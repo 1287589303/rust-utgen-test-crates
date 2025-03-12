@@ -1,0 +1,172 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: Vec<u8> = Vec::new(); // Empty byte vector",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result, Cow::Owned(unsafe { String::from_utf8_unchecked(bytes) }));",
+          "    assert!(_result.is_owned());",
+          "    assert!(matches!(_result, Cow::Owned(_)));",
+          "    assert!(String::from_utf8_lossy(&bytes).is_borrowed());",
+          "    assert!(raw_utf8 == &*bytes as *const [u8]);"
+        ],
+        "code": [
+          "{",
+          "    let bytes: Vec<u8> = Vec::new(); // Empty byte vector",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "    assert_eq!(_result, Cow::Owned(unsafe { String::from_utf8_unchecked(bytes) }));",
+          "    assert!(_result.is_owned());",
+          "    assert!(matches!(_result, Cow::Owned(_)));",
+          "    assert!(String::from_utf8_lossy(&bytes).is_borrowed());",
+          "    assert!(raw_utf8 == &*bytes as *const [u8]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: Vec<u8> = \"Hello, world!\".as_bytes().to_vec(); // Valid UTF-8",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes: Vec<u8> = \"Hello, world!\".as_bytes().to_vec(); // Valid UTF-8",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    assert_eq!(result, Cow::Owned(\"Hello, world!\".to_string()));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: Vec<u8> = \"Hello, world!\".as_bytes().to_vec(); // Valid UTF-8",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "    let bytes: Vec<u8> = \"Hello, world!\".as_bytes().to_vec(); // Valid UTF-8",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    assert_eq!(result, Cow::Owned(\"Hello, world!\".to_string()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: Vec<u8> = \"こんにちは\".as_bytes().to_vec(); // Valid UTF-8 with Japanese characters",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result, Cow::Owned(unsafe { String::from_utf8_unchecked(bytes.clone()) }));",
+          "    assert!(_result.is_owned());",
+          "    assert_eq!(_result.as_ref(), \"こんにちは\");",
+          "    assert!(matches!(_result, Cow::Owned(_)));",
+          "    assert!(std::ptr::eq(_result.as_bytes(), bytes.as_slice()));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: Vec<u8> = \"こんにちは\".as_bytes().to_vec(); // Valid UTF-8 with Japanese characters",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "    assert_eq!(_result, Cow::Owned(unsafe { String::from_utf8_unchecked(bytes.clone()) }));",
+          "    assert!(_result.is_owned());",
+          "    assert_eq!(_result.as_ref(), \"こんにちは\");",
+          "    assert!(matches!(_result, Cow::Owned(_)));",
+          "    assert!(std::ptr::eq(_result.as_bytes(), bytes.as_slice()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: Vec<u8> = \"Café naïve façade\".as_bytes().to_vec(); // Valid UTF-8 with special characters",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes: Vec<u8> = \"Café naïve façade\".as_bytes().to_vec();",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    assert_eq!(result, Cow::Owned(\"Café naïve façade\".to_string()));",
+          "    debug_assert!(std::ptr::addr_of!(result.as_bytes()) == std::ptr::addr_of!(&*input.as_ref()) as *const u8);",
+          "    assert!(result.len() == \"Café naïve façade\".len());",
+          "    assert!(result.to_string() == \"Café naïve façade\");"
+        ],
+        "code": [
+          "{",
+          "    let bytes: Vec<u8> = \"Café naïve façade\".as_bytes().to_vec(); // Valid UTF-8 with special characters",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "    let bytes: Vec<u8> = \"Café naïve façade\".as_bytes().to_vec();",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    assert_eq!(result, Cow::Owned(\"Café naïve façade\".to_string()));",
+          "    debug_assert!(std::ptr::addr_of!(result.as_bytes()) == std::ptr::addr_of!(&*input.as_ref()) as *const u8);",
+          "    assert!(result.len() == \"Café naïve façade\".len());",
+          "    assert!(result.to_string() == \"Café naïve façade\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = vec![0; 1000]; // Maximum length within a reasonable UTF-8 limit",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes = vec![0; 1000];",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    assert_eq!(result.as_ref(), String::from_utf8_lossy(&bytes).as_ref());",
+          "    assert!(result.as_ptr() == bytes.as_ptr());"
+        ],
+        "code": [
+          "{",
+          "    let bytes = vec![0; 1000]; // Maximum length within a reasonable UTF-8 limit",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "    let bytes = vec![0; 1000];",
+          "    let input: Cow<[u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    assert_eq!(result.as_ref(), String::from_utf8_lossy(&bytes).as_ref());",
+          "    assert!(result.as_ptr() == bytes.as_ptr());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

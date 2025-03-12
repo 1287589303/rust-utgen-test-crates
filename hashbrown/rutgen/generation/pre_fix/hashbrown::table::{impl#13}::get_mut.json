@@ -1,0 +1,200 @@
+{
+  "name": "hashbrown::table::{impl#13}::get_mut",
+  "mod_info": {
+    "name": "table",
+    "loc": "src/lib.rs:85:1:85:11"
+  },
+  "visible": true,
+  "loc": "src/table.rs:1711:5:1713:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "expected return value/type: unsafe { self.bucket.as_mut() }\n"
+      ],
+      "input_infer": "Valid input values for `OccupiedEntry` where T is a mutable reference, A is an allocator (Global or compatible), and hash is a valid u64 hash code, with bucket pointing to a valid memory location containing an initialized instance of T.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestAllocator;",
+                "    struct TestData(u32);",
+                "",
+                "    let mut table: HashTable<TestData, TestAllocator> = HashTable::new();",
+                "    let hash: u64 = 12345;",
+                "    let test_value = TestData(10);",
+                "    let bucket = Bucket {",
+                "        ptr: NonNull::from(&test_value),",
+                "    };",
+                "",
+                "    let mut entry = OccupiedEntry {",
+                "        hash,",
+                "        bucket,",
+                "        table: &mut table,",
+                "    };",
+                "",
+                "    let value_mut = entry.get_mut();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(value_mut.0, 10);",
+                "    assert_eq!(entry.get().0, 10);",
+                "    value_mut.0 += 5;",
+                "    assert_eq!(entry.get().0, 15);",
+                "    assert_eq!(unsafe { entry.bucket.as_mut() }.0, 15);"
+              ],
+              "code": [
+                "{",
+                "    struct TestAllocator;",
+                "    struct TestData(u32);",
+                "",
+                "    let mut table: HashTable<TestData, TestAllocator> = HashTable::new();",
+                "    let hash: u64 = 12345;",
+                "    let test_value = TestData(10);",
+                "    let bucket = Bucket {",
+                "        ptr: NonNull::from(&test_value),",
+                "    };",
+                "",
+                "    let mut entry = OccupiedEntry {",
+                "        hash,",
+                "        bucket,",
+                "        table: &mut table,",
+                "    };",
+                "",
+                "    let value_mut = entry.get_mut();",
+                "    assert_eq!(value_mut.0, 10);",
+                "    assert_eq!(entry.get().0, 10);",
+                "    value_mut.0 += 5;",
+                "    assert_eq!(entry.get().0, 15);",
+                "    assert_eq!(unsafe { entry.bucket.as_mut() }.0, 15);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestAllocator;",
+                "    struct TestData(u32);",
+                "",
+                "    let mut table: HashTable<TestData, TestAllocator> = HashTable::new();",
+                "    let hash: u64 = 0; // Boundary case: minimum hash value",
+                "    let test_value = TestData(u32::MAX); // Boundary case: maximum value of u32",
+                "    let bucket = Bucket {",
+                "        ptr: NonNull::from(&test_value),",
+                "    };",
+                "",
+                "    let mut entry = OccupiedEntry {",
+                "        hash,",
+                "        bucket,",
+                "        table: &mut table,",
+                "    };",
+                "",
+                "    let value_mut = entry.get_mut();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(value_mut.0, u32::MAX);",
+                "    assert!(value_mut as *mut TestData == bucket.ptr.as_ptr());",
+                "    assert_eq!(value_mut, unsafe { entry.bucket.as_mut() });"
+              ],
+              "code": [
+                "{",
+                "    struct TestAllocator;",
+                "    struct TestData(u32);",
+                "",
+                "    let mut table: HashTable<TestData, TestAllocator> = HashTable::new();",
+                "    let hash: u64 = 0; // Boundary case: minimum hash value",
+                "    let test_value = TestData(u32::MAX); // Boundary case: maximum value of u32",
+                "    let bucket = Bucket {",
+                "        ptr: NonNull::from(&test_value),",
+                "    };",
+                "",
+                "    let mut entry = OccupiedEntry {",
+                "        hash,",
+                "        bucket,",
+                "        table: &mut table,",
+                "    };",
+                "",
+                "    let value_mut = entry.get_mut();",
+                "    assert_eq!(value_mut.0, u32::MAX);",
+                "    assert!(value_mut as *mut TestData == bucket.ptr.as_ptr());",
+                "    assert_eq!(value_mut, unsafe { entry.bucket.as_mut() });",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    struct TestAllocator;",
+                "    struct TestData(u32);",
+                "",
+                "    let mut table: HashTable<TestData, TestAllocator> = HashTable::new();",
+                "    let hash: u64 = 54321;",
+                "    let invalid_bucket = Bucket {",
+                "        ptr: NonNull::dangling(), // Invalid bucket",
+                "    };",
+                "",
+                "    let entry = OccupiedEntry {",
+                "        hash,",
+                "        bucket: invalid_bucket,",
+                "        table: &mut table,",
+                "    };",
+                "",
+                "    let value_mut = entry.get_mut(); // This should cause a panic due to invalid memory access",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| { entry.get_mut(); }).is_err());",
+                "    assert_eq!(value_mut, unsafe { entry.bucket.as_mut() });",
+                "    assert_eq!(entry.hash, 54321);",
+                "    assert_eq!(table.raw.len(), 0);",
+                "    assert!(table.raw.capacity() > 0);"
+              ],
+              "code": [
+                "{",
+                "    struct TestAllocator;",
+                "    struct TestData(u32);",
+                "",
+                "    let mut table: HashTable<TestData, TestAllocator> = HashTable::new();",
+                "    let hash: u64 = 54321;",
+                "    let invalid_bucket = Bucket {",
+                "        ptr: NonNull::dangling(), // Invalid bucket",
+                "    };",
+                "",
+                "    let entry = OccupiedEntry {",
+                "        hash,",
+                "        bucket: invalid_bucket,",
+                "        table: &mut table,",
+                "    };",
+                "",
+                "    let value_mut = entry.get_mut(); // This should cause a panic due to invalid memory access",
+                "    assert!(std::panic::catch_unwind(|| { entry.get_mut(); }).is_err());",
+                "    assert_eq!(value_mut, unsafe { entry.bucket.as_mut() });",
+                "    assert_eq!(entry.hash, 54321);",
+                "    assert_eq!(table.raw.len(), 0);",
+                "    assert!(table.raw.capacity() > 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

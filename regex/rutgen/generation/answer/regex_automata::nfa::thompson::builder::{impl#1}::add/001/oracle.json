@@ -1,0 +1,126 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    for _ in 0..=MaxStates {  // Exceeding max allowed states",
+          "        let _ = builder.add(State::Empty { next: StateID::default() });",
+          "    }",
+          "    let result = builder.add(State::Empty { next: StateID::default() });",
+          "}"
+        ],
+        "oracle": [
+          "    let mut builder = Builder::new();",
+          "    for _ in 0..=MaxStates {",
+          "    let _ = builder.add(State::Empty { next: StateID::default() });",
+          "    }",
+          "    let result = builder.add(State::Empty { next: StateID::default() });",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates);"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    for _ in 0..=MaxStates {  // Exceeding max allowed states",
+          "        let _ = builder.add(State::Empty { next: StateID::default() });",
+          "    }",
+          "    let result = builder.add(State::Empty { next: StateID::default() });",
+          "    let mut builder = Builder::new();",
+          "    for _ in 0..=MaxStates {",
+          "    let _ = builder.add(State::Empty { next: StateID::default() });",
+          "    }",
+          "    let result = builder.add(State::Empty { next: StateID::default() });",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.set_size_limit(Some(1024)); // Setting a memory size limit",
+          "    while builder.memory_usage() < 1024 { // Adding states until we hit memory limit",
+          "        let _ = builder.add(State::Empty { next: StateID::default() });",
+          "    }",
+          "    let result = builder.add(State::ByteRange { trans: Transition::default() });",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), BuildError::too_many_states(1024));",
+          "    assert_eq!(builder.states.len(), 1024);",
+          "    assert_eq!(builder.memory_states, 1024);"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.set_size_limit(Some(1024)); // Setting a memory size limit",
+          "    while builder.memory_usage() < 1024 { // Adding states until we hit memory limit",
+          "        let _ = builder.add(State::Empty { next: StateID::default() });",
+          "    }",
+          "    let result = builder.add(State::ByteRange { trans: Transition::default() });",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), BuildError::too_many_states(1024));",
+          "    assert_eq!(builder.states.len(), 1024);",
+          "    assert_eq!(builder.memory_states, 1024);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.set_size_limit(Some(100)); // Setting a small memory size limit",
+          "    let _ = builder.add(State::Sparse { transitions: vec![Transition::default(); 5] }); // Add a few states",
+          "    let result = builder.add(State::Union { alternates: vec![StateID::default()] }); // This should be within limit",
+          "}"
+        ],
+        "oracle": [
+          "    builder.add(State::Sparse { transitions: vec![Transition::default(); 5] }).unwrap();",
+          "    let result = builder.add(State::Union { alternates: vec![StateID::default()] });",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    builder.set_size_limit(Some(0)); // Setting size limit to 0",
+          "    let result = builder.add(State::Union { alternates: vec![StateID::default()] });",
+          "    assert!(result.is_err());",
+          "    ",
+          "    let result = builder.add(State::Sparse { transitions: vec![Transition::default(); 6] });",
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.set_size_limit(Some(100)); // Setting a small memory size limit",
+          "    let _ = builder.add(State::Sparse { transitions: vec![Transition::default(); 5] }); // Add a few states",
+          "    let result = builder.add(State::Union { alternates: vec![StateID::default()] }); // This should be within limit",
+          "    builder.add(State::Sparse { transitions: vec![Transition::default(); 5] }).unwrap();",
+          "    let result = builder.add(State::Union { alternates: vec![StateID::default()] });",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    builder.set_size_limit(Some(0)); // Setting size limit to 0",
+          "    let result = builder.add(State::Union { alternates: vec![StateID::default()] });",
+          "    assert!(result.is_err());",
+          "    ",
+          "    let result = builder.add(State::Sparse { transitions: vec![Transition::default(); 6] });",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

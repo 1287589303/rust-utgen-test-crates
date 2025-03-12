@@ -1,0 +1,46 @@
+use core::convert::{AsMut, AsRef};
+use core::fmt;
+use core::future::Future;
+use core::ops::Deref;
+use core::ops::DerefMut;
+use core::pin::Pin;
+#[cfg(any(test, feature = "std"))]
+use std::error::Error;
+#[cfg(any(test, feature = "std"))]
+use std::io::{self, BufRead, Read, Seek, SeekFrom, Write};
+pub use crate::Either::{Left, Right};
+pub use self::iterator::IterEither;
+pub use self::into_either::IntoEither;
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub enum Either<L, R> {
+    /// A value of type `L`.
+    Left(L),
+    /// A value of type `R`.
+    Right(R),
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(untagged)]
+enum Either<L, R> {
+    Left(L),
+    Right(R),
+}
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+enum Either<L, R> {
+    Left(L),
+    Right(R),
+}
+#[cfg(any(test, feature = "std"))]
+impl<L, R> Read for Either<L, R>
+where
+    L: Read,
+    R: Read,
+{
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {}
+    fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {}
+    fn read_to_end(&mut self, buf: &mut std::vec::Vec<u8>) -> io::Result<usize> {
+        for_both!(self, inner => inner.read_to_end(buf))
+    }
+    fn read_to_string(&mut self, buf: &mut std::string::String) -> io::Result<usize> {}
+}

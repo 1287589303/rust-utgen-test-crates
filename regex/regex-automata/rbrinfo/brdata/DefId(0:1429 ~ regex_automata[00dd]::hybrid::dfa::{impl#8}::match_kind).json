@@ -1,0 +1,34 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#8}::match_kind",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:2998:5:3001:6",
+  "doc": "/// Set the desired match semantics.\n///\n/// The default is [`MatchKind::LeftmostFirst`], which corresponds to the\n/// match semantics of Perl-like regex engines. That is, when multiple\n/// patterns would match at the same leftmost position, the pattern that\n/// appears first in the concrete syntax is chosen.\n///\n/// Currently, the only other kind of match semantics supported is\n/// [`MatchKind::All`]. This corresponds to classical DFA construction\n/// where all possible matches are added to the lazy DFA.\n///\n/// Typically, `All` is used when one wants to execute an overlapping\n/// search and `LeftmostFirst` otherwise. In particular, it rarely makes\n/// sense to use `All` with the various \"leftmost\" find routines, since the\n/// leftmost routines depend on the `LeftmostFirst` automata construction\n/// strategy. Specifically, `LeftmostFirst` adds dead states to the\n/// lazy DFA as a way to terminate the search and report a match.\n/// `LeftmostFirst` also supports non-greedy matches using this strategy\n/// where as `All` does not.\n///\n/// # Example: overlapping search\n///\n/// This example shows the typical use of `MatchKind::All`, which is to\n/// report overlapping matches.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{\n///     hybrid::dfa::{DFA, OverlappingState},\n///     HalfMatch, Input, MatchKind,\n/// };\n///\n/// let dfa = DFA::builder()\n///     .configure(DFA::config().match_kind(MatchKind::All))\n///     .build_many(&[r\"\\w+$\", r\"\\S+$\"])?;\n/// let mut cache = dfa.create_cache();\n/// let haystack = \"@foo\";\n/// let mut state = OverlappingState::start();\n///\n/// let expected = Some(HalfMatch::must(1, 4));\n/// dfa.try_search_overlapping_fwd(\n///     &mut cache, &Input::new(haystack), &mut state,\n/// )?;\n/// assert_eq!(expected, state.get_match());\n///\n/// // The first pattern also matches at the same position, so re-running\n/// // the search will yield another match. Notice also that the first\n/// // pattern is returned after the second. This is because the second\n/// // pattern begins its match before the first, is therefore an earlier\n/// // match and is thus reported first.\n/// let expected = Some(HalfMatch::must(0, 4));\n/// dfa.try_search_overlapping_fwd(\n///     &mut cache, &Input::new(haystack), &mut state,\n/// )?;\n/// assert_eq!(expected, state.get_match());\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// # Example: reverse automaton to find start of match\n///\n/// Another example for using `MatchKind::All` is for constructing a\n/// reverse automaton to find the start of a match. `All` semantics are\n/// used for this in order to find the longest possible match, which\n/// corresponds to the leftmost starting position.\n///\n/// Note that if you need the starting position then\n/// [`hybrid::regex::Regex`](crate::hybrid::regex::Regex) will handle this\n/// for you, so it's usually not necessary to do this yourself.\n///\n/// ```\n/// use regex_automata::{\n///     hybrid::dfa::DFA,\n///     nfa::thompson::NFA,\n///     Anchored, HalfMatch, Input, MatchKind,\n/// };\n///\n/// let input = Input::new(\"123foobar456\");\n/// let pattern = r\"[a-z]+r\";\n///\n/// let dfa_fwd = DFA::new(pattern)?;\n/// let dfa_rev = DFA::builder()\n///     .thompson(NFA::config().reverse(true))\n///     .configure(DFA::config().match_kind(MatchKind::All))\n///     .build(pattern)?;\n/// let mut cache_fwd = dfa_fwd.create_cache();\n/// let mut cache_rev = dfa_rev.create_cache();\n///\n/// let expected_fwd = HalfMatch::must(0, 9);\n/// let expected_rev = HalfMatch::must(0, 3);\n/// let got_fwd = dfa_fwd.try_search_fwd(&mut cache_fwd, &input)?.unwrap();\n/// // Here we don't specify the pattern to search for since there's only\n/// // one pattern and we're doing a leftmost search. But if this were an\n/// // overlapping search, you'd need to specify the pattern that matched\n/// // in the forward direction. (Otherwise, you might wind up finding the\n/// // starting position of a match of some other pattern.) That in turn\n/// // requires building the reverse automaton with starts_for_each_pattern\n/// // enabled.\n/// let input = input\n///     .clone()\n///     .range(..got_fwd.offset())\n///     .anchored(Anchored::Yes);\n/// let got_rev = dfa_rev.try_search_rev(&mut cache_rev, &input)?.unwrap();\n/// assert_eq!(expected_fwd, got_fwd);\n/// assert_eq!(expected_rev, got_rev);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn match_kind(mut self, kind: MatchKind) -> Config {",
+    "    self.match_kind = Some(kind);",
+    "    self",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": "self",
+      "path": [
+        0,
+        1
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+// Answer 0
+
+#[test]
+fn test_start_state_with_quit_byte() {
+    let byte: u8 = 42; // Example byte in the range [0, 255]
+    
+    let quitset = {
+        let mut set = ByteSet::empty();
+        set.add(byte);
+        set
+    };
+
+    let start_map = StartByteMap::new(&LookMatcher::default());
+
+    let start_table = StartTable {
+        table: vec![StateID(0); 8], // Example state IDs
+        kind: StartKind::Both, // Example kind
+        start_map,
+        stride: 4,
+        pattern_len: Some(1),
+        universal_start_unanchored: Some(StateID(1)),
+        universal_start_anchored: Some(StateID(2)),
+    };
+
+    let dfa = DFA {
+        tt: TransitionTable::default(),
+        st: start_table,
+        ms: MatchStates::default(),
+        special: Special { max: 10, quit_id: 2, min_match: 3, max_match: 4, min_accel: 5, max_accel: 6, min_start: 7, max_start: 8 },
+        accels: Accels::default(),
+        pre: None,
+        quitset,
+        flags: Flags { has_empty: false, is_utf8: true, is_always_start_anchored: false },
+    };
+
+    let config = Config::new().look_behind(Some(byte));
+    let _ = dfa.start_state(&config);
+}
+

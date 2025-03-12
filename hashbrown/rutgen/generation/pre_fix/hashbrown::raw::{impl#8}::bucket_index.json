@@ -1,0 +1,184 @@
+{
+  "name": "hashbrown::raw::{impl#8}::bucket_index",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:74:1:74:9"
+  },
+  "visible": true,
+  "loc": "src/raw/mod.rs:707:5:709:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "unsafe reference to a Bucket<T> with valid NonNull<T> pointer, where the base pointer from data_end() is properly aligned and within valid memory bounds; bucket index should be a non-negative integer within the range of current capacity of the RawTable.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestAllocator;",
+                "    unsafe impl Allocator for TestAllocator {",
+                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "            NonNull::new_unchecked(&mut [0u8; 16][..] as *mut _ as *mut u8).ok_or(())",
+                "        }",
+                "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
+                "    }",
+                "",
+                "    let allocator = TestAllocator;",
+                "    let mut table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator);",
+                "    let bucket = table.insert(0, 42, |x| *x as u64); // Insert a value to create a bucket",
+                "    let index = table.bucket_index(&bucket);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(index, 0);",
+                "    let bucket_non_null = bucket.as_non_null();",
+                "    assert!(bucket_non_null.as_ptr() != ptr::null_mut());",
+                "    let expected_index = 0;",
+                "    assert_eq!(table.bucket_index(&bucket), expected_index);",
+                "    let invalid_bucket = Bucket::<u8> { ptr: NonNull::dangling() };",
+                "    let result = std::panic::catch_unwind(|| { table.bucket_index(&invalid_bucket) });",
+                "    assert!(result.is_err());",
+                "    let uninitialized_table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator).with_capacity_in(4);",
+                "    let empty_bucket = uninitialized_table.bucket(0);",
+                "    assert_eq!(uninitialized_table.bucket_index(&empty_bucket), 0);"
+              ],
+              "code": [
+                "{",
+                "    struct TestAllocator;",
+                "    unsafe impl Allocator for TestAllocator {",
+                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "            NonNull::new_unchecked(&mut [0u8; 16][..] as *mut _ as *mut u8).ok_or(())",
+                "        }",
+                "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
+                "    }",
+                "",
+                "    let allocator = TestAllocator;",
+                "    let mut table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator);",
+                "    let bucket = table.insert(0, 42, |x| *x as u64); // Insert a value to create a bucket",
+                "    let index = table.bucket_index(&bucket);",
+                "    assert_eq!(index, 0);",
+                "    let bucket_non_null = bucket.as_non_null();",
+                "    assert!(bucket_non_null.as_ptr() != ptr::null_mut());",
+                "    let expected_index = 0;",
+                "    assert_eq!(table.bucket_index(&bucket), expected_index);",
+                "    let invalid_bucket = Bucket::<u8> { ptr: NonNull::dangling() };",
+                "    let result = std::panic::catch_unwind(|| { table.bucket_index(&invalid_bucket) });",
+                "    assert!(result.is_err());",
+                "    let uninitialized_table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator).with_capacity_in(4);",
+                "    let empty_bucket = uninitialized_table.bucket(0);",
+                "    assert_eq!(uninitialized_table.bucket_index(&empty_bucket), 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestAllocator;",
+                "    unsafe impl Allocator for TestAllocator {",
+                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "            NonNull::new_unchecked(&mut [0u8; 16][..] as *mut _ as *mut u8).ok_or(())",
+                "        }",
+                "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
+                "    }",
+                "",
+                "    let allocator = TestAllocator;",
+                "    let mut table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator);",
+                "    let bucket = table.bucket(0); // Access a bucket that might not exist",
+                "    let index = table.bucket_index(&bucket);",
+                "}"
+              ],
+              "oracle": [
+                "    let allocator = TestAllocator;",
+                "    let mut table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator);",
+                "    let bucket = table.bucket(0);",
+                "    let index = table.bucket_index(&bucket);",
+                "    assert!(index <= table.buckets());"
+              ],
+              "code": [
+                "{",
+                "    struct TestAllocator;",
+                "    unsafe impl Allocator for TestAllocator {",
+                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "            NonNull::new_unchecked(&mut [0u8; 16][..] as *mut _ as *mut u8).ok_or(())",
+                "        }",
+                "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
+                "    }",
+                "",
+                "    let allocator = TestAllocator;",
+                "    let mut table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator);",
+                "    let bucket = table.bucket(0); // Access a bucket that might not exist",
+                "    let index = table.bucket_index(&bucket);",
+                "    let allocator = TestAllocator;",
+                "    let mut table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator);",
+                "    let bucket = table.bucket(0);",
+                "    let index = table.bucket_index(&bucket);",
+                "    assert!(index <= table.buckets());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct ZeroSized;",
+                "    struct TestAllocator;",
+                "    unsafe impl Allocator for TestAllocator {",
+                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "            NonNull::new_unchecked(&mut [0u8; 16][..] as *mut _ as *mut u8).ok_or(())",
+                "        }",
+                "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
+                "    }",
+                "",
+                "    let allocator = TestAllocator;",
+                "    let mut table: RawTable<ZeroSized, TestAllocator> = RawTable::new_in(allocator);",
+                "    let bucket = table.insert(0, ZeroSized, |x: &ZeroSized| 0); // Insert a zero-sized type",
+                "    let index = table.bucket_index(&bucket);",
+                "}"
+              ],
+              "oracle": [
+                "    let allocator = TestAllocator;",
+                "    let mut table: RawTable<ZeroSized, TestAllocator> = RawTable::new_in(allocator);",
+                "    let bucket = table.insert(0, ZeroSized, |x: &ZeroSized| 0);",
+                "    assert_eq!(table.bucket_index(&bucket), bucket.to_base_index(table.data_end()));"
+              ],
+              "code": [
+                "{",
+                "    struct ZeroSized;",
+                "    struct TestAllocator;",
+                "    unsafe impl Allocator for TestAllocator {",
+                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "            NonNull::new_unchecked(&mut [0u8; 16][..] as *mut _ as *mut u8).ok_or(())",
+                "        }",
+                "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
+                "    }",
+                "",
+                "    let allocator = TestAllocator;",
+                "    let mut table: RawTable<ZeroSized, TestAllocator> = RawTable::new_in(allocator);",
+                "    let bucket = table.insert(0, ZeroSized, |x: &ZeroSized| 0); // Insert a zero-sized type",
+                "    let index = table.bucket_index(&bucket);",
+                "    let allocator = TestAllocator;",
+                "    let mut table: RawTable<ZeroSized, TestAllocator> = RawTable::new_in(allocator);",
+                "    let bucket = table.insert(0, ZeroSized, |x: &ZeroSized| 0);",
+                "    assert_eq!(table.bucket_index(&bucket), bucket.to_base_index(table.data_end()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

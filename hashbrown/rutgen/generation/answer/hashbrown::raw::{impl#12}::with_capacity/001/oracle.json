@@ -1,0 +1,140 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct MockAllocator;",
+          "    impl Allocator for MockAllocator {",
+          "        // Implement the necessary methods for the mock allocator",
+          "    }",
+          "",
+          "    let alloc = MockAllocator;",
+          "    let table_layout = TableLayout { size: 1, ctrl_align: 1 };",
+          "    let capacity = isize::MAX as usize + 1; // This should trigger CapacityOverflow",
+          "",
+          "    let _table_inner = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(RawTableInner::fallible_with_capacity(&alloc, table_layout, capacity, Fallibility::Infallible), Err(TryReserveError::CapacityOverflow)));"
+        ],
+        "code": [
+          "{",
+          "    struct MockAllocator;",
+          "    impl Allocator for MockAllocator {",
+          "        // Implement the necessary methods for the mock allocator",
+          "    }",
+          "",
+          "    let alloc = MockAllocator;",
+          "    let table_layout = TableLayout { size: 1, ctrl_align: 1 };",
+          "    let capacity = isize::MAX as usize + 1; // This should trigger CapacityOverflow",
+          "",
+          "    let _table_inner = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    assert!(matches!(RawTableInner::fallible_with_capacity(&alloc, table_layout, capacity, Fallibility::Infallible), Err(TryReserveError::CapacityOverflow)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct MockAllocator;",
+          "    impl Allocator for MockAllocator {",
+          "        // Implement the necessary methods for the mock allocator",
+          "    }",
+          "",
+          "    let alloc = MockAllocator;",
+          "    let table_layout = TableLayout { size: 1, ctrl_align: 1 };",
+          "    let capacity = 0; // This should not trigger any allocation and yielded an empty table",
+          "",
+          "    let table_inner = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(table_inner.is_empty_singleton(), \"Table should be an empty singleton\");",
+          "    assert_eq!(table_inner.buckets(), 0, \"Bucket count must be zero for zero capacity\");",
+          "    assert_eq!(table_inner.items, 0, \"Item count must be zero for zero capacity\");",
+          "    assert_eq!(table_inner.growth_left, 0, \"Growth left must be zero for zero capacity\");",
+          "    assert!(unsafe { table_inner.ctrl_slice().iter().all(|tag| *tag == Tag::EMPTY) }, \"All control bytes should be initialized to Tag::EMPTY\");",
+          "    assert!(std::panic::catch_unwind(|| { RawTableInner::with_capacity(&alloc, table_layout, isize::MAX as usize + 1); }).is_err(), \"Capacity exceeding isize::MAX should panic\");"
+        ],
+        "code": [
+          "{",
+          "    struct MockAllocator;",
+          "    impl Allocator for MockAllocator {",
+          "        // Implement the necessary methods for the mock allocator",
+          "    }",
+          "",
+          "    let alloc = MockAllocator;",
+          "    let table_layout = TableLayout { size: 1, ctrl_align: 1 };",
+          "    let capacity = 0; // This should not trigger any allocation and yielded an empty table",
+          "",
+          "    let table_inner = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    assert!(table_inner.is_empty_singleton(), \"Table should be an empty singleton\");",
+          "    assert_eq!(table_inner.buckets(), 0, \"Bucket count must be zero for zero capacity\");",
+          "    assert_eq!(table_inner.items, 0, \"Item count must be zero for zero capacity\");",
+          "    assert_eq!(table_inner.growth_left, 0, \"Growth left must be zero for zero capacity\");",
+          "    assert!(unsafe { table_inner.ctrl_slice().iter().all(|tag| *tag == Tag::EMPTY) }, \"All control bytes should be initialized to Tag::EMPTY\");",
+          "    assert!(std::panic::catch_unwind(|| { RawTableInner::with_capacity(&alloc, table_layout, isize::MAX as usize + 1); }).is_err(), \"Capacity exceeding isize::MAX should panic\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct MockAllocator;",
+          "    impl Allocator for MockAllocator {",
+          "        // Implement the necessary methods for the mock allocator",
+          "    }",
+          "",
+          "    let alloc = MockAllocator;",
+          "    let table_layout = TableLayout { size: 1, ctrl_align: 1 };",
+          "    let capacity = usize::MAX; // This should lead to an allocation failure",
+          "",
+          "    let _table_inner = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    // Simulate calling with_capacity that exceeds isize::MAX",
+          "    RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    struct MockAllocator;",
+          "    impl Allocator for MockAllocator {",
+          "        // Implement the necessary methods for the mock allocator",
+          "    }",
+          "",
+          "    let alloc = MockAllocator;",
+          "    let table_layout = TableLayout { size: 1, ctrl_align: 1 };",
+          "    let capacity = usize::MAX; // This should lead to an allocation failure",
+          "",
+          "    let _table_inner = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    // Simulate calling with_capacity that exceeds isize::MAX",
+          "    RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,234 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ScalarRange { start: 0x0041, end: 0x1F600 }; // 'A' and '😀'",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "",
+          "    let _ = range.encode(&mut start_buffer, &mut end_buffer);",
+          "}"
+        ],
+        "oracle": [
+          "    let range = ScalarRange { start: 0x0041, end: 0x1F600 };",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let written_bytes = range.encode(&mut start_buffer, &mut end_buffer);",
+          "    assert_eq!(written_bytes, 4);",
+          "    assert_eq!(start_buffer, b\"A\");",
+          "    assert_eq!(end_buffer, b\"\\xF0\\x9F\\x98\\x80\");",
+          "    assert!(range.start != range.end);",
+          "    assert!(written_bytes > 0);"
+        ],
+        "code": [
+          "{",
+          "    let range = ScalarRange { start: 0x0041, end: 0x1F600 }; // 'A' and '😀'",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "",
+          "    let _ = range.encode(&mut start_buffer, &mut end_buffer);",
+          "    let range = ScalarRange { start: 0x0041, end: 0x1F600 };",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let written_bytes = range.encode(&mut start_buffer, &mut end_buffer);",
+          "    assert_eq!(written_bytes, 4);",
+          "    assert_eq!(start_buffer, b\"A\");",
+          "    assert_eq!(end_buffer, b\"\\xF0\\x9F\\x98\\x80\");",
+          "    assert!(range.start != range.end);",
+          "    assert!(written_bytes > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ScalarRange { start: 0x0000, end: 0x0100 }; // '\\0' and 'À'",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "",
+          "    let _ = range.encode(&mut start_buffer, &mut end_buffer);",
+          "}"
+        ],
+        "oracle": [
+          "    let range = ScalarRange { start: 0x0000, end: 0x0100 };",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let result = range.encode(&mut start_buffer, &mut end_buffer);",
+          "    assert_ne!(start_buffer, end_buffer);",
+          "    assert_eq!(result, MAX_UTF8_BYTES);",
+          "    assert!(start_buffer.iter().any(|&b| b > 0));",
+          "    assert!(end_buffer.iter().any(|&b| b > 0));",
+          "    assert!(start_buffer[0] == 0);",
+          "    assert!(end_buffer[0] == 195);"
+        ],
+        "code": [
+          "{",
+          "    let range = ScalarRange { start: 0x0000, end: 0x0100 }; // '\\0' and 'À'",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "",
+          "    let _ = range.encode(&mut start_buffer, &mut end_buffer);",
+          "    let range = ScalarRange { start: 0x0000, end: 0x0100 };",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let result = range.encode(&mut start_buffer, &mut end_buffer);",
+          "    assert_ne!(start_buffer, end_buffer);",
+          "    assert_eq!(result, MAX_UTF8_BYTES);",
+          "    assert!(start_buffer.iter().any(|&b| b > 0));",
+          "    assert!(end_buffer.iter().any(|&b| b > 0));",
+          "    assert!(start_buffer[0] == 0);",
+          "    assert!(end_buffer[0] == 195);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ScalarRange { start: 0x10FFFF, end: 0x10FFFE }; // Last valid unicode range",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "",
+          "    let _ = range.encode(&mut start_buffer, &mut end_buffer);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(start_buffer != end_buffer);",
+          "    assert_eq!(start_buffer.len(), MAX_UTF8_BYTES);",
+          "    assert_eq!(end_buffer.len(), MAX_UTF8_BYTES);",
+          "    assert!(start_buffer[0..3] != end_buffer[0..3]);",
+          "    assert_eq!(range.encode(&mut start_buffer, &mut end_buffer), 4);",
+          "    assert_eq!(start_buffer[0], 0xF4);",
+          "    assert_eq!(start_buffer[1], 0x8F);",
+          "    assert_eq!(start_buffer[2], 0xBF);",
+          "    assert_eq!(start_buffer[3], 0xBF);",
+          "    assert_eq!(end_buffer[0], 0xF4);",
+          "    assert_eq!(end_buffer[1], 0x8F);",
+          "    assert_eq!(end_buffer[2], 0xBF);",
+          "    assert_eq!(end_buffer[3], 0xBE);"
+        ],
+        "code": [
+          "{",
+          "    let range = ScalarRange { start: 0x10FFFF, end: 0x10FFFE }; // Last valid unicode range",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "",
+          "    let _ = range.encode(&mut start_buffer, &mut end_buffer);",
+          "    assert!(start_buffer != end_buffer);",
+          "    assert_eq!(start_buffer.len(), MAX_UTF8_BYTES);",
+          "    assert_eq!(end_buffer.len(), MAX_UTF8_BYTES);",
+          "    assert!(start_buffer[0..3] != end_buffer[0..3]);",
+          "    assert_eq!(range.encode(&mut start_buffer, &mut end_buffer), 4);",
+          "    assert_eq!(start_buffer[0], 0xF4);",
+          "    assert_eq!(start_buffer[1], 0x8F);",
+          "    assert_eq!(start_buffer[2], 0xBF);",
+          "    assert_eq!(start_buffer[3], 0xBF);",
+          "    assert_eq!(end_buffer[0], 0xF4);",
+          "    assert_eq!(end_buffer[1], 0x8F);",
+          "    assert_eq!(end_buffer[2], 0xBF);",
+          "    assert_eq!(end_buffer[3], 0xBE);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ScalarRange { start: 0x80, end: 0x2000 }; // Non-ASCII characters",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "",
+          "    let _ = range.encode(&mut start_buffer, &mut end_buffer);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(start_buffer.len(), MAX_UTF8_BYTES);",
+          "    assert_eq!(end_buffer.len(), MAX_UTF8_BYTES);",
+          "    assert!(start_buffer[0] >= 0x80);",
+          "    assert!(end_buffer[0] >= 0x80);",
+          "    assert_ne!(start_buffer, end_buffer);",
+          "    assert!(start_buffer.iter().any(|&b| b > 0));",
+          "    assert!(end_buffer.iter().any(|&b| b > 0));",
+          "    assert!(start_buffer.iter().all(|&b| b < 0x80 || b >= 0xC2));",
+          "    assert!(end_buffer.iter().all(|&b| b < 0x80 || b >= 0xC2));"
+        ],
+        "code": [
+          "{",
+          "    let range = ScalarRange { start: 0x80, end: 0x2000 }; // Non-ASCII characters",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "",
+          "    let _ = range.encode(&mut start_buffer, &mut end_buffer);",
+          "    assert_eq!(start_buffer.len(), MAX_UTF8_BYTES);",
+          "    assert_eq!(end_buffer.len(), MAX_UTF8_BYTES);",
+          "    assert!(start_buffer[0] >= 0x80);",
+          "    assert!(end_buffer[0] >= 0x80);",
+          "    assert_ne!(start_buffer, end_buffer);",
+          "    assert!(start_buffer.iter().any(|&b| b > 0));",
+          "    assert!(end_buffer.iter().any(|&b| b > 0));",
+          "    assert!(start_buffer.iter().all(|&b| b < 0x80 || b >= 0xC2));",
+          "    assert!(end_buffer.iter().all(|&b| b < 0x80 || b >= 0xC2));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ScalarRange { start: 0x20AC, end: 0x263A }; // '€' and '☺'",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "",
+          "    let _ = range.encode(&mut start_buffer, &mut end_buffer);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(start_buffer, [0xE2, 0x82, 0xAC, 0, 0]);",
+          "    assert_eq!(end_buffer, [0xE2, 0x98, 0xBA, 0, 0]);",
+          "    assert!(start_buffer.len() <= MAX_UTF8_BYTES);",
+          "    assert!(end_buffer.len() <= MAX_UTF8_BYTES);",
+          "    assert!(start_buffer[0] != end_buffer[0]);  // ensuring *left_val != *right_val",
+          "    assert!(start_buffer[1] != end_buffer[1]);  // ensuring *left_val != *right_val",
+          "    assert!(start_buffer[2] != end_buffer[2]);  // ensuring *left_val != *right_val",
+          "    assert!(start_buffer[3] == 0);",
+          "    assert!(end_buffer[3] == 0);"
+        ],
+        "code": [
+          "{",
+          "    let range = ScalarRange { start: 0x20AC, end: 0x263A }; // '€' and '☺'",
+          "    let mut start_buffer = [0u8; MAX_UTF8_BYTES];",
+          "    let mut end_buffer = [0u8; MAX_UTF8_BYTES];",
+          "",
+          "    let _ = range.encode(&mut start_buffer, &mut end_buffer);",
+          "    assert_eq!(start_buffer, [0xE2, 0x82, 0xAC, 0, 0]);",
+          "    assert_eq!(end_buffer, [0xE2, 0x98, 0xBA, 0, 0]);",
+          "    assert!(start_buffer.len() <= MAX_UTF8_BYTES);",
+          "    assert!(end_buffer.len() <= MAX_UTF8_BYTES);",
+          "    assert!(start_buffer[0] != end_buffer[0]);  // ensuring *left_val != *right_val",
+          "    assert!(start_buffer[1] != end_buffer[1]);  // ensuring *left_val != *right_val",
+          "    assert!(start_buffer[2] != end_buffer[2]);  // ensuring *left_val != *right_val",
+          "    assert!(start_buffer[3] == 0);",
+          "    assert!(end_buffer[3] == 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

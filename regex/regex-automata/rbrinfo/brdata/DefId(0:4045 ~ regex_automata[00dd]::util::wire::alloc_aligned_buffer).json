@@ -1,0 +1,508 @@
+{
+  "name": "regex_automata::util::wire::alloc_aligned_buffer",
+  "mod_info": {
+    "name": "util::wire",
+    "loc": "regex-automata/src/util/mod.rs:46:1:46:14"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/util/wire.rs:365:1:411:2",
+  "doc": "/// Allocate a byte buffer of the given size, along with some initial padding\n/// such that `buf[padding..]` has the same alignment as `T`, where the\n/// alignment of `T` must be at most `8`. In particular, callers should treat\n/// the first N bytes (second return value) as padding bytes that must not be\n/// overwritten. In all cases, the following identity holds:\n///\n/// ```ignore\n/// let (buf, padding) = alloc_aligned_buffer::<StateID>(SIZE);\n/// assert_eq!(SIZE, buf[padding..].len());\n/// ```\n///\n/// In practice, padding is often zero.\n///\n/// The requirement for `8` as a maximum here is somewhat arbitrary. In\n/// practice, we never need anything bigger in this crate, and so this function\n/// does some sanity asserts under the assumption of a max alignment of `8`.\n",
+  "code": [
+    "pub(crate) fn alloc_aligned_buffer<T>(size: usize) -> (Vec<u8>, usize) {",
+    "    // NOTE: This is a kludge because there's no easy way to allocate a Vec<u8>",
+    "    // with an alignment guaranteed to be greater than 1. We could create a",
+    "    // Vec<u32>, but this cannot be safely transmuted to a Vec<u8> without",
+    "    // concern, since reallocing or dropping the Vec<u8> is UB (different",
+    "    // alignment than the initial allocation). We could define a wrapper type",
+    "    // to manage this for us, but it seems like more machinery than it's worth.",
+    "    let buf = vec![0; size];",
+    "    let align = core::mem::align_of::<T>();",
+    "    let address = buf.as_ptr().as_usize();",
+    "    if address % align == 0 {",
+    "        return (buf, 0);",
+    "    }",
+    "    // Let's try this again. We have to create a totally new alloc with",
+    "    // the maximum amount of bytes we might need. We can't just extend our",
+    "    // pre-existing 'buf' because that might create a new alloc with a",
+    "    // different alignment.",
+    "    let extra = align - 1;",
+    "    let mut buf = vec![0; size + extra];",
+    "    let address = buf.as_ptr().as_usize();",
+    "    // The code below handles the case where 'address' is aligned to T, so if",
+    "    // we got lucky and 'address' is now aligned to T (when it previously",
+    "    // wasn't), then we're done.",
+    "    if address % align == 0 {",
+    "        buf.truncate(size);",
+    "        return (buf, 0);",
+    "    }",
+    "    let padding = ((address & !(align - 1)).checked_add(align).unwrap())",
+    "        .checked_sub(address)",
+    "        .unwrap();",
+    "    assert!(padding <= 7, \"padding of {} is bigger than 7\", padding);",
+    "    assert!(",
+    "        padding <= extra,",
+    "        \"padding of {} is bigger than extra {} bytes\",",
+    "        padding,",
+    "        extra",
+    "    );",
+    "    buf.truncate(size + padding);",
+    "    assert_eq!(size + padding, buf.len());",
+    "    assert_eq!(",
+    "        0,",
+    "        buf[padding..].as_ptr().as_usize() % align,",
+    "        \"expected end of initial padding to be aligned to {}\",",
+    "        align,",
+    "    );",
+    "    (buf, padding)",
+    "}"
+  ],
+  "size": {
+    "chain": 7,
+    "contra": 0,
+    "min_set": 7
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "false",
+          "line": 375,
+          "bound": null
+        }
+      ],
+      "ret": "(buf, 0)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        51,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 375,
+          "bound": null
+        },
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        }
+      ],
+      "ret": "(buf, 0)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        50,
+        51,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 375,
+          "bound": null
+        },
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "padding <= 7",
+          "norm": "7 >= padding",
+          "value": "true",
+          "line": 395,
+          "bound": "padding == 7"
+        },
+        {
+          "cond": "padding <= extra",
+          "norm": "extra >= padding",
+          "value": "true",
+          "line": 397,
+          "bound": "padding == extra"
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 53,
+          "bound": null
+        }
+      ],
+      "ret": "(buf, padding)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        28,
+        33,
+        34,
+        35,
+        36,
+        37,
+        39,
+        40,
+        41,
+        42,
+        43,
+        47,
+        48,
+        49,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 375,
+          "bound": null
+        },
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "padding <= 7",
+          "norm": "7 >= padding",
+          "value": "true",
+          "line": 395,
+          "bound": "padding == 7"
+        },
+        {
+          "cond": "padding <= extra",
+          "norm": "extra >= padding",
+          "value": "true",
+          "line": 397,
+          "bound": "padding == extra"
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 53,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        28,
+        33,
+        34,
+        35,
+        36,
+        37,
+        39,
+        40,
+        41,
+        42,
+        44,
+        45,
+        46,
+        54,
+        55,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 375,
+          "bound": null
+        },
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "padding <= 7",
+          "norm": "7 >= padding",
+          "value": "true",
+          "line": 395,
+          "bound": "padding == 7"
+        },
+        {
+          "cond": "padding <= extra",
+          "norm": "extra >= padding",
+          "value": "true",
+          "line": 397,
+          "bound": "padding == extra"
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        28,
+        33,
+        34,
+        35,
+        36,
+        38,
+        54,
+        55,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 375,
+          "bound": null
+        },
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "padding <= 7",
+          "norm": "7 >= padding",
+          "value": "true",
+          "line": 395,
+          "bound": "padding == 7"
+        },
+        {
+          "cond": "padding <= extra",
+          "norm": "extra >= padding",
+          "value": "false",
+          "line": 397,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        29,
+        30,
+        31,
+        32,
+        54,
+        55,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 375,
+          "bound": null
+        },
+        {
+          "cond": "address % align == 0",
+          "norm": "0 == address % align",
+          "value": "true",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "padding <= 7",
+          "norm": "7 >= padding",
+          "value": "false",
+          "line": 395,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        54,
+        55,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

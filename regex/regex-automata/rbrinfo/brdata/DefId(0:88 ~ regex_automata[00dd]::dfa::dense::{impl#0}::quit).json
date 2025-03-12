@@ -1,0 +1,710 @@
+{
+  "name": "regex_automata::dfa::dense::{impl#0}::quit",
+  "mod_info": {
+    "name": "dfa::dense",
+    "loc": "regex-automata/src/dfa/mod.rs:337:1:337:15"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/dense.rs:667:5:683:6",
+  "doc": "/// Add a \"quit\" byte to the DFA.\n///\n/// When a quit byte is seen during search time, then search will return\n/// a [`MatchError::quit`](crate::MatchError::quit) error indicating the\n/// offset at which the search stopped.\n///\n/// A quit byte will always overrule any other aspects of a regex. For\n/// example, if the `x` byte is added as a quit byte and the regex `\\w` is\n/// used, then observing `x` will cause the search to quit immediately\n/// despite the fact that `x` is in the `\\w` class.\n///\n/// This mechanism is primarily useful for heuristically enabling certain\n/// features like Unicode word boundaries in a DFA. Namely, if the input\n/// to search is ASCII, then a Unicode word boundary can be implemented\n/// via an ASCII word boundary with no change in semantics. Thus, a DFA\n/// can attempt to match a Unicode word boundary but give up as soon as it\n/// observes a non-ASCII byte. Indeed, if callers set all non-ASCII bytes\n/// to be quit bytes, then Unicode word boundaries will be permitted when\n/// building DFAs. Of course, callers should enable\n/// [`Config::unicode_word_boundary`] if they want this behavior instead.\n/// (The advantage being that non-ASCII quit bytes will only be added if a\n/// Unicode word boundary is in the pattern.)\n///\n/// When enabling this option, callers _must_ be prepared to handle a\n/// [`MatchError`](crate::MatchError) error during search. When using a\n/// [`Regex`](crate::dfa::regex::Regex), this corresponds to using the\n/// `try_` suite of methods.\n///\n/// By default, there are no quit bytes set.\n///\n/// # Panics\n///\n/// This panics if heuristic Unicode word boundaries are enabled and any\n/// non-ASCII byte is removed from the set of quit bytes. Namely, enabling\n/// Unicode word boundaries requires setting every non-ASCII byte to a quit\n/// byte. So if the caller attempts to undo any of that, then this will\n/// panic.\n///\n/// # Example\n///\n/// This example shows how to cause a search to terminate if it sees a\n/// `\\n` byte. This could be useful if, for example, you wanted to prevent\n/// a user supplied pattern from matching across a line boundary.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{dfa::{Automaton, dense}, Input, MatchError};\n///\n/// let dfa = dense::Builder::new()\n///     .configure(dense::Config::new().quit(b'\\n', true))\n///     .build(r\"foo\\p{any}+bar\")?;\n///\n/// let haystack = \"foo\\nbar\".as_bytes();\n/// // Normally this would produce a match, since \\p{any} contains '\\n'.\n/// // But since we instructed the automaton to enter a quit state if a\n/// // '\\n' is observed, this produces a match error instead.\n/// let expected = MatchError::quit(b'\\n', 3);\n/// let got = dfa.try_search_fwd(&Input::new(haystack)).unwrap_err();\n/// assert_eq!(expected, got);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn quit(mut self, byte: u8, yes: bool) -> Config {",
+    "    if self.get_unicode_word_boundary() && !byte.is_ascii() && !yes {",
+    "        panic!(",
+    "            \"cannot set non-ASCII byte to be non-quit when \\",
+    "             Unicode word boundaries are enabled\"",
+    "        );",
+    "    }",
+    "    if self.quitset.is_none() {",
+    "        self.quitset = Some(ByteSet::empty());",
+    "    }",
+    "    if yes {",
+    "        self.quitset.as_mut().unwrap().add(byte);",
+    "    } else {",
+    "        self.quitset.as_mut().unwrap().remove(byte);",
+    "    }",
+    "    self",
+    "}"
+  ],
+  "size": {
+    "chain": 13,
+    "contra": 0,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "byte.is_ascii()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "true",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "byte.is_ascii()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "false",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        9,
+        10,
+        11,
+        12,
+        14,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "byte.is_ascii()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "false",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "true",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        9,
+        10,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "byte.is_ascii()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "false",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "false",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        9,
+        10,
+        13,
+        14,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "byte.is_ascii()",
+          "norm": null,
+          "value": "false",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "true",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "byte.is_ascii()",
+          "norm": null,
+          "value": "false",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "false",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        10,
+        11,
+        12,
+        14,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "byte.is_ascii()",
+          "norm": null,
+          "value": "false",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "false",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "true",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        10,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "byte.is_ascii()",
+          "norm": null,
+          "value": "false",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "false",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "false",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        10,
+        13,
+        14,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "true",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "byte.is_ascii()",
+          "norm": null,
+          "value": "false",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "false",
+          "line": 668,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        25,
+        26
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "false",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "true",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "false",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "false",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "false",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "false",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "true",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        8,
+        9,
+        10,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "self.get_unicode_word_boundary()",
+          "norm": null,
+          "value": "false",
+          "line": 668,
+          "bound": null
+        },
+        {
+          "cond": "self.quitset.is_none()",
+          "norm": null,
+          "value": "false",
+          "line": 674,
+          "bound": null
+        },
+        {
+          "cond": "yes",
+          "norm": null,
+          "value": "false",
+          "line": 677,
+          "bound": null
+        }
+      ],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        8,
+        9,
+        10,
+        13,
+        14,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

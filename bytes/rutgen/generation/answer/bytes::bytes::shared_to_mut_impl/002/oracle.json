@@ -1,0 +1,158 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared = Box::into_raw(Box::new(Shared {",
+          "        buf: Box::into_raw(Box::new([1u8, 2u8, 3u8])),",
+          "        cap: 3,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    }));",
+          "    let ptr = unsafe { (*shared).buf };",
+          "    let len = 3;",
+          "",
+          "    let _result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+          "}"
+        ],
+        "oracle": [
+          "    let shared = Box::into_raw(Box::new(Shared { buf: Box::into_raw(Box::new([1u8, 2u8, 3u8])), cap: 3, ref_cnt: AtomicUsize::new(1), }));",
+          "    let ptr = unsafe { (*shared).buf };",
+          "    let len = 3;",
+          "    let result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+          "    assert_eq!(result.len(), len);",
+          "    assert_eq!(result.as_slice(), &[1u8, 2u8, 3u8]);",
+          "    assert!(unsafe { (*shared).ref_cnt.load(Ordering::Acquire) } == 0);",
+          "    let shared_instance = unsafe { Box::from_raw(shared) };",
+          "    assert_eq!(shared_instance.cap, 3);",
+          "    assert_eq!(shared_instance.buf, ptr);"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::into_raw(Box::new(Shared {",
+          "        buf: Box::into_raw(Box::new([1u8, 2u8, 3u8])),",
+          "        cap: 3,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    }));",
+          "    let ptr = unsafe { (*shared).buf };",
+          "    let len = 3;",
+          "",
+          "    let _result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+          "    let shared = Box::into_raw(Box::new(Shared { buf: Box::into_raw(Box::new([1u8, 2u8, 3u8])), cap: 3, ref_cnt: AtomicUsize::new(1), }));",
+          "    let ptr = unsafe { (*shared).buf };",
+          "    let len = 3;",
+          "    let result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+          "    assert_eq!(result.len(), len);",
+          "    assert_eq!(result.as_slice(), &[1u8, 2u8, 3u8]);",
+          "    assert!(unsafe { (*shared).ref_cnt.load(Ordering::Acquire) } == 0);",
+          "    let shared_instance = unsafe { Box::from_raw(shared) };",
+          "    assert_eq!(shared_instance.cap, 3);",
+          "    assert_eq!(shared_instance.buf, ptr);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared = Box::into_raw(Box::new(Shared {",
+          "        buf: Box::into_raw(Box::new([0u8; 10])),",
+          "        cap: 10,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    }));",
+          "    let ptr = unsafe { (*shared).buf };",
+          "    let len = 0;",
+          "",
+          "    let _result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+          "}"
+        ],
+        "oracle": [
+          "    let shared = Box::into_raw(Box::new(Shared { buf: Box::into_raw(Box::new([0u8; 10])), cap: 10, ref_cnt: AtomicUsize::new(1) }));",
+          "    let ptr = unsafe { (*shared).buf };",
+          "    let len = 0;",
+          "    let _result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+          "    assert_eq!(unsafe { (*shared).ref_cnt.load(Ordering::Acquire) }, 1);",
+          "    assert!(unsafe { (*shared).buf.is_null() } == false);",
+          "    assert!(unsafe { BytesMut::from_vec(Vec::from_raw_parts((*shared).buf, len, (*shared).cap)).len() } == len);",
+          "    assert!(unsafe { BytesMut::from_vec(Vec::from_raw_parts((*shared).buf, len, (*shared).cap)).capacity() } == (*shared).cap);"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::into_raw(Box::new(Shared {",
+          "        buf: Box::into_raw(Box::new([0u8; 10])),",
+          "        cap: 10,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    }));",
+          "    let ptr = unsafe { (*shared).buf };",
+          "    let len = 0;",
+          "",
+          "    let _result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+          "    let shared = Box::into_raw(Box::new(Shared { buf: Box::into_raw(Box::new([0u8; 10])), cap: 10, ref_cnt: AtomicUsize::new(1) }));",
+          "    let ptr = unsafe { (*shared).buf };",
+          "    let len = 0;",
+          "    let _result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+          "    assert_eq!(unsafe { (*shared).ref_cnt.load(Ordering::Acquire) }, 1);",
+          "    assert!(unsafe { (*shared).buf.is_null() } == false);",
+          "    assert!(unsafe { BytesMut::from_vec(Vec::from_raw_parts((*shared).buf, len, (*shared).cap)).len() } == len);",
+          "    assert!(unsafe { BytesMut::from_vec(Vec::from_raw_parts((*shared).buf, len, (*shared).cap)).capacity() } == (*shared).cap);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared = Box::into_raw(Box::new(Shared {",
+          "        buf: Box::into_raw(Box::new([10u8, 20u8, 30u8, 40u8, 50u8])),",
+          "        cap: 5,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    }));",
+          "    let ptr = unsafe { (*shared).buf };",
+          "    let len = 2;",
+          "",
+          "    let _result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(unsafe { (*shared).ref_cnt.load(Ordering::Acquire) }, 1);",
+          "    assert_eq!(_result.len(), 2);",
+          "    assert_eq!(_result.as_slice(), &[10u8, 20u8]);",
+          "    assert_eq!(unsafe { (*shared).ref_cnt.load(Ordering::Acquire) }, 0);",
+          "    assert!(unsafe { ptr.is_null() } == false);",
+          "    assert!(unsafe { (*shared).buf }.is_null() == false);",
+          "    assert_eq!(unsafe { *(shared as *const Shared) }.cap, 5);"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::into_raw(Box::new(Shared {",
+          "        buf: Box::into_raw(Box::new([10u8, 20u8, 30u8, 40u8, 50u8])),",
+          "        cap: 5,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    }));",
+          "    let ptr = unsafe { (*shared).buf };",
+          "    let len = 2;",
+          "",
+          "    let _result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+          "    assert_eq!(unsafe { (*shared).ref_cnt.load(Ordering::Acquire) }, 1);",
+          "    assert_eq!(_result.len(), 2);",
+          "    assert_eq!(_result.as_slice(), &[10u8, 20u8]);",
+          "    assert_eq!(unsafe { (*shared).ref_cnt.load(Ordering::Acquire) }, 0);",
+          "    assert!(unsafe { ptr.is_null() } == false);",
+          "    assert!(unsafe { (*shared).buf }.is_null() == false);",
+          "    assert_eq!(unsafe { *(shared as *const Shared) }.cap, 5);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

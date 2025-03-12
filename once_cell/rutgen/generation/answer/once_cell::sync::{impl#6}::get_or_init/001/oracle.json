@@ -1,0 +1,136 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestStruct { value: 42 });",
+          "    let _value = cell.get_or_init(|| {",
+          "        panic!(\"This function will panic\");",
+          "    });",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(cell.get_or_init(|| { panic!(\"This function will panic\"); }), &TestStruct { value: 42 });",
+          "    assert!(cell.get_or_try_init(|| Ok::<TestStruct, Void>(TestStruct { value: 99 })).is_err());",
+          "    assert!(cell.get().is_some());",
+          "    assert_eq!(cell.get().unwrap().value, 42);",
+          "    assert!(std::panic::catch_unwind(|| { cell.get_or_init(|| { panic!(\"This function will panic\"); }); }).is_err());",
+          "    assert!(cell.take().is_none());",
+          "    assert!(cell.into_inner().is_some());"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestStruct { value: 42 });",
+          "    let _value = cell.get_or_init(|| {",
+          "        panic!(\"This function will panic\");",
+          "    });",
+          "    assert_eq!(cell.get_or_init(|| { panic!(\"This function will panic\"); }), &TestStruct { value: 42 });",
+          "    assert!(cell.get_or_try_init(|| Ok::<TestStruct, Void>(TestStruct { value: 99 })).is_err());",
+          "    assert!(cell.get().is_some());",
+          "    assert_eq!(cell.get().unwrap().value, 42);",
+          "    assert!(std::panic::catch_unwind(|| { cell.get_or_init(|| { panic!(\"This function will panic\"); }); }).is_err());",
+          "    assert!(cell.take().is_none());",
+          "    assert!(cell.into_inner().is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestStruct { value: 42 });",
+          "    let value = cell.get_or_init(|| TestStruct { value: 0 });",
+          "    let _ = value; // Just to use the value",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(cell.get_or_init(|| TestStruct { value: 0 }) as *const _ == &TestStruct { value: 42 } as *const _);",
+          "    assert!(cell.get_or_try_init(|| Ok::<TestStruct, Void>(TestStruct { value: 0 })).is_err());"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestStruct { value: 42 });",
+          "    let value = cell.get_or_init(|| TestStruct { value: 0 });",
+          "    let _ = value; // Just to use the value",
+          "    assert!(cell.get_or_init(|| TestStruct { value: 0 }) as *const _ == &TestStruct { value: 42 } as *const _);",
+          "    assert!(cell.get_or_try_init(|| Ok::<TestStruct, Void>(TestStruct { value: 0 })).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestStruct { value: 42 });",
+          "    let _value = cell.get_or_init(|| {",
+          "        cell.get_or_init(|| TestStruct { value: 7 });",
+          "        TestStruct { value: 0 }",
+          "    });",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(cell.get_or_try_init(|| Ok::<TestStruct, Void>(TestStruct { value: 0 })).is_err());",
+          "    assert_eq!(cell.get(), Some(&TestStruct { value: 42 }));",
+          "    assert_eq!(cell.get_or_init(|| TestStruct { value: 42 }), &TestStruct { value: 42 });",
+          "    assert!(std::panic::catch_unwind(|| { cell.get_or_init(|| { cell.get_or_init(|| TestStruct { value: 7 }); TestStruct { value: 0 } }) }).is_err());",
+          "    assert!(cell.get().is_some());",
+          "    assert_eq!(cell.get_mut(), None);"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestStruct { value: 42 });",
+          "    let _value = cell.get_or_init(|| {",
+          "        cell.get_or_init(|| TestStruct { value: 7 });",
+          "        TestStruct { value: 0 }",
+          "    });",
+          "    assert!(cell.get_or_try_init(|| Ok::<TestStruct, Void>(TestStruct { value: 0 })).is_err());",
+          "    assert_eq!(cell.get(), Some(&TestStruct { value: 42 }));",
+          "    assert_eq!(cell.get_or_init(|| TestStruct { value: 42 }), &TestStruct { value: 42 });",
+          "    assert!(std::panic::catch_unwind(|| { cell.get_or_init(|| { cell.get_or_init(|| TestStruct { value: 7 }); TestStruct { value: 0 } }) }).is_err());",
+          "    assert!(cell.get().is_some());",
+          "    assert_eq!(cell.get_mut(), None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

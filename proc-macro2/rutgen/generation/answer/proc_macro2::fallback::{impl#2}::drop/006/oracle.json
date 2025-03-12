@@ -1,0 +1,102 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let empty_inner: RcVec<TokenTree> = RcVec { inner: Rc::new(Vec::new()) };",
+          "    let token_stream = TokenStream { inner: empty_inner };",
+          "    // Call the drop method implicitly by going out of scope",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(!Rc::strong_count(&token_stream.inner.inner), \"TokenStream inner should be dropped.\");",
+          "    assert!(Rc::get_mut(&mut token_stream.inner).is_none(), \"TokenStream inner should not be mutable after drop.\");",
+          "    assert!(token_stream.inner.is_empty(), \"TokenStream inner should be empty after drop.\");"
+        ],
+        "code": [
+          "{",
+          "    let empty_inner: RcVec<TokenTree> = RcVec { inner: Rc::new(Vec::new()) };",
+          "    let token_stream = TokenStream { inner: empty_inner };",
+          "    // Call the drop method implicitly by going out of scope",
+          "    assert!(!Rc::strong_count(&token_stream.inner.inner), \"TokenStream inner should be dropped.\");",
+          "    assert!(Rc::get_mut(&mut token_stream.inner).is_none(), \"TokenStream inner should not be mutable after drop.\");",
+          "    assert!(token_stream.inner.is_empty(), \"TokenStream inner should be empty after drop.\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let empty_vec = Rc::new(Vec::<TokenTree>::new());",
+          "    let empty_inner = RcVec { inner: empty_vec };",
+          "    let token_stream = TokenStream { inner: empty_inner };",
+          "    // Call the drop method implicitly by going out of scope",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(Rc::get_mut(&mut token_stream.inner).is_none());",
+          "    assert_eq!(token_stream.inner.len(), 0);",
+          "    assert!(token_stream.inner.is_empty());",
+          "    assert!(Rc::strong_count(&token_stream.inner) == 1);",
+          "    assert!(Rc::weak_count(&token_stream.inner) == 0);"
+        ],
+        "code": [
+          "{",
+          "    let empty_vec = Rc::new(Vec::<TokenTree>::new());",
+          "    let empty_inner = RcVec { inner: empty_vec };",
+          "    let token_stream = TokenStream { inner: empty_inner };",
+          "    // Call the drop method implicitly by going out of scope",
+          "    assert!(Rc::get_mut(&mut token_stream.inner).is_none());",
+          "    assert_eq!(token_stream.inner.len(), 0);",
+          "    assert!(token_stream.inner.is_empty());",
+          "    assert!(Rc::strong_count(&token_stream.inner) == 1);",
+          "    assert!(Rc::weak_count(&token_stream.inner) == 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let uninitialized_inner: RcVec<TokenTree> = RcVec { inner: Rc::new(Vec::with_capacity(0)) };",
+          "    let token_stream = TokenStream { inner: uninitialized_inner };",
+          "    // Call the drop method implicitly by going out of scope",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let uninitialized_inner: RcVec<TokenTree> = RcVec { inner: Rc::new(Vec::with_capacity(0)) };",
+          "    let token_stream = TokenStream { inner: uninitialized_inner };",
+          "    drop(token_stream);",
+          "    false",
+          "    }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let uninitialized_inner: RcVec<TokenTree> = RcVec { inner: Rc::new(Vec::with_capacity(0)) };",
+          "    let token_stream = TokenStream { inner: uninitialized_inner };",
+          "    // Call the drop method implicitly by going out of scope",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let uninitialized_inner: RcVec<TokenTree> = RcVec { inner: Rc::new(Vec::with_capacity(0)) };",
+          "    let token_stream = TokenStream { inner: uninitialized_inner };",
+          "    drop(token_stream);",
+          "    false",
+          "    }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

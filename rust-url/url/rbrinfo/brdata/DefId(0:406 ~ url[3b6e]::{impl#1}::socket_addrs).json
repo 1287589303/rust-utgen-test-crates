@@ -1,0 +1,365 @@
+{
+  "name": "url::{impl#1}::socket_addrs",
+  "mod_info": {
+    "name": "",
+    "loc": "url/src/lib.rs:9:1:3218:2"
+  },
+  "visible": true,
+  "loc": "url/src/lib.rs:1327:5:1353:6",
+  "doc": "/// Resolve a URL’s host and port number to `SocketAddr`.\n///\n/// If the URL has the default port number of a scheme that is unknown to this library,\n/// `default_port_number` provides an opportunity to provide the actual port number.\n/// In non-example code this should be implemented either simply as `|| None`,\n/// or by matching on the URL’s `.scheme()`.\n///\n/// If the host is a domain, it is resolved using the standard library’s DNS support.\n///\n/// # Examples\n///\n/// ```no_run\n/// let url = url::Url::parse(\"https://example.net/\").unwrap();\n/// let addrs = url.socket_addrs(|| None).unwrap();\n/// std::net::TcpStream::connect(&*addrs)\n/// # ;\n/// ```\n///\n/// ```\n/// /// With application-specific known default port numbers\n/// fn socket_addrs(url: url::Url) -> std::io::Result<Vec<std::net::SocketAddr>> {\n///     url.socket_addrs(|| match url.scheme() {\n///         \"socks5\" | \"socks5h\" => Some(1080),\n///         _ => None,\n///     })\n/// }\n/// ```\n",
+  "code": [
+    "pub fn socket_addrs(",
+    "    &self,",
+    "    default_port_number: impl Fn() -> Option<u16>,",
+    ") -> io::Result<alloc::vec::Vec<SocketAddr>> {",
+    "    // Note: trying to avoid the Vec allocation by returning `impl AsRef<[SocketAddr]>`",
+    "    // causes borrowck issues because the return value borrows `default_port_number`:",
+    "    //",
+    "    // https://github.com/rust-lang/rfcs/blob/master/text/1951-expand-impl-trait.md#scoping-for-type-and-lifetime-parameters",
+    "    //",
+    "    // > This RFC proposes that *all* type parameters are considered in scope",
+    "    // > for `impl Trait` in return position",
+    "",
+    "    fn io_result<T>(opt: Option<T>, message: &str) -> io::Result<T> {",
+    "        opt.ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, message))",
+    "    }",
+    "",
+    "    let host = io_result(self.host(), \"No host name in the URL\")?;",
+    "    let port = io_result(",
+    "        self.port_or_known_default().or_else(default_port_number),",
+    "        \"No port number in the URL\",",
+    "    )?;",
+    "    Ok(match host {",
+    "        Host::Domain(domain) => (domain, port).to_socket_addrs()?.collect(),",
+    "        Host::Ipv4(ip) => vec![(ip, port).into()],",
+    "        Host::Ipv6(ip) => vec![(ip, port).into()],",
+    "    })",
+    "}"
+  ],
+  "size": {
+    "chain": 6,
+    "contra": 0,
+    "min_set": 6
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "io_result(self.host(), \"No host name in the URL\")?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1343,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        53,
+        54,
+        55,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "io_result(self.host(), \"No host name in the URL\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1343,
+          "bound": null
+        },
+        {
+          "cond": "io_result(\n            self.port_or_known_default().or_else(default_port_number),\n            \"No port number in the URL\",\n        )?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1344,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        50,
+        51,
+        52,
+        55,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "io_result(self.host(), \"No host name in the URL\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1343,
+          "bound": null
+        },
+        {
+          "cond": "io_result(\n            self.port_or_known_default().or_else(default_port_number),\n            \"No port number in the URL\",\n        )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1344,
+          "bound": null
+        },
+        {
+          "cond": "host matches Host::Ipv6(ip)",
+          "norm": null,
+          "value": "true",
+          "line": 1348,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(match host {\n            Host::Domain(domain) => (domain, port).to_socket_addrs()?.collect(),\n            Host::Ipv4(ip) => vec![(ip, port).into()],\n            Host::Ipv6(ip) => vec![(ip, port).into()],\n        })",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        16,
+        19,
+        23,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "io_result(self.host(), \"No host name in the URL\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1343,
+          "bound": null
+        },
+        {
+          "cond": "io_result(\n            self.port_or_known_default().or_else(default_port_number),\n            \"No port number in the URL\",\n        )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1344,
+          "bound": null
+        },
+        {
+          "cond": "host matches Host::Ipv4(ip)",
+          "norm": null,
+          "value": "true",
+          "line": 1348,
+          "bound": null
+        },
+        {
+          "cond": "host matches Host::Ipv4(ip)",
+          "norm": null,
+          "value": "true",
+          "line": 1348,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(match host {\n            Host::Domain(domain) => (domain, port).to_socket_addrs()?.collect(),\n            Host::Ipv4(ip) => vec![(ip, port).into()],\n            Host::Ipv6(ip) => vec![(ip, port).into()],\n        })",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        16,
+        19,
+        22,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        46,
+        47,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "io_result(self.host(), \"No host name in the URL\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1343,
+          "bound": null
+        },
+        {
+          "cond": "io_result(\n            self.port_or_known_default().or_else(default_port_number),\n            \"No port number in the URL\",\n        )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1344,
+          "bound": null
+        },
+        {
+          "cond": "host matches Host::Domain(domain)",
+          "norm": null,
+          "value": "true",
+          "line": 1348,
+          "bound": null
+        },
+        {
+          "cond": "host matches Host::Domain(domain)",
+          "norm": null,
+          "value": "true",
+          "line": 1348,
+          "bound": null
+        },
+        {
+          "cond": "(domain, port).to_socket_addrs()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1349,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        16,
+        19,
+        21,
+        24,
+        25,
+        26,
+        28,
+        30,
+        31,
+        48,
+        49,
+        52,
+        55,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "io_result(self.host(), \"No host name in the URL\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1343,
+          "bound": null
+        },
+        {
+          "cond": "io_result(\n            self.port_or_known_default().or_else(default_port_number),\n            \"No port number in the URL\",\n        )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1344,
+          "bound": null
+        },
+        {
+          "cond": "host matches Host::Domain(domain)",
+          "norm": null,
+          "value": "true",
+          "line": 1348,
+          "bound": null
+        },
+        {
+          "cond": "host matches Host::Domain(domain)",
+          "norm": null,
+          "value": "true",
+          "line": 1348,
+          "bound": null
+        },
+        {
+          "cond": "(domain, port).to_socket_addrs()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1349,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(match host {\n            Host::Domain(domain) => (domain, port).to_socket_addrs()?.collect(),\n            Host::Ipv4(ip) => vec![(ip, port).into()],\n            Host::Ipv6(ip) => vec![(ip, port).into()],\n        })",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        16,
+        19,
+        21,
+        24,
+        25,
+        26,
+        29,
+        32,
+        33,
+        34,
+        46,
+        47,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

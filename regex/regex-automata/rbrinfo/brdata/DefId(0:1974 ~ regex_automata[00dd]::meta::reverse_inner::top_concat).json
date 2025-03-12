@@ -1,0 +1,772 @@
+{
+  "name": "regex_automata::meta::reverse_inner::top_concat",
+  "mod_info": {
+    "name": "meta::reverse_inner",
+    "loc": "regex-automata/src/meta/mod.rs:58:1:58:19"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/meta/reverse_inner.rs:166:1:200:2",
+  "doc": "/// Looks for a \"top level\" HirKind::Concat item in the given HIR. This will\n/// try to return one even if it's embedded in a capturing group, but is\n/// otherwise pretty conservative in what is returned.\n///\n/// The HIR returned is a complete copy of the concat with all capturing\n/// groups removed. In effect, the concat returned is \"flattened\" with respect\n/// to capturing groups. This makes the detection logic above for prefixes\n/// a bit simpler, and it works because 1) capturing groups never influence\n/// whether a match occurs or not and 2) capturing groups are not used when\n/// doing the reverse inner search to find the start of the match.\n",
+  "code": [
+    "fn top_concat(mut hir: &Hir) -> Option<Vec<Hir>> {",
+    "    loop {",
+    "        hir = match hir.kind() {",
+    "            HirKind::Empty",
+    "            | HirKind::Literal(_)",
+    "            | HirKind::Class(_)",
+    "            | HirKind::Look(_)",
+    "            | HirKind::Repetition(_)",
+    "            | HirKind::Alternation(_) => return None,",
+    "            HirKind::Capture(hir::Capture { ref sub, .. }) => sub,",
+    "            HirKind::Concat(ref subs) => {",
+    "                // We are careful to only do the flattening/copy when we know",
+    "                // we have a \"top level\" concat we can inspect. This avoids",
+    "                // doing extra work in cases where we definitely won't use it.",
+    "                // (This might still be wasted work if we can't go on to find",
+    "                // some literals to extract.)",
+    "                let concat =",
+    "                    Hir::concat(subs.iter().map(|h| flatten(h)).collect());",
+    "                return match concat.into_kind() {",
+    "                    HirKind::Concat(xs) => Some(xs),",
+    "                    // It is actually possible for this case to occur, because",
+    "                    // 'Hir::concat' might simplify the expression to the point",
+    "                    // that concatenations are actually removed. One wonders",
+    "                    // whether this leads to other cases where we should be",
+    "                    // extracting literals, but in theory, I believe if we do",
+    "                    // get here, then it means that a \"real\" prefilter failed",
+    "                    // to be extracted and we should probably leave well enough",
+    "                    // alone. (A \"real\" prefilter is unbothered by \"top-level",
+    "                    // concats\" and \"capturing groups.\")",
+    "                    _ => return None,",
+    "                };",
+    "            }",
+    "        };",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 16,
+    "contra": 0,
+    "min_set": 8
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Concat(ref subs)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "concat.into_kind() matches HirKind::Concat(xs)",
+          "norm": null,
+          "value": "false",
+          "line": 185,
+          "bound": null
+        },
+        {
+          "cond": "concat.into_kind() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 195,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        21,
+        22,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Concat(ref subs)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "concat.into_kind() matches HirKind::Concat(xs)",
+          "norm": null,
+          "value": "true",
+          "line": 184,
+          "bound": null
+        },
+        {
+          "cond": "concat.into_kind() matches HirKind::Concat(xs)",
+          "norm": null,
+          "value": "true",
+          "line": 184,
+          "bound": null
+        }
+      ],
+      "ret": "Some(xs)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Concat(ref subs)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "concat.into_kind() matches HirKind::Concat(xs)",
+          "norm": null,
+          "value": "false",
+          "line": 185,
+          "bound": null
+        },
+        {
+          "cond": "concat.into_kind() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 195,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        1,
+        2,
+        3,
+        6,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        21,
+        22,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Concat(ref subs)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "concat.into_kind() matches HirKind::Concat(xs)",
+          "norm": null,
+          "value": "true",
+          "line": 184,
+          "bound": null
+        },
+        {
+          "cond": "concat.into_kind() matches HirKind::Concat(xs)",
+          "norm": null,
+          "value": "true",
+          "line": 184,
+          "bound": null
+        }
+      ],
+      "ret": "Some(xs)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        1,
+        2,
+        3,
+        6,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Repetition(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Look(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Literal(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Capture(hir::Capture { ref sub, .. })",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Empty",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        9,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Repetition(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Look(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Literal(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "hir.kind() matches HirKind::Empty",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        },
+        {
+          "cond": "hir.kind() matches HirKind::Alternation(_) or HirKind::Empty or HirKind::Repetition(_) or HirKind::Literal(_) or HirKind::Look(_) or HirKind::Class(_)",
+          "norm": null,
+          "value": "true",
+          "line": 168,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        7,
+        8,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

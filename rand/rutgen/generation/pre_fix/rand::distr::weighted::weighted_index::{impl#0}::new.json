@@ -1,0 +1,1110 @@
+{
+  "name": "rand::distr::weighted::weighted_index::{impl#0}::new",
+  "mod_info": {
+    "name": "distr::weighted::weighted_index",
+    "loc": "src/distr/weighted/mod.rs:18:1:18:20"
+  },
+  "visible": true,
+  "loc": "src/distr/weighted/weighted_index.rs:99:5:137:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: iter.next().ok_or(Error::InvalidInput)? at line 106 is Err/None\n"
+      ],
+      "input_infer": "weights: empty iterator; weights containing negative values; weights containing NaN; weights resulting in total_weight as zero; weights leading to an overflow on sum calculation; weights that are all zero; a valid set of positive weights within the bounds of X.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Clone, Copy)]",
+            "struct DummyWeight;",
+            "",
+            "impl Weight for DummyWeight {",
+            "    const ZERO: Self = DummyWeight;",
+            "    fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+            "        Ok(())",
+            "    }",
+            "}",
+            "",
+            "#[derive(Clone, Copy)]",
+            "struct DummySampleUniform;",
+            "",
+            "impl SampleUniform for DummySampleUniform {",
+            "    type Sampler = ();",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights: Vec<DummyWeight> = Vec::new();",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(Vec::<DummyWeight>::new()), Err(Error::InvalidInput));"
+              ],
+              "code": [
+                "{",
+                "    let weights: Vec<DummyWeight> = Vec::new();",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(Vec::<DummyWeight>::new()), Err(Error::InvalidInput));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights = vec![DummyWeight, DummyWeight, DummyWeight]; // Assume DummyWeight can be treated as negative for testing",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(vec![]), Err(Error::InvalidInput));",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(vec![-1, 2, 3]), Err(Error::InvalidWeight));",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(vec![0, 0, 0]), Err(Error::InsufficientNonZero));",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(vec![i32::MAX, 1]), Err(Error::Overflow));"
+              ],
+              "code": [
+                "{",
+                "    let weights = vec![DummyWeight, DummyWeight, DummyWeight]; // Assume DummyWeight can be treated as negative for testing",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(vec![]), Err(Error::InvalidInput));",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(vec![-1, 2, 3]), Err(Error::InvalidWeight));",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(vec![0, 0, 0]), Err(Error::InsufficientNonZero));",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(vec![i32::MAX, 1]), Err(Error::Overflow));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    // Assuming we would have a weight that is NaN (the struct doesn't currently allow it, but for testing)",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Insert a case for NaN weight",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    let weights = vec![]; // Test for Error::InvalidInput",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidInput));",
+                "    ",
+                "    let weights = vec![DummyWeight]; // Test for valid input",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Test for non-negative weights",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Test for total_weight not negative",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Test for checked_add_assign success",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Test for total_weight",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let weights = vec![-1.0, 2.0]; // Test for Error::InvalidWeight (negative weight)",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "    ",
+                "    let weights = vec![f32::NAN]; // Test for Error::InvalidWeight (NaN weight)",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "    ",
+                "    let weights = vec![0.0, 0.0]; // Test for Error::InsufficientNonZero (sum of weights is zero)",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert_eq!(result, Err(Error::InsufficientNonZero));"
+              ],
+              "code": [
+                "{",
+                "    // Assuming we would have a weight that is NaN (the struct doesn't currently allow it, but for testing)",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Insert a case for NaN weight",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    let weights = vec![]; // Test for Error::InvalidInput",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidInput));",
+                "    ",
+                "    let weights = vec![DummyWeight]; // Test for valid input",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Test for non-negative weights",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Test for total_weight not negative",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Test for checked_add_assign success",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Test for total_weight",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let weights = vec![-1.0, 2.0]; // Test for Error::InvalidWeight (negative weight)",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "    ",
+                "    let weights = vec![f32::NAN]; // Test for Error::InvalidWeight (NaN weight)",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "    ",
+                "    let weights = vec![0.0, 0.0]; // Test for Error::InsufficientNonZero (sum of weights is zero)",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    assert_eq!(result, Err(Error::InsufficientNonZero));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights = vec![DummyWeight, DummyWeight, DummyWeight];",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    Err(Error::InvalidInput)",
+                "    let empty_weights: Vec<DummyWeight> = vec![];",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(empty_weights), Err(Error::InvalidInput));",
+                "    let negative_weight = vec![DummyWeight, DummyWeight, DummyWeight];",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(negative_weight.iter().map(|_| DummyWeight)), Err(Error::InvalidWeight));",
+                "    let zero_weight_sum = vec![DummyWeight, DummyWeight];",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(zero_weight_sum.iter().map(|_| DummyWeight)), Err(Error::InsufficientNonZero));",
+                "    let overflow_weights = vec![DummyWeight; 10]; // Simulating potential overflow",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(overflow_weights.iter()), Err(Error::Overflow));"
+              ],
+              "code": [
+                "{",
+                "    let weights = vec![DummyWeight, DummyWeight, DummyWeight];",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    Err(Error::InvalidInput)",
+                "    let empty_weights: Vec<DummyWeight> = vec![];",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(empty_weights), Err(Error::InvalidInput));",
+                "    let negative_weight = vec![DummyWeight, DummyWeight, DummyWeight];",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(negative_weight.iter().map(|_| DummyWeight)), Err(Error::InvalidWeight));",
+                "    let zero_weight_sum = vec![DummyWeight, DummyWeight];",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(zero_weight_sum.iter().map(|_| DummyWeight)), Err(Error::InsufficientNonZero));",
+                "    let overflow_weights = vec![DummyWeight; 10]; // Simulating potential overflow",
+                "    assert_eq!(WeightedIndex::<DummySampleUniform>::new(overflow_weights.iter()), Err(Error::Overflow));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights = vec![DummyWeight]; // This should be a setup leading to an overflow",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    let weights_empty: Vec<DummyWeight> = vec![];",
+                "    let result_empty = WeightedIndex::<DummySampleUniform>::new(weights_empty);",
+                "    assert_eq!(result_empty, Err(Error::InvalidInput));",
+                "    ",
+                "    let weights_negative = vec![DummyWeight, DummyWeight]; // Adjust DummyWeight implementation to simulate negative",
+                "    let result_negative = WeightedIndex::<DummySampleUniform>::new(weights_negative);",
+                "    assert_eq!(result_negative, Err(Error::InvalidWeight));",
+                "    ",
+                "    let weights_zero_total = vec![DummyWeight, DummyWeight]; // Ensure sum leads to zero",
+                "    let result_zero_total = WeightedIndex::<DummySampleUniform>::new(weights_zero_total);",
+                "    assert_eq!(result_zero_total, Err(Error::InsufficientNonZero));",
+                "    ",
+                "    let weights_overflow = vec![DummyWeight; usize::MAX]; // This should lead to overflow",
+                "    let result_overflow = WeightedIndex::<DummySampleUniform>::new(weights_overflow);",
+                "    assert_eq!(result_overflow, Err(Error::Overflow));"
+              ],
+              "code": [
+                "{",
+                "    let weights = vec![DummyWeight]; // This should be a setup leading to an overflow",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights);",
+                "    let weights_empty: Vec<DummyWeight> = vec![];",
+                "    let result_empty = WeightedIndex::<DummySampleUniform>::new(weights_empty);",
+                "    assert_eq!(result_empty, Err(Error::InvalidInput));",
+                "    ",
+                "    let weights_negative = vec![DummyWeight, DummyWeight]; // Adjust DummyWeight implementation to simulate negative",
+                "    let result_negative = WeightedIndex::<DummySampleUniform>::new(weights_negative);",
+                "    assert_eq!(result_negative, Err(Error::InvalidWeight));",
+                "    ",
+                "    let weights_zero_total = vec![DummyWeight, DummyWeight]; // Ensure sum leads to zero",
+                "    let result_zero_total = WeightedIndex::<DummySampleUniform>::new(weights_zero_total);",
+                "    assert_eq!(result_zero_total, Err(Error::InsufficientNonZero));",
+                "    ",
+                "    let weights_overflow = vec![DummyWeight; usize::MAX]; // This should lead to overflow",
+                "    let result_overflow = WeightedIndex::<DummySampleUniform>::new(weights_overflow);",
+                "    assert_eq!(result_overflow, Err(Error::Overflow));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Assuming weights are valid and positive",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(WeightedIndex::<DummySampleUniform>::new(vec![]).is_err()); // Test for Error::InvalidInput",
+                "    assert!(matches!(WeightedIndex::<DummySampleUniform>::new(vec![-1.0]), Err(Error::InvalidWeight))); // Test for negative weight",
+                "    assert!(matches!(WeightedIndex::<DummySampleUniform>::new(vec![0.0, 0.0]), Err(Error::InsufficientNonZero))); // Test for zero total weight",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(vec![1.0, std::f32::INFINITY]); // Test for overflow",
+                "    assert!(matches!(result, Err(Error::InvalidWeight))); // Expect Error::InvalidWeight when using non-finite weight",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(vec![1.0, 2.0, 3.0]); // Valid total weight",
+                "    assert!(result.is_ok()); // Expect success for valid weights"
+              ],
+              "code": [
+                "{",
+                "    let weights = vec![DummyWeight, DummyWeight]; // Assuming weights are valid and positive",
+                "    let _ = WeightedIndex::<DummySampleUniform>::new(weights).unwrap();",
+                "    assert!(WeightedIndex::<DummySampleUniform>::new(vec![]).is_err()); // Test for Error::InvalidInput",
+                "    assert!(matches!(WeightedIndex::<DummySampleUniform>::new(vec![-1.0]), Err(Error::InvalidWeight))); // Test for negative weight",
+                "    assert!(matches!(WeightedIndex::<DummySampleUniform>::new(vec![0.0, 0.0]), Err(Error::InsufficientNonZero))); // Test for zero total weight",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(vec![1.0, std::f32::INFINITY]); // Test for overflow",
+                "    assert!(matches!(result, Err(Error::InvalidWeight))); // Expect Error::InvalidWeight when using non-finite weight",
+                "    let result = WeightedIndex::<DummySampleUniform>::new(vec![1.0, 2.0, 3.0]); // Valid total weight",
+                "    assert!(result.is_ok()); // Expect success for valid weights",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: iter.next().ok_or(Error::InvalidInput)? at line 106 is Ok/Some\n",
+        "precondition: (total_weight >= zero) at line 109 is true, with bound total_weight == zero\n",
+        "precondition: w in iter at line 114 is true\n",
+        "precondition: (w.borrow() >= &zero) at line 117 is true, with bound w.borrow() == &zero\n",
+        "precondition: let Err(()) = total_weight.checked_add_assign(w.borrow()) at line 122 is true\n",
+        "expected return value/type: Err(Error::Overflow)\n"
+      ],
+      "input_infer": "I: IntoIterator with at least one item, where the first weight is >= 0 and the subsequent weights are all 0, resulting in a total weight of 0; weights leading to an overflow when summed.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights: Vec<f32> = Vec::new(); // empty iterator",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    // No assertions, only calling the function",
+                "}"
+              ],
+              "oracle": [
+                "    let weights: Vec<f32> = Vec::new();",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidInput));",
+                "    ",
+                "    let weights: Vec<f32> = vec![0.0, -1.0];",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "    ",
+                "    let weights: Vec<f32> = vec![0.0, 0.0, 0.0];",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::InsufficientNonZero));",
+                "    ",
+                "    let weights: Vec<f32> = vec![f32::MAX, f32::MAX];",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::Overflow));",
+                "    ",
+                "    let weights: Vec<f32> = vec![1.0, 2.0, 3.0];",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().total_weight, 6.0);"
+              ],
+              "code": [
+                "{",
+                "    let weights: Vec<f32> = Vec::new(); // empty iterator",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    // No assertions, only calling the function",
+                "    let weights: Vec<f32> = Vec::new();",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidInput));",
+                "    ",
+                "    let weights: Vec<f32> = vec![0.0, -1.0];",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "    ",
+                "    let weights: Vec<f32> = vec![0.0, 0.0, 0.0];",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::InsufficientNonZero));",
+                "    ",
+                "    let weights: Vec<f32> = vec![f32::MAX, f32::MAX];",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::Overflow));",
+                "    ",
+                "    let weights: Vec<f32> = vec![1.0, 2.0, 3.0];",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().total_weight, 6.0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights = vec![1.0, -1.0]; // second weight is negative",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    // No assertions, only calling the function",
+                "}"
+              ],
+              "oracle": [
+                "    err(Error::InvalidWeight)"
+              ],
+              "code": [
+                "{",
+                "    let weights = vec![1.0, -1.0]; // second weight is negative",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    // No assertions, only calling the function",
+                "    err(Error::InvalidWeight)",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights = vec![0.0, 0.0]; // total weight is zero",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    // No assertions, only calling the function",
+                "}"
+              ],
+              "oracle": [
+                "    result.expect_err(\"Expected overflow error since total weight is zero\");"
+              ],
+              "code": [
+                "{",
+                "    let weights = vec![0.0, 0.0]; // total weight is zero",
+                "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+                "    // No assertions, only calling the function",
+                "    result.expect_err(\"Expected overflow error since total weight is zero\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(Debug, Clone, PartialOrd)]",
+                "    struct CustomWeight(u32);",
+                "    ",
+                "    impl Weight for CustomWeight {",
+                "        const ZERO: Self = CustomWeight(0);",
+                "        ",
+                "        fn checked_add_assign(&mut self, v: &Self) -> Result<(), ()> {",
+                "            let new_value = self.0.checked_add(v.0);",
+                "            match new_value {",
+                "                Some(_) => {",
+                "                    self.0 = new_value.unwrap();",
+                "                    Ok(())",
+                "                },",
+                "                None => Err(()),",
+                "            }",
+                "        }",
+                "    }",
+                "    ",
+                "    let weights = vec![CustomWeight(u32::MAX), CustomWeight(1)]; // will overflow",
+                "    let result: Result<WeightedIndex<CustomWeight>, Error> = WeightedIndex::new(weights);",
+                "    // No assertions, only calling the function",
+                "}"
+              ],
+              "oracle": [
+                "    let weights = vec![CustomWeight(u32::MAX), CustomWeight(1)];",
+                "    let result: Result<WeightedIndex<CustomWeight>, Error> = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::Overflow));"
+              ],
+              "code": [
+                "{",
+                "    #[derive(Debug, Clone, PartialOrd)]",
+                "    struct CustomWeight(u32);",
+                "    ",
+                "    impl Weight for CustomWeight {",
+                "        const ZERO: Self = CustomWeight(0);",
+                "        ",
+                "        fn checked_add_assign(&mut self, v: &Self) -> Result<(), ()> {",
+                "            let new_value = self.0.checked_add(v.0);",
+                "            match new_value {",
+                "                Some(_) => {",
+                "                    self.0 = new_value.unwrap();",
+                "                    Ok(())",
+                "                },",
+                "                None => Err(()),",
+                "            }",
+                "        }",
+                "    }",
+                "    ",
+                "    let weights = vec![CustomWeight(u32::MAX), CustomWeight(1)]; // will overflow",
+                "    let result: Result<WeightedIndex<CustomWeight>, Error> = WeightedIndex::new(weights);",
+                "    // No assertions, only calling the function",
+                "    let weights = vec![CustomWeight(u32::MAX), CustomWeight(1)];",
+                "    let result: Result<WeightedIndex<CustomWeight>, Error> = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::Overflow));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "precondition: iter.next().ok_or(Error::InvalidInput)? at line 106 is Ok/Some\n",
+        "precondition: (total_weight >= zero) at line 109 is true, with bound total_weight == zero\n",
+        "precondition: w in iter at line 114 is true\n",
+        "precondition: (w.borrow() >= &zero) at line 117 is false\n",
+        "expected return value/type: Err(Error::InvalidWeight)\n"
+      ],
+      "input_infer": "weights: [], weights: [NaN], weights: [-1], weights: [0, -1], weights: [0, NaN]\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights: Vec<f64> = vec![];",
+                "    let result = WeightedIndex::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Error::InvalidInput));"
+              ],
+              "code": [
+                "{",
+                "    let weights: Vec<f64> = vec![];",
+                "    let result = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidInput));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights: Vec<f64> = vec![f64::NAN];",
+                "    let result = WeightedIndex::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), Error::InvalidWeight);"
+              ],
+              "code": [
+                "{",
+                "    let weights: Vec<f64> = vec![f64::NAN];",
+                "    let result = WeightedIndex::new(weights);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), Error::InvalidWeight);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights: Vec<f64> = vec![-1.0];",
+                "    let result = WeightedIndex::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    let weights: Vec<f64> = vec![-1.0];",
+                "    let result = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));"
+              ],
+              "code": [
+                "{",
+                "    let weights: Vec<f64> = vec![-1.0];",
+                "    let result = WeightedIndex::new(weights);",
+                "    let weights: Vec<f64> = vec![-1.0];",
+                "    let result = WeightedIndex::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights: Vec<f64> = vec![0.0, -1.0];",
+                "    let result = WeightedIndex::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err(), Some(Error::InvalidWeight));"
+              ],
+              "code": [
+                "{",
+                "    let weights: Vec<f64> = vec![0.0, -1.0];",
+                "    let result = WeightedIndex::new(weights);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err(), Some(Error::InvalidWeight));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights: Vec<f64> = vec![0.0, f64::NAN];",
+                "    let result = WeightedIndex::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result, Err(Error::InvalidWeight));"
+              ],
+              "code": [
+                "{",
+                "    let weights: Vec<f64> = vec![0.0, f64::NAN];",
+                "    let result = WeightedIndex::new(weights);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "precondition: iter.next().ok_or(Error::InvalidInput)? at line 106 is Ok/Some\n",
+        "precondition: (total_weight >= zero) at line 109 is true, with bound total_weight == zero\n",
+        "precondition: w in iter at line 114 is false\n",
+        "precondition: total_weight == zero at line 127 is true\n",
+        "expected return value/type: Err(Error::InsufficientNonZero)\n"
+      ],
+      "input_infer": "weights = [] or weights = [0] or weights = [negative_value]\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights: Vec<i32> = vec![];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    result.unwrap_err() == Error::InvalidInput",
+                "    let weights: Vec<i32> = vec![0, 0];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    result.unwrap_err() == Error::InsufficientNonZero",
+                "    let weights: Vec<i32> = vec![5, -1];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    result.unwrap_err() == Error::InvalidWeight",
+                "    let weights: Vec<i32> = vec![1, 2, 3];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    result.is_ok()",
+                "    let weights: Vec<i32> = vec![0];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    result.unwrap_err() == Error::InsufficientNonZero"
+              ],
+              "code": [
+                "{",
+                "    let weights: Vec<i32> = vec![];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    result.unwrap_err() == Error::InvalidInput",
+                "    let weights: Vec<i32> = vec![0, 0];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    result.unwrap_err() == Error::InsufficientNonZero",
+                "    let weights: Vec<i32> = vec![5, -1];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    result.unwrap_err() == Error::InvalidWeight",
+                "    let weights: Vec<i32> = vec![1, 2, 3];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    result.is_ok()",
+                "    let weights: Vec<i32> = vec![0];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    result.unwrap_err() == Error::InsufficientNonZero",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights = vec![0];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    let weights = vec![];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidInput));",
+                "    ",
+                "    let weights = vec![-1];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "    ",
+                "    let weights = vec![0, 0];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InsufficientNonZero));",
+                "    ",
+                "    let weights = vec![i32::MAX, 1];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::Overflow));"
+              ],
+              "code": [
+                "{",
+                "    let weights = vec![0];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    let weights = vec![];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidInput));",
+                "    ",
+                "    let weights = vec![-1];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "    ",
+                "    let weights = vec![0, 0];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InsufficientNonZero));",
+                "    ",
+                "    let weights = vec![i32::MAX, 1];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::Overflow));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let weights = vec![-1];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "    let weights = vec![];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidInput));",
+                "    let weights = vec![0, 0];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InsufficientNonZero));"
+              ],
+              "code": [
+                "{",
+                "    let weights = vec![-1];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "    let weights = vec![];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidInput));",
+                "    let weights = vec![0, 0];",
+                "    let result = WeightedIndex::<i32>::new(weights);",
+                "    assert_eq!(result, Err(Error::InsufficientNonZero));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "precondition: iter.next().ok_or(Error::InvalidInput)? at line 106 is Ok/Some\n",
+        "precondition: (total_weight >= zero) at line 109 is true, with bound total_weight == zero\n",
+        "precondition: w in iter at line 114 is false\n",
+        "precondition: total_weight == zero at line 127 is false\n",
+        "expected return value/type: Ok(WeightedIndex {\n            cumulative_weights: weights,\n            total_weight,\n            weight_distribution: distr,\n        })\n"
+      ],
+      "input_infer": "Input a non-empty iterable of weights of type X where all weights are non-negative numbers and their sum is greater than zero, ensuring that the first element is positive to avoid Error::InvalidWeight and that the iterable contains at least one element for Error::InvalidInput.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestWeight;",
+                "",
+                "    impl Clone for TestWeight {",
+                "        fn clone(&self) -> Self {",
+                "            TestWeight",
+                "        }",
+                "    }",
+                "",
+                "    impl Weight for TestWeight {",
+                "        const ZERO: Self = TestWeight;",
+                "",
+                "        fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let weights = vec![TestWeight, TestWeight];",
+                "    let result = WeightedIndex::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let weighted_index = result.unwrap();",
+                "    assert_eq!(weighted_index.cumulative_weights.len(), 2);",
+                "    assert_eq!(weighted_index.total_weight, TestWeight::ZERO);",
+                "    assert!(weighted_index.weight_distribution.is_some());"
+              ],
+              "code": [
+                "{",
+                "    struct TestWeight;",
+                "",
+                "    impl Clone for TestWeight {",
+                "        fn clone(&self) -> Self {",
+                "            TestWeight",
+                "        }",
+                "    }",
+                "",
+                "    impl Weight for TestWeight {",
+                "        const ZERO: Self = TestWeight;",
+                "",
+                "        fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let weights = vec![TestWeight, TestWeight];",
+                "    let result = WeightedIndex::new(weights);",
+                "    assert!(result.is_ok());",
+                "    let weighted_index = result.unwrap();",
+                "    assert_eq!(weighted_index.cumulative_weights.len(), 2);",
+                "    assert_eq!(weighted_index.total_weight, TestWeight::ZERO);",
+                "    assert!(weighted_index.weight_distribution.is_some());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestWeight;",
+                "",
+                "    impl Clone for TestWeight {",
+                "        fn clone(&self) -> Self {",
+                "            TestWeight",
+                "        }",
+                "    }",
+                "",
+                "    impl Weight for TestWeight {",
+                "        const ZERO: Self = TestWeight;",
+                "",
+                "        fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let weights = vec![TestWeight, TestWeight]; // Total used will not be zero",
+                "    let result = WeightedIndex::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let weighted_index = result.unwrap();",
+                "    assert_eq!(weighted_index.cumulative_weights.len(), 2);",
+                "    assert_eq!(weighted_index.total_weight, TestWeight);",
+                "    assert!(weighted_index.weight_distribution.is_some());"
+              ],
+              "code": [
+                "{",
+                "    struct TestWeight;",
+                "",
+                "    impl Clone for TestWeight {",
+                "        fn clone(&self) -> Self {",
+                "            TestWeight",
+                "        }",
+                "    }",
+                "",
+                "    impl Weight for TestWeight {",
+                "        const ZERO: Self = TestWeight;",
+                "",
+                "        fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let weights = vec![TestWeight, TestWeight]; // Total used will not be zero",
+                "    let result = WeightedIndex::new(weights);",
+                "    assert!(result.is_ok());",
+                "    let weighted_index = result.unwrap();",
+                "    assert_eq!(weighted_index.cumulative_weights.len(), 2);",
+                "    assert_eq!(weighted_index.total_weight, TestWeight);",
+                "    assert!(weighted_index.weight_distribution.is_some());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestWeight;",
+                "",
+                "    impl Clone for TestWeight {",
+                "        fn clone(&self) -> Self {",
+                "            TestWeight",
+                "        }",
+                "    }",
+                "",
+                "    impl Weight for TestWeight {",
+                "        const ZERO: Self = TestWeight;",
+                "",
+                "        fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let weights = vec![TestWeight, TestWeight]; // All weights are non-negative",
+                "    let result = WeightedIndex::new(weights);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let weighted_index = result.unwrap();",
+                "    assert_eq!(weighted_index.cumulative_weights.len(), 2);",
+                "    assert_eq!(weighted_index.total_weight, TestWeight::ZERO);",
+                "    assert!(weighted_index.weight_distribution.is_valid());"
+              ],
+              "code": [
+                "{",
+                "    struct TestWeight;",
+                "",
+                "    impl Clone for TestWeight {",
+                "        fn clone(&self) -> Self {",
+                "            TestWeight",
+                "        }",
+                "    }",
+                "",
+                "    impl Weight for TestWeight {",
+                "        const ZERO: Self = TestWeight;",
+                "",
+                "        fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let weights = vec![TestWeight, TestWeight]; // All weights are non-negative",
+                "    let result = WeightedIndex::new(weights);",
+                "    assert!(result.is_ok());",
+                "    let weighted_index = result.unwrap();",
+                "    assert_eq!(weighted_index.cumulative_weights.len(), 2);",
+                "    assert_eq!(weighted_index.total_weight, TestWeight::ZERO);",
+                "    assert!(weighted_index.weight_distribution.is_valid());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 8,
+      "prompt_conds": [
+        "precondition: iter.next().ok_or(Error::InvalidInput)? at line 106 is Ok/Some\n",
+        "precondition: (total_weight >= zero) at line 109 is false\n",
+        "expected return value/type: Err(Error::InvalidWeight)\n"
+      ],
+      "input_infer": "iter.next() returns a negative weight or NaN for total_weight\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestWeight;",
+                "    impl Clone for TestWeight {",
+                "        fn clone(&self) -> Self {",
+                "            TestWeight",
+                "        }",
+                "    }",
+                "    impl Weight for TestWeight {",
+                "        const ZERO: Self = TestWeight;",
+                "",
+                "        fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+                "            Err(())",
+                "        }",
+                "    }",
+                "",
+                "    let weights = vec![TestWeight, TestWeight]; // Assume some negative weight or NaN is handled here",
+                "",
+                "    let result = WeightedIndex::<TestWeight>::new(weights);",
+                "    // The expected output is Err(Error::InvalidWeight)",
+                "}"
+              ],
+              "oracle": [
+                "    let weights = vec![TestWeight, TestWeight];",
+                "    let result = WeightedIndex::<TestWeight>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));"
+              ],
+              "code": [
+                "{",
+                "    struct TestWeight;",
+                "    impl Clone for TestWeight {",
+                "        fn clone(&self) -> Self {",
+                "            TestWeight",
+                "        }",
+                "    }",
+                "    impl Weight for TestWeight {",
+                "        const ZERO: Self = TestWeight;",
+                "",
+                "        fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+                "            Err(())",
+                "        }",
+                "    }",
+                "",
+                "    let weights = vec![TestWeight, TestWeight]; // Assume some negative weight or NaN is handled here",
+                "",
+                "    let result = WeightedIndex::<TestWeight>::new(weights);",
+                "    // The expected output is Err(Error::InvalidWeight)",
+                "    let weights = vec![TestWeight, TestWeight];",
+                "    let result = WeightedIndex::<TestWeight>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct NegativeWeight;",
+                "    impl Clone for NegativeWeight {",
+                "        fn clone(&self) -> Self {",
+                "            NegativeWeight",
+                "        }",
+                "    }",
+                "    impl Weight for NegativeWeight {",
+                "        const ZERO: Self = NegativeWeight;",
+                "",
+                "        fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+                "            Err(())",
+                "        }",
+                "    }",
+                "",
+                "    let weights = vec![NegativeWeight]; // Weights are assumed to be negative",
+                "",
+                "    let result = WeightedIndex::<NegativeWeight>::new(weights);",
+                "    // The expected output is Err(Error::InvalidWeight)",
+                "}"
+              ],
+              "oracle": [
+                "    let weights = vec![NegativeWeight];",
+                "    let result = WeightedIndex::<NegativeWeight>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));"
+              ],
+              "code": [
+                "{",
+                "    struct NegativeWeight;",
+                "    impl Clone for NegativeWeight {",
+                "        fn clone(&self) -> Self {",
+                "            NegativeWeight",
+                "        }",
+                "    }",
+                "    impl Weight for NegativeWeight {",
+                "        const ZERO: Self = NegativeWeight;",
+                "",
+                "        fn checked_add_assign(&mut self, _v: &Self) -> Result<(), ()> {",
+                "            Err(())",
+                "        }",
+                "    }",
+                "",
+                "    let weights = vec![NegativeWeight]; // Weights are assumed to be negative",
+                "",
+                "    let result = WeightedIndex::<NegativeWeight>::new(weights);",
+                "    // The expected output is Err(Error::InvalidWeight)",
+                "    let weights = vec![NegativeWeight];",
+                "    let result = WeightedIndex::<NegativeWeight>::new(weights);",
+                "    assert_eq!(result, Err(Error::InvalidWeight));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

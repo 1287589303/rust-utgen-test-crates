@@ -1,0 +1,149 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let translator = Translator {",
+          "        stack: RefCell::new(vec![HirFrame::Literal(vec![b'a'])]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "    translator_i.push_char('b');",
+          "}"
+        ],
+        "oracle": [
+          "    let stack = translator.stack.borrow(); assert_eq!(stack.len(), 1); assert!(matches!(stack.last(), Some(HirFrame::Literal(ref literal)) if literal == &vec![b'a', b'b']));"
+        ],
+        "code": [
+          "{",
+          "    let translator = Translator {",
+          "        stack: RefCell::new(vec![HirFrame::Literal(vec![b'a'])]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "    translator_i.push_char('b');",
+          "    let stack = translator.stack.borrow(); assert_eq!(stack.len(), 1); assert!(matches!(stack.last(), Some(HirFrame::Literal(ref literal)) if literal == &vec![b'a', b'b']));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let translator = Translator {",
+          "        stack: RefCell::new(vec![HirFrame::Literal(vec![b'e', b'x'])]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "    translator_i.push_char('é');",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(translator.stack.borrow().len(), 1);",
+          "    assert_eq!(if let Some(HirFrame::Literal(ref literal)) = translator.stack.borrow().last() { literal } else { &vec![] }, &vec![b'e', b'x', b'\\xc3', b'\\xa9']);"
+        ],
+        "code": [
+          "{",
+          "    let translator = Translator {",
+          "        stack: RefCell::new(vec![HirFrame::Literal(vec![b'e', b'x'])]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "    translator_i.push_char('é');",
+          "    assert_eq!(translator.stack.borrow().len(), 1);",
+          "    assert_eq!(if let Some(HirFrame::Literal(ref literal)) = translator.stack.borrow().last() { literal } else { &vec![] }, &vec![b'e', b'x', b'\\xc3', b'\\xa9']);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let translator = Translator {",
+          "        stack: RefCell::new(vec![HirFrame::Literal(vec![b'1'])]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "    translator_i.push_char('#');",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(translator.stack.borrow().last().unwrap(), &HirFrame::Literal(vec![b'1', b'#']));"
+        ],
+        "code": [
+          "{",
+          "    let translator = Translator {",
+          "        stack: RefCell::new(vec![HirFrame::Literal(vec![b'1'])]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "    translator_i.push_char('#');",
+          "    assert_eq!(translator.stack.borrow().last().unwrap(), &HirFrame::Literal(vec![b'1', b'#']));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let translator = Translator {",
+          "        stack: RefCell::new(vec![HirFrame::Literal(vec![b'c'])]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "    translator_i.push_char('𐍈'); // U+10348 Gothic letter hwair",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(translator.stack.borrow().len(), 1);",
+          "    assert!(matches!(translator.stack.borrow().last().unwrap(), HirFrame::Literal(_)));",
+          "    let literal = if let HirFrame::Literal(ref literal) = translator.stack.borrow()[0] { literal } else { panic!(\"Expected a literal frame\") };",
+          "    assert_eq!(literal, &vec![b'c', 0xF0, 0x9D, 0x8C, 0x88]);"
+        ],
+        "code": [
+          "{",
+          "    let translator = Translator {",
+          "        stack: RefCell::new(vec![HirFrame::Literal(vec![b'c'])]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "    translator_i.push_char('𐍈'); // U+10348 Gothic letter hwair",
+          "    assert_eq!(translator.stack.borrow().len(), 1);",
+          "    assert!(matches!(translator.stack.borrow().last().unwrap(), HirFrame::Literal(_)));",
+          "    let literal = if let HirFrame::Literal(ref literal) = translator.stack.borrow()[0] { literal } else { panic!(\"Expected a literal frame\") };",
+          "    assert_eq!(literal, &vec![b'c', 0xF0, 0x9D, 0x8C, 0x88]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

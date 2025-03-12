@@ -1,0 +1,77 @@
+{
+  "name": "regex_automata::meta::regex::{impl#3}::search_slots_with",
+  "mod_info": {
+    "name": "meta::regex",
+    "loc": "regex-automata/src/meta/mod.rs:57:1:57:11"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/meta/regex.rs:1434:5:1444:6",
+  "doc": "/// This is like [`Regex::search_slots`], but requires the caller to\n/// explicitly pass a [`Cache`].\n///\n/// # Why pass a `Cache` explicitly?\n///\n/// Passing a `Cache` explicitly will bypass the use of an internal memory\n/// pool used by `Regex` to get a `Cache` for a search. The use of this\n/// pool can be slower in some cases when a `Regex` is used from multiple\n/// threads simultaneously. Typically, performance only becomes an issue\n/// when there is heavy contention, which in turn usually only occurs\n/// when each thread's primary unit of work is a regex search on a small\n/// haystack.\n///\n/// # Example\n///\n/// This example shows how to find the overall match offsets in a\n/// multi-pattern search without allocating a `Captures` value. Indeed, we\n/// can put our slots right on the stack.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{meta::Regex, PatternID, Input};\n///\n/// let re = Regex::new_many(&[\n///     r\"\\pL+\",\n///     r\"\\d+\",\n/// ])?;\n/// let mut cache = re.create_cache();\n/// let input = Input::new(\"!@#123\");\n///\n/// // We only care about the overall match offsets here, so we just\n/// // allocate two slots for each pattern. Each slot records the start\n/// // and end of the match.\n/// let mut slots = [None; 4];\n/// let pid = re.search_slots_with(&mut cache, &input, &mut slots);\n/// assert_eq!(Some(PatternID::must(1)), pid);\n///\n/// // The overall match offsets are always at 'pid * 2' and 'pid * 2 + 1'.\n/// // See 'GroupInfo' for more details on the mapping between groups and\n/// // slot indices.\n/// let slot_start = pid.unwrap().as_usize() * 2;\n/// let slot_end = slot_start + 1;\n/// assert_eq!(Some(3), slots[slot_start].map(|s| s.get()));\n/// assert_eq!(Some(6), slots[slot_end].map(|s| s.get()));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn search_slots_with(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    "    slots: &mut [Option<NonMaxUsize>],",
+    ") -> Option<PatternID> {",
+    "    if self.imp.info.is_impossible(input) {",
+    "        return None;",
+    "    }",
+    "    self.imp.strat.search_slots(cache, input, slots)",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.imp.info.is_impossible(input)",
+          "norm": null,
+          "value": "true",
+          "line": 1440,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        8
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.imp.info.is_impossible(input)",
+          "norm": null,
+          "value": "false",
+          "line": 1440,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

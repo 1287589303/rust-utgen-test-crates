@@ -1,0 +1,157 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let obj = serde_json::json!({",
+          "        \"key1\": \"value1\",",
+          "        \"key2\": 42,",
+          "        \"key3\": true,",
+          "    });",
+          "    let value = Value::Object(Map::new(obj.as_object().unwrap().clone()));",
+          "    let visitor = MyVisitor {}; // Assume MyVisitor implements Visitor",
+          "    let _ = value.deserialize_struct(\"MyStruct\", &[\"key1\", \"key2\", \"key3\"], visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[\"key1\", \"key2\", \"key3\"], visitor).is_ok(), true);",
+          "    let result = value.deserialize_struct(\"MyStruct\", &[\"key1\", \"key2\", \"key3\"], visitor).unwrap();",
+          "    assert!(result.has_key(\"key1\"));",
+          "    assert!(result.has_key(\"key2\"));",
+          "    assert!(result.has_key(\"key3\"));",
+          "    assert_eq!(result.get(\"key1\"), Some(&Value::String(\"value1\".to_string())));",
+          "    assert_eq!(result.get(\"key2\"), Some(&Value::Number(Number { n: 42.into() })));",
+          "    assert_eq!(result.get(\"key3\"), Some(&Value::Bool(true)));"
+        ],
+        "code": [
+          "{",
+          "    let obj = serde_json::json!({",
+          "        \"key1\": \"value1\",",
+          "        \"key2\": 42,",
+          "        \"key3\": true,",
+          "    });",
+          "    let value = Value::Object(Map::new(obj.as_object().unwrap().clone()));",
+          "    let visitor = MyVisitor {}; // Assume MyVisitor implements Visitor",
+          "    let _ = value.deserialize_struct(\"MyStruct\", &[\"key1\", \"key2\", \"key3\"], visitor);",
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[\"key1\", \"key2\", \"key3\"], visitor).is_ok(), true);",
+          "    let result = value.deserialize_struct(\"MyStruct\", &[\"key1\", \"key2\", \"key3\"], visitor).unwrap();",
+          "    assert!(result.has_key(\"key1\"));",
+          "    assert!(result.has_key(\"key2\"));",
+          "    assert!(result.has_key(\"key3\"));",
+          "    assert_eq!(result.get(\"key1\"), Some(&Value::String(\"value1\".to_string())));",
+          "    assert_eq!(result.get(\"key2\"), Some(&Value::Number(Number { n: 42.into() })));",
+          "    assert_eq!(result.get(\"key3\"), Some(&Value::Bool(true)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let obj = serde_json::json!({});",
+          "    let value = Value::Object(Map::new(obj.as_object().unwrap().clone()));",
+          "    let visitor = MyVisitor {}; // Assume MyVisitor implements Visitor",
+          "    let _ = value.deserialize_struct(\"MyStruct\", &[], visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[], visitor).is_ok(), true);",
+          "    assert!(matches!(value.deserialize_struct(\"MyStruct\", &[], visitor), Ok(_)));",
+          "    assert!(matches!(value.deserialize_struct(\"MyStruct\", &[], visitor), Err(Error::invalid_type(_, _))));",
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[], visitor).unwrap(), visitor.visit_map(serde::de::MapAccess::new()));",
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[], visitor).unwrap_err().to_string(), \"Unexpected type\");"
+        ],
+        "code": [
+          "{",
+          "    let obj = serde_json::json!({});",
+          "    let value = Value::Object(Map::new(obj.as_object().unwrap().clone()));",
+          "    let visitor = MyVisitor {}; // Assume MyVisitor implements Visitor",
+          "    let _ = value.deserialize_struct(\"MyStruct\", &[], visitor);",
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[], visitor).is_ok(), true);",
+          "    assert!(matches!(value.deserialize_struct(\"MyStruct\", &[], visitor), Ok(_)));",
+          "    assert!(matches!(value.deserialize_struct(\"MyStruct\", &[], visitor), Err(Error::invalid_type(_, _))));",
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[], visitor).unwrap(), visitor.visit_map(serde::de::MapAccess::new()));",
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[], visitor).unwrap_err().to_string(), \"Unexpected type\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let invalid_value = Value::String(\"not an object\".to_string());",
+          "    let visitor = MyVisitor {}; // Assume MyVisitor implements Visitor",
+          "    let _ = invalid_value.deserialize_struct(\"MyStruct\", &[], visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let invalid_value = Value::String(\"not an object\".to_string());",
+          "    assert_eq!(invalid_value.deserialize_struct(\"MyStruct\", &[], visitor).is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    let invalid_value = Value::String(\"not an object\".to_string());",
+          "    let visitor = MyVisitor {}; // Assume MyVisitor implements Visitor",
+          "    let _ = invalid_value.deserialize_struct(\"MyStruct\", &[], visitor);",
+          "    let invalid_value = Value::String(\"not an object\".to_string());",
+          "    assert_eq!(invalid_value.deserialize_struct(\"MyStruct\", &[], visitor).is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let obj = serde_json::json!({",
+          "        \"outer\": {",
+          "            \"inner\": \"value\"",
+          "        }",
+          "    });",
+          "    let value = Value::Object(Map::new(obj.as_object().unwrap().clone()));",
+          "    let visitor = MyVisitor {}; // Assume MyVisitor implements Visitor",
+          "    let _ = value.deserialize_struct(\"MyStruct\", &[\"outer\"], visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[\"outer\"], visitor).is_ok(), true);",
+          "    assert!(matches!(value.deserialize_struct(\"MyStruct\", &[\"outer\"], visitor), Ok(_)));",
+          "    assert!(matches!(value.deserialize_struct(\"MyStruct\", &[\"nonexistent\"], visitor), Err(_)));",
+          "    assert!(value.deserialize_struct(\"MyStruct\", &[\"outer\"], visitor).unwrap().is_some());",
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[\"outer\"], visitor).unwrap_err().to_string(), \"expected a map or array\");",
+          "    assert!(value.deserialize_struct(\"MyStruct\", &[], visitor).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let obj = serde_json::json!({",
+          "        \"outer\": {",
+          "            \"inner\": \"value\"",
+          "        }",
+          "    });",
+          "    let value = Value::Object(Map::new(obj.as_object().unwrap().clone()));",
+          "    let visitor = MyVisitor {}; // Assume MyVisitor implements Visitor",
+          "    let _ = value.deserialize_struct(\"MyStruct\", &[\"outer\"], visitor);",
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[\"outer\"], visitor).is_ok(), true);",
+          "    assert!(matches!(value.deserialize_struct(\"MyStruct\", &[\"outer\"], visitor), Ok(_)));",
+          "    assert!(matches!(value.deserialize_struct(\"MyStruct\", &[\"nonexistent\"], visitor), Err(_)));",
+          "    assert!(value.deserialize_struct(\"MyStruct\", &[\"outer\"], visitor).unwrap().is_some());",
+          "    assert_eq!(value.deserialize_struct(\"MyStruct\", &[\"outer\"], visitor).unwrap_err().to_string(), \"expected a map or array\");",
+          "    assert!(value.deserialize_struct(\"MyStruct\", &[], visitor).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

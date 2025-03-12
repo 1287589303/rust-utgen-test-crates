@@ -1,0 +1,652 @@
+{
+  "name": "regex_automata::util::interpolate::bytes",
+  "mod_info": {
+    "name": "util::interpolate",
+    "loc": "regex-automata/src/util/mod.rs:35:1:35:21"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/util/interpolate.rs:178:1:218:2",
+  "doc": "/// Accepts a replacement byte string and interpolates capture references with\n/// their corresponding values.\n///\n/// `append` should be a function that appends the byte string value of a\n/// capture group at a particular index to the byte string given. If the\n/// capture group index is invalid, then nothing should be appended.\n///\n/// `name_to_index` should be a function that maps a capture group name to a\n/// capture group index. If the given name doesn't exist, then `None` should\n/// be returned.\n///\n/// Finally, `dst` is where the final interpolated contents should be written.\n/// If `replacement` contains no capture group references, then `dst` will be\n/// equivalent to `replacement`.\n///\n/// See the [module documentation](self) for details about the format\n/// supported.\n///\n/// # Example\n///\n/// ```\n/// use regex_automata::util::interpolate;\n///\n/// let mut dst = vec![];\n/// interpolate::bytes(\n///     b\"foo $bar baz\",\n///     |index, dst| {\n///         if index == 0 {\n///             dst.extend_from_slice(b\"BAR\");\n///         }\n///     },\n///     |name| {\n///         if name == \"bar\" {\n///             Some(0)\n///         } else {\n///             None\n///         }\n///     },\n///     &mut dst,\n/// );\n/// assert_eq!(&b\"foo BAR baz\"[..], dst);\n/// ```\n",
+  "code": [
+    "pub fn bytes(",
+    "    mut replacement: &[u8],",
+    "    mut append: impl FnMut(usize, &mut Vec<u8>),",
+    "    mut name_to_index: impl FnMut(&str) -> Option<usize>,",
+    "    dst: &mut Vec<u8>,",
+    ") {",
+    "    while !replacement.is_empty() {",
+    "        match memchr(b'$', replacement) {",
+    "            None => break,",
+    "            Some(i) => {",
+    "                dst.extend_from_slice(&replacement[..i]);",
+    "                replacement = &replacement[i..];",
+    "            }",
+    "        }",
+    "        // Handle escaping of '$'.",
+    "        if replacement.get(1).map_or(false, |&b| b == b'$') {",
+    "            dst.push(b'$');",
+    "            replacement = &replacement[2..];",
+    "            continue;",
+    "        }",
+    "        debug_assert!(!replacement.is_empty());",
+    "        let cap_ref = match find_cap_ref(replacement) {",
+    "            Some(cap_ref) => cap_ref,",
+    "            None => {",
+    "                dst.push(b'$');",
+    "                replacement = &replacement[1..];",
+    "                continue;",
+    "            }",
+    "        };",
+    "        replacement = &replacement[cap_ref.end..];",
+    "        match cap_ref.cap {",
+    "            Ref::Number(i) => append(i, dst),",
+    "            Ref::Named(name) => {",
+    "                if let Some(i) = name_to_index(name) {",
+    "                    append(i, dst);",
+    "                }",
+    "            }",
+    "        }",
+    "    }",
+    "    dst.extend_from_slice(replacement);",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 5,
+    "min_set": 7
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 184,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        46,
+        48,
+        49,
+        50
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 184,
+          "bound": null
+        },
+        {
+          "cond": "memchr(b'$', replacement) matches Some(i)",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null
+        },
+        {
+          "cond": "replacement.get(1).map_or(false, |&b| b == b'$')",
+          "norm": null,
+          "value": "true",
+          "line": 193,
+          "bound": null
+        },
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 184,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        47,
+        1,
+        2,
+        3,
+        4,
+        46,
+        48,
+        49,
+        50
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 184,
+          "bound": null
+        },
+        {
+          "cond": "memchr(b'$', replacement) matches Some(i)",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null
+        },
+        {
+          "cond": "replacement.get(1).map_or(false, |&b| b == b'$')",
+          "norm": null,
+          "value": "false",
+          "line": 193,
+          "bound": null
+        },
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 198,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        19,
+        20,
+        22,
+        23,
+        51,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 184,
+          "bound": null
+        },
+        {
+          "cond": "memchr(b'$', replacement) matches Some(i)",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null
+        },
+        {
+          "cond": "replacement.get(1).map_or(false, |&b| b == b'$')",
+          "norm": null,
+          "value": "false",
+          "line": 193,
+          "bound": null
+        },
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 198,
+          "bound": null
+        },
+        {
+          "cond": "find_cap_ref(replacement) matches Some(cap_ref)",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "find_cap_ref(replacement) matches Some(cap_ref)",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "cap_ref.cap matches Ref::Number(i)",
+          "norm": null,
+          "value": "true",
+          "line": 208,
+          "bound": null
+        },
+        {
+          "cond": "cap_ref.cap matches Ref::Number(i)",
+          "norm": null,
+          "value": "true",
+          "line": 208,
+          "bound": null
+        },
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 184,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        19,
+        20,
+        22,
+        24,
+        25,
+        26,
+        28,
+        30,
+        33,
+        35,
+        37,
+        38,
+        45,
+        1,
+        2,
+        3,
+        4,
+        46,
+        48,
+        49,
+        50
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 184,
+          "bound": null
+        },
+        {
+          "cond": "memchr(b'$', replacement) matches Some(i)",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null
+        },
+        {
+          "cond": "replacement.get(1).map_or(false, |&b| b == b'$')",
+          "norm": null,
+          "value": "false",
+          "line": 193,
+          "bound": null
+        },
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 198,
+          "bound": null
+        },
+        {
+          "cond": "find_cap_ref(replacement) matches Some(cap_ref)",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "find_cap_ref(replacement) matches Some(cap_ref)",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "cap_ref.cap matches Ref::Named(name)",
+          "norm": null,
+          "value": "true",
+          "line": 208,
+          "bound": null
+        },
+        {
+          "cond": "let Some(i) = name_to_index(name)",
+          "norm": null,
+          "value": "true",
+          "line": 211,
+          "bound": null
+        },
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 184,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        19,
+        20,
+        22,
+        24,
+        25,
+        26,
+        28,
+        30,
+        33,
+        36,
+        39,
+        43,
+        44,
+        45,
+        1,
+        2,
+        3,
+        4,
+        46,
+        48,
+        49,
+        50
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 184,
+          "bound": null
+        },
+        {
+          "cond": "memchr(b'$', replacement) matches Some(i)",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null
+        },
+        {
+          "cond": "replacement.get(1).map_or(false, |&b| b == b'$')",
+          "norm": null,
+          "value": "false",
+          "line": 193,
+          "bound": null
+        },
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 198,
+          "bound": null
+        },
+        {
+          "cond": "find_cap_ref(replacement) matches Some(cap_ref)",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "find_cap_ref(replacement) matches Some(cap_ref)",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "cap_ref.cap matches Ref::Named(name)",
+          "norm": null,
+          "value": "true",
+          "line": 208,
+          "bound": null
+        },
+        {
+          "cond": "let Some(i) = name_to_index(name)",
+          "norm": null,
+          "value": "true",
+          "line": 211,
+          "bound": null
+        },
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 184,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        19,
+        20,
+        22,
+        24,
+        25,
+        26,
+        28,
+        30,
+        33,
+        36,
+        39,
+        40,
+        41,
+        42,
+        44,
+        45,
+        1,
+        2,
+        3,
+        4,
+        46,
+        48,
+        49,
+        50
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 184,
+          "bound": null
+        },
+        {
+          "cond": "memchr(b'$', replacement) matches Some(i)",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null
+        },
+        {
+          "cond": "replacement.get(1).map_or(false, |&b| b == b'$')",
+          "norm": null,
+          "value": "false",
+          "line": 193,
+          "bound": null
+        },
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 198,
+          "bound": null
+        },
+        {
+          "cond": "find_cap_ref(replacement) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 184,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        19,
+        20,
+        22,
+        24,
+        25,
+        26,
+        29,
+        31,
+        32,
+        47,
+        1,
+        2,
+        3,
+        4,
+        46,
+        48,
+        49,
+        50
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "replacement.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 184,
+          "bound": null
+        },
+        {
+          "cond": "memchr(b'$', replacement) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null
+        },
+        {
+          "cond": "memchr(b'$', replacement) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        10,
+        46,
+        48,
+        49,
+        50
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

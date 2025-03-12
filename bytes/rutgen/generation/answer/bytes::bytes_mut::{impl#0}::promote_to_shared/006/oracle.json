@@ -1,0 +1,142 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut bytes_mut = {",
+          "        let mut instance = BytesMut::with_capacity(10);",
+          "        unsafe { instance.set_len(5) }; // Ensure len is set",
+          "        instance",
+          "    };",
+          "    bytes_mut.data = (KIND_VEC as usize | (0 << VEC_POS_OFFSET)) as *mut _;",
+          "    unsafe {",
+          "        bytes_mut.promote_to_shared(0);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_mut.kind(), KIND_VEC);",
+          "    assert_eq!(bytes_mut.len(), 5);",
+          "    assert_ne!(bytes_mut.data as usize & KIND_MASK, KIND_ARC);",
+          "    let shared = unsafe { Box::from_raw(bytes_mut.data) };",
+          "    assert!(shared.ref_count.load(Ordering::SeqCst) == 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes_mut = {",
+          "        let mut instance = BytesMut::with_capacity(10);",
+          "        unsafe { instance.set_len(5) }; // Ensure len is set",
+          "        instance",
+          "    };",
+          "    bytes_mut.data = (KIND_VEC as usize | (0 << VEC_POS_OFFSET)) as *mut _;",
+          "    unsafe {",
+          "        bytes_mut.promote_to_shared(0);",
+          "    }",
+          "    assert_eq!(bytes_mut.kind(), KIND_VEC);",
+          "    assert_eq!(bytes_mut.len(), 5);",
+          "    assert_ne!(bytes_mut.data as usize & KIND_MASK, KIND_ARC);",
+          "    let shared = unsafe { Box::from_raw(bytes_mut.data) };",
+          "    assert!(shared.ref_count.load(Ordering::SeqCst) == 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut bytes_mut = {",
+          "        let mut instance = BytesMut::with_capacity(10);",
+          "        unsafe { instance.set_len(5) }; // Ensure len is set",
+          "        instance",
+          "    };",
+          "    bytes_mut.data = (KIND_VEC as usize | (0 << VEC_POS_OFFSET)) as *mut _;",
+          "    unsafe {",
+          "        bytes_mut.promote_to_shared(3);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_mut.data as usize & KIND_MASK, KIND_ARC);",
+          "    assert!(bytes_mut.len() == 5);",
+          "    assert!(bytes_mut.capacity() >= 10);",
+          "    assert!(unsafe { bytes_mut.data.as_ref() }.ref_cnt.load(Ordering::SeqCst) == 3);",
+          "    assert!(!bytes_mut.is_empty());",
+          "    assert!(bytes_mut.ptr.as_ptr() != ptr::null_mut());"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes_mut = {",
+          "        let mut instance = BytesMut::with_capacity(10);",
+          "        unsafe { instance.set_len(5) }; // Ensure len is set",
+          "        instance",
+          "    };",
+          "    bytes_mut.data = (KIND_VEC as usize | (0 << VEC_POS_OFFSET)) as *mut _;",
+          "    unsafe {",
+          "        bytes_mut.promote_to_shared(3);",
+          "    }",
+          "    assert_eq!(bytes_mut.data as usize & KIND_MASK, KIND_ARC);",
+          "    assert!(bytes_mut.len() == 5);",
+          "    assert!(bytes_mut.capacity() >= 10);",
+          "    assert!(unsafe { bytes_mut.data.as_ref() }.ref_cnt.load(Ordering::SeqCst) == 3);",
+          "    assert!(!bytes_mut.is_empty());",
+          "    assert!(bytes_mut.ptr.as_ptr() != ptr::null_mut());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut bytes_mut = {",
+          "        let mut instance = BytesMut::with_capacity(10);",
+          "        unsafe { instance.set_len(5) }; // Ensure len is set",
+          "        instance",
+          "    };",
+          "    let original_capacity_repr = (u32::MAX >> ORIGINAL_CAPACITY_OFFSET) & ORIGINAL_CAPACITY_MASK;",
+          "    bytes_mut.data = (KIND_VEC as usize | (original_capacity_repr << ORIGINAL_CAPACITY_OFFSET) | (0 << VEC_POS_OFFSET)) as *mut _;",
+          "    unsafe {",
+          "        bytes_mut.promote_to_shared(1);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_mut.kind(), KIND_ARC);",
+          "    assert_eq!(bytes_mut.len(), 5);",
+          "    assert!(bytes_mut.data != ptr::null_mut());",
+          "    assert_eq!(bytes_mut.data as usize & KIND_MASK, KIND_ARC);",
+          "    assert_eq!(unsafe { *(bytes_mut.data as *const Shared) }.ref_cnt.load(Ordering::SeqCst), 1);"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes_mut = {",
+          "        let mut instance = BytesMut::with_capacity(10);",
+          "        unsafe { instance.set_len(5) }; // Ensure len is set",
+          "        instance",
+          "    };",
+          "    let original_capacity_repr = (u32::MAX >> ORIGINAL_CAPACITY_OFFSET) & ORIGINAL_CAPACITY_MASK;",
+          "    bytes_mut.data = (KIND_VEC as usize | (original_capacity_repr << ORIGINAL_CAPACITY_OFFSET) | (0 << VEC_POS_OFFSET)) as *mut _;",
+          "    unsafe {",
+          "        bytes_mut.promote_to_shared(1);",
+          "    }",
+          "    assert_eq!(bytes_mut.kind(), KIND_ARC);",
+          "    assert_eq!(bytes_mut.len(), 5);",
+          "    assert!(bytes_mut.data != ptr::null_mut());",
+          "    assert_eq!(bytes_mut.data as usize & KIND_MASK, KIND_ARC);",
+          "    assert_eq!(unsafe { *(bytes_mut.data as *const Shared) }.ref_cnt.load(Ordering::SeqCst), 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

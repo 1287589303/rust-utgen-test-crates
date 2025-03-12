@@ -1,0 +1,519 @@
+{
+  "name": "once_cell::sync::{impl#6}::get_or_try_init",
+  "mod_info": {
+    "name": "sync",
+    "loc": "src/lib.rs:863:1:1409:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:1152:9:1166:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: let Some(value) = self.get() at line 1157 is true\n",
+        "precondition: self.0.initialize(f)? at line 1161 is Err/None\n"
+      ],
+      "input_infer": "self.get() returns Some(value) when called, function f must return a Result<T, E> where E is an error type, and f might fail in a scenario outside of returning a valid T without panicking\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct Dummy;",
+                "    let cell = OnceCell::new();",
+                "    let _ = cell.get_or_init(|| Dummy);",
+                "    let result = cell.get_or_try_init(|| Err(()));",
+                "    let _ = result; // Consuming the result",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell.get(), Some(&Dummy));",
+                "    assert_eq!(result, Err(()));",
+                "    assert!(cell.get().is_some());",
+                "    assert!(!self.0.is_initialized());"
+              ],
+              "code": [
+                "{",
+                "     #[derive(Debug, PartialEq)]  ",
+                "     struct Dummy;  ",
+                "     let cell = OnceCell::new();  ",
+                "     let _ = cell.get_or_init(|| Dummy);  ",
+                "     let result = cell.get_or_try_init(|| Err(()));  ",
+                "     let _ = result; // Consuming the result  ",
+                "     assert_eq!(cell.get(), Some(&Dummy));  ",
+                "     assert!(cell.get().is_some());  ",
+                "     assert!(!cell.is_initialized());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct Dummy;",
+                "    let cell = OnceCell::new();",
+                "    let _ = cell.get_or_init(|| Dummy);",
+                "    ",
+                "    let result = cell.get_or_try_init(|| Err(\"failure\"));",
+                "    let _ = result; // Consuming the result",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell.get_or_try_init(|| Err(\"failure\")), Err(\"failure\"));",
+                "    assert!(cell.get().is_none());",
+                "    let value = cell.get_or_try_init(|| -> Result<i32, &str> { Ok(92) });",
+                "    assert_eq!(value, Ok(&92));",
+                "    assert_eq!(cell.get(), Some(&92));"
+              ],
+              "code": [
+                "{",
+                "   #[derive(Debug)]",
+                "   struct Dummy;",
+                "   let cell = OnceCell::new();",
+                "    ",
+                "    let result = cell.get_or_try_init(|| Err(\"failure\"));",
+                "    let _ = result; // Consuming the result",
+                "   assert_eq!(cell.get_or_try_init(|| Err(\"failure\")), Err(\"failure\"));",
+                "   assert!(cell.get().is_none());",
+                "   let value = cell.get_or_try_init(|| -> Result<&Dummy, &str> { Ok(&Dummy) });",
+                "    assert_eq!(value, Ok(&92));",
+                "    assert_eq!(cell.get(), Some(&92));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct Value(i32);",
+                "    let cell = OnceCell::new();",
+                "    let _ = cell.get_or_try_init(|| Err(\"initial error\"));",
+                "",
+                "    let value = cell.get_or_try_init(|| Ok(Value(42)));",
+                "    let _ = value; // Consuming the result",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(cell.get().is_none());",
+                "    assert_eq!(cell.get_or_try_init(|| Err(\"initial error\")), Err(\"initial error\"));",
+                "    assert_eq!(cell.get_or_try_init(|| Ok(Value(42))), Ok(&Value(42)));",
+                "    assert!(cell.get().is_some());"
+              ],
+              "code": [
+                "{",
+                "   #[derive(Debug)]",
+                "   struct Value(i32);",
+                "   let cell = OnceCell::new();",
+                "   let _ = cell.get_or_try_init(|| Err(\"initial error\"));",
+                "   ",
+                "   let value = cell.get_or_try_init(|| Ok(Value(42)));",
+                "   let _ = value; // Consuming the result",
+                "   assert!(cell.get().is_none());",
+                "   assert_eq!(cell.get_or_try_init(|| Err(\"initial error\")), Err(\"initial error\"));",
+                "    assert!(cell.get().is_some());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: let Some(value) = self.get() at line 1157 is true\n",
+        "precondition: self.0.initialize(f)? at line 1161 is Ok/Some\n",
+        "precondition: self.0.is_initialized() at line 1164 is true\n",
+        "expected return value/type: Ok(unsafe { self.get_unchecked() })\n"
+      ],
+      "input_infer": "let f return `Result<T, E>` where f succeeds, `T` is a valid type, and `self.get()` is initially `None` before first call, subsequently returning `Some(&T)` on a second call with `self.0` initialized without panics.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestCell {",
+                "        once_cell: OnceCell<i32>,",
+                "    }",
+                "",
+                "    let cell = TestCell {",
+                "        once_cell: OnceCell::new(),",
+                "    };",
+                "",
+                "    // First call returns None",
+                "    assert!(cell.once_cell.get().is_none());",
+                "",
+                "    // Initialize cell successfully",
+                "    let result = cell.once_cell.get_or_try_init(|| Ok(42));",
+                "    // Check that we received Ok with the reference",
+                "    let expected = Ok(&42);",
+                "    let actual = result;",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell.once_cell.get(), None);",
+                "    assert_eq!(cell.once_cell.get_or_try_init(|| Ok(42)), Ok(&42));",
+                "    assert!(cell.once_cell.get().is_some());",
+                "    assert_eq!(cell.once_cell.get(), Some(&42));"
+              ],
+              "code": [
+                "{",
+                "    struct TestCell {",
+                "        once_cell: OnceCell<i32>,",
+                "    }",
+                "",
+                "    let cell = TestCell {",
+                "        once_cell: OnceCell::new(),",
+                "    };",
+                "",
+                "    // First call returns None",
+                "    assert!(cell.once_cell.get().is_none());",
+                "",
+                "    // Initialize cell successfully",
+                "    let result = cell.once_cell.get_or_try_init(|| Ok(42));",
+                "    // Check that we received Ok with the reference",
+                "    let expected = Ok(&42);",
+                "    let actual = result;",
+                "    assert_eq!(cell.once_cell.get(), None);",
+                "    assert_eq!(cell.once_cell.get_or_try_init(|| Ok(42)), Ok(&42));",
+                "    assert!(cell.once_cell.get().is_some());",
+                "    assert_eq!(cell.once_cell.get(), Some(&42));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestCell {",
+                "        once_cell: OnceCell<i32>,",
+                "    }",
+                "",
+                "    let cell = TestCell {",
+                "        once_cell: OnceCell::new(),",
+                "    };",
+                "",
+                "    // First call returns None",
+                "    assert!(cell.once_cell.get().is_none());",
+                "",
+                "    // Initialize cell successfully",
+                "    let _ = cell.once_cell.get_or_try_init(|| Ok(99));",
+                "    ",
+                "    // Second call should retrieve the previously initialized value",
+                "    let second_result = cell.once_cell.get_or_try_init(|| Ok(200)); // Should not re-initialize",
+                "    let expected_second = Ok(&99);",
+                "    let actual_second = second_result;",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(cell.once_cell.get().is_none()); // Checks precondition for first call, expecting None",
+                "    let _ = cell.once_cell.get_or_try_init(|| Ok(99)); // Initializes the cell",
+                "    assert!(cell.once_cell.get().is_some()); // Checks precondition for second call, expecting Some",
+                "    let second_result = cell.once_cell.get_or_try_init(|| Ok(200)); // Tests re-initialization precondition",
+                "    let expected_second = Ok(&99); // Expected value after first initialization",
+                "    assert_eq!(second_result, expected_second); // Validates against expected outcome",
+                "    assert_eq!(cell.once_cell.get(), Some(&99)); // Validates that the value in the cell is correct"
+              ],
+              "code": [
+                "{",
+                "    struct TestCell {",
+                "        once_cell: OnceCell<i32>,",
+                "    }",
+                "",
+                "    let cell = TestCell {",
+                "        once_cell: OnceCell::new(),",
+                "    };",
+                "",
+                "    // First call returns None",
+                "    assert!(cell.once_cell.get().is_none());",
+                "",
+                "    // Initialize cell successfully",
+                "    let _ = cell.once_cell.get_or_try_init(|| Ok(99));",
+                "    ",
+                "    // Second call should retrieve the previously initialized value",
+                "    let second_result = cell.once_cell.get_or_try_init(|| Ok(200)); // Should not re-initialize",
+                "    let expected_second = Ok(&99);",
+                "    let actual_second = second_result;",
+                "    assert!(cell.once_cell.get().is_none()); // Checks precondition for first call, expecting None",
+                "    let _ = cell.once_cell.get_or_try_init(|| Ok(99)); // Initializes the cell",
+                "    assert!(cell.once_cell.get().is_some()); // Checks precondition for second call, expecting Some",
+                "    let second_result = cell.once_cell.get_or_try_init(|| Ok(200)); // Tests re-initialization precondition",
+                "    let expected_second = Ok(&99); // Expected value after first initialization",
+                "    assert_eq!(second_result, expected_second); // Validates against expected outcome",
+                "    assert_eq!(cell.once_cell.get(), Some(&99)); // Validates that the value in the cell is correct",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: let Some(value) = self.get() at line 1157 is true\n",
+        "precondition: self.0.initialize(f)? at line 1161 is Ok/Some\n",
+        "precondition: self.0.is_initialized() at line 1164 is false\n"
+      ],
+      "input_infer": "Test input conditions or ranges: a callable function `f` that returns a `Result` type, where `f` must be called only once, can successfully initialize the `OnceCell` by returning a valid value of type `T`, and the `OnceCell` is in an uninitialized state before calling `get_or_try_init`.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct Test;",
+                "    let cell = OnceCell::<i32>::new();",
+                "    assert!(cell.get().is_none());",
+                "    ",
+                "    let result = cell.get_or_try_init(|| Ok(42));",
+                "    let value = result.unwrap();",
+                "    assert_eq!(*value, 42);",
+                "    assert_eq!(cell.get(), Some(&42));",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(cell.get().is_none());",
+                "    let result = cell.get_or_try_init(|| Ok(42));",
+                "    assert_eq!(result, Ok(&42));",
+                "    assert_eq!(cell.get(), Some(&42));"
+              ],
+              "code": [
+                "{",
+                "    struct Test;",
+                "    let cell = OnceCell::<i32>::new();",
+                "    assert!(cell.get().is_none());",
+                "    ",
+                "  let result: Result<&i32, ()> = cell.get_or_try_init(|| Ok(42));  ",
+                "  let value = result.unwrap();  ",
+                "  assert_eq!(*value, 42);  ",
+                "  assert_eq!(cell.get(), Some(&42));  ",
+                "  assert!(cell.get().is_none());  ",
+                "  let result: Result<&i32, ()> = cell.get_or_try_init(|| Ok(42));  ",
+                "  assert_eq!(result, Ok(&42));  ",
+                "  assert_eq!(cell.get(), Some(&42));  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    struct Test;",
+                "    let cell = OnceCell::<i32>::new();",
+                "    ",
+                "    let _ = cell.get_or_try_init(|| {",
+                "        cell.get_or_try_init(|| Ok(99)); // Attempting to reinitialize",
+                "        Ok(42)",
+                "    });",
+                "}"
+              ],
+              "oracle": [
+                "    let cell = OnceCell::<i32>::new();",
+                "    assert!(cell.get().is_none());",
+                "    let result = cell.get_or_try_init(|| Ok(42));",
+                "    assert_eq!(result, Ok(&42));",
+                "    assert_eq!(cell.get(), Some(&42));",
+                "    let result_reinitialize = cell.get_or_try_init(|| Ok(99));",
+                "    assert_eq!(result_reinitialize, Ok(&42));",
+                "    assert_eq!(cell.get(), Some(&42));",
+                "    let panic_result = std::panic::catch_unwind(|| {",
+                "    let _ = cell.get_or_try_init(|| {",
+                "    cell.get_or_try_init(|| Ok(99)); // Attempting to reinitialize",
+                "    Ok(42)",
+                "    });",
+                "    });",
+                "    assert!(panic_result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    struct Test;",
+                "    let cell = OnceCell::<i32>::new();",
+                "    ",
+                "    let _ = cell.get_or_try_init(|| {",
+                "        cell.get_or_try_init(|| Ok(99)); // Attempting to reinitialize",
+                "        Ok(42)",
+                "    });",
+                "    let cell = OnceCell::<i32>::new();",
+                "    assert!(cell.get().is_none());",
+                "    let result = cell.get_or_try_init(|| Ok(42));",
+                "    assert_eq!(result, Ok(&42));",
+                "    assert_eq!(cell.get(), Some(&42));",
+                "    let result_reinitialize = cell.get_or_try_init(|| Ok(99));",
+                "    assert_eq!(result_reinitialize, Ok(&42));",
+                "    assert_eq!(cell.get(), Some(&42));",
+                "    let panic_result = std::panic::catch_unwind(|| {",
+                "    let _ = cell.get_or_try_init(|| {",
+                "    cell.get_or_try_init(|| Ok(99)); // Attempting to reinitialize",
+                "    Ok(42)",
+                "    });",
+                "    });",
+                "    assert!(panic_result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct Test;",
+                "    let cell = OnceCell::<String>::new();",
+                "    ",
+                "    let result: Result<&String, ()> = cell.get_or_try_init(|| Err(()));",
+                "    assert!(result.is_err());",
+                "    assert!(cell.get().is_none());",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell.get_or_try_init(|| Ok(\"value\".to_string())), Ok(&\"value\".to_string()));",
+                "    assert_eq!(cell.get(), Some(&\"value\".to_string()));",
+                "    assert!(cell.get_or_try_init(|| Err(())).is_err());",
+                "    assert!(cell.get().is_none());",
+                "    assert!(cell.get_or_try_init(|| Ok(\"another_value\".to_string())).is_ok());",
+                "    assert_eq!(cell.get(), Some(&\"another_value\".to_string()));",
+                "    assert!(cell.get_or_try_init(|| Ok(\"new_value\".to_string())).is_ok());",
+                "    assert_eq!(cell.get(), Some(&\"new_value\".to_string()));",
+                "    assert!(cell.get_or_try_init(|| panic!()).is_err());"
+              ],
+              "code": [
+                "{",
+                "    struct Test;",
+                "    let cell = OnceCell::<String>::new();",
+                "    ",
+                "    let result: Result<&String, ()> = cell.get_or_try_init(|| Err(()));",
+                "    assert!(result.is_err());",
+                "    assert!(cell.get().is_none());",
+                "    assert_eq!(cell.get_or_try_init(|| Ok(\"value\".to_string())), Ok(&\"value\".to_string()));",
+                "    assert_eq!(cell.get(), Some(&\"value\".to_string()));",
+                "    assert!(cell.get_or_try_init(|| Err(())).is_err());",
+                "    assert!(cell.get().is_none());",
+                "    assert!(cell.get_or_try_init(|| Ok(\"another_value\".to_string())).is_ok());",
+                "    assert_eq!(cell.get(), Some(&\"another_value\".to_string()));",
+                "    assert!(cell.get_or_try_init(|| Ok(\"new_value\".to_string())).is_ok());",
+                "    assert_eq!(cell.get(), Some(&\"new_value\".to_string()));",
+                "    assert!(cell.get_or_try_init(|| panic!()).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct Test;",
+                "    let cell = OnceCell::<f64>::new();",
+                "    ",
+                "    let result: Result<&f64, String> = cell.get_or_try_init(|| Err(\"Failed\".to_string()));",
+                "    assert!(result.is_err());",
+                "    assert!(cell.get().is_none());",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell.get_or_try_init(|| Ok(42.0)), Ok(&42.0));",
+                "    assert_eq!(cell.get(), Some(&42.0));",
+                "    assert!(cell.get_or_try_init(|| Err(\"Another error\".to_string())).is_err());",
+                "    assert!(cell.get_or_try_init(|| Ok(3.14)).is_ok());",
+                "    assert_eq!(cell.get(), Some(&3.14));"
+              ],
+              "code": [
+                "{",
+                "   struct Test;",
+                "   let cell = OnceCell::<f64>::new();",
+                "   ",
+                "   let result: Result<&f64, String> = cell.get_or_try_init(|| Err(\"Failed\".to_string()));",
+                "   assert!(result.is_err());",
+                "   assert!(cell.get().is_none());",
+                "   assert_eq!(cell.get_or_try_init(|| Ok::<f64, String>(42.0)), Ok(&42.0));",
+                "   assert_eq!(cell.get(), Some(&42.0));",
+                "   assert!(cell.get_or_try_init(|| Err(\"Another error\".to_string())).is_err());",
+                "   assert!(cell.get_or_try_init(|| Ok::<f64, String>(3.14)).is_ok());",
+                "   assert_eq!(cell.get(), Some(&3.14));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct Test;",
+                "    let cell = OnceCell::<u32>::new();",
+                "    ",
+                "    let result = cell.get_or_try_init(|| Ok(100));",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(*result.unwrap(), 100);",
+                "    assert_eq!(cell.get(), Some(&100));",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(cell.get().is_none());",
+                "    let result = cell.get_or_try_init(|| Err(()));",
+                "    assert!(result.is_err());",
+                "    assert!(cell.get().is_none());",
+                "    let result = cell.get_or_try_init(|| Ok(42));",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(*result.unwrap(), 42);",
+                "    assert_eq!(cell.get(), Some(&42));",
+                "    assert_eq!(cell.get_or_try_init(|| Ok(55)), Ok(&42));"
+              ],
+              "code": [
+                "{",
+                "    struct Test;",
+                "    let cell = OnceCell::<u32>::new();",
+                "    ",
+                "    let result = cell.get_or_try_init(|| Ok(100));",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(*result.unwrap(), 100);",
+                "    assert_eq!(cell.get(), Some(&100));",
+                "    assert!(cell.get().is_none());",
+                "    let result = cell.get_or_try_init(|| Err(()));",
+                "    assert!(result.is_err());",
+                "    assert!(cell.get().is_none());",
+                "    let result = cell.get_or_try_init(|| Ok(42));",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(*result.unwrap(), 42);",
+                "    assert_eq!(cell.get(), Some(&42));",
+                "    assert_eq!(cell.get_or_try_init(|| Ok(55)), Ok(&42));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

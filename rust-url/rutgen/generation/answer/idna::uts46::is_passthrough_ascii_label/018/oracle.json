@@ -1,0 +1,158 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label: &[u8] = b\"ab\"; // Length is less than 4",
+          "    let result = is_passthrough_ascii_label(label);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, true);"
+        ],
+        "code": [
+          "{",
+          "    let label: &[u8] = b\"ab\"; // Length is less than 4",
+          "    let result = is_passthrough_ascii_label(label);",
+          "    assert_eq!(result, true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label: &[u8] = b\"a1bc\"; // Valid first character, contains digit, valid length",
+          "    let result = is_passthrough_ascii_label(label);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, false);"
+        ],
+        "code": [
+          "{",
+          "    let label: &[u8] = b\"a1bc\"; // Valid first character, contains digit, valid length",
+          "    let result = is_passthrough_ascii_label(label);",
+          "    assert_eq!(result, false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label: &[u8] = b\"abc!\"; // Invalid character '!' in tail, should fail",
+          "    let result = is_passthrough_ascii_label(label);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, false);"
+        ],
+        "code": [
+          "{",
+          "    let label: &[u8] = b\"abc!\"; // Invalid character '!' in tail, should fail",
+          "    let result = is_passthrough_ascii_label(label);",
+          "    assert_eq!(result, false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label: &[u8] = b\"a1b\"; // Valid first character, doesn't end with '-', valid length",
+          "    let result = is_passthrough_ascii_label(label);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(is_passthrough_ascii_label(b\"a1b\"), true);  // Precondition: label.len() >= 4 is false",
+          "    assert_eq!(is_passthrough_ascii_label(b\"az12\"), false); // Precondition: last character is not '-' and 'b' is not in [a-z]",
+          "    assert_eq!(is_passthrough_ascii_label(b\"a1-\"), true);   // Precondition: valid length, first character valid, and ends with valid character",
+          "    assert_eq!(is_passthrough_ascii_label(b\"abc1\"), false); // Precondition: 'c' is in [a-z] but '1' leads to false due to last character restriction",
+          "    assert_eq!(is_passthrough_ascii_label(b\"a1-1\"), true);  // Precondition: valid first character, does not end with '-', valid length",
+          "    assert_eq!(is_passthrough_ascii_label(b\"ab!c\"), false); // Precondition: '!' is invalid, leading to false"
+        ],
+        "code": [
+          "{",
+          "    let label: &[u8] = b\"a1b\"; // Valid first character, doesn't end with '-', valid length",
+          "    let result = is_passthrough_ascii_label(label);",
+          "    assert_eq!(is_passthrough_ascii_label(b\"a1b\"), true);  // Precondition: label.len() >= 4 is false",
+          "    assert_eq!(is_passthrough_ascii_label(b\"az12\"), false); // Precondition: last character is not '-' and 'b' is not in [a-z]",
+          "    assert_eq!(is_passthrough_ascii_label(b\"a1-\"), true);   // Precondition: valid length, first character valid, and ends with valid character",
+          "    assert_eq!(is_passthrough_ascii_label(b\"abc1\"), false); // Precondition: 'c' is in [a-z] but '1' leads to false due to last character restriction",
+          "    assert_eq!(is_passthrough_ascii_label(b\"a1-1\"), true);  // Precondition: valid first character, does not end with '-', valid length",
+          "    assert_eq!(is_passthrough_ascii_label(b\"ab!c\"), false); // Precondition: '!' is invalid, leading to false",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label: &[u8] = b\"a0b-c\"; // Valid mix of characters, contains digit and valid last character",
+          "    let result = is_passthrough_ascii_label(label);",
+          "}"
+        ],
+        "oracle": [
+          "    let label: &[u8] = b\"abc\"; // Length < 4, should return true",
+          "    let label: &[u8] = b\"a-b\"; // Length < 4, should return true",
+          "    let label: &[u8] = b\"abcd\"; // Valid label, should return true",
+          "    let label: &[u8] = b\"a1b-\"; // Valid label, should return false due to last character",
+          "    let label: &[u8] = b\"ab-c\"; // Valid label, should return true",
+          "    let label: &[u8] = b\"ab-d\"; // Valid label, should return true",
+          "    let label: &[u8] = b\"ab1-\"; // Valid label, should return false due to last character",
+          "    let label: &[u8] = b\"ab-1\"; // Valid label, should return true",
+          "    let label: &[u8] = b\"123\"; // Length < 4, should return true",
+          "    let label: &[u8] = b\"a#b\"; // Invalid character, should return false",
+          "    let label: &[u8] = b\"a b\"; // Invalid character (space), should return false",
+          "    let label: &[u8] = b\"a..b\"; // Invalid character (dot), should return false",
+          "    let label: &[u8] = b\"abc-\"; // Valid label, should return false due to last character",
+          "    let label: &[u8] = b\"xy-z\"; // Valid label, should return true",
+          "    let label: &[u8] = b\"xY-z\"; // Valid label, case sensitivity test, should return true",
+          "    let label: &[u8] = b\"abcd-\"; // Valid label, should return false due to last character",
+          "    let label: &[u8] = b\"abc#\"; // Invalid character, should return false",
+          "    let label: &[u8] = b\"xyz0\"; // Valid label, should return true"
+        ],
+        "code": [
+          "{",
+          "    let label: &[u8] = b\"a0b-c\"; // Valid mix of characters, contains digit and valid last character",
+          "    let result = is_passthrough_ascii_label(label);",
+          "    let label: &[u8] = b\"abc\"; // Length < 4, should return true",
+          "    let label: &[u8] = b\"a-b\"; // Length < 4, should return true",
+          "    let label: &[u8] = b\"abcd\"; // Valid label, should return true",
+          "    let label: &[u8] = b\"a1b-\"; // Valid label, should return false due to last character",
+          "    let label: &[u8] = b\"ab-c\"; // Valid label, should return true",
+          "    let label: &[u8] = b\"ab-d\"; // Valid label, should return true",
+          "    let label: &[u8] = b\"ab1-\"; // Valid label, should return false due to last character",
+          "    let label: &[u8] = b\"ab-1\"; // Valid label, should return true",
+          "    let label: &[u8] = b\"123\"; // Length < 4, should return true",
+          "    let label: &[u8] = b\"a#b\"; // Invalid character, should return false",
+          "    let label: &[u8] = b\"a b\"; // Invalid character (space), should return false",
+          "    let label: &[u8] = b\"a..b\"; // Invalid character (dot), should return false",
+          "    let label: &[u8] = b\"abc-\"; // Valid label, should return false due to last character",
+          "    let label: &[u8] = b\"xy-z\"; // Valid label, should return true",
+          "    let label: &[u8] = b\"xY-z\"; // Valid label, case sensitivity test, should return true",
+          "    let label: &[u8] = b\"abcd-\"; // Valid label, should return false due to last character",
+          "    let label: &[u8] = b\"abc#\"; // Invalid character, should return false",
+          "    let label: &[u8] = b\"xyz0\"; // Valid label, should return true",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

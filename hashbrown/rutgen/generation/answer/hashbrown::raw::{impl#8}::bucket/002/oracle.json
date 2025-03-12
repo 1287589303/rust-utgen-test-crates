@@ -1,0 +1,161 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let allocator = Global; // Default allocator",
+          "    let mut table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = 3; // Valid index within bucket range",
+          "",
+          "    let _bucket = table.bucket(index);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table.buckets(), 8);",
+          "    assert!(index < table.buckets());",
+          "    let bucket_ptr = _bucket.as_ptr();",
+          "    assert!(!bucket_ptr.is_null());",
+          "    assert_eq!(unsafe { *bucket_ptr }, 0);  // Assuming default values in an uninitialized table"
+        ],
+        "code": [
+          "{",
+          "    let allocator = Global; // Default allocator",
+          "    let mut table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = 3; // Valid index within bucket range",
+          "",
+          "    let _bucket = table.bucket(index);",
+          "    assert_eq!(table.buckets(), 8);",
+          "    assert!(index < table.buckets());",
+          "    let bucket_ptr = _bucket.as_ptr();",
+          "    assert!(!bucket_ptr.is_null());",
+          "    assert_eq!(unsafe { *bucket_ptr }, 0);  // Assuming default values in an uninitialized table",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let allocator = Global; // Default allocator",
+          "    let mut table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = 0; // Boundary case for index",
+          "",
+          "    let _bucket = table.bucket(index);",
+          "}"
+        ],
+        "oracle": [
+          "    let allocator = Global;",
+          "    let mut table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = 0;",
+          "    let bucket = table.bucket(index);",
+          "    assert!(bucket.as_ptr().is_null() || table.buckets() > 0);",
+          "    assert_eq!(index, 0);",
+          "    assert!(unsafe { table.bucket(0).as_ptr() }.is_non_null());",
+          "    assert!(unsafe { table.bucket(1).as_ptr() }.is_non_null());",
+          "    table.buckets();"
+        ],
+        "code": [
+          "{",
+          "    let allocator = Global; // Default allocator",
+          "    let mut table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = 0; // Boundary case for index",
+          "",
+          "    let _bucket = table.bucket(index);",
+          "    let allocator = Global;",
+          "    let mut table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = 0;",
+          "    let bucket = table.bucket(index);",
+          "    assert!(bucket.as_ptr().is_null() || table.buckets() > 0);",
+          "    assert_eq!(index, 0);",
+          "    assert!(unsafe { table.bucket(0).as_ptr() }.is_non_null());",
+          "    assert!(unsafe { table.bucket(1).as_ptr() }.is_non_null());",
+          "    table.buckets();",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let allocator = Global; // Default allocator",
+          "    let mut table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = table.buckets() - 1; // Maximum valid index",
+          "",
+          "    let _bucket = table.bucket(index);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table.buckets(), 8);",
+          "    assert!(index < table.buckets());",
+          "    let expected_ptr = unsafe { table.data_end().as_ptr().sub(index + 1) };",
+          "    assert_eq!(bucket.as_ptr(), expected_ptr);",
+          "    assert_ne!(std::ptr::null_mut(), bucket.as_ptr());"
+        ],
+        "code": [
+          "{",
+          "    let allocator = Global; // Default allocator",
+          "    let mut table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = table.buckets() - 1; // Maximum valid index",
+          "",
+          "    let _bucket = table.bucket(index);",
+          "    assert_eq!(table.buckets(), 8);",
+          "    assert!(index < table.buckets());",
+          "    let expected_ptr = unsafe { table.data_end().as_ptr().sub(index + 1) };",
+          "    assert_eq!(bucket.as_ptr(), expected_ptr);",
+          "    assert_ne!(std::ptr::null_mut(), bucket.as_ptr());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let allocator = Global; // Default allocator",
+          "    let mut table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = 8; // Invalid index, should panic",
+          "",
+          "    let _bucket = table.bucket(index);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let allocator = Global;",
+          "    let table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = 8;",
+          "    let _bucket = table.bucket(index);",
+          "    }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let allocator = Global; // Default allocator",
+          "    let mut table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = 8; // Invalid index, should panic",
+          "",
+          "    let _bucket = table.bucket(index);",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let allocator = Global;",
+          "    let table = RawTable::<i32, Global>::with_capacity_in(8, allocator);",
+          "    let index = 8;",
+          "    let _bucket = table.bucket(index);",
+          "    }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

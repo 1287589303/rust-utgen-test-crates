@@ -1,0 +1,245 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: 'a',",
+          "        end: 'z',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(range.start.is_whitespace(), false);",
+          "    assert_eq!(range.start.is_control(), false);",
+          "    assert_eq!(range.end.is_whitespace(), false);",
+          "    assert_eq!(range.end.is_control(), false);",
+          "    assert_eq!(formatter.output(), \"ClassUnicodeRange { start: 'a', end: 'z' }\");"
+        ],
+        "code": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: 'a',",
+          "        end: 'z',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "    assert_eq!(range.start.is_whitespace(), false);",
+          "    assert_eq!(range.start.is_control(), false);",
+          "    assert_eq!(range.end.is_whitespace(), false);",
+          "    assert_eq!(range.end.is_control(), false);",
+          "    assert_eq!(formatter.output(), \"ClassUnicodeRange { start: 'a', end: 'z' }\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: ' ',",
+          "        end: 'z',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(range.start.is_whitespace(), false);",
+          "    assert_eq!(range.start.is_control(), true);",
+          "    assert_eq!(range.end.is_whitespace(), false);",
+          "    assert_eq!(range.end.is_control(), true);",
+          "    assert_eq!(formatter.debug_struct(\"ClassUnicodeRange\").field(\"start\", &start).field(\"end\", &end).finish(), Ok(()));",
+          "    assert!(formatter.to_string().contains(\"ClassUnicodeRange\"));",
+          "    assert!(formatter.to_string().contains(\"0x20\"));",
+          "    assert!(formatter.to_string().contains(\"z\"));"
+        ],
+        "code": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: ' ',",
+          "        end: 'z',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "    assert_eq!(range.start.is_whitespace(), false);",
+          "    assert_eq!(range.start.is_control(), true);",
+          "    assert_eq!(range.end.is_whitespace(), false);",
+          "    assert_eq!(range.end.is_control(), true);",
+          "    assert_eq!(formatter.debug_struct(\"ClassUnicodeRange\").field(\"start\", &start).field(\"end\", &end).finish(), Ok(()));",
+          "    assert!(formatter.to_string().contains(\"ClassUnicodeRange\"));",
+          "    assert!(formatter.to_string().contains(\"0x20\"));",
+          "    assert!(formatter.to_string().contains(\"z\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: '\\n',",
+          "        end: 'z',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(formatter.buffer().contains(\"ClassUnicodeRange\"));",
+          "    assert!(formatter.buffer().contains(\"start: 0xA\")); // '\\n' is control character",
+          "    assert!(formatter.buffer().contains(\"end: z\")); // 'z' is printable character",
+          "    assert!(formatter.buffer().len() > 0); // Ensure something was written"
+        ],
+        "code": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: '\\n',",
+          "        end: 'z',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "    assert!(formatter.buffer().contains(\"ClassUnicodeRange\"));",
+          "    assert!(formatter.buffer().contains(\"start: 0xA\")); // '\\n' is control character",
+          "    assert!(formatter.buffer().contains(\"end: z\")); // 'z' is printable character",
+          "    assert!(formatter.buffer().len() > 0); // Ensure something was written",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: 'a',",
+          "        end: ' ',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    let range = ClassUnicodeRange { start: 'a', end: ' ' };",
+          "    assert_eq!(range.fmt(&mut formatter).unwrap_err().kind(), core::fmt::Error::default());",
+          "    let range = ClassUnicodeRange { start: '\\u{2000}', end: 'b' };",
+          "    assert!(range.fmt(&mut formatter).is_ok());",
+          "    let range = ClassUnicodeRange { start: '\\u{200B}', end: '\\u{200D}' };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    assert_eq!(range.fmt(&mut formatter).unwrap_err().kind(), core::fmt::Error::default());",
+          "    let range = ClassUnicodeRange { start: '\\u{D800}', end: '\\u{DFFF}' };",
+          "    assert!(range.fmt(&mut formatter).is_ok());",
+          "    let range = ClassUnicodeRange { start: ' ', end: ' ' };",
+          "    assert_eq!(range.fmt(&mut formatter).unwrap_err().kind(), core::fmt::Error::default());"
+        ],
+        "code": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: 'a',",
+          "        end: ' ',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "    let range = ClassUnicodeRange { start: 'a', end: ' ' };",
+          "    assert_eq!(range.fmt(&mut formatter).unwrap_err().kind(), core::fmt::Error::default());",
+          "    let range = ClassUnicodeRange { start: '\\u{2000}', end: 'b' };",
+          "    assert!(range.fmt(&mut formatter).is_ok());",
+          "    let range = ClassUnicodeRange { start: '\\u{200B}', end: '\\u{200D}' };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    assert_eq!(range.fmt(&mut formatter).unwrap_err().kind(), core::fmt::Error::default());",
+          "    let range = ClassUnicodeRange { start: '\\u{D800}', end: '\\u{DFFF}' };",
+          "    assert!(range.fmt(&mut formatter).is_ok());",
+          "    let range = ClassUnicodeRange { start: ' ', end: ' ' };",
+          "    assert_eq!(range.fmt(&mut formatter).unwrap_err().kind(), core::fmt::Error::default());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: 'a',",
+          "        end: '\\n',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(range.start.to_string(), \"a\");",
+          "    assert_eq!(format!(\"0x{:X}\", u32::from(range.end)), \"0xA\");",
+          "    assert!(formatter.flags().is_empty());",
+          "    assert!(formatter.sign().is_none());",
+          "    assert_eq!(formatter.width(), None);",
+          "    assert_eq!(formatter.precision(), None);",
+          "    assert!(formatter.alignment().is_none());",
+          "    assert_eq!(formatter.fill(), ' ');"
+        ],
+        "code": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: 'a',",
+          "        end: '\\n',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "    assert_eq!(range.start.to_string(), \"a\");",
+          "    assert_eq!(format!(\"0x{:X}\", u32::from(range.end)), \"0xA\");",
+          "    assert!(formatter.flags().is_empty());",
+          "    assert!(formatter.sign().is_none());",
+          "    assert_eq!(formatter.width(), None);",
+          "    assert_eq!(formatter.precision(), None);",
+          "    assert!(formatter.alignment().is_none());",
+          "    assert_eq!(formatter.fill(), ' ');",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: '\\n',",
+          "        end: '\\t',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(formatter.buffer(), \"ClassUnicodeRange { start: 0xA, end: 0x9 }\");"
+        ],
+        "code": [
+          "{",
+          "    let range = ClassUnicodeRange {",
+          "        start: '\\n',",
+          "        end: '\\t',",
+          "    };",
+          "    let mut formatter = core::fmt::Formatter::new();",
+          "    let _ = range.fmt(&mut formatter);",
+          "    assert_eq!(formatter.buffer(), \"ClassUnicodeRange { start: 0xA, end: 0x9 }\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

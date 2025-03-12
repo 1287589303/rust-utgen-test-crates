@@ -1,0 +1,143 @@
+// Answer 0
+
+#[test]
+fn test_difference_with_overlapping_intervals() {
+    #[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd, Eq)]
+    struct Bound(u32);
+
+    impl Bound {
+        fn upper(&self) -> u32 { self.0 }
+        fn lower(&self) -> u32 { self.0 }
+        fn increment(&self) -> Self { Bound(self.0 + 1) }
+        fn decrement(&self) -> Self { Bound(self.0 - 1) }
+    }
+
+    impl Debug for Bound {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            write!(f, "Bound({})", self.0)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    struct Interval {
+        lower: Bound,
+        upper: Bound,
+    }
+
+    impl Interval {
+        fn new(lower: Bound, upper: Bound) -> Self {
+            Interval { lower, upper }
+        }
+    
+        fn lower(&self) -> Bound {
+            self.lower
+        }
+    
+        fn upper(&self) -> Bound {
+            self.upper
+        }
+    
+        fn is_intersection_empty(&self, other: &Self) -> bool {
+            self.upper < other.lower || self.lower > other.upper
+        }
+
+        fn difference(&self, other: &Self) -> (Option<Self>, Option<Self>) {
+            if self.is_intersection_empty(other) {
+                return (Some(self.clone()), None);
+            }
+
+            // Simplified logic for this test
+            let new_lower = other.upper.increment();
+            let new_upper = self.upper;
+            (Some(Self::new(self.lower, new_lower)), Some(Self::new(new_lower, new_upper)))
+        }
+    }
+
+    impl PartialOrd for Interval {
+        fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+            self.lower.partial_cmp(&other.lower)
+        }
+    }
+
+    impl Eq for Interval {}
+
+    impl Clone for IntervalSet<Interval> {
+        fn clone(&self) -> Self {
+            Self { 
+                ranges: self.ranges.clone(), 
+                folded: self.folded 
+            }
+        }
+    }
+
+    #[derive(Debug)]
+    struct IntervalSet<I> {
+        ranges: Vec<I>,
+        folded: bool,
+    }
+
+    impl IntervalSet<Interval> {
+        fn new(intervals: Vec<Interval>) -> Self {
+            IntervalSet { ranges: intervals, folded: false }
+        }
+
+        fn difference(&mut self, other: &IntervalSet<Interval>) {
+            if self.ranges.is_empty() || other.ranges.is_empty() {
+                return;
+            }
+            let drain_end = self.ranges.len();
+            let (mut a, mut b) = (0, 0);
+            while a < drain_end && b < other.ranges.len() {
+                if other.ranges[b].upper() < self.ranges[a].lower() {
+                    b += 1;
+                    continue;
+                }
+                if self.ranges[a].upper() < other.ranges[b].lower() {
+                    let range = self.ranges[a].clone();
+                    self.ranges.push(range);
+                    a += 1;
+                    continue;
+                }
+                assert!(!self.ranges[a].is_intersection_empty(&other.ranges[b]));
+
+                let mut range = self.ranges[a].clone();
+                while b < other.ranges.len() && !range.is_intersection_empty(&other.ranges[b]) {
+                    let old_range = range.clone();
+                    range = match range.difference(&other.ranges[b]) {
+                        (None, None) => {
+                            a += 1;
+                            continue;
+                        }
+                        (Some(range1), None) | (None, Some(range1)) => range1,
+                        (Some(range1), Some(range2)) => {
+                            self.ranges.push(range1);
+                            range2
+                        }
+                    };
+                    if other.ranges[b].upper != old_range.upper() {
+                        break;
+                    }
+                    b += 1;
+                }
+                self.ranges.push(range);
+                a += 1;
+            }
+            while a < drain_end {
+                let range = self.ranges[a].clone();
+                self.ranges.push(range);
+                a += 1;
+            }
+            self.ranges.drain(..drain_end);
+            self.folded = self.folded && other.folded;
+        }
+    }
+
+    let interval_set_a = IntervalSet::new(vec![Interval::new(Bound(1), Bound(5)),
+                                               Interval::new(Bound(7), Bound(10))]);
+    let interval_set_b = IntervalSet::new(vec![Interval::new(Bound(5), Bound(6)),
+                                               Interval::new(Bound(9), Bound(11))]);
+
+    let mut set_a = interval_set_a;
+    set_a.difference(&interval_set_b);
+}
+

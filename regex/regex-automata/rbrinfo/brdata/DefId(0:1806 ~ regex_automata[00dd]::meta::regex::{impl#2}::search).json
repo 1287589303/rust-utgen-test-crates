@@ -1,0 +1,97 @@
+{
+  "name": "regex_automata::meta::regex::{impl#2}::search",
+  "mod_info": {
+    "name": "meta::regex",
+    "loc": "regex-automata/src/meta/mod.rs:57:1:57:11"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/meta/regex.rs:919:5:945:6",
+  "doc": "/// Returns the start and end offset of the leftmost match. If no match\n/// exists, then `None` is returned.\n///\n/// This is like [`Regex::find`] but, but it accepts a concrete `&Input`\n/// instead of an `Into<Input>`.\n///\n/// # Example\n///\n/// ```\n/// use regex_automata::{meta::Regex, Input, Match};\n///\n/// let re = Regex::new(r\"Samwise|Sam\")?;\n/// let input = Input::new(\n///     \"one of the chief characters, Samwise the Brave\",\n/// );\n/// assert_eq!(Some(Match::must(0, 29..36)), re.search(&input));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn search(&self, input: &Input<'_>) -> Option<Match> {",
+    "    if self.imp.info.is_impossible(input) {",
+    "        return None;",
+    "    }",
+    "    let mut guard = self.pool.get();",
+    "    let result = self.imp.strat.search(&mut guard, input);",
+    "    // We do this dance with the guard and explicitly put it back in the",
+    "    // pool because it seems to result in better codegen. If we let the",
+    "    // guard's Drop impl put it back in the pool, then functions like",
+    "    // ptr::drop_in_place get called and they *don't* get inlined. This",
+    "    // isn't usually a big deal, but in latency sensitive benchmarks the",
+    "    // extra function call can matter.",
+    "    //",
+    "    // I used `rebar measure -f '^grep/every-line$' -e meta` to measure",
+    "    // the effects here.",
+    "    //",
+    "    // Note that this doesn't eliminate the latency effects of using the",
+    "    // pool. There is still some (minor) cost for the \"thread owner\" of the",
+    "    // pool. (i.e., The thread that first calls a regex search routine.)",
+    "    // However, for other threads using the regex, the pool access can be",
+    "    // quite expensive as it goes through a mutex. Callers can avoid this",
+    "    // by either cloning the Regex (which creates a distinct copy of the",
+    "    // pool), or callers can use the lower level APIs that accept a 'Cache'",
+    "    // directly and do their own handling.",
+    "    PoolGuard::put(guard);",
+    "    result",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.imp.info.is_impossible(input)",
+          "norm": null,
+          "value": "true",
+          "line": 920,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.imp.info.is_impossible(input)",
+          "norm": null,
+          "value": "false",
+          "line": 920,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

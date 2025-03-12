@@ -1,0 +1,193 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct TestVisitor;",
+      "",
+      "impl<'de> Visitor<'de> for TestVisitor {",
+      "    type Value = (); // The actual type returned by the visitor",
+      "    // Implement necessary methods...",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array(vec![]);",
+          "    let visitor = TestVisitor;",
+          "    let _ = value.deserialize_seq(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let value = Value::Array(vec![]);",
+          "    let visitor = TestVisitor;",
+          "    let result = value.deserialize_seq(visitor);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), ());",
+          "    let value_with_elements = Value::Array(vec![Value::Bool(true), Value::Number(Number::from(42))]);",
+          "    let result_with_elements = value_with_elements.deserialize_seq(visitor);",
+          "    assert!(result_with_elements.is_ok());",
+          "    assert_eq!(result_with_elements.unwrap(), ());",
+          "    let value_non_array = Value::Bool(false);",
+          "    let result_non_array = value_non_array.deserialize_seq(visitor);",
+          "    assert!(result_non_array.is_err());",
+          "    assert_eq!(result_non_array.unwrap_err().to_string(), \"invalid type: bool, expected an array\");"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array(vec![]);",
+          "    let visitor = TestVisitor;",
+          "    let _ = value.deserialize_seq(visitor);",
+          "    let value = Value::Array(vec![]);",
+          "    let visitor = TestVisitor;",
+          "    let result = value.deserialize_seq(visitor);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), ());",
+          "    let value_with_elements = Value::Array(vec![Value::Bool(true), Value::Number(Number::from(42))]);",
+          "    let result_with_elements = value_with_elements.deserialize_seq(visitor);",
+          "    assert!(result_with_elements.is_ok());",
+          "    assert_eq!(result_with_elements.unwrap(), ());",
+          "    let value_non_array = Value::Bool(false);",
+          "    let result_non_array = value_non_array.deserialize_seq(visitor);",
+          "    assert!(result_non_array.is_err());",
+          "    assert_eq!(result_non_array.unwrap_err().to_string(), \"invalid type: bool, expected an array\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array(vec![Value::Bool(true)]);",
+          "    let visitor = TestVisitor;",
+          "    let _ = value.deserialize_seq(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value, Value::Array(vec![Value::Bool(true)]));",
+          "    assert!(matches!(value.deserialize_seq(visitor), Ok(())));"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array(vec![Value::Bool(true)]);",
+          "    let visitor = TestVisitor;",
+          "    let _ = value.deserialize_seq(visitor);",
+          "    assert_eq!(value, Value::Array(vec![Value::Bool(true)]));",
+          "    assert!(matches!(value.deserialize_seq(visitor), Ok(())));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array(vec![Value::Number(Number::from(42)), Value::String(\"test\".into())]);",
+          "    let visitor = TestVisitor;",
+          "    let _ = value.deserialize_seq(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(value, Value::Array(_)));",
+          "    assert_eq!(value.deserialize_seq(visitor).is_ok(), true);",
+          "    assert!(value.deserialize_seq(visitor).unwrap() == ());",
+          "    assert!(value.deserialize_seq(visitor).is_err() == false);",
+          "    assert!(visitor.visit_seq.calls() > 0);",
+          "    assert!(visitor.visit_array_ref.calls() > 0);",
+          "    assert_eq!(value.deserialize_seq(visitor).unwrap(), visitor.visit_seq_result);",
+          "    assert!(value.deserialize_seq(visitor).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array(vec![Value::Number(Number::from(42)), Value::String(\"test\".into())]);",
+          "    let visitor = TestVisitor;",
+          "    let _ = value.deserialize_seq(visitor);",
+          "    assert!(matches!(value, Value::Array(_)));",
+          "    assert_eq!(value.deserialize_seq(visitor).is_ok(), true);",
+          "    assert!(value.deserialize_seq(visitor).unwrap() == ());",
+          "    assert!(value.deserialize_seq(visitor).is_err() == false);",
+          "    assert!(visitor.visit_seq.calls() > 0);",
+          "    assert!(visitor.visit_array_ref.calls() > 0);",
+          "    assert_eq!(value.deserialize_seq(visitor).unwrap(), visitor.visit_seq_result);",
+          "    assert!(value.deserialize_seq(visitor).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array((0..1000).map(|i| Value::Number(Number::from(i))).collect());",
+          "    let visitor = TestVisitor;",
+          "    let _ = value.deserialize_seq(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value.deserialize_seq(visitor).is_ok(), true);",
+          "    assert!(matches!(value.deserialize_seq(visitor), Ok(_)));",
+          "    assert!(value.deserialize_seq(visitor).unwrap().len() == 1000);",
+          "    assert!(value.deserialize_seq(visitor).unwrap_err().is_none());"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array((0..1000).map(|i| Value::Number(Number::from(i))).collect());",
+          "    let visitor = TestVisitor;",
+          "    let _ = value.deserialize_seq(visitor);",
+          "    assert_eq!(value.deserialize_seq(visitor).is_ok(), true);",
+          "    assert!(matches!(value.deserialize_seq(visitor), Ok(_)));",
+          "    assert!(value.deserialize_seq(visitor).unwrap().len() == 1000);",
+          "    assert!(value.deserialize_seq(visitor).unwrap_err().is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array(vec![Value::Bool(false), Value::Number(Number::from(3.14)), Value::String(\"hello\".into()), Value::Null]);",
+          "    let visitor = TestVisitor;",
+          "    let _ = value.deserialize_seq(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value.deserialize_seq(visitor).is_ok(), true);",
+          "    assert!(matches!(value, Value::Array(_)));",
+          "    assert_eq!(value.deserialize_seq(visitor).unwrap(), expected_value);",
+          "    assert_eq!(visitor.visit_seq.call_count, 1);",
+          "    assert_eq!(visitor.visited_elements.len(), 4);",
+          "    assert!(visitor.visited_elements.contains(&Value::Bool(false)));",
+          "    assert!(visitor.visited_elements.contains(&Value::Number(Number::from(3.14))));",
+          "    assert!(visitor.visited_elements.contains(&Value::String(\"hello\".into())));",
+          "    assert!(visitor.visited_elements.contains(&Value::Null));"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array(vec![Value::Bool(false), Value::Number(Number::from(3.14)), Value::String(\"hello\".into()), Value::Null]);",
+          "    let visitor = TestVisitor;",
+          "    let _ = value.deserialize_seq(visitor);",
+          "    assert_eq!(value.deserialize_seq(visitor).is_ok(), true);",
+          "    assert!(matches!(value, Value::Array(_)));",
+          "    assert_eq!(value.deserialize_seq(visitor).unwrap(), expected_value);",
+          "    assert_eq!(visitor.visit_seq.call_count, 1);",
+          "    assert_eq!(visitor.visited_elements.len(), 4);",
+          "    assert!(visitor.visited_elements.contains(&Value::Bool(false)));",
+          "    assert!(visitor.visited_elements.contains(&Value::Number(Number::from(3.14))));",
+          "    assert!(visitor.visited_elements.contains(&Value::String(\"hello\".into())));",
+          "    assert!(visitor.visited_elements.contains(&Value::Null));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

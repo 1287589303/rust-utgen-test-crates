@@ -1,0 +1,251 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let patterns = vec![\"valid_pattern\", \"invalid_pattern*\"]; // \"invalid_pattern*\" could fail in reverse match context",
+          "    let result = builder.build_many(&patterns);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let regex = result.unwrap();",
+          "    assert_eq!(regex.forward.pattern_len(), 13);",
+          "    assert!(regex.reverse.pattern_len() == 0);",
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result.unwrap_err().kind, BuildErrorKind::InvalidPattern(_)));",
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().kind == BuildErrorKind::InvalidPattern(\"invalid_pattern*\".to_string()));"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let patterns = vec![\"valid_pattern\", \"invalid_pattern*\"]; // \"invalid_pattern*\" could fail in reverse match context",
+          "    let result = builder.build_many(&patterns);",
+          "    assert!(result.is_ok());",
+          "    let regex = result.unwrap();",
+          "    assert_eq!(regex.forward.pattern_len(), 13);",
+          "    assert!(regex.reverse.pattern_len() == 0);",
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result.unwrap_err().kind, BuildErrorKind::InvalidPattern(_)));",
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().kind == BuildErrorKind::InvalidPattern(\"invalid_pattern*\".to_string()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let patterns = vec![\"a\", \"b\", \"c\"]; // Simple valid patterns",
+          "    let result = builder.build_many(&patterns);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert!(builder.dfa.build_many(&patterns).is_ok());",
+          "    assert!(builder.dfa.clone().configure(DFA::config().prefilter(None).specialize_start_states(false).match_kind(MatchKind::All)).thompson(thompson::Config::new().reverse(true)).build_many(&patterns).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let patterns = vec![\"a\", \"b\", \"c\"]; // Simple valid patterns",
+          "    let result = builder.build_many(&patterns);",
+          "    assert!(result.is_ok());",
+          "    assert!(builder.dfa.build_many(&patterns).is_ok());",
+          "    assert!(builder.dfa.clone().configure(DFA::config().prefilter(None).specialize_start_states(false).match_kind(MatchKind::All)).thompson(thompson::Config::new().reverse(true)).build_many(&patterns).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let patterns = vec![\"a\", \"1\"]; // testing with a single character",
+          "    let result = builder.build_many(&patterns);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert!(matches!(result, Ok(Regex { .. })));",
+          "    assert_eq!(result.unwrap().forward.pattern_len(), 1);",
+          "    assert!(result.unwrap().reverse.memory_usage() > 0);",
+          "    assert_eq!(builder.dfa.get_config().get_match_kind(), MatchKind::All);",
+          "    assert_eq!(builder.dfa.get_config().get_prefilter(), None);",
+          "    assert_eq!(builder.dfa.get_config().get_specialize_start_states(), false);",
+          "    assert_eq!(builder.dfa.get_nfa().number_of_states(), greater_than(0));",
+          "    assert!(result.unwrap().forward.byte_classes().is_empty());",
+          "    assert!(result.unwrap().reverse.byte_classes().is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let patterns = vec![\"a\", \"1\"]; // testing with a single character",
+          "    let result = builder.build_many(&patterns);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert!(matches!(result, Ok(Regex { .. })));",
+          "    assert_eq!(result.unwrap().forward.pattern_len(), 1);",
+          "    assert!(result.unwrap().reverse.memory_usage() > 0);",
+          "    assert_eq!(builder.dfa.get_config().get_match_kind(), MatchKind::All);",
+          "    assert_eq!(builder.dfa.get_config().get_prefilter(), None);",
+          "    assert_eq!(builder.dfa.get_config().get_specialize_start_states(), false);",
+          "    assert_eq!(builder.dfa.get_nfa().number_of_states(), greater_than(0));",
+          "    assert!(result.unwrap().forward.byte_classes().is_empty());",
+          "    assert!(result.unwrap().reverse.byte_classes().is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let patterns = vec![\"valid_pattern\", \"$*invalid_pattern@\"];",
+          "    let result = builder.build_many(&patterns); // special characters in the second pattern to trigger potential issues",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let regex = result.unwrap();",
+          "    let forward_dfa = regex.forward;",
+          "    let reverse_dfa = regex.reverse;",
+          "    assert_eq!(forward_dfa.pattern_len(), 1);",
+          "    assert_eq!(reverse_dfa.pattern_len(), 1);",
+          "    assert!(forward_dfa.get_config().get_match_kind() == MatchKind::All);",
+          "    assert!(reverse_dfa.get_config().get_match_kind() == MatchKind::All);",
+          "    assert!(reverse_dfa.get_nfa().is_some());",
+          "    assert!(reverse_dfa.get_nfa().get_minimum_cache_capacity(forward_dfa.get_nfa()).is_err());",
+          "    assert!(forward_dfa.clone().configure(DFA::config().prefilter(None)).thompson(thompson::Config::new().reverse(true)).build_many(&patterns).is_err());",
+          "    assert!(forward_dfa.clone().configure(DFA::config().match_kind(MatchKind::LeftmostFirst)).build_many(&patterns).is_ok());",
+          "    assert!(regex.forward.memory_usage() > 0);",
+          "    assert!(regex.reverse.memory_usage() > 0);",
+          "    assert!(regex.forward.byte_classes().len() > 0);",
+          "    assert!(regex.reverse.byte_classes().len() > 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let patterns = vec![\"valid_pattern\", \"$*invalid_pattern@\"];",
+          "    let result = builder.build_many(&patterns); // special characters in the second pattern to trigger potential issues",
+          "    assert!(result.is_ok());",
+          "    let regex = result.unwrap();",
+          "    let forward_dfa = regex.forward;",
+          "    let reverse_dfa = regex.reverse;",
+          "    assert_eq!(forward_dfa.pattern_len(), 1);",
+          "    assert_eq!(reverse_dfa.pattern_len(), 1);",
+          "    assert!(forward_dfa.get_config().get_match_kind() == MatchKind::All);",
+          "    assert!(reverse_dfa.get_config().get_match_kind() == MatchKind::All);",
+          "    assert!(reverse_dfa.get_nfa().is_some());",
+          "    assert!(reverse_dfa.get_nfa().get_minimum_cache_capacity(forward_dfa.get_nfa()).is_err());",
+          "    assert!(forward_dfa.clone().configure(DFA::config().prefilter(None)).thompson(thompson::Config::new().reverse(true)).build_many(&patterns).is_err());",
+          "    assert!(forward_dfa.clone().configure(DFA::config().match_kind(MatchKind::LeftmostFirst)).build_many(&patterns).is_ok());",
+          "    assert!(regex.forward.memory_usage() > 0);",
+          "    assert!(regex.reverse.memory_usage() > 0);",
+          "    assert!(regex.forward.byte_classes().len() > 0);",
+          "    assert!(regex.reverse.byte_classes().len() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let patterns = vec![\"valid_pattern\", \"\"]; // including an empty string",
+          "    let result = builder.build_many(&patterns);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().forward.pattern_len(), patterns.len());",
+          "    assert!(matches!(result.unwrap_err(), BuildError::Nfa(_)));",
+          "    assert!(result.unwrap().reverse.memory_usage() > 0);",
+          "    assert!(result.unwrap().forward.byte_classes().is_empty());",
+          "    assert!(builder.dfa.clone().configure(DFA::config().prefilter(None).specialize_start_states(false).match_kind(MatchKind::All)).thompson(thompson::Config::new().reverse(true)).build_many(&patterns).is_err());",
+          "    assert!(builder.dfa.build_many(&[\"another_valid_pattern\"]).is_ok());",
+          "    assert!(builder.dfa.build_many(&[\"valid_pattern_1\", \"valid_pattern_2\"]).is_ok());",
+          "    assert!(builder.dfa.build_many(&[\"\", \"\"]).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let patterns = vec![\"valid_pattern\", \"\"]; // including an empty string",
+          "    let result = builder.build_many(&patterns);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().forward.pattern_len(), patterns.len());",
+          "    assert!(matches!(result.unwrap_err(), BuildError::Nfa(_)));",
+          "    assert!(result.unwrap().reverse.memory_usage() > 0);",
+          "    assert!(result.unwrap().forward.byte_classes().is_empty());",
+          "    assert!(builder.dfa.clone().configure(DFA::config().prefilter(None).specialize_start_states(false).match_kind(MatchKind::All)).thompson(thompson::Config::new().reverse(true)).build_many(&patterns).is_err());",
+          "    assert!(builder.dfa.build_many(&[\"another_valid_pattern\"]).is_ok());",
+          "    assert!(builder.dfa.build_many(&[\"valid_pattern_1\", \"valid_pattern_2\"]).is_ok());",
+          "    assert!(builder.dfa.build_many(&[\"\", \"\"]).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let max_length_pattern = \"a\".repeat(1024); // assuming 1024 is a significant length based on context",
+          "    let patterns = vec![&max_length_pattern, \"another_valid_pattern\"];",
+          "    let result = builder.build_many(&patterns);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let regex = result.unwrap();",
+          "    assert_eq!(regex.forward.pattern_len(), 1024);",
+          "    assert_eq!(regex.reverse.pattern_len(), 24);",
+          "    assert!(builder.dfa.get_config().get_match_kind() == MatchKind::All);",
+          "    assert!(builder.dfa.get_config().get_specialize_start_states() == false);",
+          "    assert!(builder.dfa.get_config().get_prefilter().is_none());",
+          "    assert!(builder.dfa.get_config().get_minimum_cache_clear_count().is_none());",
+          "    assert!(builder.dfa.get_config().get_cache_capacity() > 0);",
+          "    assert!(builder.dfa.get_config().get_byte_classes());",
+          "    assert!(builder.dfa.get_config().get_unicode_word_boundary());"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let max_length_pattern = \"a\".repeat(1024); // assuming 1024 is a significant length based on context",
+          "    let patterns = vec![&max_length_pattern, \"another_valid_pattern\"];",
+          "    let result = builder.build_many(&patterns);",
+          "    assert!(result.is_ok());",
+          "    let regex = result.unwrap();",
+          "    assert_eq!(regex.forward.pattern_len(), 1024);",
+          "    assert_eq!(regex.reverse.pattern_len(), 24);",
+          "    assert!(builder.dfa.get_config().get_match_kind() == MatchKind::All);",
+          "    assert!(builder.dfa.get_config().get_specialize_start_states() == false);",
+          "    assert!(builder.dfa.get_config().get_prefilter().is_none());",
+          "    assert!(builder.dfa.get_config().get_minimum_cache_clear_count().is_none());",
+          "    assert!(builder.dfa.get_config().get_cache_capacity() > 0);",
+          "    assert!(builder.dfa.get_config().get_byte_classes());",
+          "    assert!(builder.dfa.get_config().get_unicode_word_boundary());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

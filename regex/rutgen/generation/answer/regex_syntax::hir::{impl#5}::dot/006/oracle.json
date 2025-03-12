@@ -1,0 +1,140 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let ch = '\\n'; // This should ideally never be passed to this function as per the requirements.",
+          "    let hir = Hir::dot(Dot::AnyCharExcept(ch));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(hir.kind, HirKind::Class(Class::Unicode(ClassUnicode::new([",
+          "    ClassUnicodeRange::new('\\0', '\\n'),",
+          "    ClassUnicodeRange::new('\\u{0B}', '\\u{10FFFF}'),",
+          "    ]))));"
+        ],
+        "code": [
+          "{",
+          "    let ch = '\\n'; // This should ideally never be passed to this function as per the requirements.",
+          "    let hir = Hir::dot(Dot::AnyCharExcept(ch));",
+          "    assert_eq!(hir.kind, HirKind::Class(Class::Unicode(ClassUnicode::new([",
+          "    ClassUnicodeRange::new('\\0', '\\n'),",
+          "    ClassUnicodeRange::new('\\u{0B}', '\\u{10FFFF}'),",
+          "    ]))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let ch = '\\r'; // This should ideally never be passed to this function as per the requirements.",
+          "    let hir = Hir::dot(Dot::AnyCharExcept(ch));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(hir.kind, HirKind::Class(Class::Unicode(ClassUnicode::new([ClassUnicodeRange::new('\\0', '\\r'), ClassUnicodeRange::new('\\x0B', '\\u{10FFFF}')]))));"
+        ],
+        "code": [
+          "{",
+          "    let ch = '\\r'; // This should ideally never be passed to this function as per the requirements.",
+          "    let hir = Hir::dot(Dot::AnyCharExcept(ch));",
+          "    assert_eq!(hir.kind, HirKind::Class(Class::Unicode(ClassUnicode::new([ClassUnicodeRange::new('\\0', '\\r'), ClassUnicodeRange::new('\\x0B', '\\u{10FFFF}')]))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let ch = '\\u{1234}';",
+          "    let hir = Hir::dot(Dot::AnyCharExcept(ch));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(hir.kind, HirKind::Class(Class::Unicode(ClassUnicode::new([ClassUnicodeRange::new('\\u{1234}', '\\u{1234}')]))));"
+        ],
+        "code": [
+          "{",
+          "    let ch = '\\u{1234}';",
+          "    let hir = Hir::dot(Dot::AnyCharExcept(ch));",
+          "    assert_eq!(hir.kind, HirKind::Class(Class::Unicode(ClassUnicode::new([ClassUnicodeRange::new('\\u{1234}', '\\u{1234}')]))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let ch = '\\u{0001}'; // Exclusion of the first valid Unicode character",
+          "    let hir = Hir::dot(Dot::AnyCharExcept(ch));",
+          "}"
+        ],
+        "oracle": [
+          "    let ch = '\\u{0001}'; // Expected character range should not include '\\u{0001}'",
+          "    let expected = Hir::class(Class::Unicode(ClassUnicode::new([",
+          "    ClassUnicodeRange::new('\\0', '\\u{0000}'),",
+          "    ClassUnicodeRange::new('\\u{0002}', '\\u{10FFFF}'),",
+          "    ])));",
+          "    assert_eq!(expected, hir);"
+        ],
+        "code": [
+          "{",
+          "    let ch = '\\u{0001}'; // Exclusion of the first valid Unicode character",
+          "    let hir = Hir::dot(Dot::AnyCharExcept(ch));",
+          "    let ch = '\\u{0001}'; // Expected character range should not include '\\u{0001}'",
+          "    let expected = Hir::class(Class::Unicode(ClassUnicode::new([",
+          "    ClassUnicodeRange::new('\\0', '\\u{0000}'),",
+          "    ClassUnicodeRange::new('\\u{0002}', '\\u{10FFFF}'),",
+          "    ])));",
+          "    assert_eq!(expected, hir);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let ch = '\\u{10FFFF}'; // Exclusion of the last valid Unicode character",
+          "    let hir = Hir::dot(Dot::AnyCharExcept(ch));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(hir.kind, HirKind::Class(Class::Unicode(ClassUnicode::new([",
+          "    ClassUnicodeRange::new('\\0', '\\u{10FFFF}'),",
+          "    ]))));",
+          "    assert!(cls.iter().all(|range| range.start() == '\\0' || range.end() == '\\u{10FFFF}'));",
+          "    assert!(cls.len() == 1);",
+          "    assert!(cls.ranges().contains(&ClassUnicodeRange::new(ch, ch)));"
+        ],
+        "code": [
+          "{",
+          "    let ch = '\\u{10FFFF}'; // Exclusion of the last valid Unicode character",
+          "    let hir = Hir::dot(Dot::AnyCharExcept(ch));",
+          "    assert_eq!(hir.kind, HirKind::Class(Class::Unicode(ClassUnicode::new([",
+          "    ClassUnicodeRange::new('\\0', '\\u{10FFFF}'),",
+          "    ]))));",
+          "    assert!(cls.iter().all(|range| range.start() == '\\0' || range.end() == '\\u{10FFFF}'));",
+          "    assert!(cls.len() == 1);",
+          "    assert!(cls.ranges().contains(&ClassUnicodeRange::new(ch, ch)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

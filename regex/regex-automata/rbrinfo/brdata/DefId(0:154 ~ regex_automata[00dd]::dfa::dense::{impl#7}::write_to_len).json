@@ -1,0 +1,63 @@
+{
+  "name": "regex_automata::dfa::dense::{impl#7}::write_to_len",
+  "mod_info": {
+    "name": "dfa::dense",
+    "loc": "regex-automata/src/dfa/mod.rs:337:1:337:15"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/dense.rs:2146:5:2158:6",
+  "doc": "/// Return the total number of bytes required to serialize this DFA.\n///\n/// This is useful for determining the size of the buffer required to pass\n/// to one of the serialization routines:\n///\n/// * [`DFA::write_to_little_endian`]\n/// * [`DFA::write_to_big_endian`]\n/// * [`DFA::write_to_native_endian`]\n///\n/// Passing a buffer smaller than the size returned by this method will\n/// result in a serialization error. Serialization routines are guaranteed\n/// to succeed when the buffer is big enough.\n///\n/// # Example\n///\n/// This example shows how to dynamically allocate enough room to serialize\n/// a DFA.\n///\n/// ```\n/// use regex_automata::{dfa::{Automaton, dense::DFA}, HalfMatch, Input};\n///\n/// let original_dfa = DFA::new(\"foo[0-9]+\")?;\n///\n/// let mut buf = vec![0; original_dfa.write_to_len()];\n/// // This is guaranteed to succeed, because the only serialization error\n/// // that can occur is when the provided buffer is too small. But\n/// // write_to_len guarantees a correct size.\n/// let written = original_dfa.write_to_native_endian(&mut buf).unwrap();\n/// // But this is not guaranteed to succeed! In particular,\n/// // deserialization requires proper alignment for &[u32], but our buffer\n/// // was allocated as a &[u8] whose required alignment is smaller than\n/// // &[u32]. However, it's likely to work in practice because of how most\n/// // allocators work. So if you write code like this, make sure to either\n/// // handle the error correctly and/or run it under Miri since Miri will\n/// // likely provoke the error by returning Vec<u8> buffers with alignment\n/// // less than &[u32].\n/// let dfa: DFA<&[u32]> = match DFA::from_bytes(&buf[..written]) {\n///     // As mentioned above, it is legal for an error to be returned\n///     // here. It is quite difficult to get a Vec<u8> with a guaranteed\n///     // alignment equivalent to Vec<u32>.\n///     Err(_) => return Ok(()),\n///     Ok((dfa, _)) => dfa,\n/// };\n///\n/// let expected = Some(HalfMatch::must(0, 8));\n/// assert_eq!(expected, dfa.try_search_fwd(&Input::new(\"foo12345\"))?);\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// Note that this example isn't actually guaranteed to work! In\n/// particular, if `buf` is not aligned to a 4-byte boundary, then the\n/// `DFA::from_bytes` call will fail. If you need this to work, then you\n/// either need to deal with adding some initial padding yourself, or use\n/// one of the `to_bytes` methods, which will do it for you.\n",
+  "code": [
+    "pub fn write_to_len(&self) -> usize {",
+    "    wire::write_label_len(LABEL)",
+    "    + wire::write_endianness_check_len()",
+    "    + wire::write_version_len()",
+    "    + size_of::<u32>() // unused, intended for future flexibility",
+    "    + self.flags.write_to_len()",
+    "    + self.tt.write_to_len()",
+    "    + self.st.write_to_len()",
+    "    + self.ms.write_to_len()",
+    "    + self.special.write_to_len()",
+    "    + self.accels.write_to_len()",
+    "    + self.quitset.write_to_len()",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": "wire::write_label_len(LABEL)\n        + wire::write_endianness_check_len()\n        + wire::write_version_len()\n        + size_of::<u32>() // unused, intended for future flexibility\n        + self.flags.write_to_len()\n        + self.tt.write_to_len()\n        + self.st.write_to_len()\n        + self.ms.write_to_len()\n        + self.special.write_to_len()\n        + self.accels.write_to_len()\n        + self.quitset.write_to_len()",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

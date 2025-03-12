@@ -1,0 +1,245 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = Utf8State::new();",
+          "    state.clear();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(state.compiled.version, 0);",
+          "    assert!(state.compiled.map.is_empty());",
+          "    assert!(state.uncompiled.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let mut state = Utf8State::new();",
+          "    state.clear();",
+          "    assert_eq!(state.compiled.version, 0);",
+          "    assert!(state.compiled.map.is_empty());",
+          "    assert!(state.uncompiled.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(10),",
+          "        uncompiled: vec![],",
+          "    };",
+          "    state.compiled.map.push(Utf8BoundedEntry::default());",
+          "    state.clear();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(state.compiled.map.len(), 0);",
+          "    assert_eq!(state.compiled.version, 1);",
+          "    assert!(state.uncompiled.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let mut state = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(10),",
+          "        uncompiled: vec![],",
+          "    };",
+          "    state.compiled.map.push(Utf8BoundedEntry::default());",
+          "    state.clear();",
+          "    assert_eq!(state.compiled.map.len(), 0);",
+          "    assert_eq!(state.compiled.version, 1);",
+          "    assert!(state.uncompiled.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(10),",
+          "        uncompiled: vec![Utf8Node { trans: vec![], last: None }],",
+          "    };",
+          "    state.clear();",
+          "}"
+        ],
+        "oracle": [
+          "    state.compiled.version == 0",
+          "    state.compiled.capacity == 10",
+          "    state.compiled.map.iter().all(|entry| entry == Utf8BoundedEntry::default())",
+          "    state.uncompiled.is_empty()"
+        ],
+        "code": [
+          "{",
+          "    let mut state = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(10),",
+          "        uncompiled: vec![Utf8Node { trans: vec![], last: None }],",
+          "    };",
+          "    state.clear();",
+          "    state.compiled.version == 0",
+          "    state.compiled.capacity == 10",
+          "    state.compiled.map.iter().all(|entry| entry == Utf8BoundedEntry::default())",
+          "    state.uncompiled.is_empty()",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(10),",
+          "        uncompiled: vec![",
+          "            Utf8Node { trans: vec![], last: None },",
+          "            Utf8Node { trans: vec![], last: None },",
+          "        ],",
+          "    };",
+          "    state.compiled.map.push(Utf8BoundedEntry::default());",
+          "    state.clear();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(state.compiled.map.len(), 10);",
+          "    assert!(state.compiled.version > 0);",
+          "    assert_eq!(state.uncompiled.len(), 0);",
+          "    assert_eq!(state.compiled.map.iter().filter(|entry| !entry.is_default()).count(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut state = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(10),",
+          "        uncompiled: vec![",
+          "            Utf8Node { trans: vec![], last: None },",
+          "            Utf8Node { trans: vec![], last: None },",
+          "        ],",
+          "    };",
+          "    state.compiled.map.push(Utf8BoundedEntry::default());",
+          "    state.clear();",
+          "    assert_eq!(state.compiled.map.len(), 10);",
+          "    assert!(state.compiled.version > 0);",
+          "    assert_eq!(state.uncompiled.len(), 0);",
+          "    assert_eq!(state.compiled.map.iter().filter(|entry| !entry.is_default()).count(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(10),",
+          "        uncompiled: vec![],",
+          "    };",
+          "    for _ in 0..10 {",
+          "        state.compiled.map.push(Utf8BoundedEntry::default());",
+          "    }",
+          "    state.clear();",
+          "}"
+        ],
+        "oracle": [
+          "    let state = Utf8State {",
+          "    compiled: Utf8BoundedMap::new(10),",
+          "    uncompiled: vec![],",
+          "    };",
+          "    assert_eq!(state.compiled.map.len(), 10);",
+          "    state.clear();",
+          "    assert_eq!(state.compiled.map.len(), 10); // Ensure map remains the same length",
+          "    assert!(state.uncompiled.is_empty()); // Ensure uncompiled is empty after clear",
+          "    assert_ne!(state.compiled.version, 0); // Ensure version has changed after clear",
+          "    state.clear();",
+          "    assert_eq!(state.compiled.version, state.compiled.version.wrapping_add(1)); // Check version increment",
+          "    assert!(state.compiled.map.iter().all(|entry| entry.is_default())); // Check all map entries are default after clear"
+        ],
+        "code": [
+          "{",
+          "    let mut state = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(10),",
+          "        uncompiled: vec![],",
+          "    };",
+          "    for _ in 0..10 {",
+          "        state.compiled.map.push(Utf8BoundedEntry::default());",
+          "    }",
+          "    state.clear();",
+          "    let state = Utf8State {",
+          "    compiled: Utf8BoundedMap::new(10),",
+          "    uncompiled: vec![],",
+          "    };",
+          "    assert_eq!(state.compiled.map.len(), 10);",
+          "    state.clear();",
+          "    assert_eq!(state.compiled.map.len(), 10); // Ensure map remains the same length",
+          "    assert!(state.uncompiled.is_empty()); // Ensure uncompiled is empty after clear",
+          "    assert_ne!(state.compiled.version, 0); // Ensure version has changed after clear",
+          "    state.clear();",
+          "    assert_eq!(state.compiled.version, state.compiled.version.wrapping_add(1)); // Check version increment",
+          "    assert!(state.compiled.map.iter().all(|entry| entry.is_default())); // Check all map entries are default after clear",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(0),",
+          "        uncompiled: vec![],",
+          "    };",
+          "    state.clear();",
+          "",
+          "    let mut state_full = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(1),",
+          "        uncompiled: vec![Utf8Node { trans: vec![], last: None }],",
+          "    };",
+          "    state_full.compiled.map.push(Utf8BoundedEntry::default());",
+          "    state_full.clear();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(state.compiled.map.len(), 0);",
+          "    assert_eq!(state.uncompiled.len(), 0);",
+          "    assert_eq!(state_full.compiled.map.len(), 1);",
+          "    assert_eq!(state_full.uncompiled.len(), 0);",
+          "    assert_ne!(state_full.compiled.version, 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut state = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(0),",
+          "        uncompiled: vec![],",
+          "    };",
+          "    state.clear();",
+          "",
+          "    let mut state_full = Utf8State {",
+          "        compiled: Utf8BoundedMap::new(1),",
+          "        uncompiled: vec![Utf8Node { trans: vec![], last: None }],",
+          "    };",
+          "    state_full.compiled.map.push(Utf8BoundedEntry::default());",
+          "    state_full.clear();",
+          "    assert_eq!(state.compiled.map.len(), 0);",
+          "    assert_eq!(state.uncompiled.len(), 0);",
+          "    assert_eq!(state_full.compiled.map.len(), 1);",
+          "    assert_eq!(state_full.uncompiled.len(), 0);",
+          "    assert_ne!(state_full.compiled.version, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

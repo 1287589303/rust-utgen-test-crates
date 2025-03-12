@@ -1,0 +1,722 @@
+{
+  "name": "regex_lite::utf8::decode",
+  "mod_info": {
+    "name": "utf8",
+    "loc": "regex-lite/src/lib.rs:885:1:885:10"
+  },
+  "visible": true,
+  "loc": "regex-lite/src/utf8.rs:56:1:83:2",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: slice.get(0) matches Some(&b) at line 60 is false\n",
+        "precondition: slice.get(0) matches _ at line 61 is true\n",
+        "precondition: slice.get(0) matches None at line 59 is false\n",
+        "precondition: i < slice.len() at line 65 is true\n",
+        "precondition: state == ACCEPT at line 69 is false\n",
+        "precondition: state == REJECT at line 77 is true\n",
+        "expected return value/type: (None, core::cmp::max(1, i.saturating_sub(1)))\n"
+      ],
+      "input_infer": "input: a non-empty slice with UTF-8 byte sequences that induce a REJECT state after processing at least one byte but before reaching ACCEPT, specifically containing a continuation byte or an invalid sequence that exceeds valid length (e.g., [0b10000000, 0b01000000])\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: &[u8] = &[0b10000000, 0b01000000]; // continuation byte scenario",
+                "    let result = decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (None, 1));  // Expected result for continuation byte scenario",
+                "    assert!(result.0.is_none());     // Check that the decoded character is None",
+                "    assert_eq!(result.1, core::cmp::max(1, 1));  // Check number of bytes consumed is 1"
+              ],
+              "code": [
+                "{",
+                "    let input: &[u8] = &[0b10000000, 0b01000000]; // continuation byte scenario",
+                "    let result = decode(input);",
+                "    assert_eq!(result, (None, 1));  // Expected result for continuation byte scenario",
+                "    assert!(result.0.is_none());     // Check that the decoded character is None",
+                "    assert_eq!(result.1, core::cmp::max(1, 1));  // Check number of bytes consumed is 1",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: &[u8] = &[0b11111111]; // invalid byte that can't start a sequence",
+                "    let result = decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (None, 1));"
+              ],
+              "code": [
+                "{",
+                "    let input: &[u8] = &[0b11111111]; // invalid byte that can't start a sequence",
+                "    let result = decode(input);",
+                "    assert_eq!(result, (None, 1));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: &[u8] = &[0b11000000, 0b10000000, 0b01000000]; // valid starting byte followed by continuation byte",
+                "    let result = decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    let input: &[u8] = &[0b11000000, 0b10000000, 0b01000000]; // valid starting byte followed by continuation byte",
+                "    let expected = (None, 3); // asserting for (None, max(1, 3.saturating_sub(1))) == (None, 3)",
+                "    assert_eq!(decode(input), expected);"
+              ],
+              "code": [
+                "{",
+                "    let input: &[u8] = &[0b11000000, 0b10000000, 0b01000000]; // valid starting byte followed by continuation byte",
+                "    let result = decode(input);",
+                "    let input: &[u8] = &[0b11000000, 0b10000000, 0b01000000]; // valid starting byte followed by continuation byte",
+                "    let expected = (None, 3); // asserting for (None, max(1, 3.saturating_sub(1))) == (None, 3)",
+                "    assert_eq!(decode(input), expected);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "precondition: slice.get(0) matches Some(&b) at line 58 is true\n",
+        "precondition: slice.get(0) matches Some(&b) at line 58 is true\n",
+        "precondition: b <= 0x7F at line 60 is true, with bound b == 0x7F\n",
+        "expected return value/type: (Some(b as char), 1)\n"
+      ],
+      "input_infer": "b must be in the range 0 to 0x7F (inclusive).\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0x7F]; // b == 0x7F",
+                "    let result = regex_lite::decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (Some('\\u{7F}'), 1));"
+              ],
+              "code": [
+                "{",
+                "    let input = [0x7F]; // b == 0x7F",
+                "    let result = regex_lite::decode(&input);",
+                "    assert_eq!(result, (Some('\\u{7F}'), 1));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0x00]; // b == 0x00",
+                "    let result = regex_lite::decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (Some('\\u{0}'), 1));"
+              ],
+              "code": [
+                "{",
+                "    let input = [0x00]; // b == 0x00",
+                "    let result = regex_lite::decode(&input);",
+                "    assert_eq!(result, (Some('\\u{0}'), 1));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0x1F]; // b in range 0 to 0x7F",
+                "    let result = regex_lite::decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (Some('\\u{1F}'), 1));"
+              ],
+              "code": [
+                "{",
+                "    let input = [0x1F]; // b in range 0 to 0x7F",
+                "    let result = regex_lite::decode(&input);",
+                "    assert_eq!(result, (Some('\\u{1F}'), 1));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0x20, 0x7F]; // b <= 0x7F for the first byte",
+                "    let result = regex_lite::decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    let expected = (Some('\\u{20}'), 1);",
+                "    assert_eq!(result, expected);"
+              ],
+              "code": [
+                "{",
+                "    let input = [0x20, 0x7F]; // b <= 0x7F for the first byte",
+                "    let result = regex_lite::decode(&input);",
+                "    let expected = (Some('\\u{20}'), 1);",
+                "    assert_eq!(result, expected);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "precondition: slice.get(0) matches Some(&b) at line 58 is true\n",
+        "precondition: slice.get(0) matches Some(&b) at line 58 is true\n",
+        "precondition: b <= 0x7F at line 60 is false\n",
+        "precondition: i < slice.len() at line 65 is true\n",
+        "precondition: state == ACCEPT at line 69 is true\n",
+        "expected return value/type: (Some(ch), i)\n"
+      ],
+      "input_infer": "Test input conditions or ranges: input slice where first byte is a valid multi-byte UTF-8 character (e.g., [0xC2, 0xA0], [0xE2, 0x82, 0xAC], [0xF0, 0x90, 0x8D, 0x88]), length between 2 and 4 bytes, ensuring first byte is not <= 0x7F\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0xC2, 0xA0]; // U+00A0 (non-breaking space)",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (Some(' '), 2));  // Validate the decoded character and number of bytes consumed for U+00A0."
+              ],
+              "code": [
+                "{",
+                "    let input = [0xC2, 0xA0]; // U+00A0 (non-breaking space)",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (Some(' '), 2));  // Validate the decoded character and number of bytes consumed for U+00A0.",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0xE2, 0x82, 0xAC]; // U+20AC (euro sign)",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (Some('€'), 3));"
+              ],
+              "code": [
+                "{",
+                "    let input = [0xE2, 0x82, 0xAC]; // U+20AC (euro sign)",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (Some('€'), 3));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0xF0, 0x90, 0x8D, 0x88]; // U+10348 (gothic letter hwair)",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (Some('𐍈'), 4));"
+              ],
+              "code": [
+                "{",
+                "    let input = [0xF0, 0x90, 0x8D, 0x88]; // U+10348 (gothic letter hwair)",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (Some('𐍈'), 4));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 8,
+      "prompt_conds": [
+        "precondition: slice.get(0) matches Some(&b) at line 58 is true\n",
+        "precondition: slice.get(0) matches Some(&b) at line 58 is true\n",
+        "precondition: b <= 0x7F at line 60 is false\n",
+        "precondition: i < slice.len() at line 65 is true\n",
+        "precondition: state == ACCEPT at line 69 is false\n",
+        "precondition: state == REJECT at line 77 is false\n",
+        "precondition: i < slice.len() at line 65 is false, with bound i == slice.len()\n",
+        "expected return value/type: (None, i)\n"
+      ],
+      "input_infer": "slice containing invalid UTF-8 sequences of lengths between 1 and 4, including valid sequences at lengths of 1, 2, 3, and 4 bytes, empty slice, and slices that include only bytes corresponding to UTF-8 values 0x80 to 0xFF.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0x80]; // invalid UTF-8 single byte",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (None, 1));"
+              ],
+              "code": [
+                "{",
+                "    let input = [0x80]; // invalid UTF-8 single byte",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (None, 1));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0xC0, 0x80]; // two-byte sequence leading to invalid",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (None, 1));  // Test for invalid UTF-8 sequence with leading byte 0xC0",
+                "    assert_eq!(result.1, 1);         // Check the number of bytes consumed is 1",
+                "    assert!(result.0.is_none());     // Validate that the returned character is None"
+              ],
+              "code": [
+                "{",
+                "    let input = [0xC0, 0x80]; // two-byte sequence leading to invalid",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (None, 1));  // Test for invalid UTF-8 sequence with leading byte 0xC0",
+                "    assert_eq!(result.1, 1);         // Check the number of bytes consumed is 1",
+                "    assert!(result.0.is_none());     // Validate that the returned character is None",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0xE0, 0x80, 0x80]; // three-byte sequence leading to invalid",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (None, 3));"
+              ],
+              "code": [
+                "{",
+                "    let input = [0xE0, 0x80, 0x80]; // three-byte sequence leading to invalid",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (None, 3));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0xF0, 0x80, 0x80, 0x80]; // four-byte sequence leading to invalid",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (None, 4));",
+                "    assert!(result.0.is_none());",
+                "    assert_eq!(result.1, 4);",
+                "    assert!(result.1 >= 1);",
+                "    assert!(result.1 <= 4);"
+              ],
+              "code": [
+                "{",
+                "    let input = [0xF0, 0x80, 0x80, 0x80]; // four-byte sequence leading to invalid",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (None, 4));",
+                "    assert!(result.0.is_none());",
+                "    assert_eq!(result.1, 4);",
+                "    assert!(result.1 >= 1);",
+                "    assert!(result.1 <= 4);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: &[u8] = &[]; // empty slice",
+                "    let result = decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (None, 0));"
+              ],
+              "code": [
+                "{",
+                "    let input: &[u8] = &[]; // empty slice",
+                "    let result = decode(input);",
+                "    assert_eq!(result, (None, 0));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0xFF, 0xFE, 0xFD]; // slice containing only invalid byte sequences",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    let input = [0xFF, 0xFE, 0xFD]; // slice containing only invalid byte sequences",
+                "    let expected = (None, input.len());",
+                "    assert_eq!(decode(&input), expected);"
+              ],
+              "code": [
+                "{",
+                "    let input = [0xFF, 0xFE, 0xFD]; // slice containing only invalid byte sequences",
+                "    let result = decode(&input);",
+                "    let input = [0xFF, 0xFE, 0xFD]; // slice containing only invalid byte sequences",
+                "    let expected = (None, input.len());",
+                "    assert_eq!(decode(&input), expected);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0x61, 0xC0, 0x80]; // valid 'a' followed by invalid sequence",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (None, 3));"
+              ],
+              "code": [
+                "{",
+                "    let input = [0x61, 0xC0, 0x80]; // valid 'a' followed by invalid sequence",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (None, 3));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0x80, 0xFF, 0xF8]; // various invalid UTF-8 bytes",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    let input = [0x80, 0xFF, 0xF8];",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (None, 3));"
+              ],
+              "code": [
+                "{",
+                "    let input = [0x80, 0xFF, 0xF8]; // various invalid UTF-8 bytes",
+                "    let result = decode(&input);",
+                "    let input = [0x80, 0xFF, 0xF8];",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (None, 3));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = [0xC3, 0x28, 0xCC, 0x81]; // mixture with invalid sequences",
+                "    let result = decode(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (None, 4));",
+                "    assert!(slice.get(0).is_some());",
+                "    assert!(slice.get(0).unwrap() > &0x7F);",
+                "    assert!(i < input.len());",
+                "    assert!(state != ACCEPT);",
+                "    assert!(state != REJECT);",
+                "    assert!(i == input.len());"
+              ],
+              "code": [
+                "{",
+                "    let input = [0xC3, 0x28, 0xCC, 0x81]; // mixture with invalid sequences",
+                "    let result = decode(&input);",
+                "    assert_eq!(result, (None, 4));",
+                "    assert!(slice.get(0).is_some());",
+                "    assert!(slice.get(0).unwrap() > &0x7F);",
+                "    assert!(i < input.len());",
+                "    assert!(state != ACCEPT);",
+                "    assert!(state != REJECT);",
+                "    assert!(i == input.len());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 9,
+      "prompt_conds": [
+        "precondition: slice.get(0) matches Some(&b) at line 58 is true\n",
+        "precondition: slice.get(0) matches Some(&b) at line 58 is true\n",
+        "precondition: b <= 0x7F at line 60 is false\n",
+        "precondition: i < slice.len() at line 65 is false, with bound i == slice.len()\n",
+        "expected return value/type: (None, i)\n"
+      ],
+      "input_infer": "Test input conditions or ranges: empty slice, valid UTF-8 sequences of 1 to 4 bytes for acceptance, invalid UTF-8 sequences of 1 to 3 bytes for rejection, and boundary case of i == slice.len().\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = b\"\";",
+                "    decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(decode(b\"\"), (None, 0));"
+              ],
+              "code": [
+                "{",
+                "    let input = b\"\";",
+                "    decode(input);",
+                "    assert_eq!(decode(b\"\"), (None, 0));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = b\"\\x80\"; // Invalid UTF-8 byte",
+                "    decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(decode(b\"\\x80\"), (None, 1));"
+              ],
+              "code": [
+                "{",
+                "    let input = b\"\\x80\"; // Invalid UTF-8 byte",
+                "    decode(input);",
+                "    assert_eq!(decode(b\"\\x80\"), (None, 1));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = b\"\\xC0\\xAF\"; // Invalid UTF-8 sequence",
+                "    decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(decode(b\"\\xC0\\xAF\"), (None, 2));"
+              ],
+              "code": [
+                "{",
+                "    let input = b\"\\xC0\\xAF\"; // Invalid UTF-8 sequence",
+                "    decode(input);",
+                "    assert_eq!(decode(b\"\\xC0\\xAF\"), (None, 2));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = b\"\\xE0\\xA0\\xAF\"; // Invalid UTF-8 sequence",
+                "    decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(decode(b\"\\xE0\\xA0\\xAF\"), (None, 3));"
+              ],
+              "code": [
+                "{",
+                "    let input = b\"\\xE0\\xA0\\xAF\"; // Invalid UTF-8 sequence",
+                "    decode(input);",
+                "    assert_eq!(decode(b\"\\xE0\\xA0\\xAF\"), (None, 3));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = b\"\\xE0\"; // Invalid UTF-8 sequence, expecting length 1",
+                "    decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(decode(b\"\\xE0\"), (None, 1));"
+              ],
+              "code": [
+                "{",
+                "    let input = b\"\\xE0\"; // Invalid UTF-8 sequence, expecting length 1",
+                "    decode(input);",
+                "    assert_eq!(decode(b\"\\xE0\"), (None, 1));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 10,
+      "prompt_conds": [
+        "precondition: slice.get(0) matches None at line 58 is true\n",
+        "precondition: slice.get(0) matches None at line 58 is true\n",
+        "expected return value/type: (None, 0)\n"
+      ],
+      "input_infer": "slice: empty byte array or slice\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: &[u8] = &[];",
+                "    decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    (None, 0)"
+              ],
+              "code": [
+                "{",
+                "    let input: &[u8] = &[];",
+                "    decode(input);",
+                "    (None, 0)",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: Vec<u8> = Vec::new();",
+                "    decode(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(decode(Vec::new()), (None, 0));"
+              ],
+              "code": [
+                "{",
+                "    let input: Vec<u8> = Vec::new();",
+                "    decode(input);",
+                "    assert_eq!(decode(Vec::new()), (None, 0));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

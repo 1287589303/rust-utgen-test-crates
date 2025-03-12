@@ -1,0 +1,193 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: HashMap<&str, u32> = HashMap::new();",
+          "    map.insert(\"test_key\", 42);",
+          "",
+          "    if let OccupiedEntry { hash, elem, table } = map.entry(\"test_key\").or_insert(0) {",
+          "        let value = OccupiedEntry {",
+          "            hash,",
+          "            elem,",
+          "            table,",
+          "        };",
+          "        value.remove();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(map.get(\"test_key\"), None);",
+          "    assert!(map.is_empty());",
+          "    assert_eq!(map.capacity() > 0, true);",
+          "    assert_eq!(value.remove_entry().1, 42);"
+        ],
+        "code": [
+          "{",
+          "    let mut map: HashMap<&str, u32> = HashMap::new();",
+          "    map.insert(\"test_key\", 42);",
+          "",
+          "    if let OccupiedEntry { hash, elem, table } = map.entry(\"test_key\").or_insert(0) {",
+          "        let value = OccupiedEntry {",
+          "            hash,",
+          "            elem,",
+          "            table,",
+          "        };",
+          "        value.remove();",
+          "    }",
+          "    assert_eq!(map.get(\"test_key\"), None);",
+          "    assert!(map.is_empty());",
+          "    assert_eq!(map.capacity() > 0, true);",
+          "    assert_eq!(value.remove_entry().1, 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: HashMap<&str, u32> = HashMap::new();",
+          "    ",
+          "    if let OccupiedEntry { hash, elem, table } = map.entry(\"non_existing_key\").or_insert(0) {",
+          "        let value = OccupiedEntry {",
+          "            hash,",
+          "            elem,",
+          "            table,",
+          "        };",
+          "        value.remove();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(map.entry(\"non_existing_key\").or_insert(0).remove(), 0);",
+          "    assert!(map.contains_key(\"non_existing_key\"), \"The key should be present after insertion.\");",
+          "    assert_eq!(map.entry(\"non_existing_key\").or_insert(0).remove(), 0);",
+          "    assert!(map.is_empty(), \"The map should be empty after removing the only element.\");"
+        ],
+        "code": [
+          "{",
+          "    let mut map: HashMap<&str, u32> = HashMap::new();",
+          "    ",
+          "    if let OccupiedEntry { hash, elem, table } = map.entry(\"non_existing_key\").or_insert(0) {",
+          "        let value = OccupiedEntry {",
+          "            hash,",
+          "            elem,",
+          "            table,",
+          "        };",
+          "        value.remove();",
+          "    }",
+          "    assert_eq!(map.entry(\"non_existing_key\").or_insert(0).remove(), 0);",
+          "    assert!(map.contains_key(\"non_existing_key\"), \"The key should be present after insertion.\");",
+          "    assert_eq!(map.entry(\"non_existing_key\").or_insert(0).remove(), 0);",
+          "    assert!(map.is_empty(), \"The map should be empty after removing the only element.\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: HashMap<&str, u32> = HashMap::new();",
+          "    map.insert(\"key_to_remove\", 99);",
+          "",
+          "    if let OccupiedEntry { hash, elem, table } = map.entry(\"key_to_remove\").or_insert(0) {",
+          "        let value = OccupiedEntry {",
+          "            hash,",
+          "            elem,",
+          "            table,",
+          "        };",
+          "        let removed_value = value.remove();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(map.contains_key(\"key_to_remove\"), false);",
+          "    assert!(map.is_empty());",
+          "    assert_eq!(removed_value, 99);"
+        ],
+        "code": [
+          "{",
+          "    let mut map: HashMap<&str, u32> = HashMap::new();",
+          "    map.insert(\"key_to_remove\", 99);",
+          "",
+          "    if let OccupiedEntry { hash, elem, table } = map.entry(\"key_to_remove\").or_insert(0) {",
+          "        let value = OccupiedEntry {",
+          "            hash,",
+          "            elem,",
+          "            table,",
+          "        };",
+          "        let removed_value = value.remove();",
+          "    }",
+          "    assert_eq!(map.contains_key(\"key_to_remove\"), false);",
+          "    assert!(map.is_empty());",
+          "    assert_eq!(removed_value, 99);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: HashMap<&str, u32> = HashMap::new();",
+          "    map.insert(\"mutable_key\", 25);",
+          "",
+          "    if let OccupiedEntry { hash, elem, table } = map.entry(\"mutable_key\").or_insert(0) {",
+          "        let mut value = OccupiedEntry {",
+          "            hash,",
+          "            elem,",
+          "            table,",
+          "        };",
+          "        let mut_ref = value.get_mut();",
+          "        *mut_ref += 5; // modifying the value",
+          "        let removed_value = value.remove();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(map.get(\"mutable_key\"), Some(&30));",
+          "    assert_eq!(removed_value, 25);",
+          "    assert!(map.contains_key(\"mutable_key\"));",
+          "    assert_eq!(map.len(), 1);",
+          "    assert!(map.is_empty() == false);",
+          "    assert!(map.capacity() > 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut map: HashMap<&str, u32> = HashMap::new();",
+          "    map.insert(\"mutable_key\", 25);",
+          "",
+          "    if let OccupiedEntry { hash, elem, table } = map.entry(\"mutable_key\").or_insert(0) {",
+          "        let mut value = OccupiedEntry {",
+          "            hash,",
+          "            elem,",
+          "            table,",
+          "        };",
+          "        let mut_ref = value.get_mut();",
+          "        *mut_ref += 5; // modifying the value",
+          "        let removed_value = value.remove();",
+          "    }",
+          "    assert_eq!(map.get(\"mutable_key\"), Some(&30));",
+          "    assert_eq!(removed_value, 25);",
+          "    assert!(map.contains_key(\"mutable_key\"));",
+          "    assert_eq!(map.len(), 1);",
+          "    assert!(map.is_empty() == false);",
+          "    assert!(map.capacity() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

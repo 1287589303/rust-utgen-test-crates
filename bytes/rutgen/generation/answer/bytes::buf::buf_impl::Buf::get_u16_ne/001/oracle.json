@@ -1,0 +1,170 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x08\\x09\";",
+          "    let result = buf.get_u16_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 0x0809);",
+          "    assert!(buf.remaining() == 0);",
+          "    assert!(buf.has_remaining() == false);",
+          "    assert!(panic::catch_unwind(|| { buf.get_u16_ne(); }).is_err());",
+          "    let mut buf_short: &[u8] = b\"\\x08\";",
+          "    assert!(panic::catch_unwind(|| { buf_short.get_u16_ne(); }).is_err());",
+          "    let mut buf_empty: &[u8] = b\"\";",
+          "    assert!(panic::catch_unwind(|| { buf_empty.get_u16_ne(); }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x08\\x09\";",
+          "    let result = buf.get_u16_ne();",
+          "    assert_eq!(result, 0x0809);",
+          "    assert!(buf.remaining() == 0);",
+          "    assert!(buf.has_remaining() == false);",
+          "    assert!(panic::catch_unwind(|| { buf.get_u16_ne(); }).is_err());",
+          "    let mut buf_short: &[u8] = b\"\\x08\";",
+          "    assert!(panic::catch_unwind(|| { buf_short.get_u16_ne(); }).is_err());",
+          "    let mut buf_empty: &[u8] = b\"\";",
+          "    assert!(panic::catch_unwind(|| { buf_empty.get_u16_ne(); }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x09\\x08\";",
+          "    let result = buf.get_u16_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 0x0908);",
+          "    let mut buf_empty: &[u8] = b\"\";",
+          "    let panic_result = std::panic::catch_unwind(|| { buf_empty.get_u16_ne(); });",
+          "    assert!(panic_result.is_err());",
+          "    let mut buf_insufficient: &[u8] = b\"\\x09\";",
+          "    let panic_result_insufficient = std::panic::catch_unwind(|| { buf_insufficient.get_u16_ne(); });",
+          "    assert!(panic_result_insufficient.is_err());",
+          "    let mut buf_overflow: &[u8] = b\"\\x09\\x08\\x07\";",
+          "    let result_overflow = buf_overflow.get_u16_ne();",
+          "    assert_eq!(result_overflow, 0x0908);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x09\\x08\";",
+          "    let result = buf.get_u16_ne();",
+          "    assert_eq!(result, 0x0908);",
+          "    let mut buf_empty: &[u8] = b\"\";",
+          "    let panic_result = std::panic::catch_unwind(|| { buf_empty.get_u16_ne(); });",
+          "    assert!(panic_result.is_err());",
+          "    let mut buf_insufficient: &[u8] = b\"\\x09\";",
+          "    let panic_result_insufficient = std::panic::catch_unwind(|| { buf_insufficient.get_u16_ne(); });",
+          "    assert!(panic_result_insufficient.is_err());",
+          "    let mut buf_overflow: &[u8] = b\"\\x09\\x08\\x07\";",
+          "    let result_overflow = buf_overflow.get_u16_ne();",
+          "    assert_eq!(result_overflow, 0x0908);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x08\";",
+          "    let result = buf.get_u16_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 0);  // Assert that it panics or does not return a value since input is insufficient.",
+          "    assert_eq!(buf.remaining(), 1);  // Ensure remaining buffer length is 1 after failed attempt.",
+          "    assert!(matches!(result, Err(TryGetError { requested: 2, available: 1 })));  // Ensure error details match expected."
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x08\";",
+          "    let result = buf.get_u16_ne();",
+          "    assert_eq!(result, 0);  // Assert that it panics or does not return a value since input is insufficient.",
+          "    assert_eq!(buf.remaining(), 1);  // Ensure remaining buffer length is 1 after failed attempt.",
+          "    assert!(matches!(result, Err(TryGetError { requested: 2, available: 1 })));  // Ensure error details match expected.",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x00\\x00\";",
+          "    let result = buf.get_u16_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 0x0000);",
+          "    assert_panics!(buf.get_u16_ne());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x00\\x00\";",
+          "    let result = buf.get_u16_ne();",
+          "    assert_eq!(result, 0x0000);",
+          "    assert_panics!(buf.get_u16_ne());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\xFF\\xFF\";",
+          "    let result = buf.get_u16_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 0xFFFF);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert!(buf.has_remaining() == false);",
+          "    let mut buf_empty: &[u8] = b\"\";",
+          "    let result_empty = buf_empty.get_u16_ne();",
+          "    panic!();",
+          "    assert!(result_empty.is_err());",
+          "    assert_eq!(result_empty.err().unwrap().requested, 2);",
+          "    assert_eq!(result_empty.err().unwrap().available, 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\xFF\\xFF\";",
+          "    let result = buf.get_u16_ne();",
+          "    assert_eq!(result, 0xFFFF);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert!(buf.has_remaining() == false);",
+          "    let mut buf_empty: &[u8] = b\"\";",
+          "    let result_empty = buf_empty.get_u16_ne();",
+          "    panic!();",
+          "    assert!(result_empty.is_err());",
+          "    assert_eq!(result_empty.err().unwrap().requested, 2);",
+          "    assert_eq!(result_empty.err().unwrap().available, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

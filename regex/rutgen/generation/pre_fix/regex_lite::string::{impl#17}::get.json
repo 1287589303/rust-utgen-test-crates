@@ -1,0 +1,1020 @@
+{
+  "name": "regex_lite::string::{impl#17}::get",
+  "mod_info": {
+    "name": "string",
+    "loc": "regex-lite/src/lib.rs:884:1:884:12"
+  },
+  "visible": true,
+  "loc": "regex-lite/src/string.rs:2105:5:2111:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: i.checked_mul(2)? at line 2106 is Err/None\n"
+      ],
+      "input_infer": "i must be a non-negative integer where i checked_mul(2) is None or results in a value equal to or greater than the size of the internal Vec<Option<NonMaxUsize>> in CaptureLocations.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let locs = CaptureLocations(vec![Some(NonMaxUsize::new(1).unwrap()), Some(NonMaxUsize::new(5).unwrap())]);",
+                "    let result = locs.get(2); // 2 * 2 = 4, which is out of bounds for the vec",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let locs = CaptureLocations(vec![Some(NonMaxUsize::new(1).unwrap()), Some(NonMaxUsize::new(5).unwrap())]);",
+                "    let result = locs.get(2); // 2 * 2 = 4, which is out of bounds for the vec",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let locs = CaptureLocations(vec![]);",
+                "    let result = locs.get(0); // 0 * 2 = 0, which is out of bounds for the vec",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let locs = CaptureLocations(vec![]);",
+                "    let result = locs.get(0); // 0 * 2 = 0, which is out of bounds for the vec",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let locs = CaptureLocations(vec![Some(NonMaxUsize::new(3).unwrap())]);",
+                "    let result = locs.get(usize::MAX); // usize::MAX * 2 would overflow",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let locs = CaptureLocations(vec![Some(NonMaxUsize::new(3).unwrap())]);",
+                "    let result = locs.get(usize::MAX); // usize::MAX * 2 would overflow",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: i.checked_mul(2)? at line 2106 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()? at line 2107 is Err/None\n"
+      ],
+      "input_infer": "i values in the range [0, floor((length of self.0) / 2)] to satisfy checked_mul condition, and i values outside this range to satisfy None return for self.0.get(slot).copied()\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct ValidCaptureLocations {",
+                "        locations: CaptureLocations,",
+                "    }",
+                "",
+                "    impl ValidCaptureLocations {",
+                "        fn new() -> Self {",
+                "            let locs = CaptureLocations(vec![",
+                "                NonMaxUsize::new(1).unwrap(), // start for group 0",
+                "                NonMaxUsize::new(5).unwrap(), // end for group 0",
+                "                NonMaxUsize::new(6).unwrap(), // start for group 1",
+                "                NonMaxUsize::new(10).unwrap(), // end for group 1",
+                "            ]);",
+                "            ValidCaptureLocations { locations: locs }",
+                "        }",
+                "    }",
+                "",
+                "    let locs = ValidCaptureLocations::new();",
+                "    ",
+                "    // This call uses a valid index (0) but expects None for the start since it's moved.",
+                "    let _result = locs.locations.get(1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(None, locs.locations.get(1));"
+              ],
+              "code": [
+                "{",
+                "    struct ValidCaptureLocations {",
+                "        locations: CaptureLocations,",
+                "    }",
+                "",
+                "    impl ValidCaptureLocations {",
+                "        fn new() -> Self {",
+                "            let locs = CaptureLocations(vec![",
+                "                NonMaxUsize::new(1).unwrap(), // start for group 0",
+                "                NonMaxUsize::new(5).unwrap(), // end for group 0",
+                "                NonMaxUsize::new(6).unwrap(), // start for group 1",
+                "                NonMaxUsize::new(10).unwrap(), // end for group 1",
+                "            ]);",
+                "            ValidCaptureLocations { locations: locs }",
+                "        }",
+                "    }",
+                "",
+                "    let locs = ValidCaptureLocations::new();",
+                "    ",
+                "    // This call uses a valid index (0) but expects None for the start since it's moved.",
+                "    let _result = locs.locations.get(1);",
+                "    assert_eq!(None, locs.locations.get(1));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct OutOfRangeCaptureLocations {",
+                "        locations: CaptureLocations,",
+                "    }",
+                "",
+                "    impl OutOfRangeCaptureLocations {",
+                "        fn new() -> Self {",
+                "            let locs = CaptureLocations(vec![",
+                "                NonMaxUsize::new(1).unwrap(), // start for group 0",
+                "                NonMaxUsize::new(5).unwrap(), // end for group 0",
+                "            ]);",
+                "            OutOfRangeCaptureLocations { locations: locs }",
+                "        }",
+                "    }",
+                "",
+                "    let locs = OutOfRangeCaptureLocations::new();",
+                "    ",
+                "    // This call uses an index (1) that leads to out-of-bounds for get. ",
+                "    let _result = locs.locations.get(1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Some((0, 5)), locs.locations.get(0));",
+                "    assert_eq!(None, locs.locations.get(1));",
+                "    assert_eq!(None, locs.locations.get(2));"
+              ],
+              "code": [
+                "{",
+                "    struct OutOfRangeCaptureLocations {",
+                "        locations: CaptureLocations,",
+                "    }",
+                "",
+                "    impl OutOfRangeCaptureLocations {",
+                "        fn new() -> Self {",
+                "            let locs = CaptureLocations(vec![",
+                "                NonMaxUsize::new(1).unwrap(), // start for group 0",
+                "                NonMaxUsize::new(5).unwrap(), // end for group 0",
+                "            ]);",
+                "            OutOfRangeCaptureLocations { locations: locs }",
+                "        }",
+                "    }",
+                "",
+                "    let locs = OutOfRangeCaptureLocations::new();",
+                "    ",
+                "    // This call uses an index (1) that leads to out-of-bounds for get. ",
+                "    let _result = locs.locations.get(1);",
+                "    assert_eq!(Some((0, 5)), locs.locations.get(0));",
+                "    assert_eq!(None, locs.locations.get(1));",
+                "    assert_eq!(None, locs.locations.get(2));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: i.checked_mul(2)? at line 2106 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()? at line 2107 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()?? at line 2107 is Err/None\n"
+      ],
+      "input_infer": "i: 0 to (length of CaptureLocations)/2 - 1, inclusive; where (length of CaptureLocations) must be even to satisfy bounds and ensure getting start and end offsets does not yield None\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let valid_start = NonMaxUsize::new(1).unwrap();",
+                "    let valid_end = NonMaxUsize::new(3).unwrap();",
+                "    let locs = CaptureLocations(vec![Some(valid_start), Some(valid_end)]);",
+                "    assert!(locs.get(0).is_some());",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Some((0, 1)), locs.get(0));",
+                "    assert!(locs.get(1).is_some());",
+                "    assert!(locs.get(2).is_none());"
+              ],
+              "code": [
+                "{",
+                "    let valid_start = NonMaxUsize::new(1).unwrap();",
+                "    let valid_end = NonMaxUsize::new(3).unwrap();",
+                "    let locs = CaptureLocations(vec![Some(valid_start), Some(valid_end)]);",
+                "    assert!(locs.get(0).is_some());",
+                "    assert_eq!(Some((0, 1)), locs.get(0));",
+                "    assert!(locs.get(1).is_some());",
+                "    assert!(locs.get(2).is_none());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let valid_start = NonMaxUsize::new(1).unwrap();",
+                "    let locs = CaptureLocations(vec![Some(valid_start), None]);",
+                "    assert!(locs.get(0).is_some());",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(locs.get(0), Some((0, 0)));",
+                "    assert!(locs.get(1).is_none());",
+                "    assert!(locs.get(2).is_none());",
+                "    assert!(locs.get(3).is_none());",
+                "    assert!(locs.get(4).is_none());",
+                "    assert!(locs.get(usize::MAX).is_none());",
+                "    assert!(locs.get(1).is_none());"
+              ],
+              "code": [
+                "{",
+                "    let valid_start = NonMaxUsize::new(1).unwrap();",
+                "    let locs = CaptureLocations(vec![Some(valid_start), None]);",
+                "    assert!(locs.get(0).is_some());",
+                "    assert_eq!(locs.get(0), Some((0, 0)));",
+                "    assert!(locs.get(1).is_none());",
+                "    assert!(locs.get(2).is_none());",
+                "    assert!(locs.get(3).is_none());",
+                "    assert!(locs.get(4).is_none());",
+                "    assert!(locs.get(usize::MAX).is_none());",
+                "    assert!(locs.get(1).is_none());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let invalid_start = NonMaxUsize::new(1).unwrap();",
+                "    let locs = CaptureLocations(vec![Some(invalid_start)]);",
+                "    assert!(locs.get(1).is_none());",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(locs.get(0), None);",
+                "    assert_eq!(locs.get(2), None);",
+                "    assert_eq!(locs.get(3), None);",
+                "    assert_eq!(locs.get(10), None);",
+                "    assert_eq!(locs.get(5), None);",
+                "    assert_eq!(locs.get(4), None);",
+                "    assert_eq!(locs.get(u32::MAX as usize), None);"
+              ],
+              "code": [
+                "{",
+                "    let invalid_start = NonMaxUsize::new(1).unwrap();",
+                "    let locs = CaptureLocations(vec![Some(invalid_start)]);",
+                "    assert!(locs.get(1).is_none());",
+                "    assert_eq!(locs.get(0), None);",
+                "    assert_eq!(locs.get(2), None);",
+                "    assert_eq!(locs.get(3), None);",
+                "    assert_eq!(locs.get(10), None);",
+                "    assert_eq!(locs.get(5), None);",
+                "    assert_eq!(locs.get(4), None);",
+                "    assert_eq!(locs.get(u32::MAX as usize), None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: i.checked_mul(2)? at line 2106 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()? at line 2107 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()?? at line 2107 is Ok/Some\n",
+        "precondition: slot.checked_add(1)? at line 2108 is Err/None\n"
+      ],
+      "input_infer": "i: 0 to (self.0.len() / 2 - 1) for valid capture groups; for boundary test, i = self.0.len() / 2 to check error handling; self.0 should contain at least one NonMaxUsize for valid start/end retrieval.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    // Create a CaptureLocations with valid NonMaxUsize values",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(5).unwrap()), // start",
+                "        Some(NonMaxUsize::new(10).unwrap()), // end",
+                "    ]);",
+                "    ",
+                "    // This should be valid, as i = 0 is within the bounds",
+                "    let _ = locs.get(0);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(locs.get(0), Some((4, 9)));",
+                "    assert_eq!(locs.get(1), None);",
+                "    assert_eq!(locs.get(2), None);",
+                "    assert_eq!(locs.get(3), None);"
+              ],
+              "code": [
+                "{",
+                "    // Create a CaptureLocations with valid NonMaxUsize values",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(5).unwrap()), // start",
+                "        Some(NonMaxUsize::new(10).unwrap()), // end",
+                "    ]);",
+                "    ",
+                "    // This should be valid, as i = 0 is within the bounds",
+                "    let _ = locs.get(0);",
+                "    assert_eq!(locs.get(0), Some((4, 9)));",
+                "    assert_eq!(locs.get(1), None);",
+                "    assert_eq!(locs.get(2), None);",
+                "    assert_eq!(locs.get(3), None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    // Create a CaptureLocations with valid NonMaxUsize values",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(5).unwrap()), // start",
+                "        Some(NonMaxUsize::new(10).unwrap()), // end",
+                "    ]);",
+                "    ",
+                "    // Check for out-of-bounds case",
+                "    let _ = locs.get(1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(locs.get(0), Some((4, 9)));",
+                "    assert_eq!(locs.get(1), None);"
+              ],
+              "code": [
+                "{",
+                "    // Create a CaptureLocations with valid NonMaxUsize values",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(5).unwrap()), // start",
+                "        Some(NonMaxUsize::new(10).unwrap()), // end",
+                "    ]);",
+                "    ",
+                "    // Check for out-of-bounds case",
+                "    let _ = locs.get(1);",
+                "    assert_eq!(locs.get(0), Some((4, 9)));",
+                "    assert_eq!(locs.get(1), None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    // Create a CaptureLocations with invalid NonMaxUsize values",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(5).unwrap()), // start",
+                "        Some(NonMaxUsize::new(10).unwrap()), // end",
+                "    ]);",
+                "    ",
+                "    // Test the case where slot.checked_add(1) is None",
+                "    let _ = locs.get(2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(locs.get(2), None);"
+              ],
+              "code": [
+                "{",
+                "    // Create a CaptureLocations with invalid NonMaxUsize values",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(5).unwrap()), // start",
+                "        Some(NonMaxUsize::new(10).unwrap()), // end",
+                "    ]);",
+                "    ",
+                "    // Test the case where slot.checked_add(1) is None",
+                "    let _ = locs.get(2);",
+                "    assert_eq!(locs.get(2), None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "precondition: i.checked_mul(2)? at line 2106 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()? at line 2107 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()?? at line 2107 is Ok/Some\n",
+        "precondition: slot.checked_add(1)? at line 2108 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()? at line 2109 is Err/None\n"
+      ],
+      "input_infer": "i must be a non-negative integer less than half the length of self.0 to ensure all preconditions yield Some, including the case when self.0 is empty resulting in None on line 2109.\n",
+      "answers": [
+        {
+          "uses": [
+            "use crate::CaptureLocations;",
+            "use alloc::vec::Vec;",
+            "use crate::int::NonMaxUsize;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use alloc::vec::Vec;",
+                "    use crate::int::NonMaxUsize;",
+                "    use crate::CaptureLocations;",
+                "",
+                "    let capture_vec = vec![",
+                "        NonMaxUsize::new(1).unwrap(), // Start of group 0",
+                "        NonMaxUsize::new(18).unwrap(), // End of group 0",
+                "        NonMaxUsize::new(1).unwrap(), // Start of group 1",
+                "        NonMaxUsize::new(6).unwrap(), // End of group 1",
+                "    ];",
+                "",
+                "    let locs = CaptureLocations(capture_vec);",
+                "    let result = locs.get(0);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some((0, 17)));",
+                "    let result = locs.get(1);",
+                "    assert_eq!(result, Some((0, 5)));",
+                "    let result = locs.get(2);",
+                "    assert_eq!(result, Some((6, 17)));",
+                "    let result = locs.get(3);",
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    use alloc::vec::Vec;",
+                "    use crate::int::NonMaxUsize;",
+                "    use crate::CaptureLocations;",
+                "",
+                "    let capture_vec = vec![",
+                "        NonMaxUsize::new(1).unwrap(), // Start of group 0",
+                "        NonMaxUsize::new(18).unwrap(), // End of group 0",
+                "        NonMaxUsize::new(1).unwrap(), // Start of group 1",
+                "        NonMaxUsize::new(6).unwrap(), // End of group 1",
+                "    ];",
+                "",
+                "    let locs = CaptureLocations(capture_vec);",
+                "    let result = locs.get(0);",
+                "    assert_eq!(result, Some((0, 17)));",
+                "    let result = locs.get(1);",
+                "    assert_eq!(result, Some((0, 5)));",
+                "    let result = locs.get(2);",
+                "    assert_eq!(result, Some((6, 17)));",
+                "    let result = locs.get(3);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use alloc::vec::Vec;",
+                "    use crate::int::NonMaxUsize;",
+                "    use crate::CaptureLocations;",
+                "",
+                "    let capture_vec = vec![",
+                "        NonMaxUsize::new(1).unwrap(), // Start of group 0",
+                "        NonMaxUsize::new(18).unwrap(), // End of group 0",
+                "        NonMaxUsize::new(1).unwrap(), // Start of group 1",
+                "        NonMaxUsize::new(6).unwrap(), // End of group 1",
+                "    ];",
+                "",
+                "    let locs = CaptureLocations(capture_vec);",
+                "    let result = locs.get(1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some((0, 18)));",
+                "    assert_eq!(locs.get(0), Some((0, 17)));",
+                "    assert_eq!(locs.get(1), Some((0, 5)));",
+                "    assert_eq!(locs.get(2), Some((6, 17)));",
+                "    assert_eq!(locs.get(3), None);",
+                "    assert_eq!(locs.get(4), None);"
+              ],
+              "code": [
+                "{",
+                "    use alloc::vec::Vec;",
+                "    use crate::int::NonMaxUsize;",
+                "    use crate::CaptureLocations;",
+                "",
+                "    let capture_vec = vec![",
+                "        NonMaxUsize::new(1).unwrap(), // Start of group 0",
+                "        NonMaxUsize::new(18).unwrap(), // End of group 0",
+                "        NonMaxUsize::new(1).unwrap(), // Start of group 1",
+                "        NonMaxUsize::new(6).unwrap(), // End of group 1",
+                "    ];",
+                "",
+                "    let locs = CaptureLocations(capture_vec);",
+                "    let result = locs.get(1);",
+                "    assert_eq!(result, Some((0, 18)));",
+                "    assert_eq!(locs.get(0), Some((0, 17)));",
+                "    assert_eq!(locs.get(1), Some((0, 5)));",
+                "    assert_eq!(locs.get(2), Some((6, 17)));",
+                "    assert_eq!(locs.get(3), None);",
+                "    assert_eq!(locs.get(4), None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use alloc::vec::Vec;",
+                "    use crate::int::NonMaxUsize;",
+                "    use crate::CaptureLocations;",
+                "",
+                "    let capture_vec = vec![];",
+                "    let locs = CaptureLocations(capture_vec);",
+                "    let result = locs.get(0);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);",
+                "    let capture_vec = vec![Some(NonMaxUsize::new(1).unwrap()), Some(NonMaxUsize::new(3).unwrap())];",
+                "    let locs = CaptureLocations(capture_vec);",
+                "    let result = locs.get(0);",
+                "    assert_eq!(result, Some((0, 2)));",
+                "    let result = locs.get(1);",
+                "    assert_eq!(result, Some((2, 4)));",
+                "    let result = locs.get(2);",
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    use alloc::vec::Vec;",
+                "    use crate::int::NonMaxUsize;",
+                "    use crate::CaptureLocations;",
+                "",
+                "    let capture_vec = vec![];",
+                "    let locs = CaptureLocations(capture_vec);",
+                "    let result = locs.get(0);",
+                "    assert_eq!(result, None);",
+                "    let capture_vec = vec![Some(NonMaxUsize::new(1).unwrap()), Some(NonMaxUsize::new(3).unwrap())];",
+                "    let locs = CaptureLocations(capture_vec);",
+                "    let result = locs.get(0);",
+                "    assert_eq!(result, Some((0, 2)));",
+                "    let result = locs.get(1);",
+                "    assert_eq!(result, Some((2, 4)));",
+                "    let result = locs.get(2);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "precondition: i.checked_mul(2)? at line 2106 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()? at line 2107 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()?? at line 2107 is Ok/Some\n",
+        "precondition: slot.checked_add(1)? at line 2108 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()? at line 2109 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()?? at line 2109 is Err/None\n"
+      ],
+      "input_infer": "i must be in the range [0, (len(self.0) / 2) - 1] and must not exceed (len(self.0) / 2) where len(self.0) is even.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(1).unwrap()),",
+                "        Some(NonMaxUsize::new(18).unwrap()),",
+                "        Some(NonMaxUsize::new(7).unwrap()),",
+                "        Some(NonMaxUsize::new(18).unwrap()),",
+                "    ]);",
+                "",
+                "    let result = locs.get(0);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Some((0, 17)), locs.get(0));",
+                "    assert_eq!(Some((0, 5)), locs.get(1));",
+                "    assert_eq!(Some((6, 17)), locs.get(2));",
+                "    assert_eq!(None, locs.get(3));",
+                "    assert_eq!(None, locs.get(4));",
+                "    assert_eq!(None, locs.get(10));",
+                "    assert_eq!(None, locs.get(1_000));",
+                "    assert_eq!(Some((0, 17)), locs.get(0));",
+                "    assert_eq!(Some((0, 18)), locs.get(1));",
+                "    assert_eq!(Some((7, 18)), locs.get(2));",
+                "    assert_eq!(None, locs.get(5));"
+              ],
+              "code": [
+                "{",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(1).unwrap()),",
+                "        Some(NonMaxUsize::new(18).unwrap()),",
+                "        Some(NonMaxUsize::new(7).unwrap()),",
+                "        Some(NonMaxUsize::new(18).unwrap()),",
+                "    ]);",
+                "",
+                "    let result = locs.get(0);",
+                "    assert_eq!(Some((0, 17)), locs.get(0));",
+                "    assert_eq!(Some((0, 5)), locs.get(1));",
+                "    assert_eq!(Some((6, 17)), locs.get(2));",
+                "    assert_eq!(None, locs.get(3));",
+                "    assert_eq!(None, locs.get(4));",
+                "    assert_eq!(None, locs.get(10));",
+                "    assert_eq!(None, locs.get(1_000));",
+                "    assert_eq!(Some((0, 17)), locs.get(0));",
+                "    assert_eq!(Some((0, 18)), locs.get(1));",
+                "    assert_eq!(Some((7, 18)), locs.get(2));",
+                "    assert_eq!(None, locs.get(5));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(1).unwrap()),",
+                "        Some(NonMaxUsize::new(10).unwrap()),",
+                "        Some(NonMaxUsize::new(5).unwrap()),",
+                "        Some(NonMaxUsize::new(10).unwrap()),",
+                "    ]);",
+                "",
+                "    let result = locs.get(1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Some((0, 9)), result);",
+                "    assert_eq!(None, locs.get(3));"
+              ],
+              "code": [
+                "{",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(1).unwrap()),",
+                "        Some(NonMaxUsize::new(10).unwrap()),",
+                "        Some(NonMaxUsize::new(5).unwrap()),",
+                "        Some(NonMaxUsize::new(10).unwrap()),",
+                "    ]);",
+                "",
+                "    let result = locs.get(1);",
+                "    assert_eq!(Some((0, 9)), result);",
+                "    assert_eq!(None, locs.get(3));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(1).unwrap()),",
+                "        Some(NonMaxUsize::new(10).unwrap()),",
+                "        Some(NonMaxUsize::new(5).unwrap()),",
+                "    ]);",
+                "",
+                "    let result = locs.get(2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Some((0, 4)), locs.get(0));",
+                "    assert_eq!(Some((0, 9)), locs.get(1));",
+                "    assert_eq!(None, locs.get(2));"
+              ],
+              "code": [
+                "{",
+                "    let locs = CaptureLocations(vec![",
+                "        Some(NonMaxUsize::new(1).unwrap()),",
+                "        Some(NonMaxUsize::new(10).unwrap()),",
+                "        Some(NonMaxUsize::new(5).unwrap()),",
+                "    ]);",
+                "",
+                "    let result = locs.get(2);",
+                "    assert_eq!(Some((0, 4)), locs.get(0));",
+                "    assert_eq!(Some((0, 9)), locs.get(1));",
+                "    assert_eq!(None, locs.get(2));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "precondition: i.checked_mul(2)? at line 2106 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()? at line 2107 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()?? at line 2107 is Ok/Some\n",
+        "precondition: slot.checked_add(1)? at line 2108 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()? at line 2109 is Ok/Some\n",
+        "precondition: self.0.get(slot).copied()?? at line 2109 is Ok/Some\n",
+        "expected return value/type: Some((start, end))\n"
+      ],
+      "input_infer": "i = 0 to (self.0.len()/2 - 1) where self.0 contains valid NonMaxUsize values\n",
+      "answers": [
+        {
+          "uses": [
+            "use core::num::NonZeroUsize;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use core::num::NonZeroUsize;",
+                "",
+                "    struct MockCaptureLocations {",
+                "        data: Vec<Option<NonMaxUsize>>,",
+                "    }",
+                "",
+                "    impl CaptureLocations {",
+                "        fn new(data: Vec<Option<NonMaxUsize>>) -> Self {",
+                "            CaptureLocations(data)",
+                "        }",
+                "    }",
+                "",
+                "    let locs = MockCaptureLocations {",
+                "        data: vec![",
+                "            NonMaxUsize::new(1), // start for index 0",
+                "            NonMaxUsize::new(18), // end for index 0",
+                "            NonMaxUsize::new(7), // start for index 1",
+                "            NonMaxUsize::new(18), // end for index 1",
+                "        ].into_iter().collect(),",
+                "    };",
+                "",
+                "    let result = locs.get(0);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Some((0, 17)), locs.get(0));",
+                "    assert_eq!(Some((6, 17)), locs.get(1));",
+                "    assert_eq!(None, locs.get(2));",
+                "    assert_eq!(None, locs.get(3));",
+                "    assert_eq!(None, locs.get(usize::MAX));",
+                "    let empty_locs = MockCaptureLocations { data: vec![] };",
+                "    assert_eq!(None, empty_locs.get(0));"
+              ],
+              "code": [
+                "{",
+                "    use core::num::NonZeroUsize;",
+                "",
+                "    struct MockCaptureLocations {",
+                "        data: Vec<Option<NonMaxUsize>>,",
+                "    }",
+                "",
+                "    impl CaptureLocations {",
+                "        fn new(data: Vec<Option<NonMaxUsize>>) -> Self {",
+                "            CaptureLocations(data)",
+                "        }",
+                "    }",
+                "",
+                "    let locs = MockCaptureLocations {",
+                "        data: vec![",
+                "            NonMaxUsize::new(1), // start for index 0",
+                "            NonMaxUsize::new(18), // end for index 0",
+                "            NonMaxUsize::new(7), // start for index 1",
+                "            NonMaxUsize::new(18), // end for index 1",
+                "        ].into_iter().collect(),",
+                "    };",
+                "",
+                "    let result = locs.get(0);",
+                "    assert_eq!(Some((0, 17)), locs.get(0));",
+                "    assert_eq!(Some((6, 17)), locs.get(1));",
+                "    assert_eq!(None, locs.get(2));",
+                "    assert_eq!(None, locs.get(3));",
+                "    assert_eq!(None, locs.get(usize::MAX));",
+                "    let empty_locs = MockCaptureLocations { data: vec![] };",
+                "    assert_eq!(None, empty_locs.get(0));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use core::num::NonZeroUsize;",
+                "",
+                "    struct MockCaptureLocations {",
+                "        data: Vec<Option<NonMaxUsize>>,",
+                "    }",
+                "",
+                "    impl CaptureLocations {",
+                "        fn new(data: Vec<Option<NonMaxUsize>>) -> Self {",
+                "            CaptureLocations(data)",
+                "        }",
+                "    }",
+                "",
+                "    let locs = MockCaptureLocations {",
+                "        data: vec![",
+                "            NonMaxUsize::new(1),",
+                "            NonMaxUsize::new(18),",
+                "            NonMaxUsize::new(7),",
+                "            NonMaxUsize::new(18),",
+                "        ].into_iter().collect(),",
+                "    };",
+                "",
+                "    let result = locs.get(1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Some((0, 17)), locs.get(0));",
+                "    assert_eq!(Some((0, 5)), locs.get(1));",
+                "    assert_eq!(Some((6, 17)), locs.get(2));",
+                "    assert_eq!(None, locs.get(3));"
+              ],
+              "code": [
+                "{",
+                "    use core::num::NonZeroUsize;",
+                "",
+                "    struct MockCaptureLocations {",
+                "        data: Vec<Option<NonMaxUsize>>,",
+                "    }",
+                "",
+                "    impl CaptureLocations {",
+                "        fn new(data: Vec<Option<NonMaxUsize>>) -> Self {",
+                "            CaptureLocations(data)",
+                "        }",
+                "    }",
+                "",
+                "    let locs = MockCaptureLocations {",
+                "        data: vec![",
+                "            NonMaxUsize::new(1),",
+                "            NonMaxUsize::new(18),",
+                "            NonMaxUsize::new(7),",
+                "            NonMaxUsize::new(18),",
+                "        ].into_iter().collect(),",
+                "    };",
+                "",
+                "    let result = locs.get(1);",
+                "    assert_eq!(Some((0, 17)), locs.get(0));",
+                "    assert_eq!(Some((0, 5)), locs.get(1));",
+                "    assert_eq!(Some((6, 17)), locs.get(2));",
+                "    assert_eq!(None, locs.get(3));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use core::num::NonZeroUsize;",
+                "",
+                "    struct MockCaptureLocations {",
+                "        data: Vec<Option<NonMaxUsize>>,",
+                "    }",
+                "",
+                "    impl CaptureLocations {",
+                "        fn new(data: Vec<Option<NonMaxUsize>>) -> Self {",
+                "            CaptureLocations(data)",
+                "        }",
+                "    }",
+                "",
+                "    let locs = MockCaptureLocations {",
+                "        data: vec![",
+                "            NonMaxUsize::new(1),",
+                "            NonMaxUsize::new(18),",
+                "            NonMaxUsize::new(7),",
+                "            NonMaxUsize::new(18),",
+                "        ].into_iter().collect(),",
+                "    };",
+                "",
+                "    let result = locs.get(2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Some((6, 17)), locs.get(2));",
+                "    assert_eq!(Some((0, 17)), locs.get(0));",
+                "    assert_eq!(Some((0, 5)), locs.get(1));",
+                "    assert_eq!(None, locs.get(3));",
+                "    assert_eq!(None, locs.get(4));"
+              ],
+              "code": [
+                "{",
+                "    use core::num::NonZeroUsize;",
+                "",
+                "    struct MockCaptureLocations {",
+                "        data: Vec<Option<NonMaxUsize>>,",
+                "    }",
+                "",
+                "    impl CaptureLocations {",
+                "        fn new(data: Vec<Option<NonMaxUsize>>) -> Self {",
+                "            CaptureLocations(data)",
+                "        }",
+                "    }",
+                "",
+                "    let locs = MockCaptureLocations {",
+                "        data: vec![",
+                "            NonMaxUsize::new(1),",
+                "            NonMaxUsize::new(18),",
+                "            NonMaxUsize::new(7),",
+                "            NonMaxUsize::new(18),",
+                "        ].into_iter().collect(),",
+                "    };",
+                "",
+                "    let result = locs.get(2);",
+                "    assert_eq!(Some((6, 17)), locs.get(2));",
+                "    assert_eq!(Some((0, 17)), locs.get(0));",
+                "    assert_eq!(Some((0, 5)), locs.get(1));",
+                "    assert_eq!(None, locs.get(3));",
+                "    assert_eq!(None, locs.get(4));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+// Answer 0
+
+#[test]
+fn test_next_on_empty_iterator() {
+    struct TestAllocator;
+
+    unsafe impl Allocator for TestAllocator {
+        fn allocate(&self, _layout: core::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {
+            Ok(std::ptr::NonNull::new_unchecked(std::ptr::null_mut()))
+        }
+        
+        unsafe fn deallocate(&self, _ptr: std::ptr::NonNull<u8>, _layout: core::alloc::Layout) {}
+    }
+
+    let allocator = TestAllocator;
+    let empty_map: HashMap<i32, i32, TestAllocator> = HashMap::with_hasher(DefaultHashBuilder::new());
+    let mut iter = IntoIter { iter: empty_map.into_iter() };
+    let result = iter.next();
+}
+
+#[test]
+fn test_next_on_empty_into_iter() {
+    struct TestAllocator;
+
+    unsafe impl Allocator for TestAllocator {
+        fn allocate(&self, _layout: core::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {
+            Ok(std::ptr::NonNull::new_unchecked(std::ptr::null_mut()))
+        }
+        
+        unsafe fn deallocate(&self, _ptr: std::ptr::NonNull<u8>, _layout: core::alloc::Layout) {}
+    }
+
+    let allocator = TestAllocator;
+    let empty_iter: IntoIter<i32, TestAllocator> = IntoIter { inner: RawIntoIter::new(Vec::new()) };
+    let mut iter = empty_iter;
+    let result = iter.next();
+}
+

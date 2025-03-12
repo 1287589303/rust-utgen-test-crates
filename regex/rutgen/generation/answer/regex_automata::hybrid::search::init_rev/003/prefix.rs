@@ -1,0 +1,104 @@
+// Answer 0
+
+#[test]
+fn init_rev_success_case_1() {
+    let dfa = DFA {
+        config: Config::default(),
+        nfa: thompson::NFA::default(),
+        stride2: 1,
+        start_map: StartByteMap::default(),
+        classes: ByteClasses::default(),
+        quitset: ByteSet::default(),
+        cache_capacity: 10,
+    };
+    let mut cache = Cache {
+        trans: vec![LazyStateID(0)],
+        starts: vec![LazyStateID(1)],
+        states: vec![],
+        states_to_id: StateMap::default(),
+        sparses: SparseSets::default(),
+        stack: vec![],
+        scratch_state_builder: StateBuilderEmpty::default(),
+        state_saver: StateSaver::default(),
+        memory_usage_state: 0,
+        clear_count: 0,
+        bytes_searched: 0,
+        progress: None,
+    };
+    let input = Input {
+        haystack: b"test input",
+        span: Span::new(0, 10),
+        anchored: Anchored::No,
+        earliest: true,
+    };
+    let _ = init_rev(&dfa, &mut cache, &input);
+}
+
+#[test]
+fn init_rev_success_case_2() {
+    let dfa = DFA {
+        config: Config::default(),
+        nfa: thompson::NFA::default(),
+        stride2: 1,
+        start_map: StartByteMap::default(),
+        classes: ByteClasses::default(),
+        quitset: ByteSet::default(),
+        cache_capacity: 10,
+    };
+    let mut cache = Cache {
+        trans: vec![LazyStateID(2)],
+        starts: vec![LazyStateID(3)],
+        states: vec![],
+        states_to_id: StateMap::default(),
+        sparses: SparseSets::default(),
+        stack: vec![],
+        scratch_state_builder: StateBuilderEmpty::default(),
+        state_saver: StateSaver::default(),
+        memory_usage_state: 0,
+        clear_count: 0,
+        bytes_searched: 0,
+        progress: None,
+    };
+    let input = Input {
+        haystack: b"another test",
+        span: Span::new(0, 12),
+        anchored: Anchored::Yes,
+        earliest: false,
+    };
+    let _ = init_rev(&dfa, &mut cache, &input);
+}
+
+#[test]
+fn init_rev_success_case_3() {
+    let dfa = DFA {
+        config: Config::default(),
+        nfa: thompson::NFA::default(),
+        stride2: 1,
+        start_map: StartByteMap::default(),
+        classes: ByteClasses::default(),
+        quitset: ByteSet::default(),
+        cache_capacity: 10,
+    };
+    let mut cache = Cache {
+        trans: vec![LazyStateID(4)],
+        starts: vec![LazyStateID(5)],
+        states: vec![],
+        states_to_id: StateMap::default(),
+        sparses: SparseSets::default(),
+        stack: vec![],
+        scratch_state_builder: StateBuilderEmpty::default(),
+        state_saver: StateSaver::default(),
+        memory_usage_state: 0,
+        clear_count: 0,
+        bytes_searched: 0,
+        progress: None,
+    };
+    let input = Input {
+        haystack: b"more input data",
+        span: Span::new(0, 15),
+        anchored: Anchored::No,
+        earliest: true,
+    };
+    let _ = init_rev(&dfa, &mut cache, &input);
+}
+

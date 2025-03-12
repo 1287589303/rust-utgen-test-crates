@@ -1,0 +1,169 @@
+{
+  "name": "bytes::bytes::_split_off_must_use",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1647:1:1647:28",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "Input conditions should include a non-empty byte string of minimum length 1 and a valid split index within the range 0 to the length of the byte string, particularly testing edge cases like the start and end of the string (0 and length).\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut b1 = bytes::Bytes::from(\"hello world\");",
+                "    b1.split_off(0);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(b1.split_off(12), b1); // expect panic for high index",
+                "    assert_eq!(b1.split_off(0).len(), 0); // expect length of split to be 0",
+                "    assert_eq!(b1.len(), 11); // expect original length to remain 11 after split off",
+                "    assert_eq!(b1.split_off(6).len(), 5); // expect length of second part to be 5",
+                "    assert_eq!(b1.split_off(6), bytes::Bytes::from(\"world\")); // expect split part to be \"world\""
+              ],
+              "code": [
+                "{",
+                "   #[should_panic]  ",
+                "   fn test_split_off_at_invalid_high() {  ",
+                "       let mut b1 = Bytes::from(\"hello world\");  ",
+                "       b1.split_off(12);  ",
+                "   }  ",
+                "       let mut b1 = Bytes::from(\"hello world\");  ",
+                "       b1.split_off(0);  ",
+                "       assert_eq!(b1.split_off(12), b1); // expect panic for high index  ",
+                "       assert_eq!(b1.split_off(0).len(), 0); // expect length of split to be 0  ",
+                "       assert_eq!(b1.len(), 11); // expect original length to remain 11 after split off  ",
+                "       assert_eq!(b1.split_off(6).len(), 5); // expect length of second part to be 5  ",
+                "       assert_eq!(b1.split_off(6), Bytes::from(\"world\")); // expect split part to be \"world\"  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut b1 = bytes::Bytes::from(\"hello world\");",
+                "    b1.split_off(5);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(b1.split_off(12), Err(\"index out of bounds\"));",
+                "    assert_eq!(b1.split_off(5), Ok(b1));",
+                "    assert!(std::panic::catch_unwind(|| b1.split_off(12)).is_err());",
+                "    assert!(std::panic::catch_unwind(|| b1.split_off(5)).is_ok());",
+                "    assert!(b1.len() == 12);",
+                "    assert!(b1.split_off(0).is_empty());",
+                "    assert!(b1.split_off(11).is_empty());",
+                "    assert!(b1.split_off(6).len() == 6);"
+              ],
+              "code": [
+                "{",
+                "#[should_panic]",
+                "fn test_split_off_at_invalid_high() {",
+                "    let mut b1 = bytes::Bytes::from(\"hello world\");",
+                "    b1.split_off(12);",
+                "}",
+                "    let mut b1 = bytes::Bytes::from(\"hello world\");",
+                "    b1.split_off(5);",
+                "    assert_eq!(b1.split_off(12), Err(\"index out of bounds\"));",
+                "    assert_eq!(b1.split_off(5), Ok(b1));",
+                "    assert!(std::panic::catch_unwind(|| b1.split_off(12)).is_err());",
+                "    assert!(std::panic::catch_unwind(|| b1.split_off(5)).is_ok());",
+                "    assert!(b1.len() == 12);",
+                "    assert!(b1.split_off(0).is_empty());",
+                "    assert!(b1.split_off(11).is_empty());",
+                "    assert!(b1.split_off(6).len() == 6);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut b1 = bytes::Bytes::from(\"hello world\");",
+                "    b1.split_off(11);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(b1.split_off(12), panic!());",
+                "    assert_eq!(b1.split_off(11), Bytes::from(\"hello world\"));"
+              ],
+              "code": [
+                "{",
+                "#[should_panic]",
+                "fn test_split_off_at_invalid_high() {",
+                "   let mut b1 = Bytes::from(\"hello world\");",
+                "   b1.split_off(12);",
+                "}    ",
+                "   let mut b1 = Bytes::from(\"hello world\");",
+                "   b1.split_off(11);",
+                "   assert_eq!(b1.split_off(12), panic!());",
+                "   assert_eq!(b1.split_off(11), Bytes::from(\"hello world\"));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut b1 = bytes::Bytes::from(\"hello world\");",
+                "    b1.split_off(-1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let mut b1 = bytes::Bytes::from(\"hello world\");",
+                "    b1.split_off(12);",
+                "    }).is_err());",
+                "    ",
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let mut b1 = bytes::Bytes::from(\"hello world\");",
+                "    b1.split_off(-1);",
+                "    }).is_err());"
+              ],
+              "code": [
+                "{",
+                "  #[should_panic]  ",
+                "  fn test_split_off_at_invalid_high() {  ",
+                "      let mut b1 = Bytes::from(\"hello world\");  ",
+                "      b1.split_off(12);  ",
+                "  }  ",
+                "      let mut b1 = Bytes::from(\"hello world\");  ",
+                "      b1.split_off(0);  ",
+                "      assert!(std::panic::catch_unwind(|| {  ",
+                "          let mut b1 = Bytes::from(\"hello world\");  ",
+                "          b1.split_off(12);  ",
+                "      }).is_err());  ",
+                "      ",
+                "      assert!(std::panic::catch_unwind(|| {  ",
+                "          let mut b1 = Bytes::from(\"hello world\");  ",
+                "          b1.split_off(0);  ",
+                "      }).is_err());  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

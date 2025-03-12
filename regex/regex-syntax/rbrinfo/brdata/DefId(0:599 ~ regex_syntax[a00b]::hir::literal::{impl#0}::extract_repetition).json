@@ -1,0 +1,1746 @@
+{
+  "name": "regex_syntax::hir::literal::{impl#0}::extract_repetition",
+  "mod_info": {
+    "name": "hir::literal",
+    "loc": "regex-syntax/src/hir/mod.rs:42:1:42:17"
+  },
+  "visible": false,
+  "loc": "regex-syntax/src/hir/literal.rs:448:5:495:6",
+  "doc": "/// Extract a sequence of literals from the given repetition. We do our\n/// best, Some examples:\n///\n///   'a*'    => [inexact(a), exact(\"\")]\n///   'a*?'   => [exact(\"\"), inexact(a)]\n///   'a+'    => [inexact(a)]\n///   'a{3}'  => [exact(aaa)]\n///   'a{3,5} => [inexact(aaa)]\n///\n/// The key here really is making sure we get the 'inexact' vs 'exact'\n/// attributes correct on each of the literals we add. For example, the\n/// fact that 'a*' gives us an inexact 'a' and an exact empty string means\n/// that a regex like 'ab*c' will result in [inexact(ab), exact(ac)]\n/// literals being extracted, which might actually be a better prefilter\n/// than just 'a'.\n",
+  "code": [
+    "fn extract_repetition(&self, rep: &hir::Repetition) -> Seq {",
+    "    let mut subseq = self.extract(&rep.sub);",
+    "    match *rep {",
+    "        hir::Repetition { min: 0, max, greedy, .. } => {",
+    "            // When 'max=1', we can retain exactness, since 'a?' is",
+    "            // equivalent to 'a|'. Similarly below, 'a??' is equivalent to",
+    "            // '|a'.",
+    "            if max != Some(1) {",
+    "                subseq.make_inexact();",
+    "            }",
+    "            let mut empty = Seq::singleton(Literal::exact(vec![]));",
+    "            if !greedy {",
+    "                mem::swap(&mut subseq, &mut empty);",
+    "            }",
+    "            self.union(subseq, &mut empty)",
+    "        }",
+    "        hir::Repetition { min, max: Some(max), .. } if min == max => {",
+    "            assert!(min > 0); // handled above",
+    "            let limit =",
+    "                u32::try_from(self.limit_repeat).unwrap_or(u32::MAX);",
+    "            let mut seq = Seq::singleton(Literal::exact(vec![]));",
+    "            for _ in 0..cmp::min(min, limit) {",
+    "                if seq.is_inexact() {",
+    "                    break;",
+    "                }",
+    "                seq = self.cross(seq, &mut subseq.clone());",
+    "            }",
+    "            if usize::try_from(min).is_err() || min > limit {",
+    "                seq.make_inexact();",
+    "            }",
+    "            seq",
+    "        }",
+    "        hir::Repetition { min, .. } => {",
+    "            assert!(min > 0); // handled above",
+    "            let limit =",
+    "                u32::try_from(self.limit_repeat).unwrap_or(u32::MAX);",
+    "            let mut seq = Seq::singleton(Literal::exact(vec![]));",
+    "            for _ in 0..cmp::min(min, limit) {",
+    "                if seq.is_inexact() {",
+    "                    break;",
+    "                }",
+    "                seq = self.cross(seq, &mut subseq.clone());",
+    "            }",
+    "            seq.make_inexact();",
+    "            seq",
+    "        }",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 22,
+    "contra": 5,
+    "min_set": 11
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "true",
+          "line": 485,
+          "bound": null
+        },
+        {
+          "cond": "seq.is_inexact()",
+          "norm": null,
+          "value": "true",
+          "line": 486,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        60,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        74,
+        76,
+        77,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "true",
+          "line": 485,
+          "bound": null
+        },
+        {
+          "cond": "seq.is_inexact()",
+          "norm": null,
+          "value": "false",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "false",
+          "line": 485,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        60,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        74,
+        76,
+        78,
+        79,
+        80,
+        81,
+        83,
+        84,
+        69,
+        70,
+        71,
+        73,
+        75,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "false",
+          "line": 485,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        60,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        73,
+        75,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "false",
+          "line": 481,
+          "bound": "min == 0"
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        61,
+        106,
+        107
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 465,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "seq.is_inexact()",
+          "norm": null,
+          "value": "true",
+          "line": 470,
+          "bound": null
+        },
+        {
+          "cond": "usize::try_from(min).is_err()",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        22,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        38,
+        40,
+        41,
+        49,
+        50,
+        51,
+        52,
+        55,
+        56,
+        58,
+        59,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 465,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "seq.is_inexact()",
+          "norm": null,
+          "value": "true",
+          "line": 470,
+          "bound": null
+        },
+        {
+          "cond": "usize::try_from(min).is_err()",
+          "norm": null,
+          "value": "false",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "min > limit",
+          "norm": "limit < min",
+          "value": "true",
+          "line": 475,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        22,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        38,
+        40,
+        41,
+        49,
+        50,
+        51,
+        53,
+        54,
+        55,
+        56,
+        58,
+        59,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 465,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "seq.is_inexact()",
+          "norm": null,
+          "value": "true",
+          "line": 470,
+          "bound": null
+        },
+        {
+          "cond": "usize::try_from(min).is_err()",
+          "norm": null,
+          "value": "false",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "min > limit",
+          "norm": "limit < min",
+          "value": "false",
+          "line": 475,
+          "bound": "min == limit"
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        22,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        38,
+        40,
+        41,
+        49,
+        50,
+        51,
+        53,
+        57,
+        58,
+        59,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 465,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "seq.is_inexact()",
+          "norm": null,
+          "value": "false",
+          "line": 470,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "false",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "usize::try_from(min).is_err()",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        22,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        38,
+        40,
+        42,
+        43,
+        44,
+        45,
+        47,
+        48,
+        33,
+        34,
+        35,
+        37,
+        39,
+        49,
+        50,
+        51,
+        52,
+        55,
+        56,
+        58,
+        59,
+        88,
+        89
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 465,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "seq.is_inexact()",
+          "norm": null,
+          "value": "false",
+          "line": 470,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "false",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "usize::try_from(min).is_err()",
+          "norm": null,
+          "value": "false",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "min > limit",
+          "norm": "limit < min",
+          "value": "true",
+          "line": 475,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        22,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        38,
+        40,
+        42,
+        43,
+        44,
+        45,
+        47,
+        48,
+        33,
+        34,
+        35,
+        37,
+        39,
+        49,
+        50,
+        51,
+        53,
+        54,
+        55,
+        56,
+        58,
+        59,
+        88,
+        89
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 465,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "seq.is_inexact()",
+          "norm": null,
+          "value": "false",
+          "line": 470,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "false",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "usize::try_from(min).is_err()",
+          "norm": null,
+          "value": "false",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "min > limit",
+          "norm": "limit < min",
+          "value": "false",
+          "line": 475,
+          "bound": "min == limit"
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        22,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        38,
+        40,
+        42,
+        43,
+        44,
+        45,
+        47,
+        48,
+        33,
+        34,
+        35,
+        37,
+        39,
+        49,
+        50,
+        51,
+        53,
+        57,
+        58,
+        59,
+        88,
+        89
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 465,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "false",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "usize::try_from(min).is_err()",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        22,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        37,
+        39,
+        49,
+        50,
+        51,
+        52,
+        55,
+        56,
+        58,
+        59,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 465,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "false",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "usize::try_from(min).is_err()",
+          "norm": null,
+          "value": "false",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "min > limit",
+          "norm": "limit < min",
+          "value": "true",
+          "line": 475,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        22,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        37,
+        39,
+        49,
+        50,
+        51,
+        53,
+        54,
+        55,
+        56,
+        58,
+        59,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 465,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "false",
+          "line": 469,
+          "bound": null
+        },
+        {
+          "cond": "usize::try_from(min).is_err()",
+          "norm": null,
+          "value": "false",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "min > limit",
+          "norm": "limit < min",
+          "value": "false",
+          "line": 475,
+          "bound": "min == limit"
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        22,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        37,
+        39,
+        49,
+        50,
+        51,
+        53,
+        57,
+        58,
+        59,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "false",
+          "line": 465,
+          "bound": "min == 0"
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        22,
+        25,
+        106,
+        107
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "true",
+          "line": 485,
+          "bound": null
+        },
+        {
+          "cond": "seq.is_inexact()",
+          "norm": null,
+          "value": "true",
+          "line": 486,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        23,
+        4,
+        60,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        74,
+        76,
+        77,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "true",
+          "line": 485,
+          "bound": null
+        },
+        {
+          "cond": "seq.is_inexact()",
+          "norm": null,
+          "value": "false",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "false",
+          "line": 485,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        23,
+        4,
+        60,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        74,
+        76,
+        78,
+        79,
+        80,
+        81,
+        83,
+        84,
+        69,
+        70,
+        71,
+        73,
+        75,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..cmp::min(min, limit)",
+          "norm": null,
+          "value": "false",
+          "line": 485,
+          "bound": null
+        }
+      ],
+      "ret": "seq",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        23,
+        4,
+        60,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        73,
+        75,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min, max: Some(max), .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 464,
+          "bound": null
+        },
+        {
+          "cond": "min > 0",
+          "norm": "0 < min",
+          "value": "false",
+          "line": 481,
+          "bound": "min == 0"
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        21,
+        23,
+        4,
+        61,
+        106,
+        107
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min: 0, max, greedy, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "max != Some(1)",
+          "norm": "Some(1) != max",
+          "value": "true",
+          "line": 455,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "true",
+          "line": 459,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        20,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min: 0, max, greedy, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "max != Some(1)",
+          "norm": "Some(1) != max",
+          "value": "true",
+          "line": 455,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "false",
+          "line": 459,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        18,
+        19,
+        20,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min: 0, max, greedy, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "max != Some(1)",
+          "norm": "Some(1) != max",
+          "value": "false",
+          "line": 455,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "true",
+          "line": 459,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        20,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "*rep.min matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "*rep matches hir::Repetition { min: 0, max, greedy, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 450,
+          "bound": null
+        },
+        {
+          "cond": "max != Some(1)",
+          "norm": "Some(1) != max",
+          "value": "false",
+          "line": 455,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "false",
+          "line": 459,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        18,
+        19,
+        20,
+        88,
+        89
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

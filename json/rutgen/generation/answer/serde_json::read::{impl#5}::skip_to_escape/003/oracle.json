@@ -1,0 +1,226 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input_slice: &[u8] = b\"Hello\\x00World!\"; // Contains control character \\x00 and valid characters",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // Setting the initial index",
+          "    let forbid_control_characters = true;",
+          "    ",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "}"
+        ],
+        "oracle": [
+          "    reader.index == 0;",
+          "    reader.slice.len() == 15;",
+          "    is_escape(reader.slice[reader.index], forbid_control_characters) == false;",
+          "    forbid_control_characters == true;",
+          "    rest.chunks_exact(8).len() > 0;",
+          "    self.index < reader.slice.len();",
+          "    masked != 0;",
+          "    reader.index < 15;",
+          "    reader.index > 0;",
+          "    reader.index < 15;"
+        ],
+        "code": [
+          "{",
+          "    let input_slice: &[u8] = b\"Hello\\x00World!\"; // Contains control character \\x00 and valid characters",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // Setting the initial index",
+          "    let forbid_control_characters = true;",
+          "    ",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "    reader.index == 0;",
+          "    reader.slice.len() == 15;",
+          "    is_escape(reader.slice[reader.index], forbid_control_characters) == false;",
+          "    forbid_control_characters == true;",
+          "    rest.chunks_exact(8).len() > 0;",
+          "    self.index < reader.slice.len();",
+          "    masked != 0;",
+          "    reader.index < 15;",
+          "    reader.index > 0;",
+          "    reader.index < 15;",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input_slice: &[u8] = b\"ABC\\x01DEF\\x02G\"; // Contains multiple control characters \\x01 and \\x02",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // Setting the initial index",
+          "    let forbid_control_characters = true;",
+          "    ",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "}"
+        ],
+        "oracle": [
+          "    let input_slice: &[u8] = b\"ABC\\x01DEF\\x02G\"; // test input with control characters",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // setting initial index",
+          "    let forbid_control_characters = true;",
+          "    ",
+          "    assert!(reader.index < input_slice.len()); // ensure index is not out of bounds",
+          "    assert!(reader.index > 0); // initial index should not be at data end",
+          "    assert!(!is_escape(input_slice[reader.index], forbid_control_characters)); // ensure current byte is not escape",
+          "    assert!(forbid_control_characters); // check that forbid_control_characters is true",
+          "    ",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "    ",
+          "    assert!(reader.index < input_slice.len()); // ensure index has modified, still within bounds",
+          "    assert!(reader.index == 3); // assert index moved to the first control character's position",
+          "    assert!(is_escape(input_slice[reader.index - 1], forbid_control_characters)); // assert previous index should be escape",
+          "    assert!(reader.index > 0); // after skipping, index still should not be out of bounds"
+        ],
+        "code": [
+          "{",
+          "    let input_slice: &[u8] = b\"ABC\\x01DEF\\x02G\"; // Contains multiple control characters \\x01 and \\x02",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // Setting the initial index",
+          "    let forbid_control_characters = true;",
+          "    ",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "    let input_slice: &[u8] = b\"ABC\\x01DEF\\x02G\"; // test input with control characters",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // setting initial index",
+          "    let forbid_control_characters = true;",
+          "    ",
+          "    assert!(reader.index < input_slice.len()); // ensure index is not out of bounds",
+          "    assert!(reader.index > 0); // initial index should not be at data end",
+          "    assert!(!is_escape(input_slice[reader.index], forbid_control_characters)); // ensure current byte is not escape",
+          "    assert!(forbid_control_characters); // check that forbid_control_characters is true",
+          "    ",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "    ",
+          "    assert!(reader.index < input_slice.len()); // ensure index has modified, still within bounds",
+          "    assert!(reader.index == 3); // assert index moved to the first control character's position",
+          "    assert!(is_escape(input_slice[reader.index - 1], forbid_control_characters)); // assert previous index should be escape",
+          "    assert!(reader.index > 0); // after skipping, index still should not be out of bounds",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input_slice: &[u8] = b\"AAAAAAA\\x1F\"; // Only one character in the control range, right at the end",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // Setting the initial index",
+          "    let forbid_control_characters = true;",
+          "    ",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(reader.index, 8);  // After processing, the index should point to the end of the slice.",
+          "    assert_eq!(reader.slice[reader.index], b'\\x1F');  // The last character is in the control range."
+        ],
+        "code": [
+          "{",
+          "    let input_slice: &[u8] = b\"AAAAAAA\\x1F\"; // Only one character in the control range, right at the end",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // Setting the initial index",
+          "    let forbid_control_characters = true;",
+          "    ",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "    assert_eq!(reader.index, 8);  // After processing, the index should point to the end of the slice.",
+          "    assert_eq!(reader.slice[reader.index], b'\\x1F');  // The last character is in the control range.",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input_slice: &[u8] = b\"AAAAAAAAAAAAAAA\\x1E\"; // Large input with control character at the end",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // Setting the initial index",
+          "    let forbid_control_characters = true;",
+          "",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "}"
+        ],
+        "oracle": [
+          "    reader.index == 0;",
+          "    reader.slice.len() == 16;",
+          "    is_escape(reader.slice[reader.index], forbid_control_characters) == false;",
+          "    forbid_control_characters == true;",
+          "    rest.len() == 15;",
+          "    self.index == 15;",
+          "    masked != 0;"
+        ],
+        "code": [
+          "{",
+          "    let input_slice: &[u8] = b\"AAAAAAAAAAAAAAA\\x1E\"; // Large input with control character at the end",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // Setting the initial index",
+          "    let forbid_control_characters = true;",
+          "",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "    reader.index == 0;",
+          "    reader.slice.len() == 16;",
+          "    is_escape(reader.slice[reader.index], forbid_control_characters) == false;",
+          "    forbid_control_characters == true;",
+          "    rest.len() == 15;",
+          "    self.index == 15;",
+          "    masked != 0;",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input_slice: &[u8] = b\"abc\\x1A\\x00xyz\"; // Mixed valid and control characters",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // Setting the initial index",
+          "    let forbid_control_characters = true;",
+          "    ",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(reader.index, expected_index); // Ensure index is updated correctly after processing",
+          "    assert!(is_escape(reader.slice[expected_index], forbid_control_characters)); // Check if the character at the new index is an escape character",
+          "    assert!(reader.index < input_slice.len()); // Ensure index is within bounds after processing",
+          "    assert!(reader.slice[reader.index..].iter().any(|&c| c < 0x20 || c == b'\"' || c == b'\\\\')); // Confirm presence of control characters, double quotes, or backslashes in remaining slice",
+          "    assert!(forbid_control_characters); // Validate that the forbid_control_characters flag is set to true",
+          "    assert!(reader.index > 0); // Ensure that the index has advanced after the method call"
+        ],
+        "code": [
+          "{",
+          "    let input_slice: &[u8] = b\"abc\\x1A\\x00xyz\"; // Mixed valid and control characters",
+          "    let mut reader = SliceRead::new(input_slice);",
+          "    reader.index = 0; // Setting the initial index",
+          "    let forbid_control_characters = true;",
+          "    ",
+          "    reader.skip_to_escape(forbid_control_characters);",
+          "    assert_eq!(reader.index, expected_index); // Ensure index is updated correctly after processing",
+          "    assert!(is_escape(reader.slice[expected_index], forbid_control_characters)); // Check if the character at the new index is an escape character",
+          "    assert!(reader.index < input_slice.len()); // Ensure index is within bounds after processing",
+          "    assert!(reader.slice[reader.index..].iter().any(|&c| c < 0x20 || c == b'\"' || c == b'\\\\')); // Confirm presence of control characters, double quotes, or backslashes in remaining slice",
+          "    assert!(forbid_control_characters); // Validate that the forbid_control_characters flag is set to true",
+          "    assert!(reader.index > 0); // Ensure that the index has advanced after the method call",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

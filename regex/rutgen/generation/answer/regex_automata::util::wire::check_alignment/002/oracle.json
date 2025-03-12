@@ -1,0 +1,184 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3]; // Address will not be aligned for u8",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u32>(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    Err(DeserializeError::alignment_mismatch(4, slice.as_ptr().as_usize()))"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3]; // Address will not be aligned for u8",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u32>(slice);",
+          "    Err(DeserializeError::alignment_mismatch(4, slice.as_ptr().as_usize()))",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0; 3]; // Address will not be aligned for u64",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u64>(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: &[u8] = &[0; 3]; // Address is not aligned for u64",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u64>(slice);",
+          "    assert!(result.is_err()); // Expecting an error since address % alignment should not be 0",
+          "    match result {",
+          "    Err(DeserializeError::alignment_mismatch(alignment, address)) => {",
+          "    assert_eq!(alignment, core::mem::align_of::<u64>()); // Alignment for u64",
+          "    assert_eq!(address, slice.as_ptr().as_usize()); // Address of the slice",
+          "    }",
+          "    _ => panic!(\"Expected alignment mismatch error\"),",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0; 3]; // Address will not be aligned for u64",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u64>(slice);",
+          "    let slice: &[u8] = &[0; 3]; // Address is not aligned for u64",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u64>(slice);",
+          "    assert!(result.is_err()); // Expecting an error since address % alignment should not be 0",
+          "    match result {",
+          "    Err(DeserializeError::alignment_mismatch(alignment, address)) => {",
+          "    assert_eq!(alignment, core::mem::align_of::<u64>()); // Alignment for u64",
+          "    assert_eq!(address, slice.as_ptr().as_usize()); // Address of the slice",
+          "    }",
+          "    _ => panic!(\"Expected alignment mismatch error\"),",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0; 1]; // Address will not be aligned for u16",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u16>(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: &[u8] = &[0; 2];",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u16>(slice);",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let slice: &[u8] = &[0; 4];",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u32>(slice);",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let slice: &[u8] = &[0; 8];",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u64>(slice);",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let slice: &[u8] = &[0; 3];",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u16>(slice);",
+          "    assert!(result.is_err());",
+          "    if let Err(DeserializeError::AlignmentMismatch { alignment, address }) = result {",
+          "    assert_eq!(alignment, 2);",
+          "    assert_eq!(address % alignment, 1);",
+          "    }",
+          "    ",
+          "    let slice: &[u8] = &[0; 5];",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u32>(slice);",
+          "    assert!(result.is_err());",
+          "    if let Err(DeserializeError::AlignmentMismatch { alignment, address }) = result {",
+          "    assert_eq!(alignment, 4);",
+          "    assert_eq!(address % alignment, 1);",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0; 1]; // Address will not be aligned for u16",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u16>(slice);",
+          "    let slice: &[u8] = &[0; 2];",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u16>(slice);",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let slice: &[u8] = &[0; 4];",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u32>(slice);",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let slice: &[u8] = &[0; 8];",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u64>(slice);",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let slice: &[u8] = &[0; 3];",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u16>(slice);",
+          "    assert!(result.is_err());",
+          "    if let Err(DeserializeError::AlignmentMismatch { alignment, address }) = result {",
+          "    assert_eq!(alignment, 2);",
+          "    assert_eq!(address % alignment, 1);",
+          "    }",
+          "    ",
+          "    let slice: &[u8] = &[0; 5];",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u32>(slice);",
+          "    assert!(result.is_err());",
+          "    if let Err(DeserializeError::AlignmentMismatch { alignment, address }) = result {",
+          "    assert_eq!(alignment, 4);",
+          "    assert_eq!(address % alignment, 1);",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0; 5]; // Address will not be aligned for u8",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u64>(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    Err(DeserializeError::alignment_mismatch(8, slice.as_ptr().as_usize()))"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0; 5]; // Address will not be aligned for u8",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u64>(slice);",
+          "    Err(DeserializeError::alignment_mismatch(8, slice.as_ptr().as_usize()))",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0; 7]; // Address will not be aligned for u8",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u32>(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    Err(DeserializeError::alignment_mismatch(4, slice.as_ptr().as_usize()))"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0; 7]; // Address will not be aligned for u8",
+          "    let result: Result<(), DeserializeError> = check_alignment::<u32>(slice);",
+          "    Err(DeserializeError::alignment_mismatch(4, slice.as_ptr().as_usize()))",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

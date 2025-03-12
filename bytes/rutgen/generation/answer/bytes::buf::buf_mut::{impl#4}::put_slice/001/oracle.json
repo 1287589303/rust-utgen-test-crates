@@ -1,0 +1,151 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer: Vec<u8> = Vec::with_capacity(10);",
+          "    let src: &[u8] = &[];",
+          "    buffer.put_slice(src);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buffer.len(), 0);",
+          "    assert_eq!(buffer.capacity(), 10);"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer: Vec<u8> = Vec::with_capacity(10);",
+          "    let src: &[u8] = &[];",
+          "    buffer.put_slice(src);",
+          "    assert_eq!(buffer.len(), 0);",
+          "    assert_eq!(buffer.capacity(), 10);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer: Vec<u8> = Vec::with_capacity(10);",
+          "    let src: &[u8] = &[1, 2, 3, 4];",
+          "    buffer.extend_from_slice(&[0; 4]); // Ensure buffer has remaining capacity",
+          "    buffer.put_slice(src);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buffer.len(), 4);",
+          "    assert_eq!(&buffer[..4], &[0, 0, 0, 0]);",
+          "    assert_eq!(buffer[4..8], [1, 2, 3, 4]);",
+          "    assert_eq!(buffer.capacity(), 10);",
+          "    assert!(buffer.has_remaining_mut());",
+          "    assert_eq!(buffer.remaining_mut(), 2);"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer: Vec<u8> = Vec::with_capacity(10);",
+          "    let src: &[u8] = &[1, 2, 3, 4];",
+          "    buffer.extend_from_slice(&[0; 4]); // Ensure buffer has remaining capacity",
+          "    buffer.put_slice(src);",
+          "    assert_eq!(buffer.len(), 4);",
+          "    assert_eq!(&buffer[..4], &[0, 0, 0, 0]);",
+          "    assert_eq!(buffer[4..8], [1, 2, 3, 4]);",
+          "    assert_eq!(buffer.capacity(), 10);",
+          "    assert!(buffer.has_remaining_mut());",
+          "    assert_eq!(buffer.remaining_mut(), 2);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer: Vec<u8> = Vec::with_capacity(4);",
+          "    let src: &[u8] = &[1, 2, 3, 4];",
+          "    buffer.put_slice(src);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buffer.len(), 4);",
+          "    assert_eq!(buffer.as_slice(), &[1, 2, 3, 4]);",
+          "    assert!(buffer.capacity() >= 4);",
+          "    assert!(buffer.remaining_mut() >= 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer: Vec<u8> = Vec::with_capacity(4);",
+          "    let src: &[u8] = &[1, 2, 3, 4];",
+          "    buffer.put_slice(src);",
+          "    assert_eq!(buffer.len(), 4);",
+          "    assert_eq!(buffer.as_slice(), &[1, 2, 3, 4]);",
+          "    assert!(buffer.capacity() >= 4);",
+          "    assert!(buffer.remaining_mut() >= 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buffer: Vec<u8> = Vec::with_capacity(4);",
+          "    let src: &[u8] = &[1, 2, 3, 4, 5]; // Attempt to overfill the buffer",
+          "    buffer.put_slice(src);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buffer.len(), 0);  // Ensure buffer is initially empty",
+          "    buffer.put_slice(&[0; 4]);    // Fill buffer to capacity",
+          "    assert!(buffer.len() == 4);    // Check buffer is full",
+          "    #[should_panic]                 // Expect panic on attempt to overflow",
+          "    buffer.put_slice(&[5]);         // Attempt to add one more byte",
+          "    assert!(buffer.len() == 4);     // Buffer size should remain unchanged due to panic",
+          "    buffer.put_slice(&[1, 2, 3]);   // Ensure buffer can accept valid input after panic",
+          "    assert!(buffer.len() == 4);     // Buffer still has size 4",
+          "    buffer.clear();                  // Clear buffer for next test",
+          "    buffer.put_slice(&[5, 6]);      // Add bytes after clear",
+          "    assert!(buffer.len() == 2);     // Check length after valid addition",
+          "    buffer.put_slice(&[7, 8]);      // Fill the buffer to capacity",
+          "    assert!(buffer.len() == 4);     // Confirm buffer filled to capacity",
+          "    buffer.put_slice(&[9, 10]);     // Ensure panic on overflow",
+          "    assert!(buffer.len() == 4);     // Check buffer length remains unchanged after panic"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer: Vec<u8> = Vec::with_capacity(4);",
+          "    let src: &[u8] = &[1, 2, 3, 4, 5]; // Attempt to overfill the buffer",
+          "    buffer.put_slice(src);",
+          "    assert_eq!(buffer.len(), 0);  // Ensure buffer is initially empty",
+          "    buffer.put_slice(&[0; 4]);    // Fill buffer to capacity",
+          "    assert!(buffer.len() == 4);    // Check buffer is full",
+          "    #[should_panic]                 // Expect panic on attempt to overflow",
+          "    buffer.put_slice(&[5]);         // Attempt to add one more byte",
+          "    assert!(buffer.len() == 4);     // Buffer size should remain unchanged due to panic",
+          "    buffer.put_slice(&[1, 2, 3]);   // Ensure buffer can accept valid input after panic",
+          "    assert!(buffer.len() == 4);     // Buffer still has size 4",
+          "    buffer.clear();                  // Clear buffer for next test",
+          "    buffer.put_slice(&[5, 6]);      // Add bytes after clear",
+          "    assert!(buffer.len() == 2);     // Check length after valid addition",
+          "    buffer.put_slice(&[7, 8]);      // Fill the buffer to capacity",
+          "    assert!(buffer.len() == 4);     // Confirm buffer filled to capacity",
+          "    buffer.put_slice(&[9, 10]);     // Ensure panic on overflow",
+          "    assert!(buffer.len() == 4);     // Check buffer length remains unchanged after panic",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

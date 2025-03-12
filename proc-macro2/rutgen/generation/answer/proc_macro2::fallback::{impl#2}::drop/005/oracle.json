@@ -1,0 +1,123 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let inner = RcVec::new();",
+          "    let group = Group::Fallback(fallback::Group { /* initialize as needed */ });",
+          "    let token_tree = TokenTree::Group(group);",
+          "    let mut vec = RcVecBuilder { inner: vec![token_tree] }.take();",
+          "    let token_stream = TokenStream { inner: vec };",
+          "    ",
+          "    // Assume we're testing the drop of a TokenStream",
+          "    drop(token_stream);",
+          "}"
+        ],
+        "oracle": [
+          "    let inner = RcVec::new();",
+          "    let group = Group::Compiler(proc_macro::Group { /* initialize as needed */ });",
+          "    let token_tree = TokenTree::Group(group);",
+          "    let mut vec = RcVecBuilder { inner: vec![token_tree] }.take();",
+          "    let token_stream = TokenStream { inner: vec };",
+          "    drop(token_stream);"
+        ],
+        "code": [
+          "{",
+          "    let inner = RcVec::new();",
+          "    let group = Group::Fallback(fallback::Group { /* initialize as needed */ });",
+          "    let token_tree = TokenTree::Group(group);",
+          "    let mut vec = RcVecBuilder { inner: vec![token_tree] }.take();",
+          "    let token_stream = TokenStream { inner: vec };",
+          "    ",
+          "    // Assume we're testing the drop of a TokenStream",
+          "    drop(token_stream);",
+          "    let inner = RcVec::new();",
+          "    let group = Group::Compiler(proc_macro::Group { /* initialize as needed */ });",
+          "    let token_tree = TokenTree::Group(group);",
+          "    let mut vec = RcVecBuilder { inner: vec![token_tree] }.take();",
+          "    let token_stream = TokenStream { inner: vec };",
+          "    drop(token_stream);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let inner = RcVec::new();",
+          "    let group = Group::Compiler(proc_macro::Group { /* initialize as needed */ });",
+          "    let token_tree = TokenTree::Group(group);",
+          "    let mut vec = RcVecBuilder { inner: vec![token_tree] }.take();",
+          "    let token_stream = TokenStream { inner: vec };",
+          "",
+          "    // Assume we're testing the drop of a TokenStream",
+          "    drop(token_stream);",
+          "}"
+        ],
+        "oracle": [
+          "    RcVec<TokenTree> inner = RcVec::new();",
+          "    Group group = Group::Compiler(proc_macro::Group { /* initialize as needed */ });",
+          "    TokenTree token_tree = TokenTree::Group(group);",
+          "    RcVecBuilder<TokenTree> vec_builder = RcVecBuilder { inner: vec![token_tree] };",
+          "    RcVec<TokenTree> rcvec = vec_builder.take();",
+          "    TokenStream token_stream = TokenStream { inner: rcvec };",
+          "    assert!(token_stream.inner.get_mut().is_some());",
+          "    assert_eq!(token_stream.inner.len(), 1);",
+          "    assert!(!token_stream.inner.is_empty());",
+          "    assert!(matches!(token_stream.inner.iter().next(), Some(TokenTree::Group(_))));",
+          "    assert!(matches!(token_stream.inner.get_mut().unwrap().make_mut().as_mut(), RcVecMut { inner: _ }));",
+          "    let group = if let TokenTree::Group(ref g) = token_tree { g } else { panic!(\"Expected Group\") };",
+          "    assert!(matches!(group.inner, crate::imp::Group::Compiler(_)));",
+          "    let mut stack = Vec::new();",
+          "    let mut current = token_stream.inner.get_mut().unwrap().take().into_iter();",
+          "    assert!(current.next().is_some());",
+          "    assert!(current.next().is_some());",
+          "    assert!(stack.is_empty());",
+          "    assert!(stack.pop().is_none());",
+          "    drop(token_stream);"
+        ],
+        "code": [
+          "{",
+          "    let inner = RcVec::new();",
+          "    let group = Group::Compiler(proc_macro::Group { /* initialize as needed */ });",
+          "    let token_tree = TokenTree::Group(group);",
+          "    let mut vec = RcVecBuilder { inner: vec![token_tree] }.take();",
+          "    let token_stream = TokenStream { inner: vec };",
+          "",
+          "    // Assume we're testing the drop of a TokenStream",
+          "    drop(token_stream);",
+          "    RcVec<TokenTree> inner = RcVec::new();",
+          "    Group group = Group::Compiler(proc_macro::Group { /* initialize as needed */ });",
+          "    TokenTree token_tree = TokenTree::Group(group);",
+          "    RcVecBuilder<TokenTree> vec_builder = RcVecBuilder { inner: vec![token_tree] };",
+          "    RcVec<TokenTree> rcvec = vec_builder.take();",
+          "    TokenStream token_stream = TokenStream { inner: rcvec };",
+          "    assert!(token_stream.inner.get_mut().is_some());",
+          "    assert_eq!(token_stream.inner.len(), 1);",
+          "    assert!(!token_stream.inner.is_empty());",
+          "    assert!(matches!(token_stream.inner.iter().next(), Some(TokenTree::Group(_))));",
+          "    assert!(matches!(token_stream.inner.get_mut().unwrap().make_mut().as_mut(), RcVecMut { inner: _ }));",
+          "    let group = if let TokenTree::Group(ref g) = token_tree { g } else { panic!(\"Expected Group\") };",
+          "    assert!(matches!(group.inner, crate::imp::Group::Compiler(_)));",
+          "    let mut stack = Vec::new();",
+          "    let mut current = token_stream.inner.get_mut().unwrap().take().into_iter();",
+          "    assert!(current.next().is_some());",
+          "    assert!(current.next().is_some());",
+          "    assert!(stack.is_empty());",
+          "    assert!(stack.pop().is_none());",
+          "    drop(token_stream);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

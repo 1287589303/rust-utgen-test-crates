@@ -1,0 +1,465 @@
+{
+  "name": "percent_encoding::{impl#5}::decode_utf8",
+  "mod_info": {
+    "name": "",
+    "loc": "percent_encoding/src/lib.rs:9:1:481:2"
+  },
+  "visible": true,
+  "loc": "percent_encoding/src/lib.rs:312:5:323:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: self.clone().into() matches Cow::Owned(bytes) at line 313 is true\n",
+        "precondition: String::from_utf8(bytes) matches Err(e) at line 318 is true\n",
+        "expected return value/type: Err(e.utf8_error())\n"
+      ],
+      "input_infer": "test input conditions/ranges: a non-UTF-8 byte sequence as a Vec<u8> containing bytes that do not form valid UTF-8 encoding, such as Vec<u8> consisting of values [0xFF, 0xFE, 0xFD] or similar combinations\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: Vec<u8> = vec![0xFF, 0xFE, 0xFD];",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    match result {",
+                "    Err(e) => {",
+                "    assert_eq!(e, str::Utf8Error::from_bytes_iter(&[0xFF, 0xFE, 0xFD]));",
+                "    }",
+                "    _ => panic!(\"Expected an error but got a different result\"),",
+                "    }"
+              ],
+              "code": [
+                "{",
+                "    let bytes: Vec<u8> = vec![0xFF, 0xFE, 0xFD];",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "    assert!(result.is_err());",
+                "    match result {",
+                "    Err(e) => {",
+                "    assert_eq!(e, str::Utf8Error::from_bytes_iter(&[0xFF, 0xFE, 0xFD]));",
+                "    }",
+                "    _ => panic!(\"Expected an error but got a different result\"),",
+                "    }",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: Vec<u8> = vec![0x80, 0x81, 0xFE];",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().utf8_error().valid_up_to(), 0);",
+                "    assert_eq!(result.unwrap_err().utf8_error().into_inner(), &[0x80, 0x81, 0xFE]);"
+              ],
+              "code": [
+                "{",
+                "    let bytes: Vec<u8> = vec![0x80, 0x81, 0xFE];",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().utf8_error().valid_up_to(), 0);",
+                "    assert_eq!(result.unwrap_err().utf8_error().into_inner(), &[0x80, 0x81, 0xFE]);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: self.clone().into() matches Cow::Owned(bytes) at line 313 is true\n",
+        "precondition: String::from_utf8(bytes) matches Ok(s) at line 318 is true\n",
+        "precondition: String::from_utf8(bytes) matches Ok(s) at line 318 is true\n",
+        "expected return value/type: Ok(s.into())\n"
+      ],
+      "input_infer": "self.clone().into() should contain valid UTF-8 encoded bytes (e.g., any valid UTF-8 string like \"Hello%20World\", maximum length 1_024 bytes) where percent-encoded sequences are properly formed and result in a fully valid UTF-8 output.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: Vec<u8> = b\"Hello%20World\".to_vec(); ",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let decoded = result.unwrap();",
+                "    assert_eq!(decoded, Cow::Owned(\"Hello World\".to_string()));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: Vec<u8> = b\"Hello%20World\".to_vec(); ",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "    assert!(result.is_ok());",
+                "    let decoded = result.unwrap();",
+                "    assert_eq!(decoded, Cow::Owned(\"Hello World\".to_string()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let max_length_string = \"A%20\".repeat(341); // 341 * 3 = 1023 bytes (valid percent-encoded)",
+                "    let bytes: Vec<u8> = max_length_string.into_bytes(); ",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), Cow::Owned(\"A \".repeat(341).as_str().into()));"
+              ],
+              "code": [
+                "{",
+                "    let max_length_string = \"A%20\".repeat(341); // 341 * 3 = 1023 bytes (valid percent-encoded)",
+                "    let bytes: Vec<u8> = max_length_string.into_bytes(); ",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), Cow::Owned(\"A \".repeat(341).as_str().into()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: Vec<u8> = b\"%E2%9C%94%20Hello%20World\".to_vec(); // Contains valid UTF-8 and percent-encoded characters",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), Cow::Owned(\"✅ Hello World\".into()));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: Vec<u8> = b\"%E2%9C%94%20Hello%20World\".to_vec(); // Contains valid UTF-8 and percent-encoded characters",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), Cow::Owned(\"✅ Hello World\".into()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: Vec<u8> = b\"%C3%89l%C3%A9phant%20en%20%26%40%23\".to_vec(); ",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Ok(Cow::Owned(\"Éléphant en &@#\".to_owned())));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: Vec<u8> = b\"%C3%89l%C3%A9phant%20en%20%26%40%23\".to_vec(); ",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "    assert_eq!(result, Ok(Cow::Owned(\"Éléphant en &@#\".to_owned())));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: self.clone().into() matches Cow::Borrowed(bytes) at line 313 is true\n",
+        "precondition: self.clone().into() matches Cow::Borrowed(bytes) at line 313 is true\n",
+        "precondition: str::from_utf8(bytes) matches Err(e) at line 314 is true\n",
+        "expected return value/type: Err(e)\n"
+      ],
+      "input_infer": "Test input conditions or ranges: Any slice of bytes that results in a percent-decoded string that contains invalid UTF-8 sequences, such as bytes with values 0x80-0xFF or byte patterns like [0xC0, 0xA0, 0xED, 0x9F, 0xBF] which are valid in percent encoding but would fail UTF-8 decoding.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let invalid_bytes: &[u8] = &[0xC0, 0x80]; // Invalid UTF-8 sequence",
+                "    let percent_decode = PercentDecode { bytes: invalid_bytes.iter() };",
+                "    let _result = percent_decode.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(_result.is_err());",
+                "    assert_eq!(_result.unwrap_err().utf8_error().valid_up_to(), 0);",
+                "    assert_eq!(_result.unwrap_err().utf8_error().byte(), 0xC0);"
+              ],
+              "code": [
+                "{",
+                "    let invalid_bytes: &[u8] = &[0xC0, 0x80]; // Invalid UTF-8 sequence",
+                "    let percent_decode = PercentDecode { bytes: invalid_bytes.iter() };",
+                "    let _result = percent_decode.decode_utf8();",
+                "    assert!(_result.is_err());",
+                "    assert_eq!(_result.unwrap_err().utf8_error().valid_up_to(), 0);",
+                "    assert_eq!(_result.unwrap_err().utf8_error().byte(), 0xC0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let invalid_bytes: &[u8] = &[0xED, 0x9F, 0xBF]; // Valid in percent encoding but invalid in UTF-8",
+                "    let percent_decode = PercentDecode { bytes: invalid_bytes.iter() };",
+                "    let _result = percent_decode.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result.is_err(), true);",
+                "    assert!(_result.err().is_some());"
+              ],
+              "code": [
+                "{",
+                "    let invalid_bytes: &[u8] = &[0xED, 0x9F, 0xBF]; // Valid in percent encoding but invalid in UTF-8",
+                "    let percent_decode = PercentDecode { bytes: invalid_bytes.iter() };",
+                "    let _result = percent_decode.decode_utf8();",
+                "    assert_eq!(_result.is_err(), true);",
+                "    assert!(_result.err().is_some());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let invalid_bytes: &[u8] = &[0xFF]; // High value byte, not valid in UTF-8",
+                "    let percent_decode = PercentDecode { bytes: invalid_bytes.iter() };",
+                "    let _result = percent_decode.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    let result = percent_decode.decode_utf8();",
+                "    assert!(result.is_err());",
+                "    assert!(result.unwrap_err().utf8_error().valid_up_to() == 0);",
+                "    assert_eq!(result.unwrap_err().utf8_error().error_len(), Some(1));"
+              ],
+              "code": [
+                "{",
+                "    let invalid_bytes: &[u8] = &[0xFF]; // High value byte, not valid in UTF-8",
+                "    let percent_decode = PercentDecode { bytes: invalid_bytes.iter() };",
+                "    let _result = percent_decode.decode_utf8();",
+                "    let result = percent_decode.decode_utf8();",
+                "    assert!(result.is_err());",
+                "    assert!(result.unwrap_err().utf8_error().valid_up_to() == 0);",
+                "    assert_eq!(result.unwrap_err().utf8_error().error_len(), Some(1));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let invalid_bytes: &[u8] = &[0x80, 0xC0, 0xA0]; // Mixed invalid bytes",
+                "    let percent_decode = PercentDecode { bytes: invalid_bytes.iter() };",
+                "    let _result = percent_decode.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(_result.is_err());",
+                "    assert_eq!(_result.unwrap_err().data(), /* provide specific error data if known */);"
+              ],
+              "code": [
+                "{",
+                "    let invalid_bytes: &[u8] = &[0x80, 0xC0, 0xA0]; // Mixed invalid bytes",
+                "    let percent_decode = PercentDecode { bytes: invalid_bytes.iter() };",
+                "    let _result = percent_decode.decode_utf8();",
+                "    assert!(_result.is_err());",
+                "    assert_eq!(_result.unwrap_err().data(), /* provide specific error data if known */);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: self.clone().into() matches Cow::Borrowed(bytes) at line 313 is true\n",
+        "precondition: self.clone().into() matches Cow::Borrowed(bytes) at line 313 is true\n",
+        "precondition: str::from_utf8(bytes) matches Ok(s) at line 314 is true\n",
+        "precondition: str::from_utf8(bytes) matches Ok(s) at line 314 is true\n",
+        "expected return value/type: Ok(s.into())\n"
+      ],
+      "input_infer": "Test input conditions for `decode_utf8` function: provide a slice of bytes containing valid UTF-8 encoded characters, such as `b\"Hello, World!\"`, ensuring that the bytes represent a valid UTF-8 sequence and fit within the bounds of a typical string length (0 to 1024 bytes).\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = b\"Hello, World!\";",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let _result = decoder.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, Ok(Cow::Borrowed(\"Hello, World!\")));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = b\"Hello, World!\";",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let _result = decoder.decode_utf8();",
+                "    assert_eq!(_result, Ok(Cow::Borrowed(\"Hello, World!\")));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = b\"Rust programming is fun!\";",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let _result = decoder.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, Ok(Cow::Borrowed(\"Rust programming is fun!\")));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = b\"Rust programming is fun!\";",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let _result = decoder.decode_utf8();",
+                "    assert_eq!(_result, Ok(Cow::Borrowed(\"Rust programming is fun!\")));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = b\"\";",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let _result = decoder.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes: &[u8] = b\"\";",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), Cow::Borrowed(\"\"));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = b\"\";",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let _result = decoder.decode_utf8();",
+                "    let bytes: &[u8] = b\"\";",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), Cow::Borrowed(\"\"));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = b\"A\".repeat(1024).as_slice();",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let _result = decoder.decode_utf8();",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes: &[u8] = b\"A\".repeat(1024).as_slice();",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), Cow::Borrowed(\"A\".repeat(1024).as_str()));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = b\"A\".repeat(1024).as_slice();",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let _result = decoder.decode_utf8();",
+                "    let bytes: &[u8] = b\"A\".repeat(1024).as_slice();",
+                "    let decoder = PercentDecode { bytes: bytes.iter() };",
+                "    let result = decoder.decode_utf8();",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), Cow::Borrowed(\"A\".repeat(1024).as_str()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,359 @@
+{
+  "name": "regex_syntax::hir::{impl#29}::next",
+  "mod_info": {
+    "name": "hir",
+    "loc": "regex-syntax/src/lib.rs:190:1:190:13"
+  },
+  "visible": true,
+  "loc": "regex-syntax/src/hir/mod.rs:2924:5:2934:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: self.set.is_empty() at line 2925 is true\n",
+        "expected return value/type: None\n"
+      ],
+      "input_infer": "self.set.bits = 0 (representing an empty LookSet)\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut iter = LookSetIter { set: LookSet::empty() };",
+                "    let result = iter.next();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_none());"
+              ],
+              "code": [
+                "{",
+                "    let mut iter = LookSetIter { set: LookSet::empty() };",
+                "    let result = iter.next();",
+                "    assert!(result.is_none());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut iter = LookSetIter { set: LookSet { bits: 0 } };",
+                "    let result = iter.next();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let mut iter = LookSetIter { set: LookSet { bits: 0 } };",
+                "    let result = iter.next();",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: self.set.is_empty() at line 2925 is false\n",
+        "precondition: Look::from_repr(1 << bit)? at line 2931 is Err/None\n"
+      ],
+      "input_infer": "self.set.bits should contain at least one bit set between 0 and 17 (inclusive) to ensure is_empty() is false, and when evaluating Look::from_repr(1 << bit), it should result in values that do not match any valid Look enum variants (e.g., 1 << 18 or higher).\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut look_set = LookSet {",
+                "        bits: 1 << 18, // Sets bit outside valid Look range.",
+                "    };",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let _ = iter.next(); // This should trigger the conditions.",
+                "}"
+              ],
+              "oracle": [
+                "    self.set.is_empty() == false",
+                "    Look::from_repr(1 << (18)) == None",
+                "    iter.next() == None"
+              ],
+              "code": [
+                "{",
+                "    let mut look_set = LookSet {",
+                "        bits: 1 << 18, // Sets bit outside valid Look range.",
+                "    };",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let _ = iter.next(); // This should trigger the conditions.",
+                "    self.set.is_empty() == false",
+                "    Look::from_repr(1 << (18)) == None",
+                "    iter.next() == None",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut look_set = LookSet {",
+                "        bits: 1 << 19, // Another bit outside of valid Look range.",
+                "    };",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let _ = iter.next(); // Method should be tested here.",
+                "}"
+              ],
+              "oracle": [
+                "    let mut look_set = LookSet { bits: 1 << 19 }; // Ensure bits are outside valid Look range",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    assert_eq!(iter.next(), None); // Expect None due to invalid look-around assertion"
+              ],
+              "code": [
+                "{",
+                "    let mut look_set = LookSet {",
+                "        bits: 1 << 19, // Another bit outside of valid Look range.",
+                "    };",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let _ = iter.next(); // Method should be tested here.",
+                "    let mut look_set = LookSet { bits: 1 << 19 }; // Ensure bits are outside valid Look range",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    assert_eq!(iter.next(), None); // Expect None due to invalid look-around assertion",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: self.set.is_empty() at line 2925 is false\n",
+        "precondition: Look::from_repr(1 << bit)? at line 2931 is Ok/Some\n",
+        "expected return value/type: Some(look)\n"
+      ],
+      "input_infer": "self.set.bits must be in the range 1 to 0b10_0000_0000_0000_0000 (inclusive) with at least one bit set and the value must correspond to a valid Look variant\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut look_set = LookSet { bits: 1 }; // corresponds to Look::Start",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result = iter.next();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_some());",
+                "    assert_eq!(result.unwrap(), Look::Start);",
+                "    assert!(iter.set.is_empty());"
+              ],
+              "code": [
+                "{",
+                "    let mut look_set = LookSet { bits: 1 }; // corresponds to Look::Start",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result = iter.next();",
+                "    assert!(result.is_some());",
+                "    assert_eq!(result.unwrap(), Look::Start);",
+                "    assert!(iter.set.is_empty());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut look_set = LookSet { bits: 2 }; // corresponds to Look::End",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result = iter.next();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Look::End));",
+                "    assert!(iter.set.is_empty() == true);",
+                "    assert_eq!(iter.set.len(), 0);",
+                "    assert!(iter.set.contains(Look::End) == false);"
+              ],
+              "code": [
+                "{",
+                "    let mut look_set = LookSet { bits: 2 }; // corresponds to Look::End",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result = iter.next();",
+                "    assert_eq!(result, Some(Look::End));",
+                "    assert!(iter.set.is_empty() == true);",
+                "    assert_eq!(iter.set.len(), 0);",
+                "    assert!(iter.set.contains(Look::End) == false);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut look_set = LookSet { bits: 3 }; // corresponds to Look::Start and Look::End",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result_start = iter.next();",
+                "    let result_end = iter.next();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(iter.set.bits, 0); // After consuming two elements, no bits should remain.",
+                "    assert_eq!(result_start, Some(Look::Start)); // First call should return Some(Look::Start).",
+                "    assert_eq!(result_end, Some(Look::End)); // Second call should return Some(Look::End).",
+                "    assert_eq!(iter.next(), None); // Third call should return None as no more elements are left."
+              ],
+              "code": [
+                "{",
+                "    let mut look_set = LookSet { bits: 3 }; // corresponds to Look::Start and Look::End",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result_start = iter.next();",
+                "    let result_end = iter.next();",
+                "    assert_eq!(iter.set.bits, 0); // After consuming two elements, no bits should remain.",
+                "    assert_eq!(result_start, Some(Look::Start)); // First call should return Some(Look::Start).",
+                "    assert_eq!(result_end, Some(Look::End)); // Second call should return Some(Look::End).",
+                "    assert_eq!(iter.next(), None); // Third call should return None as no more elements are left.",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut look_set = LookSet { bits: 4 }; // corresponds to Look::StartLF",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result = iter.next();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_some());",
+                "    assert_eq!(result, Some(Look::StartLF));",
+                "    assert_eq!(iter.set.bits, 0);",
+                "    assert!(!iter.set.is_empty());"
+              ],
+              "code": [
+                "{",
+                "    let mut look_set = LookSet { bits: 4 }; // corresponds to Look::StartLF",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result = iter.next();",
+                "    assert!(result.is_some());",
+                "    assert_eq!(result, Some(Look::StartLF));",
+                "    assert_eq!(iter.set.bits, 0);",
+                "    assert!(!iter.set.is_empty());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut look_set = LookSet { bits: 8 }; // corresponds to Look::EndLF",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result = iter.next();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_some());",
+                "    assert_eq!(result, Some(Look::EndLF));",
+                "    assert!(iter.set.is_empty() == true);"
+              ],
+              "code": [
+                "{",
+                "    let mut look_set = LookSet { bits: 8 }; // corresponds to Look::EndLF",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result = iter.next();",
+                "    assert!(result.is_some());",
+                "    assert_eq!(result, Some(Look::EndLF));",
+                "    assert!(iter.set.is_empty() == true);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut look_set = LookSet { bits: 0b11_1110 }; // corresponds to multiple Look variants",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result_first = iter.next();",
+                "    let result_second = iter.next();",
+                "    let result_third = iter.next();",
+                "}"
+              ],
+              "oracle": [
+                "    let mut look_set = LookSet { bits: 0b11_1110 };",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result_first = iter.next();",
+                "    let result_second = iter.next();",
+                "    let result_third = iter.next();",
+                "    assert!(result_first.is_some());",
+                "    assert!(result_second.is_some());",
+                "    assert!(result_third.is_some());",
+                "    assert!(!iter.set.is_empty());",
+                "    assert!(Look::from_repr(1 << result_first.unwrap().as_repr()).is_some());",
+                "    assert!(Look::from_repr(1 << result_second.unwrap().as_repr()).is_some());",
+                "    assert!(Look::from_repr(1 << result_third.unwrap().as_repr()).is_some());"
+              ],
+              "code": [
+                "{",
+                "    let mut look_set = LookSet { bits: 0b11_1110 }; // corresponds to multiple Look variants",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result_first = iter.next();",
+                "    let result_second = iter.next();",
+                "    let result_third = iter.next();",
+                "    let mut look_set = LookSet { bits: 0b11_1110 };",
+                "    let mut iter = LookSetIter { set: look_set };",
+                "    let result_first = iter.next();",
+                "    let result_second = iter.next();",
+                "    let result_third = iter.next();",
+                "    assert!(result_first.is_some());",
+                "    assert!(result_second.is_some());",
+                "    assert!(result_third.is_some());",
+                "    assert!(!iter.set.is_empty());",
+                "    assert!(Look::from_repr(1 << result_first.unwrap().as_repr()).is_some());",
+                "    assert!(Look::from_repr(1 << result_second.unwrap().as_repr()).is_some());",
+                "    assert!(Look::from_repr(1 << result_third.unwrap().as_repr()).is_some());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

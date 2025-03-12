@@ -1,0 +1,204 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut serialize_map = SerializeMap::Map { ",
+          "        map: Map::<String, Value>::new(), ",
+          "        next_key: None ",
+          "    };",
+          "    let key = \"test_key\";",
+          "    let value = \"test_value\";",
+          "",
+          "    let _ = serialize_map.serialize_field(key, &value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(serialize_map.next_key, None);",
+          "    assert!(serialize_map.map.is_empty());",
+          "    assert!(serialize_map.serialize_field(key, &value).is_ok());",
+          "    assert!(serialize_map.map.len() == 1);",
+          "    assert!(serialize_map.map.contains_key(key));",
+          "    assert!(serialize_map.map.get(key).unwrap() == &Value::String(String::from(\"test_value\")));",
+          "    assert!(serialize_map.serialize_field(\"invalid_key\", &value).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut serialize_map = SerializeMap::Map { ",
+          "        map: Map::<String, Value>::new(), ",
+          "        next_key: None ",
+          "    };",
+          "    let key = \"test_key\";",
+          "    let value = \"test_value\";",
+          "",
+          "    let _ = serialize_map.serialize_field(key, &value);",
+          "    assert_eq!(serialize_map.next_key, None);",
+          "    assert!(serialize_map.map.is_empty());",
+          "    assert!(serialize_map.serialize_field(key, &value).is_ok());",
+          "    assert!(serialize_map.map.len() == 1);",
+          "    assert!(serialize_map.map.contains_key(key));",
+          "    assert!(serialize_map.map.get(key).unwrap() == &Value::String(String::from(\"test_value\")));",
+          "    assert!(serialize_map.serialize_field(\"invalid_key\", &value).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    #[cfg(feature = \"arbitrary_precision\")]",
+          "    {",
+          "        let mut serialize_map = SerializeMap::Number { out_value: None };",
+          "        let key = crate::number::TOKEN;",
+          "        let value = 42;",
+          "",
+          "        let _ = serialize_map.serialize_field(key, &value);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(serialize_map.out_value.is_some(), true);",
+          "    assert!(matches!(serialize_map, SerializeMap::Number { .. }));",
+          "    assert_eq!(serialize_map.serialize_field(key, &value).is_ok(), true);",
+          "    assert_eq!(serialize_map.out_value.unwrap(), Some(tri!(value.serialize(NumberValueEmitter))));"
+        ],
+        "code": [
+          "{",
+          "    #[cfg(feature = \"arbitrary_precision\")]",
+          "    {",
+          "        let mut serialize_map = SerializeMap::Number { out_value: None };",
+          "        let key = crate::number::TOKEN;",
+          "        let value = 42;",
+          "",
+          "        let _ = serialize_map.serialize_field(key, &value);",
+          "    }",
+          "    assert_eq!(serialize_map.out_value.is_some(), true);",
+          "    assert!(matches!(serialize_map, SerializeMap::Number { .. }));",
+          "    assert_eq!(serialize_map.serialize_field(key, &value).is_ok(), true);",
+          "    assert_eq!(serialize_map.out_value.unwrap(), Some(tri!(value.serialize(NumberValueEmitter))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    #[cfg(feature = \"arbitrary_precision\")]",
+          "    {",
+          "        let mut serialize_map = SerializeMap::Number { out_value: None };",
+          "        let key = \"invalid_key\";",
+          "        let value = 42;",
+          "",
+          "        let _ = serialize_map.serialize_field(key, &value);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(serialize_map.serialize_field(key, &value).is_err());",
+          "    assert_eq!(serialize_map.out_value, None);"
+        ],
+        "code": [
+          "{",
+          "    #[cfg(feature = \"arbitrary_precision\")]",
+          "    {",
+          "        let mut serialize_map = SerializeMap::Number { out_value: None };",
+          "        let key = \"invalid_key\";",
+          "        let value = 42;",
+          "",
+          "        let _ = serialize_map.serialize_field(key, &value);",
+          "    }",
+          "    assert!(serialize_map.serialize_field(key, &value).is_err());",
+          "    assert_eq!(serialize_map.out_value, None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    #[cfg(feature = \"raw_value\")]",
+          "    {",
+          "        let mut serialize_map = SerializeMap::RawValue { out_value: None };",
+          "        let key = crate::raw::TOKEN;",
+          "        let value = \"raw_value\";",
+          "",
+          "        let _ = serialize_map.serialize_field(key, &value);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(serialize_map.serialize_field(key, &value), Ok(())));",
+          "    assert!(serialize_map.out_value.is_some());",
+          "    assert_eq!(serialize_map.out_value.unwrap(), expected_value);",
+          "    assert!(matches!(serialize_map.serialize_field(crate::raw::TOKEN, &123), Ok(())));",
+          "    assert!(matches!(serialize_map.serialize_field(\"invalid_key\", &value), Err(Error::invalid_raw_value())));",
+          "    assert!(matches!(serialize_map.serialize_field(key, &value), Ok(())));"
+        ],
+        "code": [
+          "{",
+          "    #[cfg(feature = \"raw_value\")]",
+          "    {",
+          "        let mut serialize_map = SerializeMap::RawValue { out_value: None };",
+          "        let key = crate::raw::TOKEN;",
+          "        let value = \"raw_value\";",
+          "",
+          "        let _ = serialize_map.serialize_field(key, &value);",
+          "    }",
+          "    assert!(matches!(serialize_map.serialize_field(key, &value), Ok(())));",
+          "    assert!(serialize_map.out_value.is_some());",
+          "    assert_eq!(serialize_map.out_value.unwrap(), expected_value);",
+          "    assert!(matches!(serialize_map.serialize_field(crate::raw::TOKEN, &123), Ok(())));",
+          "    assert!(matches!(serialize_map.serialize_field(\"invalid_key\", &value), Err(Error::invalid_raw_value())));",
+          "    assert!(matches!(serialize_map.serialize_field(key, &value), Ok(())));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    #[cfg(feature = \"raw_value\")]",
+          "    {",
+          "        let mut serialize_map = SerializeMap::RawValue { out_value: None };",
+          "        let key = \"invalid_key\";",
+          "        let value = \"raw_value\";",
+          "",
+          "        let _ = serialize_map.serialize_field(key, &value);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(serialize_map.serialize_field(key, &value), Err(invalid_raw_value()));"
+        ],
+        "code": [
+          "{",
+          "    #[cfg(feature = \"raw_value\")]",
+          "    {",
+          "        let mut serialize_map = SerializeMap::RawValue { out_value: None };",
+          "        let key = \"invalid_key\";",
+          "        let value = \"raw_value\";",
+          "",
+          "        let _ = serialize_map.serialize_field(key, &value);",
+          "    }",
+          "    assert_eq!(serialize_map.serialize_field(key, &value), Err(invalid_raw_value()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

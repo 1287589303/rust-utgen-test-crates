@@ -1,0 +1,220 @@
+[
+  {
+    "uses": [
+      "use std::fmt;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::fmt;",
+          "    ",
+          "    let err = Error {",
+          "        err: Box::from(\"Sample error message\").into(),",
+          "    };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let _ = err.fmt(&mut buffer);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buffer.to_string(), \"Error(\\\"Sample error message\\\")\");",
+          "    assert!(buffer.is_empty() == false);",
+          "    assert!(buffer.fmt_called);",
+          "    assert!(err.err == Box::from(\"Sample error message\").into());"
+        ],
+        "code": [
+          "{",
+          "    use std::fmt;",
+          "    ",
+          "    let err = Error {",
+          "        err: Box::from(\"Sample error message\").into(),",
+          "    };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let _ = err.fmt(&mut buffer);",
+          "    assert_eq!(buffer.to_string(), \"Error(\\\"Sample error message\\\")\");",
+          "    assert!(buffer.is_empty() == false);",
+          "    assert!(buffer.fmt_called);",
+          "    assert!(err.err == Box::from(\"Sample error message\").into());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::fmt;",
+          "    ",
+          "    let err = Error {",
+          "        err: Box::from(\"\").into(),",
+          "    };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let _ = err.fmt(&mut buffer);",
+          "}"
+        ],
+        "oracle": [
+          "    let err = Error { err: Box::from(\"\").into() };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let result = err.fmt(&mut buffer);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(buffer.to_string(), \"Error\");",
+          "    ",
+          "    let err_non_std = Error { err: () };",
+          "    let mut buffer_non_std = fmt::Formatter::new();",
+          "    let result_non_std = err_non_std.fmt(&mut buffer_non_std);",
+          "    assert_eq!(result_non_std.is_ok(), true);",
+          "    assert_eq!(buffer_non_std.to_string(), \"Error\");"
+        ],
+        "code": [
+          "{",
+          "    use std::fmt;",
+          "    ",
+          "    let err = Error {",
+          "        err: Box::from(\"\").into(),",
+          "    };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let _ = err.fmt(&mut buffer);",
+          "    let err = Error { err: Box::from(\"\").into() };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let result = err.fmt(&mut buffer);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(buffer.to_string(), \"Error\");",
+          "    ",
+          "    let err_non_std = Error { err: () };",
+          "    let mut buffer_non_std = fmt::Formatter::new();",
+          "    let result_non_std = err_non_std.fmt(&mut buffer_non_std);",
+          "    assert_eq!(result_non_std.is_ok(), true);",
+          "    assert_eq!(buffer_non_std.to_string(), \"Error\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::fmt;",
+          "    ",
+          "    let err = Error {",
+          "        err: Box::from(\"A very large error message that exceeds the usual length.\").into(),",
+          "    };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let _ = err.fmt(&mut buffer);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buffer.to_string(), \"Error(\\\"A very large error message that exceeds the usual length.\\\")\");",
+          "    assert!(buffer.is_empty() == false);",
+          "    assert!(buffer.to_string().contains(\"Error\"));",
+          "    assert!(buffer.to_string().contains(\"A very large error message that exceeds the usual length.\"));",
+          "    assert!(matches!(err.fmt(&mut buffer), Ok(())));",
+          "    assert!(matches!(buffer.debug_tuple(\"Error\"), fmt::DebugTuple));"
+        ],
+        "code": [
+          "{",
+          "    use std::fmt;",
+          "    ",
+          "    let err = Error {",
+          "        err: Box::from(\"A very large error message that exceeds the usual length.\").into(),",
+          "    };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let _ = err.fmt(&mut buffer);",
+          "    assert_eq!(buffer.to_string(), \"Error(\\\"A very large error message that exceeds the usual length.\\\")\");",
+          "    assert!(buffer.is_empty() == false);",
+          "    assert!(buffer.to_string().contains(\"Error\"));",
+          "    assert!(buffer.to_string().contains(\"A very large error message that exceeds the usual length.\"));",
+          "    assert!(matches!(err.fmt(&mut buffer), Ok(())));",
+          "    assert!(matches!(buffer.debug_tuple(\"Error\"), fmt::DebugTuple));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    use std::fmt;",
+          "    ",
+          "    let err = Error {",
+          "        err: Box::from(std::ptr::null_mut()).into(),",
+          "    };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let _ = err.fmt(&mut buffer);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::any::type_name::<Error>().contains(\"Error\"));",
+          "    assert_eq!(std::mem::size_of::<Error>(), std::mem::size_of::<ErrorImpl>() + std::mem::size_of::<()>());",
+          "    assert!(matches!(err.fmt(&mut buffer), Err(_)));",
+          "    assert!(buffer.lines().count() > 0);",
+          "    assert!(buffer.errors().is_empty());"
+        ],
+        "code": [
+          "{",
+          "    use std::fmt;",
+          "    ",
+          "    let err = Error {",
+          "        err: Box::from(std::ptr::null_mut()).into(),",
+          "    };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let _ = err.fmt(&mut buffer);",
+          "    assert!(std::any::type_name::<Error>().contains(\"Error\"));",
+          "    assert_eq!(std::mem::size_of::<Error>(), std::mem::size_of::<ErrorImpl>() + std::mem::size_of::<()>());",
+          "    assert!(matches!(err.fmt(&mut buffer), Err(_)));",
+          "    assert!(buffer.lines().count() > 0);",
+          "    assert!(buffer.errors().is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::fmt;",
+          "    ",
+          "    #[cfg(not(any(feature = \"std\", feature = \"alloc\")))]",
+          "    let err = Error {",
+          "        err: (),",
+          "    };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let _ = err.fmt(&mut buffer);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(buffer.is_empty());",
+          "    assert_eq!(format!(\"{:?}\", err), \"Error\");",
+          "    #[cfg(any(feature = \"std\", feature = \"alloc\"))] assert!(buffer.contains(\"\"));",
+          "    #[cfg(not(any(feature = \"std\", feature = \"alloc\")))] assert!(buffer.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    use std::fmt;",
+          "    ",
+          "    #[cfg(not(any(feature = \"std\", feature = \"alloc\")))]",
+          "    let err = Error {",
+          "        err: (),",
+          "    };",
+          "    let mut buffer = fmt::Formatter::new();",
+          "    let _ = err.fmt(&mut buffer);",
+          "    assert!(buffer.is_empty());",
+          "    assert_eq!(format!(\"{:?}\", err), \"Error\");",
+          "    #[cfg(any(feature = \"std\", feature = \"alloc\"))] assert!(buffer.contains(\"\"));",
+          "    #[cfg(not(any(feature = \"std\", feature = \"alloc\")))] assert!(buffer.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

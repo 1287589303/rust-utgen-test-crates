@@ -1,0 +1,280 @@
+{
+  "name": "bytes::bytes_mut::{impl#0}::unsplit",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": true,
+  "loc": "src/bytes_mut.rs:904:5:913:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: self.is_empty() at line 905 is true\n"
+      ],
+      "input_infer": "self is a mutable reference to a BytesMut object and other is a BytesMut object with len == 0 (for an empty other) or capacity at least equal to self.len (for non-empty self), and both have valid allocated memory.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut self_buf = BytesMut::new();",
+                "    let other_buf = BytesMut::from_vec(vec![1, 2, 3]);",
+                "    self_buf.unsplit(other_buf);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(self_buf.len() == 3);",
+                "    assert!(self_buf.capacity() >= 3);",
+                "    assert_eq!(self_buf.as_slice(), &[1, 2, 3]);"
+              ],
+              "code": [
+                "{",
+                "    let mut self_buf = BytesMut::new();",
+                "    let other_buf = BytesMut::from_vec(vec![1, 2, 3]);",
+                "    self_buf.unsplit(other_buf);",
+                "    assert!(self_buf.len() == 3);",
+                "    assert!(self_buf.capacity() >= 3);",
+                "    assert_eq!(self_buf.as_slice(), &[1, 2, 3]);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut self_buf = BytesMut::new();",
+                "    let other_buf = BytesMut::new();",
+                "    self_buf.unsplit(other_buf);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(self_buf.is_empty());",
+                "    assert_eq!(self_buf.len(), 0);",
+                "    assert_eq!(self_buf.capacity(), 0);",
+                "    assert_eq!(self_buf, other_buf);",
+                "    assert!(self_buf.as_slice().is_empty());",
+                "    assert!(self_buf.is_empty());"
+              ],
+              "code": [
+                "{",
+                "    let mut self_buf = BytesMut::new();",
+                "    let other_buf = BytesMut::new();",
+                "    self_buf.unsplit(other_buf);",
+                "    assert!(self_buf.is_empty());",
+                "    assert_eq!(self_buf.len(), 0);",
+                "    assert_eq!(self_buf.capacity(), 0);",
+                "    assert_eq!(self_buf, other_buf);",
+                "    assert!(self_buf.as_slice().is_empty());",
+                "    assert!(self_buf.is_empty());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut self_buf = BytesMut::new();",
+                "    let other_buf = BytesMut::with_capacity(128);",
+                "    self_buf.unsplit(other_buf);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(self_buf.is_empty());",
+                "    assert_eq!(self_buf.len(), 0);",
+                "    assert_eq!(self_buf.capacity(), 128);",
+                "    assert_eq!(self_buf, other_buf);"
+              ],
+              "code": [
+                "{",
+                "    let mut self_buf = BytesMut::new();",
+                "    let other_buf = BytesMut::with_capacity(128);",
+                "    self_buf.unsplit(other_buf);",
+                "    assert!(self_buf.is_empty());",
+                "    assert_eq!(self_buf.len(), 0);",
+                "    assert_eq!(self_buf.capacity(), 128);",
+                "    assert_eq!(self_buf, other_buf);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: self.is_empty() at line 905 is false\n",
+        "precondition: let Err(other) = self.try_unsplit(other) at line 910 is true\n"
+      ],
+      "input_infer": "self.is_empty() is false; other's capacity must be greater than 0; self.length must be less than or equal to self.capacity; if self.kind() is KIND_ARC, other.kind() must not be KIND_ARC; the length of other must be greater than 0; other must have been split from self and have a length that violates the contiguous condition.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut self_bytes = BytesMut::with_capacity(10);",
+                "    self_bytes.extend_from_slice(b\"abcdef\");",
+                "    let other_bytes = self_bytes.split_off(3); // Creates a contiguous split",
+                "",
+                "    // Now we modify `other` in a way that violates the contiguous condition",
+                "    let mut non_contiguous_other = BytesMut::with_capacity(5);",
+                "    non_contiguous_other.extend_from_slice(b\"xyz\");",
+                "",
+                "    // Since `other` was split, it cannot be contiguous now",
+                "    self_bytes.unsplit(non_contiguous_other);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(self_bytes.len(), 6);",
+                "    assert_eq!(self_bytes.capacity(), 10);",
+                "    assert_eq!(self_bytes.as_slice(), b\"abcdef\");",
+                "    assert_eq!(non_contiguous_other.len(), 3);",
+                "    assert_eq!(non_contiguous_other.capacity(), 5);",
+                "    assert_eq!(non_contiguous_other.as_slice(), b\"xyz\");",
+                "    assert!(self_bytes.try_unsplit(non_contiguous_other).is_err());",
+                "    assert_eq!(self_bytes.as_slice(), b\"abcdef\");",
+                "    assert_eq!(non_contiguous_other.len(), 3);",
+                "    assert_eq!(non_contiguous_other.capacity(), 5);"
+              ],
+              "code": [
+                "{",
+                "    let mut self_bytes = BytesMut::with_capacity(10);",
+                "    self_bytes.extend_from_slice(b\"abcdef\");",
+                "    let other_bytes = self_bytes.split_off(3); // Creates a contiguous split",
+                "",
+                "    // Now we modify `other` in a way that violates the contiguous condition",
+                "    let mut non_contiguous_other = BytesMut::with_capacity(5);",
+                "    non_contiguous_other.extend_from_slice(b\"xyz\");",
+                "",
+                "    // Since `other` was split, it cannot be contiguous now",
+                "    self_bytes.unsplit(non_contiguous_other);",
+                "    assert_eq!(self_bytes.len(), 6);",
+                "    assert_eq!(self_bytes.capacity(), 10);",
+                "    assert_eq!(self_bytes.as_slice(), b\"abcdef\");",
+                "    assert_eq!(non_contiguous_other.len(), 3);",
+                "    assert_eq!(non_contiguous_other.capacity(), 5);",
+                "    assert_eq!(non_contiguous_other.as_slice(), b\"xyz\");",
+                "    assert!(self_bytes.try_unsplit(non_contiguous_other).is_err());",
+                "    assert_eq!(self_bytes.as_slice(), b\"abcdef\");",
+                "    assert_eq!(non_contiguous_other.len(), 3);",
+                "    assert_eq!(non_contiguous_other.capacity(), 5);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut self_bytes = BytesMut::with_capacity(10);",
+                "    self_bytes.extend_from_slice(b\"abcdef\");",
+                "",
+                "    let empty_other = BytesMut::new(); // An empty BytesMut",
+                "",
+                "    // In this case, we want to check that the empty other",
+                "    self_bytes.unsplit(empty_other);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(self_bytes.len(), 6);",
+                "    assert_eq!(self_bytes.capacity(), 10);",
+                "    assert!(self_bytes.as_slice() == b\"abcdef\");",
+                "    assert!(self_bytes.is_empty() == false);",
+                "    assert!(self_bytes.try_unsplit(empty_other).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut self_bytes = BytesMut::with_capacity(10);",
+                "    self_bytes.extend_from_slice(b\"abcdef\");",
+                "",
+                "    let empty_other = BytesMut::new(); // An empty BytesMut",
+                "",
+                "    // In this case, we want to check that the empty other",
+                "    self_bytes.unsplit(empty_other);",
+                "    assert_eq!(self_bytes.len(), 6);",
+                "    assert_eq!(self_bytes.capacity(), 10);",
+                "    assert!(self_bytes.as_slice() == b\"abcdef\");",
+                "    assert!(self_bytes.is_empty() == false);",
+                "    assert!(self_bytes.try_unsplit(empty_other).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut self_bytes = BytesMut::with_capacity(20);",
+                "    self_bytes.extend_from_slice(b\"1234567890\");",
+                "    ",
+                "    let other_bytes = self_bytes.split_off(5); // Creates a contiguous split",
+                "    ",
+                "    let another_bytes = BytesMut::with_capacity(5);",
+                "    another_bytes.extend_from_slice(b\"xyz\");",
+                "",
+                "    // Now `self_bytes` is non_empty, and the `other_bytes` is non contiguous",
+                "    self_bytes.unsplit(another_bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(!self_bytes.is_empty());",
+                "    assert_eq!(self_bytes.len(), 10);",
+                "    assert_eq!(self_bytes.capacity(), 20);",
+                "    assert_eq!(self_bytes.as_slice(), b\"1234567890\");",
+                "    assert_eq!(another_bytes.len(), 5);",
+                "    assert_eq!(another_bytes.as_slice(), b\"xyz\");",
+                "    assert_eq!(other_bytes.len(), 5);",
+                "    assert_eq!(other_bytes.as_slice(), b\"567890\");",
+                "    assert!(self_bytes.try_unsplit(another_bytes).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut self_bytes = BytesMut::with_capacity(20);",
+                "    self_bytes.extend_from_slice(b\"1234567890\");",
+                "    ",
+                "    let other_bytes = self_bytes.split_off(5); // Creates a contiguous split",
+                "    ",
+                "    let another_bytes = BytesMut::with_capacity(5);",
+                "    another_bytes.extend_from_slice(b\"xyz\");",
+                "",
+                "    // Now `self_bytes` is non_empty, and the `other_bytes` is non contiguous",
+                "    self_bytes.unsplit(another_bytes);",
+                "    assert!(!self_bytes.is_empty());",
+                "    assert_eq!(self_bytes.len(), 10);",
+                "    assert_eq!(self_bytes.capacity(), 20);",
+                "    assert_eq!(self_bytes.as_slice(), b\"1234567890\");",
+                "    assert_eq!(another_bytes.len(), 5);",
+                "    assert_eq!(another_bytes.as_slice(), b\"xyz\");",
+                "    assert_eq!(other_bytes.len(), 5);",
+                "    assert_eq!(other_bytes.as_slice(), b\"567890\");",
+                "    assert!(self_bytes.try_unsplit(another_bytes).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

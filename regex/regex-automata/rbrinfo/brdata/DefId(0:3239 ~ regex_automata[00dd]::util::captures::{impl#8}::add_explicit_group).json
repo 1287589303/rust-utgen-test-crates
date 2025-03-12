@@ -1,0 +1,575 @@
+{
+  "name": "regex_automata::util::captures::{impl#8}::add_explicit_group",
+  "mod_info": {
+    "name": "util::captures",
+    "loc": "regex-automata/src/util/mod.rs:32:1:32:18"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/util/captures.rs:2217:5:2260:6",
+  "doc": "/// Add an explicit capturing group for the given pattern with the given\n/// index. If the group has a name, then that must be given as well.\n///\n/// Note that every capturing group except for the first or zeroth group is\n/// explicit.\n///\n/// This returns an error if adding this group would result in overflowing\n/// slot indices or if a capturing group with the same name for this\n/// pattern has already been added.\n",
+  "code": [
+    "fn add_explicit_group<N: AsRef<str>>(",
+    "    &mut self,",
+    "    pid: PatternID,",
+    "    group: SmallIndex,",
+    "    maybe_name: Option<N>,",
+    ") -> Result<(), GroupInfoError> {",
+    "    // We also need to check that the slot index generated for",
+    "    // this group is also valid. Although, this is a little weird",
+    "    // because we offset these indices below, at which point, we'll",
+    "    // have to recheck them. Gosh this is annoying. Note that",
+    "    // the '+2' below is OK because 'end' is guaranteed to be less",
+    "    // than isize::MAX.",
+    "    let end = &mut self.slot_ranges[pid].1;",
+    "    *end = SmallIndex::new(end.as_usize() + 2).map_err(|_| {",
+    "        GroupInfoError::too_many_groups(pid, group.as_usize())",
+    "    })?;",
+    "    if let Some(name) = maybe_name {",
+    "        let name = Arc::<str>::from(name.as_ref());",
+    "        if self.name_to_index[pid].contains_key(&*name) {",
+    "            return Err(GroupInfoError::duplicate(pid, &name));",
+    "        }",
+    "        let len = name.len();",
+    "        self.name_to_index[pid].insert(Arc::clone(&name), group);",
+    "        self.index_to_name[pid].push(Some(name));",
+    "        // Adds the memory used by the Arc<str> in both maps.",
+    "        self.memory_extra +=",
+    "            2 * (len + core::mem::size_of::<Option<Arc<str>>>());",
+    "        // And also the value entry for the 'name_to_index' map.",
+    "        // This is probably an underestimate for 'name_to_index' since",
+    "        // hashmaps/btrees likely have some non-zero overhead, but we",
+    "        // assume here that they have zero overhead.",
+    "        self.memory_extra += core::mem::size_of::<SmallIndex>();",
+    "    } else {",
+    "        self.index_to_name[pid].push(None);",
+    "        self.memory_extra += core::mem::size_of::<Option<Arc<str>>>();",
+    "    }",
+    "    // This is a sanity assert that checks that our group index",
+    "    // is in line with the number of groups added so far for this",
+    "    // pattern.",
+    "    assert_eq!(group.one_more(), self.group_len(pid));",
+    "    // And is also in line with the 'index_to_name' map.",
+    "    assert_eq!(group.one_more(), self.index_to_name[pid].len());",
+    "    Ok(())",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 2,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "SmallIndex::new(end.as_usize() + 2).map_err(|_| {\n            GroupInfoError::too_many_groups(pid, group.as_usize())\n        })?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 2230,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        10,
+        11,
+        58,
+        59,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "SmallIndex::new(end.as_usize() + 2).map_err(|_| {\n            GroupInfoError::too_many_groups(pid, group.as_usize())\n        })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2230,
+          "bound": null
+        },
+        {
+          "cond": "let Some(name) = maybe_name",
+          "norm": null,
+          "value": "true",
+          "line": 2233,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        12,
+        40,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        51,
+        52,
+        53,
+        54,
+        61
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "SmallIndex::new(end.as_usize() + 2).map_err(|_| {\n            GroupInfoError::too_many_groups(pid, group.as_usize())\n        })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2230,
+          "bound": null
+        },
+        {
+          "cond": "let Some(name) = maybe_name",
+          "norm": null,
+          "value": "true",
+          "line": 2233,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        12,
+        40,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        51,
+        52,
+        53,
+        55,
+        71,
+        72
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "SmallIndex::new(end.as_usize() + 2).map_err(|_| {\n            GroupInfoError::too_many_groups(pid, group.as_usize())\n        })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2230,
+          "bound": null
+        },
+        {
+          "cond": "let Some(name) = maybe_name",
+          "norm": null,
+          "value": "true",
+          "line": 2233,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        12,
+        40,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        50,
+        71,
+        72
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "SmallIndex::new(end.as_usize() + 2).map_err(|_| {\n            GroupInfoError::too_many_groups(pid, group.as_usize())\n        })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2230,
+          "bound": null
+        },
+        {
+          "cond": "let Some(name) = maybe_name",
+          "norm": null,
+          "value": "true",
+          "line": 2233,
+          "bound": null
+        },
+        {
+          "cond": "self.name_to_index[pid].contains_key(&*name)",
+          "norm": null,
+          "value": "true",
+          "line": 2235,
+          "bound": null
+        }
+      ],
+      "ret": "Err(GroupInfoError::duplicate(pid, &name))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        56,
+        57,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "SmallIndex::new(end.as_usize() + 2).map_err(|_| {\n            GroupInfoError::too_many_groups(pid, group.as_usize())\n        })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2230,
+          "bound": null
+        },
+        {
+          "cond": "let Some(name) = maybe_name",
+          "norm": null,
+          "value": "true",
+          "line": 2233,
+          "bound": null
+        },
+        {
+          "cond": "self.name_to_index[pid].contains_key(&*name)",
+          "norm": null,
+          "value": "false",
+          "line": 2235,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        46,
+        47,
+        48,
+        49,
+        51,
+        52,
+        53,
+        54,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "SmallIndex::new(end.as_usize() + 2).map_err(|_| {\n            GroupInfoError::too_many_groups(pid, group.as_usize())\n        })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2230,
+          "bound": null
+        },
+        {
+          "cond": "let Some(name) = maybe_name",
+          "norm": null,
+          "value": "true",
+          "line": 2233,
+          "bound": null
+        },
+        {
+          "cond": "self.name_to_index[pid].contains_key(&*name)",
+          "norm": null,
+          "value": "false",
+          "line": 2235,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        46,
+        47,
+        48,
+        49,
+        51,
+        52,
+        53,
+        55,
+        71,
+        72
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "SmallIndex::new(end.as_usize() + 2).map_err(|_| {\n            GroupInfoError::too_many_groups(pid, group.as_usize())\n        })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2230,
+          "bound": null
+        },
+        {
+          "cond": "let Some(name) = maybe_name",
+          "norm": null,
+          "value": "true",
+          "line": 2233,
+          "bound": null
+        },
+        {
+          "cond": "self.name_to_index[pid].contains_key(&*name)",
+          "norm": null,
+          "value": "false",
+          "line": 2235,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        46,
+        47,
+        48,
+        50,
+        71,
+        72
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

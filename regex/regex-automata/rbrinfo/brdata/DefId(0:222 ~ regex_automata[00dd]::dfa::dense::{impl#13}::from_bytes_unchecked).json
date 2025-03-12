@@ -1,0 +1,972 @@
+{
+  "name": "regex_automata::dfa::dense::{impl#13}::from_bytes_unchecked",
+  "mod_info": {
+    "name": "dfa::dense",
+    "loc": "regex-automata/src/dfa/mod.rs:337:1:337:15"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/dfa/dense.rs:3362:5:3424:6",
+  "doc": "/// Deserialize a transition table starting at the beginning of `slice`.\n/// Upon success, return the total number of bytes read along with the\n/// transition table.\n///\n/// If there was a problem deserializing any part of the transition table,\n/// then this returns an error. Notably, if the given slice does not have\n/// the same alignment as `StateID`, then this will return an error (among\n/// other possible errors).\n///\n/// This is guaranteed to execute in constant time.\n///\n/// # Safety\n///\n/// This routine is not safe because it does not check the validity of the\n/// transition table itself. In particular, the transition table can be\n/// quite large, so checking its validity can be somewhat expensive. An\n/// invalid transition table is not safe because other code may rely on the\n/// transition table being correct (such as explicit bounds check elision).\n/// Therefore, an invalid transition table can lead to undefined behavior.\n///\n/// Callers that use this function must either pass on the safety invariant\n/// or guarantee that the bytes given contain a valid transition table.\n/// This guarantee is upheld by the bytes written by `write_to`.\n",
+  "code": [
+    "unsafe fn from_bytes_unchecked(",
+    "    mut slice: &'a [u8],",
+    ") -> Result<(TransitionTable<&'a [u32]>, usize), DeserializeError> {",
+    "    let slice_start = slice.as_ptr().as_usize();",
+    "",
+    "    let (state_len, nr) =",
+    "        wire::try_read_u32_as_usize(slice, \"state length\")?;",
+    "    slice = &slice[nr..];",
+    "",
+    "    let (stride2, nr) = wire::try_read_u32_as_usize(slice, \"stride2\")?;",
+    "    slice = &slice[nr..];",
+    "",
+    "    let (classes, nr) = ByteClasses::from_bytes(slice)?;",
+    "    slice = &slice[nr..];",
+    "",
+    "    // The alphabet length (determined by the byte class map) cannot be",
+    "    // bigger than the stride (total space used by each DFA state).",
+    "    if stride2 > 9 {",
+    "        return Err(DeserializeError::generic(",
+    "            \"dense DFA has invalid stride2 (too big)\",",
+    "        ));",
+    "    }",
+    "    // It also cannot be zero, since even a DFA that never matches anything",
+    "    // has a non-zero number of states with at least two equivalence",
+    "    // classes: one for all 256 byte values and another for the EOI",
+    "    // sentinel.",
+    "    if stride2 < 1 {",
+    "        return Err(DeserializeError::generic(",
+    "            \"dense DFA has invalid stride2 (too small)\",",
+    "        ));",
+    "    }",
+    "    // This is OK since 1 <= stride2 <= 9.",
+    "    let stride =",
+    "        1usize.checked_shl(u32::try_from(stride2).unwrap()).unwrap();",
+    "    if classes.alphabet_len() > stride {",
+    "        return Err(DeserializeError::generic(",
+    "            \"alphabet size cannot be bigger than transition table stride\",",
+    "        ));",
+    "    }",
+    "",
+    "    let trans_len =",
+    "        wire::shl(state_len, stride2, \"dense table transition length\")?;",
+    "    let table_bytes_len = wire::mul(",
+    "        trans_len,",
+    "        StateID::SIZE,",
+    "        \"dense table state byte length\",",
+    "    )?;",
+    "    wire::check_slice_len(slice, table_bytes_len, \"transition table\")?;",
+    "    wire::check_alignment::<StateID>(slice)?;",
+    "    let table_bytes = &slice[..table_bytes_len];",
+    "    slice = &slice[table_bytes_len..];",
+    "    // SAFETY: Since StateID is always representable as a u32, all we need",
+    "    // to do is ensure that we have the proper length and alignment. We've",
+    "    // checked both above, so the cast below is safe.",
+    "    //",
+    "    // N.B. This is the only not-safe code in this function.",
+    "    let table = core::slice::from_raw_parts(",
+    "        table_bytes.as_ptr().cast::<u32>(),",
+    "        trans_len,",
+    "    );",
+    "    let tt = TransitionTable { table, classes, stride2 };",
+    "    Ok((tt, slice.as_ptr().as_usize() - slice_start))",
+    "}"
+  ],
+  "size": {
+    "chain": 11,
+    "contra": 0,
+    "min_set": 11
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 3368,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        9,
+        83,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3368,
+          "bound": null
+        },
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"stride2\")?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 3371,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        14,
+        16,
+        17,
+        82,
+        83,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3368,
+          "bound": null
+        },
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"stride2\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3371,
+          "bound": null
+        },
+        {
+          "cond": "ByteClasses::from_bytes(slice)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 3374,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        22,
+        24,
+        25,
+        81,
+        82,
+        83,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3368,
+          "bound": null
+        },
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"stride2\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3371,
+          "bound": null
+        },
+        {
+          "cond": "ByteClasses::from_bytes(slice)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3374,
+          "bound": null
+        },
+        {
+          "cond": "stride2 > 9",
+          "norm": "9 < stride2",
+          "value": "true",
+          "line": 3379,
+          "bound": null
+        }
+      ],
+      "ret": "Err(DeserializeError::generic(\n                \"dense DFA has invalid stride2 (too big)\",\n            ))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        23,
+        26,
+        27,
+        28,
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3368,
+          "bound": null
+        },
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"stride2\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3371,
+          "bound": null
+        },
+        {
+          "cond": "ByteClasses::from_bytes(slice)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3374,
+          "bound": null
+        },
+        {
+          "cond": "stride2 > 9",
+          "norm": "9 < stride2",
+          "value": "false",
+          "line": 3379,
+          "bound": "stride2 == 9"
+        },
+        {
+          "cond": "stride2 < 1",
+          "norm": "1 > stride2",
+          "value": "true",
+          "line": 3388,
+          "bound": null
+        }
+      ],
+      "ret": "Err(DeserializeError::generic(\n                \"dense DFA has invalid stride2 (too small)\",\n            ))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        23,
+        26,
+        29,
+        30,
+        32,
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3368,
+          "bound": null
+        },
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"stride2\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3371,
+          "bound": null
+        },
+        {
+          "cond": "ByteClasses::from_bytes(slice)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3374,
+          "bound": null
+        },
+        {
+          "cond": "stride2 > 9",
+          "norm": "9 < stride2",
+          "value": "false",
+          "line": 3379,
+          "bound": "stride2 == 9"
+        },
+        {
+          "cond": "stride2 < 1",
+          "norm": "1 > stride2",
+          "value": "false",
+          "line": 3388,
+          "bound": "stride2 == 1"
+        },
+        {
+          "cond": "classes.alphabet_len() > stride",
+          "norm": null,
+          "value": "true",
+          "line": 3396,
+          "bound": null
+        }
+      ],
+      "ret": "Err(DeserializeError::generic(\n                \"alphabet size cannot be bigger than transition table stride\",\n            ))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        23,
+        26,
+        29,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3368,
+          "bound": null
+        },
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"stride2\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3371,
+          "bound": null
+        },
+        {
+          "cond": "ByteClasses::from_bytes(slice)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3374,
+          "bound": null
+        },
+        {
+          "cond": "stride2 > 9",
+          "norm": "9 < stride2",
+          "value": "false",
+          "line": 3379,
+          "bound": "stride2 == 9"
+        },
+        {
+          "cond": "stride2 < 1",
+          "norm": "1 > stride2",
+          "value": "false",
+          "line": 3388,
+          "bound": "stride2 == 1"
+        },
+        {
+          "cond": "classes.alphabet_len() > stride",
+          "norm": null,
+          "value": "false",
+          "line": 3396,
+          "bound": "classes.alphabet_len() == stride"
+        },
+        {
+          "cond": "wire::shl(state_len, stride2, \"dense table transition length\")?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 3403,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        23,
+        26,
+        29,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        41,
+        42,
+        44,
+        46,
+        47,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3368,
+          "bound": null
+        },
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"stride2\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3371,
+          "bound": null
+        },
+        {
+          "cond": "ByteClasses::from_bytes(slice)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3374,
+          "bound": null
+        },
+        {
+          "cond": "stride2 > 9",
+          "norm": "9 < stride2",
+          "value": "false",
+          "line": 3379,
+          "bound": "stride2 == 9"
+        },
+        {
+          "cond": "stride2 < 1",
+          "norm": "1 > stride2",
+          "value": "false",
+          "line": 3388,
+          "bound": "stride2 == 1"
+        },
+        {
+          "cond": "classes.alphabet_len() > stride",
+          "norm": null,
+          "value": "false",
+          "line": 3396,
+          "bound": "classes.alphabet_len() == stride"
+        },
+        {
+          "cond": "wire::shl(state_len, stride2, \"dense table transition length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3403,
+          "bound": null
+        },
+        {
+          "cond": "wire::mul(\n            trans_len,\n            StateID::SIZE,\n            \"dense table state byte length\",\n        )?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 3404,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        23,
+        26,
+        29,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        41,
+        42,
+        45,
+        48,
+        49,
+        51,
+        53,
+        54,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3368,
+          "bound": null
+        },
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"stride2\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3371,
+          "bound": null
+        },
+        {
+          "cond": "ByteClasses::from_bytes(slice)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3374,
+          "bound": null
+        },
+        {
+          "cond": "stride2 > 9",
+          "norm": "9 < stride2",
+          "value": "false",
+          "line": 3379,
+          "bound": "stride2 == 9"
+        },
+        {
+          "cond": "stride2 < 1",
+          "norm": "1 > stride2",
+          "value": "false",
+          "line": 3388,
+          "bound": "stride2 == 1"
+        },
+        {
+          "cond": "classes.alphabet_len() > stride",
+          "norm": null,
+          "value": "false",
+          "line": 3396,
+          "bound": "classes.alphabet_len() == stride"
+        },
+        {
+          "cond": "wire::shl(state_len, stride2, \"dense table transition length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3403,
+          "bound": null
+        },
+        {
+          "cond": "wire::mul(\n            trans_len,\n            StateID::SIZE,\n            \"dense table state byte length\",\n        )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3404,
+          "bound": null
+        },
+        {
+          "cond": "wire::check_slice_len(slice, table_bytes_len, \"transition table\")?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 3409,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        23,
+        26,
+        29,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        41,
+        42,
+        45,
+        48,
+        49,
+        52,
+        55,
+        56,
+        58,
+        60,
+        61,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3368,
+          "bound": null
+        },
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"stride2\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3371,
+          "bound": null
+        },
+        {
+          "cond": "ByteClasses::from_bytes(slice)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3374,
+          "bound": null
+        },
+        {
+          "cond": "stride2 > 9",
+          "norm": "9 < stride2",
+          "value": "false",
+          "line": 3379,
+          "bound": "stride2 == 9"
+        },
+        {
+          "cond": "stride2 < 1",
+          "norm": "1 > stride2",
+          "value": "false",
+          "line": 3388,
+          "bound": "stride2 == 1"
+        },
+        {
+          "cond": "classes.alphabet_len() > stride",
+          "norm": null,
+          "value": "false",
+          "line": 3396,
+          "bound": "classes.alphabet_len() == stride"
+        },
+        {
+          "cond": "wire::shl(state_len, stride2, \"dense table transition length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3403,
+          "bound": null
+        },
+        {
+          "cond": "wire::mul(\n            trans_len,\n            StateID::SIZE,\n            \"dense table state byte length\",\n        )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3404,
+          "bound": null
+        },
+        {
+          "cond": "wire::check_slice_len(slice, table_bytes_len, \"transition table\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3409,
+          "bound": null
+        },
+        {
+          "cond": "wire::check_alignment::<StateID>(slice)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 3410,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        23,
+        26,
+        29,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        41,
+        42,
+        45,
+        48,
+        49,
+        52,
+        55,
+        56,
+        59,
+        62,
+        63,
+        65,
+        67,
+        68,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"state length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3368,
+          "bound": null
+        },
+        {
+          "cond": "wire::try_read_u32_as_usize(slice, \"stride2\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3371,
+          "bound": null
+        },
+        {
+          "cond": "ByteClasses::from_bytes(slice)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3374,
+          "bound": null
+        },
+        {
+          "cond": "stride2 > 9",
+          "norm": "9 < stride2",
+          "value": "false",
+          "line": 3379,
+          "bound": "stride2 == 9"
+        },
+        {
+          "cond": "stride2 < 1",
+          "norm": "1 > stride2",
+          "value": "false",
+          "line": 3388,
+          "bound": "stride2 == 1"
+        },
+        {
+          "cond": "classes.alphabet_len() > stride",
+          "norm": null,
+          "value": "false",
+          "line": 3396,
+          "bound": "classes.alphabet_len() == stride"
+        },
+        {
+          "cond": "wire::shl(state_len, stride2, \"dense table transition length\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3403,
+          "bound": null
+        },
+        {
+          "cond": "wire::mul(\n            trans_len,\n            StateID::SIZE,\n            \"dense table state byte length\",\n        )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3404,
+          "bound": null
+        },
+        {
+          "cond": "wire::check_slice_len(slice, table_bytes_len, \"transition table\")?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3409,
+          "bound": null
+        },
+        {
+          "cond": "wire::check_alignment::<StateID>(slice)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3410,
+          "bound": null
+        }
+      ],
+      "ret": "Ok((tt, slice.as_ptr().as_usize() - slice_start))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        23,
+        26,
+        29,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        41,
+        42,
+        45,
+        48,
+        49,
+        52,
+        55,
+        56,
+        59,
+        62,
+        63,
+        66,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        84
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,393 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = -3.40282347e+38;",
+          "    buffer.format_finite(value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(buffer.bytes.iter().all(|b| b.as_ptr().is_null()));",
+          "    assert_eq!(buffer.format_finite(value), \"-3.40282347e+38\");",
+          "    assert!(value.is_finite());",
+          "    assert!(unsafe { buffer.bytes.len() } == 24);",
+          "    assert!(format_finite(value).len() <= buffer.bytes.len());"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = -3.40282347e+38;",
+          "    buffer.format_finite(value);",
+          "    assert!(buffer.bytes.iter().all(|b| b.as_ptr().is_null()));",
+          "    assert_eq!(buffer.format_finite(value), \"-3.40282347e+38\");",
+          "    assert!(value.is_finite());",
+          "    assert!(unsafe { buffer.bytes.len() } == 24);",
+          "    assert!(format_finite(value).len() <= buffer.bytes.len());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = 3.40282347e+38;",
+          "    buffer.format_finite(value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(buffer.bytes.len() == 24);",
+          "    let n = value.write_to_ryu_buffer(buffer.bytes.as_mut_ptr() as *mut u8);",
+          "    assert!(n <= buffer.bytes.len());",
+          "    let slice = slice::from_raw_parts(buffer.bytes.as_ptr() as *const u8, n);",
+          "    let result = str::from_utf8_unchecked(slice);",
+          "    assert_eq!(result, \"3.40282347e+38\");"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = 3.40282347e+38;",
+          "    buffer.format_finite(value);",
+          "    assert!(buffer.bytes.len() == 24);",
+          "    let n = value.write_to_ryu_buffer(buffer.bytes.as_mut_ptr() as *mut u8);",
+          "    assert!(n <= buffer.bytes.len());",
+          "    let slice = slice::from_raw_parts(buffer.bytes.as_ptr() as *const u8, n);",
+          "    let result = str::from_utf8_unchecked(slice);",
+          "    assert_eq!(result, \"3.40282347e+38\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f64 = -1.7976931348623157e+308;",
+          "    buffer.format_finite(value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buffer.format_finite(value), \"string representation of -1.7976931348623157e+308\");",
+          "    assert!(buffer.bytes.iter().all(|b| b.is_initialized()));",
+          "    assert!(value.is_finite());",
+          "    assert!(buffer.format_finite(value).len() <= 24);"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f64 = -1.7976931348623157e+308;",
+          "    buffer.format_finite(value);",
+          "    assert_eq!(buffer.format_finite(value), \"string representation of -1.7976931348623157e+308\");",
+          "    assert!(buffer.bytes.iter().all(|b| b.is_initialized()));",
+          "    assert!(value.is_finite());",
+          "    assert!(buffer.format_finite(value).len() <= 24);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f64 = 1.7976931348623157e+308;",
+          "    buffer.format_finite(value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!((buffer.bytes[0].assume_init() as char).is_ascii_alphabetic());",
+          "    assert_eq!(buffer.format_finite(value).len(), buffer.bytes.len() - 1);",
+          "    assert!(buffer.format_finite(value).contains('.'));",
+          "    assert!(buffer.format_finite(value).parse::<f64>().is_ok());",
+          "    assert!(buffer.format_finite(value).is_ascii());",
+          "    assert_eq!(buffer.format_finite(value), \"1.7976931348623157e+308\");"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f64 = 1.7976931348623157e+308;",
+          "    buffer.format_finite(value);",
+          "    assert!((buffer.bytes[0].assume_init() as char).is_ascii_alphabetic());",
+          "    assert_eq!(buffer.format_finite(value).len(), buffer.bytes.len() - 1);",
+          "    assert!(buffer.format_finite(value).contains('.'));",
+          "    assert!(buffer.format_finite(value).parse::<f64>().is_ok());",
+          "    assert!(buffer.format_finite(value).is_ascii());",
+          "    assert_eq!(buffer.format_finite(value), \"1.7976931348623157e+308\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = 0.0;",
+          "    buffer.format_finite(value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buffer.format_finite(value), \"0\");",
+          "    assert!(buffer.bytes.len() == 24);",
+          "    assert!(value.is_finite());",
+          "    assert!(buffer.bytes.as_ptr() as *const u8 != core::ptr::null());",
+          "    assert!(buffer.bytes.iter().all(|byte| unsafe { byte.assume_init() } != 0));",
+          "    assert!(str::from_utf8_unchecked(slice::from_raw_parts(buffer.bytes.as_ptr() as *const u8, 1)) == \"0\");",
+          "    assert_eq!(unsafe { buffer.format_finite(value).as_ptr().offset(0) }, buffer.bytes.as_ptr() as *const u8);"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = 0.0;",
+          "    buffer.format_finite(value);",
+          "    assert_eq!(buffer.format_finite(value), \"0\");",
+          "    assert!(buffer.bytes.len() == 24);",
+          "    assert!(value.is_finite());",
+          "    assert!(buffer.bytes.as_ptr() as *const u8 != core::ptr::null());",
+          "    assert!(buffer.bytes.iter().all(|byte| unsafe { byte.assume_init() } != 0));",
+          "    assert!(str::from_utf8_unchecked(slice::from_raw_parts(buffer.bytes.as_ptr() as *const u8, 1)) == \"0\");",
+          "    assert_eq!(unsafe { buffer.format_finite(value).as_ptr().offset(0) }, buffer.bytes.as_ptr() as *const u8);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f64 = 0.0;",
+          "    buffer.format_finite(value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buffer.format_finite(0.0), \"0\");",
+          "    assert!(buffer.bytes.iter().all(|b| b.is_initialized()));",
+          "    assert!(buffer.format_finite(1.23).len() <= 24);",
+          "    assert_eq!(buffer.format_finite(2.71828), \"2.71828\");",
+          "    assert_eq!(buffer.format_finite(-3.14), \"-3.14\");",
+          "    assert_eq!(buffer.format_finite(1.0 / 3.0), \"0.33333333333333331\");",
+          "    assert_eq!(buffer.format_finite(f64::MAX), \"1.7976931348623157e+308\");",
+          "    assert_eq!(buffer.format_finite(1.0 / 0.0), \"inf\");",
+          "    assert_eq!(buffer.format_finite(-1.0 / 0.0), \"-inf\");"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f64 = 0.0;",
+          "    buffer.format_finite(value);",
+          "    assert_eq!(buffer.format_finite(0.0), \"0\");",
+          "    assert!(buffer.bytes.iter().all(|b| b.is_initialized()));",
+          "    assert!(buffer.format_finite(1.23).len() <= 24);",
+          "    assert_eq!(buffer.format_finite(2.71828), \"2.71828\");",
+          "    assert_eq!(buffer.format_finite(-3.14), \"-3.14\");",
+          "    assert_eq!(buffer.format_finite(1.0 / 3.0), \"0.33333333333333331\");",
+          "    assert_eq!(buffer.format_finite(f64::MAX), \"1.7976931348623157e+308\");",
+          "    assert_eq!(buffer.format_finite(1.0 / 0.0), \"inf\");",
+          "    assert_eq!(buffer.format_finite(-1.0 / 0.0), \"-inf\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = 1.0e-38;",
+          "    buffer.format_finite(value);",
+          "}"
+        ],
+        "oracle": [
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = 1.0e-38;",
+          "    let result = buffer.format_finite(value);",
+          "    assert_eq!(result, \"1e-38\");",
+          "    assert!(result.len() <= 24);",
+          "    assert!(buffer.bytes.iter().all(|b| b.is_uninit()));"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = 1.0e-38;",
+          "    buffer.format_finite(value);",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = 1.0e-38;",
+          "    let result = buffer.format_finite(value);",
+          "    assert_eq!(result, \"1e-38\");",
+          "    assert!(result.len() <= 24);",
+          "    assert!(buffer.bytes.iter().all(|b| b.is_uninit()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f64 = 1.0e-308;",
+          "    buffer.format_finite(value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!((buffer.bytes[0].assume_init() as char) == '1');",
+          "    assert!((buffer.bytes[1].assume_init() as char) == '.');",
+          "    assert!((buffer.bytes[2].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[3].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[4].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[5].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[6].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[7].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[8].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[9].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[10].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[11].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[12].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[13].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[14].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[15].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[16].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[17].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[18].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[19].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[20].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[21].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[22].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[23].assume_init() as char) == '0');",
+          "    assert_eq!(buffer.format_finite(value), \"1e-308\");",
+          "    assert!(buffer.bytes.iter().all(|b| b.assume_init() != 0));"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f64 = 1.0e-308;",
+          "    buffer.format_finite(value);",
+          "    assert!((buffer.bytes[0].assume_init() as char) == '1');",
+          "    assert!((buffer.bytes[1].assume_init() as char) == '.');",
+          "    assert!((buffer.bytes[2].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[3].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[4].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[5].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[6].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[7].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[8].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[9].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[10].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[11].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[12].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[13].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[14].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[15].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[16].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[17].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[18].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[19].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[20].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[21].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[22].assume_init() as char) == '0');",
+          "    assert!((buffer.bytes[23].assume_init() as char) == '0');",
+          "    assert_eq!(buffer.format_finite(value), \"1e-308\");",
+          "    assert!(buffer.bytes.iter().all(|b| b.assume_init() != 0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = 1.0e38;",
+          "    buffer.format_finite(value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(buffer.bytes.iter().all(|b| b.as_ptr().is_null()));",
+          "    let result = buffer.format_finite(value);",
+          "    assert_eq!(result.len(), 24);",
+          "    assert!(result.is_ascii());",
+          "    assert!(result == \"1.0e+38\");",
+          "    assert!(buffer.bytes[0..result.len()].iter().enumerate().all(|(i, b)| b.get() == result.as_bytes()[i]));",
+          "    let value2: f32 = 0.0;",
+          "    let result2 = buffer.format_finite(value2);",
+          "    assert_eq!(result2, \"0\");",
+          "    let value3: f32 = -1.0;",
+          "    let result3 = buffer.format_finite(value3);",
+          "    assert_eq!(result3, \"-1\");"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f32 = 1.0e38;",
+          "    buffer.format_finite(value);",
+          "    assert!(buffer.bytes.iter().all(|b| b.as_ptr().is_null()));",
+          "    let result = buffer.format_finite(value);",
+          "    assert_eq!(result.len(), 24);",
+          "    assert!(result.is_ascii());",
+          "    assert!(result == \"1.0e+38\");",
+          "    assert!(buffer.bytes[0..result.len()].iter().enumerate().all(|(i, b)| b.get() == result.as_bytes()[i]));",
+          "    let value2: f32 = 0.0;",
+          "    let result2 = buffer.format_finite(value2);",
+          "    assert_eq!(result2, \"0\");",
+          "    let value3: f32 = -1.0;",
+          "    let result3 = buffer.format_finite(value3);",
+          "    assert_eq!(result3, \"-1\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f64 = 1.0e308;",
+          "    buffer.format_finite(value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(buffer.bytes.iter().all(|b| b.is_initialized()));",
+          "    let result = buffer.format_finite(value);",
+          "    assert_eq!(result, \"1.0e308\");",
+          "    assert!(result.len() <= 24);",
+          "    assert!(std::str::from_utf8(result.as_bytes()).is_ok());",
+          "    assert!(value.is_finite());"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer = Buffer::new();",
+          "    let value: f64 = 1.0e308;",
+          "    buffer.format_finite(value);",
+          "    assert!(buffer.bytes.iter().all(|b| b.is_initialized()));",
+          "    let result = buffer.format_finite(value);",
+          "    assert_eq!(result, \"1.0e308\");",
+          "    assert!(result.len() <= 24);",
+          "    assert!(std::str::from_utf8(result.as_bytes()).is_ok());",
+          "    assert!(value.is_finite());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

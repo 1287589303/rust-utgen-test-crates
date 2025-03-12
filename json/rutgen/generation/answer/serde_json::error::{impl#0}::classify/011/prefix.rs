@@ -1,0 +1,55 @@
+// Answer 0
+
+#[test]
+fn test_classify_number_out_of_range() {
+    struct ErrorImpl {
+        code: ErrorCode,
+        line: usize,
+        column: usize,
+    }
+
+    struct Error {
+        err: Box<ErrorImpl>,
+    }
+
+    enum ErrorCode {
+        Message(String),
+        Io(io::Error),
+        EofWhileParsingList,
+        EofWhileParsingObject,
+        EofWhileParsingString,
+        EofWhileParsingValue,
+        ExpectedColon,
+        ExpectedListCommaOrEnd,
+        ExpectedObjectCommaOrEnd,
+        ExpectedSomeIdent,
+        ExpectedSomeValue,
+        ExpectedDoubleQuote,
+        InvalidEscape,
+        InvalidNumber,
+        NumberOutOfRange,
+        InvalidUnicodeCodePoint,
+        ControlCharacterWhileParsingString,
+        KeyMustBeAString,
+        ExpectedNumericKey,
+        FloatKeyMustBeFinite,
+        LoneLeadingSurrogateInHexEscape,
+        TrailingComma,
+        TrailingCharacters,
+        UnexpectedEndOfHexEscape,
+        RecursionLimitExceeded,
+    }
+
+    let error_impl = ErrorImpl {
+        code: ErrorCode::NumberOutOfRange,
+        line: 0,
+        column: 0,
+    };
+
+    let error = Error {
+        err: Box::new(error_impl),
+    };
+
+    let _category = error.classify();
+}
+

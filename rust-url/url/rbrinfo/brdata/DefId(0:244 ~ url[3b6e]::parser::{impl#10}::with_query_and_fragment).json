@@ -1,0 +1,1158 @@
+{
+  "name": "url::parser::{impl#10}::with_query_and_fragment",
+  "mod_info": {
+    "name": "parser",
+    "loc": "url/src/lib.rs:218:1:218:12"
+  },
+  "visible": false,
+  "loc": "url/src/parser.rs:1443:5:1510:6",
+  "doc": "",
+  "code": [
+    "fn with_query_and_fragment(",
+    "    mut self,",
+    "    scheme_type: SchemeType,",
+    "    scheme_end: u32,",
+    "    username_end: u32,",
+    "    host_start: u32,",
+    "    host_end: u32,",
+    "    host: HostInternal,",
+    "    port: Option<u16>,",
+    "    mut path_start: u32,",
+    "    remaining: Input<'_>,",
+    ") -> ParseResult<Url> {",
+    "    // Special case for anarchist URL's with a leading empty path segment",
+    "    // This prevents web+demo:/.//not-a-host/ or web+demo:/path/..//not-a-host/,",
+    "    // when parsed and then serialized, from ending up as web+demo://not-a-host/",
+    "    // (they end up as web+demo:/.//not-a-host/).",
+    "    //",
+    "    // If url’s host is null, url does not have an opaque path,",
+    "    // url’s path’s size is greater than 1, and url’s path[0] is the empty string,",
+    "    // then append U+002F (/) followed by U+002E (.) to output.",
+    "    let scheme_end_as_usize = scheme_end as usize;",
+    "    let path_start_as_usize = path_start as usize;",
+    "    if path_start_as_usize == scheme_end_as_usize + 1 {",
+    "        // Anarchist URL",
+    "        if self.serialization[path_start_as_usize..].starts_with(\"//\") {",
+    "            // Case 1: The base URL did not have an empty path segment, but the resulting one does",
+    "            // Insert the \"/.\" prefix",
+    "            self.serialization.insert_str(path_start_as_usize, \"/.\");",
+    "            path_start += 2;",
+    "        }",
+    "        assert!(!self.serialization[scheme_end_as_usize..].starts_with(\"://\"));",
+    "    } else if path_start_as_usize == scheme_end_as_usize + 3",
+    "        && &self.serialization[scheme_end_as_usize..path_start_as_usize] == \":/.\"",
+    "    {",
+    "        // Anarchist URL with leading empty path segment",
+    "        // The base URL has a \"/.\" between the host and the path",
+    "        assert_eq!(self.serialization.as_bytes()[path_start_as_usize], b'/');",
+    "        if self",
+    "            .serialization",
+    "            .as_bytes()",
+    "            .get(path_start_as_usize + 1)",
+    "            .copied()",
+    "            != Some(b'/')",
+    "        {",
+    "            // Case 2: The base URL had an empty path segment, but the resulting one does not",
+    "            // Remove the \"/.\" prefix",
+    "            self.serialization",
+    "                .replace_range(scheme_end_as_usize..path_start_as_usize, \":\");",
+    "            path_start -= 2;",
+    "        }",
+    "        assert!(!self.serialization[scheme_end_as_usize..].starts_with(\"://\"));",
+    "    }",
+    "",
+    "    let (query_start, fragment_start) =",
+    "        self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?;",
+    "    Ok(Url {",
+    "        serialization: self.serialization,",
+    "        scheme_end,",
+    "        username_end,",
+    "        host_start,",
+    "        host_end,",
+    "        host,",
+    "        port,",
+    "        path_start,",
+    "        query_start,",
+    "        fragment_start,",
+    "    })",
+    "}"
+  ],
+  "size": {
+    "chain": 17,
+    "contra": 0,
+    "min_set": 7
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "true",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[path_start_as_usize..].starts_with(\"//\")",
+          "norm": null,
+          "value": "true",
+          "line": 1467,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "true",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[path_start_as_usize..].starts_with(\"//\")",
+          "norm": null,
+          "value": "true",
+          "line": 1467,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "false",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        42,
+        43,
+        44,
+        46,
+        48,
+        49,
+        52
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "true",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[path_start_as_usize..].starts_with(\"//\")",
+          "norm": null,
+          "value": "true",
+          "line": 1467,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "false",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Url {\n            serialization: self.serialization,\n            scheme_end,\n            username_end,\n            host_start,\n            host_end,\n            host,\n            port,\n            path_start,\n            query_start,\n            fragment_start,\n        })",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        42,
+        43,
+        44,
+        47,
+        50,
+        51,
+        52
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "true",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[path_start_as_usize..].starts_with(\"//\")",
+          "norm": null,
+          "value": "false",
+          "line": 1467,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        8,
+        9,
+        10,
+        11,
+        12,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "true",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[path_start_as_usize..].starts_with(\"//\")",
+          "norm": null,
+          "value": "false",
+          "line": 1467,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "false",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        8,
+        9,
+        10,
+        11,
+        13,
+        42,
+        43,
+        44,
+        46,
+        48,
+        49,
+        52
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "true",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[path_start_as_usize..].starts_with(\"//\")",
+          "norm": null,
+          "value": "false",
+          "line": 1467,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "false",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Url {\n            serialization: self.serialization,\n            scheme_end,\n            username_end,\n            host_start,\n            host_end,\n            host,\n            port,\n            path_start,\n            query_start,\n            fragment_start,\n        })",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        8,
+        9,
+        10,
+        11,
+        13,
+        42,
+        43,
+        44,
+        47,
+        50,
+        51,
+        52
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "true",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "&self.serialization[scheme_end_as_usize..path_start_as_usize] == \":/.\"",
+          "norm": "\":/.\" == &self.serialization[scheme_end_as_usize..path_start_as_usize]",
+          "value": "true",
+          "line": 1475,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()\n                != Some(b'/')",
+          "norm": "Some(b'/') != self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()",
+          "value": "true",
+          "line": 1480,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "true",
+          "line": 1493,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "true",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "&self.serialization[scheme_end_as_usize..path_start_as_usize] == \":/.\"",
+          "norm": "\":/.\" == &self.serialization[scheme_end_as_usize..path_start_as_usize]",
+          "value": "true",
+          "line": 1475,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()\n                != Some(b'/')",
+          "norm": "Some(b'/') != self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()",
+          "value": "true",
+          "line": 1480,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "false",
+          "line": 1493,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        41,
+        42,
+        43,
+        44,
+        46,
+        48,
+        49,
+        52
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "true",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "&self.serialization[scheme_end_as_usize..path_start_as_usize] == \":/.\"",
+          "norm": "\":/.\" == &self.serialization[scheme_end_as_usize..path_start_as_usize]",
+          "value": "true",
+          "line": 1475,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()\n                != Some(b'/')",
+          "norm": "Some(b'/') != self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()",
+          "value": "true",
+          "line": 1480,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "false",
+          "line": 1493,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Url {\n            serialization: self.serialization,\n            scheme_end,\n            username_end,\n            host_start,\n            host_end,\n            host,\n            port,\n            path_start,\n            query_start,\n            fragment_start,\n        })",
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        41,
+        42,
+        43,
+        44,
+        47,
+        50,
+        51,
+        52
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "true",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "&self.serialization[scheme_end_as_usize..path_start_as_usize] == \":/.\"",
+          "norm": "\":/.\" == &self.serialization[scheme_end_as_usize..path_start_as_usize]",
+          "value": "true",
+          "line": 1475,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()\n                != Some(b'/')",
+          "norm": "Some(b'/') != self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()",
+          "value": "false",
+          "line": 1480,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "true",
+          "line": 1493,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        32,
+        33,
+        34,
+        35,
+        36,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "true",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "&self.serialization[scheme_end_as_usize..path_start_as_usize] == \":/.\"",
+          "norm": "\":/.\" == &self.serialization[scheme_end_as_usize..path_start_as_usize]",
+          "value": "true",
+          "line": 1475,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()\n                != Some(b'/')",
+          "norm": "Some(b'/') != self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()",
+          "value": "false",
+          "line": 1480,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "false",
+          "line": 1493,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        32,
+        33,
+        34,
+        35,
+        37,
+        41,
+        42,
+        43,
+        44,
+        46,
+        48,
+        49,
+        52
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "true",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "&self.serialization[scheme_end_as_usize..path_start_as_usize] == \":/.\"",
+          "norm": "\":/.\" == &self.serialization[scheme_end_as_usize..path_start_as_usize]",
+          "value": "true",
+          "line": 1475,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()\n                != Some(b'/')",
+          "norm": "Some(b'/') != self\n                .serialization\n                .as_bytes()\n                .get(path_start_as_usize + 1)\n                .copied()",
+          "value": "false",
+          "line": 1480,
+          "bound": null
+        },
+        {
+          "cond": "self.serialization[scheme_end_as_usize..].starts_with(\"://\")",
+          "norm": null,
+          "value": "false",
+          "line": 1493,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Url {\n            serialization: self.serialization,\n            scheme_end,\n            username_end,\n            host_start,\n            host_end,\n            host,\n            port,\n            path_start,\n            query_start,\n            fragment_start,\n        })",
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        32,
+        33,
+        34,
+        35,
+        37,
+        41,
+        42,
+        43,
+        44,
+        47,
+        50,
+        51,
+        52
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "true",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "&self.serialization[scheme_end_as_usize..path_start_as_usize] == \":/.\"",
+          "norm": "\":/.\" == &self.serialization[scheme_end_as_usize..path_start_as_usize]",
+          "value": "true",
+          "line": 1475,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "true",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "&self.serialization[scheme_end_as_usize..path_start_as_usize] == \":/.\"",
+          "norm": "\":/.\" == &self.serialization[scheme_end_as_usize..path_start_as_usize]",
+          "value": "false",
+          "line": 1475,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        16,
+        17,
+        18,
+        38,
+        40,
+        41,
+        42,
+        43,
+        44,
+        46,
+        48,
+        49,
+        52
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "true",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "&self.serialization[scheme_end_as_usize..path_start_as_usize] == \":/.\"",
+          "norm": "\":/.\" == &self.serialization[scheme_end_as_usize..path_start_as_usize]",
+          "value": "false",
+          "line": 1475,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Url {\n            serialization: self.serialization,\n            scheme_end,\n            username_end,\n            host_start,\n            host_end,\n            host,\n            port,\n            path_start,\n            query_start,\n            fragment_start,\n        })",
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        16,
+        17,
+        18,
+        38,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        50,
+        51,
+        52
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "false",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        46,
+        48,
+        49,
+        52
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 1",
+          "norm": null,
+          "value": "false",
+          "line": 1465,
+          "bound": null
+        },
+        {
+          "cond": "path_start_as_usize == scheme_end_as_usize + 3",
+          "norm": null,
+          "value": "false",
+          "line": 1474,
+          "bound": null
+        },
+        {
+          "cond": "self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1497,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Url {\n            serialization: self.serialization,\n            scheme_end,\n            username_end,\n            host_start,\n            host_end,\n            host,\n            port,\n            path_start,\n            query_start,\n            fragment_start,\n        })",
+      "path": [
+        0,
+        1,
+        14,
+        15,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        50,
+        51,
+        52
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "name": "once_cell::race::{impl#3}::fmt",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": true,
+  "loc": "src/race.rs:215:5:217:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "self.inner must be a valid AtomicPtr<T> that could point to any valid memory location, including null; hence tests should include cases where inner is null, pointing to a valid memory allocation, and edge cases for extreme values of T if applicable.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let once_ref = OnceRef::<i32> {",
+                "        inner: AtomicPtr::new(ptr::null_mut()),",
+                "        ghost: PhantomData,",
+                "    };",
+                "    let _ = format!(\"{:?}\", once_ref);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(format!(\"{:?}\", once_ref), \"OnceRef(0x0)\");"
+              ],
+              "code": [
+                "{",
+                "    let once_ref = OnceRef::<i32> {",
+                "        inner: AtomicPtr::new(ptr::null_mut()),",
+                "        ghost: PhantomData,",
+                "    };",
+                "    let _ = format!(\"{:?}\", once_ref);",
+                "    assert_eq!(format!(\"{:?}\", once_ref), \"OnceRef(0x0)\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let value = Box::new(42);",
+                "    let once_ref = OnceRef::<i32> {",
+                "        inner: AtomicPtr::new(Box::into_raw(value)),",
+                "        ghost: PhantomData,",
+                "    };",
+                "    let _ = format!(\"{:?}\", once_ref);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(format!(\"{:?}\", once_ref), \"OnceRef(0x...)\", \"The debug format should include the pointer address.\");",
+                "    assert!(once_ref.inner.load(Ordering::SeqCst).is_non_null(), \"The inner AtomicPtr should be non-null.\");",
+                "    assert!(once_ref.ghost.is_some(), \"The ghost field should be valid as PhantomData.\");"
+              ],
+              "code": [
+                "{",
+                "    let value = Box::new(42);",
+                "    let once_ref = OnceRef::<i32> {",
+                "        inner: AtomicPtr::new(Box::into_raw(value)),",
+                "       ghost: PhantomData,",
+                "   };",
+                "   let _ = format!(\"{:?}\", once_ref);",
+                "   assert_eq!(format!(\"{:?}\", once_ref), \"OnceRef(0x...)\", \"The debug format should include the pointer address.\");",
+                "   assert!(!once_ref.inner.load(Ordering::SeqCst).is_null(), \"The inner AtomicPtr should be non-null.\");",
+                "   assert!(std::mem::size_of_val(&once_ref.ghost) > 0, \"The ghost field should be valid as PhantomData.\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let once_ref = OnceRef::<NonZeroUsize> {",
+                "        inner: AtomicPtr::new(ptr::null_mut()),",
+                "        ghost: PhantomData,",
+                "    };",
+                "    let _ = format!(\"{:?}\", once_ref);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(format!(\"{:?}\", once_ref), \"OnceRef(0x0)\");",
+                "    once_ref.inner.store(AtomicPtr::new(&NonZeroUsize::new(1).unwrap() as *const _ as *mut _), Ordering::SeqCst);",
+                "    assert_eq!(format!(\"{:?}\", once_ref), format!(\"OnceRef({:?})\", &NonZeroUsize::new(1).unwrap()));",
+                "    once_ref.inner.store(AtomicPtr::new(&NonZeroUsize::new(2).unwrap() as *const _ as *mut _), Ordering::SeqCst);",
+                "    assert_eq!(format!(\"{:?}\", once_ref), format!(\"OnceRef({:?})\", &NonZeroUsize::new(2).unwrap()));",
+                "    once_ref.inner.store(AtomicPtr::new(ptr::null_mut()), Ordering::SeqCst);",
+                "    assert_eq!(format!(\"{:?}\", once_ref), \"OnceRef(0x0)\");"
+              ],
+              "code": [
+                "{",
+                "   let once_ref = OnceRef::<NonZeroUsize> {",
+                "       inner: AtomicPtr::new(ptr::null_mut()),",
+                "       ghost: PhantomData,",
+                "   };",
+                "   let _ = format!(\"{:?}\", once_ref);",
+                "   assert_eq!(format!(\"{:?}\", once_ref), \"OnceRef(0x0)\");",
+                "   let val1 = NonZeroUsize::new(1).unwrap();",
+                "   once_ref.inner.store(&val1 as *const _ as *mut _, Ordering::SeqCst);",
+                "   assert_eq!(format!(\"{:?}\", once_ref), format!(\"OnceRef({:?})\", &val1));",
+                "   let val2 = NonZeroUsize::new(2).unwrap();",
+                "   once_ref.inner.store(&val2 as *const _ as *mut _, Ordering::SeqCst);",
+                "   assert_eq!(format!(\"{:?}\", once_ref), format!(\"OnceRef({:?})\", &val2));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

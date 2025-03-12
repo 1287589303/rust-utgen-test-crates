@@ -1,0 +1,207 @@
+{
+  "name": "quote::to_tokens::{impl#4}::to_tokens",
+  "mod_info": {
+    "name": "to_tokens",
+    "loc": "src/lib.rs:112:1:112:15"
+  },
+  "visible": true,
+  "loc": "src/to_tokens.rs:99:5:101:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "self is a non-null Rc<T> where T implements ToTokens, tokens is a mutable TokenStream object, and T is not Sized; ensure to cover Rc pointers pointing to various structures that implement ToTokens, including empty TokenStream, and edge cases of the TokenStream's size limits.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct EmptyToken;",
+                "    ",
+                "    impl ToTokens for EmptyToken {",
+                "        fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "            // No tokens to add",
+                "        }",
+                "    }",
+                "",
+                "    let empty_token = Rc::new(EmptyToken);",
+                "    let mut tokens = TokenStream::new();",
+                "    empty_token.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(tokens.to_string(), \"\");"
+              ],
+              "code": [
+                "{",
+                "    struct EmptyToken;",
+                "    ",
+                "    impl ToTokens for EmptyToken {",
+                "        fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "            // No tokens to add",
+                "        }",
+                "    }",
+                "",
+                "    let empty_token = Rc::new(EmptyToken);",
+                "    let mut tokens = TokenStream::new();",
+                "    empty_token.to_tokens(&mut tokens);",
+                "    assert_eq!(tokens.to_string(), \"\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct SimpleToken;",
+                "",
+                "    impl ToTokens for SimpleToken {",
+                "        fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "            tokens.extend(iter::once(Ident::new(\"test\", Span::call_site()).into()));",
+                "        }",
+                "    }",
+                "",
+                "    let simple_token = Rc::new(SimpleToken);",
+                "    let mut tokens = TokenStream::new();",
+                "    simple_token.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    tokens.len() == 1",
+                "    tokens.to_string() == \"test\""
+              ],
+              "code": [
+                "{",
+                "   struct SimpleToken;",
+                "",
+                "   impl ToTokens for SimpleToken {",
+                "       fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "           tokens.extend(iter::once::<TokenTree>(Ident::new(\"test\", Span::call_site()).into()));",
+                "        }",
+                "    }",
+                "",
+                "   let simple_token = Rc::new(SimpleToken);",
+                "   let mut tokens = TokenStream::new();",
+                "   simple_token.to_tokens(&mut tokens);",
+                "   assert!(tokens.clone().into_iter().count() == 1);  ",
+                "   assert_eq!(tokens.to_string(), \"test\");  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct MultipleTokens;",
+                "",
+                "    impl ToTokens for MultipleTokens {",
+                "        fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "            tokens.extend(vec![",
+                "                Ident::new(\"token1\", Span::call_site()).into(),",
+                "                Ident::new(\"token2\", Span::call_site()).into(),",
+                "            ]);",
+                "        }",
+                "    }",
+                "",
+                "    let multiple_tokens = Rc::new(MultipleTokens);",
+                "    let mut tokens = TokenStream::new();",
+                "    multiple_tokens.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(tokens.to_string(), \"token1 token2\");"
+              ],
+              "code": [
+                "{",
+                "    struct MultipleTokens;",
+                "",
+                "    impl ToTokens for MultipleTokens {",
+                "        fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "           tokens.extend::<Vec<TokenTree>>(vec![  ",
+                "               Ident::new(\"token1\", Span::call_site()).into(),  ",
+                "               Ident::new(\"token2\", Span::call_site()).into(),  ",
+                "           ]);  ",
+                "        }",
+                "    }",
+                "",
+                "    let multiple_tokens = Rc::new(MultipleTokens);",
+                "    let mut tokens = TokenStream::new();",
+                "    multiple_tokens.to_tokens(&mut tokens);",
+                "    assert_eq!(tokens.to_string(), \"token1 token2\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct SizeLimitTokens;",
+                "",
+                "    impl ToTokens for SizeLimitTokens {",
+                "        fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "            for _ in 0..1000 {",
+                "                tokens.extend(iter::once(Ident::new(\"limit_token\", Span::call_site()).into()));",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    let size_limit_tokens = Rc::new(SizeLimitTokens);",
+                "    let mut tokens = TokenStream::new();",
+                "    size_limit_tokens.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(tokens.to_string().matches(\"limit_token\").count(), 1000);",
+                "    assert!(!tokens.is_empty());",
+                "    assert!(tokens.into_iter().count() > 0);",
+                "    assert!(Rc::strong_count(&size_limit_tokens) == 1);",
+                "    assert_eq!(tokens.len(), 1000);",
+                "    assert!(tokens.to_string().contains(\"limit_token\"));",
+                "    assert!(tokens.to_string().starts_with(\"limit_token\"));",
+                "    assert!(tokens.to_string().ends_with(\"limit_token\"));"
+              ],
+              "code": [
+                "{",
+                "    struct SizeLimitTokens;",
+                "",
+                "    impl ToTokens for SizeLimitTokens {",
+                "        fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "            for _ in 0..1000 {",
+                "               tokens.extend(iter::once::<TokenTree>(Ident::new(\"limit_token\", Span::call_site()).into()));",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    let size_limit_tokens = Rc::new(SizeLimitTokens);",
+                "    let mut tokens = TokenStream::new();",
+                "    size_limit_tokens.to_tokens(&mut tokens);",
+                "    assert_eq!(tokens.to_string().matches(\"limit_token\").count(), 1000);",
+                "    assert!(!tokens.is_empty());",
+                "    assert!(tokens.into_iter().count() > 0);",
+                "    assert!(Rc::strong_count(&size_limit_tokens) == 1);",
+                "    assert_eq!(tokens.len(), 1000);",
+                "    assert!(tokens.to_string().contains(\"limit_token\"));",
+                "    assert!(tokens.to_string().starts_with(\"limit_token\"));",
+                "    assert!(tokens.to_string().ends_with(\"limit_token\"));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

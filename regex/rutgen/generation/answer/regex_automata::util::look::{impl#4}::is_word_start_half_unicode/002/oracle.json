@@ -1,0 +1,191 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack = b\"hello\";",
+          "    let at = 5; // at > 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(true)); // Test case where at is a valid position and word_before is false",
+          "    assert_eq!(result, Ok(false)); // Test case where at is valid and word_before is true",
+          "    assert!(result.is_err()); // Test case where unicode word boundary tables are not available",
+          "    assert_eq!(result, Ok(false)); // Test case where utf8::decode_last(&haystack[..at]) is None",
+          "    assert!(result.is_err()); // Test case where is_word_char::rev(haystack, at) returns Err"
+        ],
+        "code": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack = b\"hello\";",
+          "    let at = 5; // at > 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert_eq!(result, Ok(true)); // Test case where at is a valid position and word_before is false",
+          "    assert_eq!(result, Ok(false)); // Test case where at is valid and word_before is true",
+          "    assert!(result.is_err()); // Test case where unicode word boundary tables are not available",
+          "    assert_eq!(result, Ok(false)); // Test case where utf8::decode_last(&haystack[..at]) is None",
+          "    assert!(result.is_err()); // Test case where is_word_char::rev(haystack, at) returns Err",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack = b\"hell\\xFFo\"; // Invalid UTF-8",
+          "    let at = 5; // at > 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), UnicodeWordBoundaryError(()));",
+          "    assert!(matcher.is_word_start_half_unicode(b\"hello\\xFF\", 5).is_err());",
+          "    assert_eq!(matcher.is_word_start_half_unicode(b\"hello\", 0).unwrap(), false);",
+          "    assert!(matcher.is_word_start_half_unicode(b\"hello\", 1).unwrap());",
+          "    assert!(matcher.is_word_start_half_unicode(b\"\\xC2\\xA9a\", 2).unwrap());"
+        ],
+        "code": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack = b\"hell\\xFFo\"; // Invalid UTF-8",
+          "    let at = 5; // at > 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), UnicodeWordBoundaryError(()));",
+          "    assert!(matcher.is_word_start_half_unicode(b\"hello\\xFF\", 5).is_err());",
+          "    assert_eq!(matcher.is_word_start_half_unicode(b\"hello\", 0).unwrap(), false);",
+          "    assert!(matcher.is_word_start_half_unicode(b\"hello\", 1).unwrap());",
+          "    assert!(matcher.is_word_start_half_unicode(b\"\\xC2\\xA9a\", 2).unwrap());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack = b\"\\xC2\\xA9\"; // Multi-byte UTF-8 character",
+          "    let at = 2; // at > 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    let matcher = LookMatcher::new();",
+          "    let haystack = b\"\\xC2\\xA9\"; // Multi-byte UTF-8 character",
+          "    let at = 2; // at > 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert_eq!(result.is_err(), false); // utf8::decode_last(&haystack[..at]) should not match None",
+          "    assert_eq!(result.is_ok(), true); // Checks if result is OK",
+          "    assert!(matches!(result, Ok(value) if value == true)); // Ensure expected return value is true"
+        ],
+        "code": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack = b\"\\xC2\\xA9\"; // Multi-byte UTF-8 character",
+          "    let at = 2; // at > 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack = b\"\\xC2\\xA9\"; // Multi-byte UTF-8 character",
+          "    let at = 2; // at > 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert_eq!(result.is_err(), false); // utf8::decode_last(&haystack[..at]) should not match None",
+          "    assert_eq!(result.is_ok(), true); // Checks if result is OK",
+          "    assert!(matches!(result, Ok(value) if value == true)); // Ensure expected return value is true",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack: &[u8] = b\"\"; // Empty haystack",
+          "    let at = 0; // at must be greater than 0, providing a valid case just under",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err()); // Expecting an error due to at being 0",
+          "    ",
+          "    let haystack: &[u8] = b\"abc\"; // Valid haystack",
+          "    let at = 1; // at is greater than 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_ok()); // Expecting a valid result",
+          "    ",
+          "    let haystack: &[u8] = b\"abc\"; // Valid haystack",
+          "    let at = 3; // at equals haystack length",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_ok()); // Expecting a valid result",
+          "    ",
+          "    let haystack: &[u8] = b\"abc\\xFF\"; // Valid haystack with invalid UTF-8 byte",
+          "    let at = 3; // at is greater than 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_ok()); // Expecting a valid result despite the invalid byte",
+          "    ",
+          "    let haystack: &[u8] = b\"ab\\xEA\"; // Valid haystack where decode_last returns Some(Err(_))",
+          "    let at = 2; // at is greater than 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_ok()); // Expecting a valid result since utf8::decode_last matched Some(Err(_))",
+          "    ",
+          "    let haystack: &[u8] = b\"abc\"; // Valid haystack",
+          "    let at = 1; // at is greater than 0",
+          "    matcher.set_line_terminator(0); // Setting a line terminator, if applicable",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_ok()); // Expecting a valid result after setting state"
+        ],
+        "code": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack: &[u8] = b\"\"; // Empty haystack",
+          "    let at = 0; // at must be greater than 0, providing a valid case just under",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_err()); // Expecting an error due to at being 0",
+          "    ",
+          "    let haystack: &[u8] = b\"abc\"; // Valid haystack",
+          "    let at = 1; // at is greater than 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_ok()); // Expecting a valid result",
+          "    ",
+          "    let haystack: &[u8] = b\"abc\"; // Valid haystack",
+          "    let at = 3; // at equals haystack length",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_ok()); // Expecting a valid result",
+          "    ",
+          "    let haystack: &[u8] = b\"abc\\xFF\"; // Valid haystack with invalid UTF-8 byte",
+          "    let at = 3; // at is greater than 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_ok()); // Expecting a valid result despite the invalid byte",
+          "    ",
+          "    let haystack: &[u8] = b\"ab\\xEA\"; // Valid haystack where decode_last returns Some(Err(_))",
+          "    let at = 2; // at is greater than 0",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_ok()); // Expecting a valid result since utf8::decode_last matched Some(Err(_))",
+          "    ",
+          "    let haystack: &[u8] = b\"abc\"; // Valid haystack",
+          "    let at = 1; // at is greater than 0",
+          "    matcher.set_line_terminator(0); // Setting a line terminator, if applicable",
+          "    let result = matcher.is_word_start_half_unicode(haystack, at);",
+          "    assert!(result.is_ok()); // Expecting a valid result after setting state",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

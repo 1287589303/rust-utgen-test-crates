@@ -1,0 +1,120 @@
+[
+  {
+    "uses": [
+      "use proc_macro::TokenStream;"
+    ],
+    "has_test_mod": false,
+    "common": [
+      "#[should_panic]",
+      "fn test_from_malformed_token_stream() {",
+      "    let input: TokenStream = \"malformed_token\".parse().unwrap();",
+      "    let result = TokenStream::from(input);",
+      "}",
+      "",
+      "#[should_panic]",
+      "fn test_from_null_reference() {",
+      "    let input: Option<proc_macro::TokenStream> = None;",
+      "    let result = TokenStream::from(input.unwrap()); // This should panic",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use proc_macro::TokenStream;",
+          "    let input: TokenStream = \"valid_token\".parse().unwrap();",
+          "    let result = TokenStream::from(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let malformed_input: TokenStream = \"malformed_token\".parse().unwrap(); // expect panic",
+          "    let null_input: Option<proc_macro::TokenStream> = None; // expect panic",
+          "    let valid_input: TokenStream = \"valid_token\".parse().unwrap(); // expect valid conversion",
+          "    let empty_token_stream: TokenStream = TokenStream::new(); // expect to not panic",
+          "    let result_from_empty: TokenStream = TokenStream::from(empty_token_stream); // expect valid conversion",
+          "    let result_from_valid: TokenStream = TokenStream::from(valid_input); // expect valid conversion"
+        ],
+        "code": [
+          "{",
+          "    use proc_macro::TokenStream;",
+          "    let input: TokenStream = \"valid_token\".parse().unwrap();",
+          "    let result = TokenStream::from(input);",
+          "    let malformed_input: TokenStream = \"malformed_token\".parse().unwrap(); // expect panic",
+          "    let null_input: Option<proc_macro::TokenStream> = None; // expect panic",
+          "    let valid_input: TokenStream = \"valid_token\".parse().unwrap(); // expect valid conversion",
+          "    let empty_token_stream: TokenStream = TokenStream::new(); // expect to not panic",
+          "    let result_from_empty: TokenStream = TokenStream::from(empty_token_stream); // expect valid conversion",
+          "    let result_from_valid: TokenStream = TokenStream::from(valid_input); // expect valid conversion",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use proc_macro::TokenStream;",
+          "    let input: TokenStream = TokenStream::new();",
+          "    let result = TokenStream::from(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(panic::catch_unwind(|| { TokenStream::from(\"malformed_token\".parse().unwrap()); }).is_err());",
+          "    assert!(panic::catch_unwind(|| { TokenStream::from(None.unwrap()); }).is_err());",
+          "    let input: TokenStream = TokenStream::new();",
+          "    let result = TokenStream::from(input);",
+          "    assert!(result.is_empty() == false);"
+        ],
+        "code": [
+          "{",
+          "    use proc_macro::TokenStream;",
+          "    let input: TokenStream = TokenStream::new();",
+          "    let result = TokenStream::from(input);",
+          "    assert!(panic::catch_unwind(|| { TokenStream::from(\"malformed_token\".parse().unwrap()); }).is_err());",
+          "    assert!(panic::catch_unwind(|| { TokenStream::from(None.unwrap()); }).is_err());",
+          "    let input: TokenStream = TokenStream::new();",
+          "    let result = TokenStream::from(input);",
+          "    assert!(result.is_empty() == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use proc_macro::TokenStream;",
+          "    let input: TokenStream = \"token1 token2 token3 token4 token5 token6 token7 token8 token9 token10\".parse().unwrap();",
+          "    let result = TokenStream::from(input);",
+          "}"
+        ],
+        "oracle": [
+          "    TokenStream::from(proc_macro::TokenStream::from(\"malformed_token\")) // should panic",
+          "    TokenStream::from(proc_macro::TokenStream::from(\"\")) // should not panic, expect empty TokenStream",
+          "    TokenStream::from(proc_macro::TokenStream::from(\"token1 token2\")) // should not panic, expect valid TokenStream",
+          "    TokenStream::from(proc_macro::TokenStream::from(\"token\")) // should not panic, expect valid TokenStream",
+          "    TokenStream::from(proc_macro::TokenStream::from(\"token1 token2 token3 token4 token5 token6 token7 token8 token9 token10\")) // should not panic, expect valid TokenStream",
+          "    TokenStream::from(None.unwrap()) // should panic"
+        ],
+        "code": [
+          "{",
+          "    use proc_macro::TokenStream;",
+          "    let input: TokenStream = \"token1 token2 token3 token4 token5 token6 token7 token8 token9 token10\".parse().unwrap();",
+          "    let result = TokenStream::from(input);",
+          "    TokenStream::from(proc_macro::TokenStream::from(\"malformed_token\")) // should panic",
+          "    TokenStream::from(proc_macro::TokenStream::from(\"\")) // should not panic, expect empty TokenStream",
+          "    TokenStream::from(proc_macro::TokenStream::from(\"token1 token2\")) // should not panic, expect valid TokenStream",
+          "    TokenStream::from(proc_macro::TokenStream::from(\"token\")) // should not panic, expect valid TokenStream",
+          "    TokenStream::from(proc_macro::TokenStream::from(\"token1 token2 token3 token4 token5 token6 token7 token8 token9 token10\")) // should not panic, expect valid TokenStream",
+          "    TokenStream::from(None.unwrap()) // should panic",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

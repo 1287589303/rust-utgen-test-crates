@@ -1,0 +1,181 @@
+{
+  "name": "strsim::{impl#6}::get_mut",
+  "mod_info": {
+    "name": "",
+    "loc": "src/lib.rs:1:1:1307:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:586:5:594:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: value <= 255 at line 588 is true, with bound value == 255\n",
+        "expected return value/type: if value <= 255 {\n            let val_u8 = u8::try_from(value).expect(\"we check the bounds above\");\n            &mut self.extended_ascii[usize::from(val_u8)]\n        } else {\n            self.map.get_mut(value)\n        }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "   #[derive(Clone, Copy, Eq, PartialEq)]  ",
+                "   struct MockValueType {  ",
+                "       value: usize,  ",
+                "   }  ",
+                " ",
+                "   impl Default for MockValueType {  ",
+                "        fn default() -> Self {",
+                "            MockValueType { value: 0 }",
+                "        }",
+                "    }",
+                "",
+                "    let mut hashmap = HybridGrowingHashmapChar {",
+                "        map: GrowingHashmapChar {",
+                "            used: 0,",
+                "            fill: 0,",
+                "            mask: 0,",
+                "            map: None,",
+                "        },",
+                "        extended_ascii: [MockValueType::default(); 256],",
+                "    };",
+                "",
+                "    let key: char = char::from(255); // Testing the boundary at 255",
+                "    let value = hashmap.get_mut(key);",
+                "    value.value = 42; // Assigning a value to check if it is set correctly",
+                "    ",
+                "    assert_eq!(hashmap.extended_ascii[255].value, 42);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "   #[derive(Clone, Copy, Eq, PartialEq)]",
+                "   struct MockValueType {",
+                "       value: usize,",
+                "   }",
+                "",
+                "   impl Default for MockValueType {",
+                "       fn default() -> Self {",
+                "           MockValueType { value: 0 }",
+                "       }",
+                "   }",
+                "    ",
+                "    let mut hashmap = HybridGrowingHashmapChar {",
+                "        map: GrowingHashmapChar {",
+                "            used: 0,",
+                "            fill: 0,",
+                "            mask: 0,",
+                "            map: None,",
+                "        },",
+                "        extended_ascii: [MockValueType::default(); 256],",
+                "    };",
+                "",
+                "    let key: char = char::from(0); // Testing lower boundary",
+                "    let value = hashmap.get_mut(key);",
+                "    value.value = 13; // Assigning a value to check if it is set correctly",
+                "",
+                "    assert_eq!(hashmap.extended_ascii[0].value, 13);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: value <= 255 at line 588 is false\n",
+        "expected return value/type: if value <= 255 {\n            let val_u8 = u8::try_from(value).expect(\"we check the bounds above\");\n            &mut self.extended_ascii[usize::from(val_u8)]\n        } else {\n            self.map.get_mut(value)\n        }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestValueType {",
+                "        value: usize,",
+                "    }",
+                "",
+                "    struct TestHashmap {",
+                "        map: Option<Vec<GrowingHashmapMapElemChar<TestValueType>>>,",
+                "        extended_ascii: [TestValueType; 256],",
+                "    }",
+                "",
+                "    impl Default for TestValueType {",
+                "        fn default() -> Self {",
+                "            TestValueType { value: 0 }",
+                "        }",
+                "    }",
+                "",
+                "    impl HybridGrowingHashmapChar<TestValueType> {",
+                "        fn new() -> Self {",
+                "            HybridGrowingHashmapChar {",
+                "                map: GrowingHashmapChar {",
+                "                    used: 0,",
+                "                    fill: 0,",
+                "                    mask: 0,",
+                "                    map: None,",
+                "                },",
+                "                extended_ascii: [TestValueType::default(); 256],",
+                "            }",
+                "        }",
+                "",
+                "        fn get_mut(&mut self, key: char) -> &mut TestValueType {",
+                "            let value = key as u32;",
+                "            if value <= 255 {",
+                "                let val_u8 = u8::try_from(value).expect(\"we check the bounds above\");",
+                "                &mut self.extended_ascii[usize::from(val_u8)]",
+                "            } else {",
+                "                self.map.get_mut(value)",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    // Instantiate HybridGrowingHashmapChar",
+                "    let mut hashmap = HybridGrowingHashmapChar::new();",
+                "",
+                "    // Test with a character that has a value above 255",
+                "    let result = hashmap.get_mut('𐍈'); // This character exceeds Unicode value 255",
+                "",
+                "    // Ensure that it returns a mutable reference to the expected data structure",
+                "    assert_eq!(result.value, 0); // Initial value in case it defaults to 0",
+                "    result.value = 5; // Modify the value via the mutable reference",
+                "    assert_eq!(result.value, 5); // Confirm the modification",
+                "",
+                "    // Further checks can be performed depending on map implementation details if required",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

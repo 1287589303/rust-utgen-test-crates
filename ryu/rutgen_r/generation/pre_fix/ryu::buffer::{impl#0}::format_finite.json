@@ -1,0 +1,228 @@
+{
+  "name": "ryu::buffer::{impl#0}::format_finite",
+  "mod_info": {
+    "name": "buffer",
+    "loc": "src/lib.rs:106:1:106:12"
+  },
+  "visible": true,
+  "loc": "src/buffer/mod.rs:72:5:79:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: n <= self.bytes.len() at line 75 is true, with bound n == self.bytes.len()\n",
+        "expected return value/type: str::from_utf8_unchecked(slice)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct Buffer {",
+                "        bytes: [u8; 64],",
+                "    }",
+                "",
+                "    impl Buffer {",
+                "        fn new() -> Self {",
+                "            Buffer { bytes: [0; 64] }",
+                "        }",
+                "",
+                "        fn format_finite<F: Float>(&mut self, f: F) -> &str {",
+                "            unsafe {",
+                "                let n = f.write_to_ryu_buffer(self.bytes.as_mut_ptr() as *mut u8);",
+                "                debug_assert!(n <= self.bytes.len());",
+                "                let slice = core::slice::from_raw_parts(self.bytes.as_ptr() as *const u8, n);",
+                "                core::str::from_utf8_unchecked(slice)",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = buffer.format_finite(3.14f32);",
+                "    assert_eq!(result, \"3.14\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct Buffer {",
+                "        bytes: [u8; 64],",
+                "    }",
+                "",
+                "    impl Buffer {",
+                "        fn new() -> Self {",
+                "            Buffer { bytes: [0; 64] }",
+                "        }",
+                "",
+                "        fn format_finite<F: Float>(&mut self, f: F) -> &str {",
+                "            unsafe {",
+                "                let n = f.write_to_ryu_buffer(self.bytes.as_mut_ptr() as *mut u8);",
+                "                debug_assert!(n <= self.bytes.len());",
+                "                let slice = core::slice::from_raw_parts(self.bytes.as_ptr() as *const u8, n);",
+                "                core::str::from_utf8_unchecked(slice)",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = buffer.format_finite(2.718281828459045f64);",
+                "    assert_eq!(result, \"2.718281828459045\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct Buffer {",
+                "        bytes: [u8; 64],",
+                "    }",
+                "",
+                "    impl Buffer {",
+                "        fn new() -> Self {",
+                "            Buffer { bytes: [0; 64] }",
+                "        }",
+                "",
+                "        fn format_finite<F: Float>(&mut self, f: F) -> &str {",
+                "            unsafe {",
+                "                let n = f.write_to_ryu_buffer(self.bytes.as_mut_ptr() as *mut u8);",
+                "                debug_assert!(n <= self.bytes.len());",
+                "                let slice = core::slice::from_raw_parts(self.bytes.as_ptr() as *const u8, n);",
+                "                core::str::from_utf8_unchecked(slice)",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = buffer.format_finite(0.0f32);",
+                "    assert_eq!(result, \"0\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: n <= self.bytes.len() at line 75 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestFloat;",
+                "    impl ryu::Float for TestFloat {",
+                "        fn write_to_ryu_buffer(&self, _buffer: *mut u8) -> usize {",
+                "            // Return a value greater than the allocated buffer size to trigger the assertion failure",
+                "            20 // Assume bytes.len() is less than 20",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = ryu::Buffer {",
+                "        bytes: [0u8; 10], // Set a small buffer size to cause failure",
+                "    };",
+                "",
+                "    let result = std::panic::catch_unwind(|| {",
+                "        buffer.format_finite(TestFloat);",
+                "    });",
+                "",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestFloat;",
+                "    impl ryu::Float for TestFloat {",
+                "        fn write_to_ryu_buffer(&self, _buffer: *mut u8) -> usize {",
+                "            // Return a value that perfectly fits the buffer",
+                "            10 // Size matches bytes.len()",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = ryu::Buffer {",
+                "        bytes: [0u8; 10], // Set the buffer size",
+                "    };",
+                "",
+                "    let result = std::panic::catch_unwind(|| {",
+                "        buffer.format_finite(TestFloat);",
+                "    });",
+                "",
+                "    assert!(result.is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestFloat;",
+                "    impl ryu::Float for TestFloat {",
+                "        fn write_to_ryu_buffer(&self, _buffer: *mut u8) -> usize {",
+                "            // Return a value less than zero to test the lower boundary, ",
+                "            // assuming that denotes an underflow condition in context",
+                "            0 // No bytes written, should not panic",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = ryu::Buffer {",
+                "        bytes: [0u8; 10], // Set the buffer size",
+                "    };",
+                "",
+                "    let result = std::panic::catch_unwind(|| {",
+                "        buffer.format_finite(TestFloat);",
+                "    });",
+                "",
+                "    assert!(result.is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

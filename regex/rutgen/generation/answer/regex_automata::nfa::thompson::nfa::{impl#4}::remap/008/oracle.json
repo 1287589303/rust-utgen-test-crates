@@ -1,0 +1,165 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = State::Dense(DenseTransitions {",
+          "        transitions: Box::new((0..256).map(|i| StateID(SmallIndex(i))).collect::<Vec<_>>().into_boxed_slice()),",
+          "    });",
+          "    let remap: Vec<StateID> = (0..256).map(|i| StateID(SmallIndex(i + 1))).collect();",
+          "    state.remap(&remap);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(state.memory_usage(), expected_memory_usage);",
+          "    assert_eq!(state.is_epsilon(), false);",
+          "    assert_eq!(state, State::Dense(DenseTransitions { transitions: Box::new((1..257).map(|i| StateID(SmallIndex(i))).collect::<Vec<_>>().into_boxed_slice()) }));",
+          "    assert!(matches!(state, State::Dense(DenseTransitions { transitions }) if transitions.iter().all(|&sid| sid.0.0 == 1 || sid.0.0 == 257)));",
+          "    assert!(matches!(state, State::Dense(DenseTransitions { transitions }) if transitions.iter().none(|&sid| sid.0.0 == 0)));"
+        ],
+        "code": [
+          "{",
+          "    let mut state = State::Dense(DenseTransitions {",
+          "        transitions: Box::new((0..256).map(|i| StateID(SmallIndex(i))).collect::<Vec<_>>().into_boxed_slice()),",
+          "    });",
+          "    let remap: Vec<StateID> = (0..256).map(|i| StateID(SmallIndex(i + 1))).collect();",
+          "    state.remap(&remap);",
+          "    assert_eq!(state.memory_usage(), expected_memory_usage);",
+          "    assert_eq!(state.is_epsilon(), false);",
+          "    assert_eq!(state, State::Dense(DenseTransitions { transitions: Box::new((1..257).map(|i| StateID(SmallIndex(i))).collect::<Vec<_>>().into_boxed_slice()) }));",
+          "    assert!(matches!(state, State::Dense(DenseTransitions { transitions }) if transitions.iter().all(|&sid| sid.0.0 == 1 || sid.0.0 == 257)));",
+          "    assert!(matches!(state, State::Dense(DenseTransitions { transitions }) if transitions.iter().none(|&sid| sid.0.0 == 0)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = State::Dense(DenseTransitions {",
+          "        transitions: Box::new((0..256).map(|i| StateID(SmallIndex(i))).collect::<Vec<_>>().into_boxed_slice()),",
+          "    });",
+          "    let remap: Vec<StateID> = vec![StateID(SmallIndex(1)); 128]; // only mapping first half",
+          "    state.remap(&remap);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(state.memory_usage(), expected_memory_usage);",
+          "    assert_eq!(state, State::Dense(DenseTransitions { transitions: Box::new((0..128).map(|i| StateID(SmallIndex(1))).collect::<Vec<_>>().into_boxed_slice()) }));",
+          "    assert_ne!(state, State::Dense(DenseTransitions { transitions: Box::new((0..256).map(|i| StateID(SmallIndex(SmallIndex(i)))).collect::<Vec<_>>().into_boxed_slice()) }));",
+          "    assert!(matches!(state, State::Dense(_)));",
+          "    assert_eq!(state.transitions.iter().count(), 256);",
+          "    assert_eq!(state.transitions[0], StateID(SmallIndex(1)));",
+          "    assert_eq!(state.transitions[127], StateID(SmallIndex(1)));",
+          "    assert_eq!(state.transitions[128], StateID(SmallIndex(128)));"
+        ],
+        "code": [
+          "{",
+          "    let mut state = State::Dense(DenseTransitions {",
+          "        transitions: Box::new((0..256).map(|i| StateID(SmallIndex(i))).collect::<Vec<_>>().into_boxed_slice()),",
+          "    });",
+          "    let remap: Vec<StateID> = vec![StateID(SmallIndex(1)); 128]; // only mapping first half",
+          "    state.remap(&remap);",
+          "    assert_eq!(state.memory_usage(), expected_memory_usage);",
+          "    assert_eq!(state, State::Dense(DenseTransitions { transitions: Box::new((0..128).map(|i| StateID(SmallIndex(1))).collect::<Vec<_>>().into_boxed_slice()) }));",
+          "    assert_ne!(state, State::Dense(DenseTransitions { transitions: Box::new((0..256).map(|i| StateID(SmallIndex(SmallIndex(i)))).collect::<Vec<_>>().into_boxed_slice()) }));",
+          "    assert!(matches!(state, State::Dense(_)));",
+          "    assert_eq!(state.transitions.iter().count(), 256);",
+          "    assert_eq!(state.transitions[0], StateID(SmallIndex(1)));",
+          "    assert_eq!(state.transitions[127], StateID(SmallIndex(1)));",
+          "    assert_eq!(state.transitions[128], StateID(SmallIndex(128)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = State::Dense(DenseTransitions {",
+          "        transitions: Box::new((0..256).map(|i| StateID(SmallIndex(i))).collect::<Vec<_>>().into_boxed_slice()),",
+          "    });",
+          "    let remap: Vec<StateID> = vec![]; // empty remap slice",
+          "    state.remap(&remap);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(state.is_epsilon(), false);",
+          "    assert_eq!(state.memory_usage(), expected_memory_usage); // replace with actual expected value",
+          "    assert_eq!(state.remap(&remap), expected_state_after_remap); // replace with actual expected value after remap",
+          "    assert!(state.transitions.iter().all(|&sid| sid == StateID(SmallIndex(0)))); // validate no transitions after empty remap",
+          "    assert!(state.transitions.iter().copied().zip(remap.iter()).all(|(sid, &remapped_sid)| sid == remapped_sid)); // validate mapping correctness",
+          "    assert_eq!(state, expected_state); // validate expected state after invoking remap with empty remap"
+        ],
+        "code": [
+          "{",
+          "    let mut state = State::Dense(DenseTransitions {",
+          "        transitions: Box::new((0..256).map(|i| StateID(SmallIndex(i))).collect::<Vec<_>>().into_boxed_slice()),",
+          "    });",
+          "    let remap: Vec<StateID> = vec![]; // empty remap slice",
+          "    state.remap(&remap);",
+          "    assert_eq!(state.is_epsilon(), false);",
+          "    assert_eq!(state.memory_usage(), expected_memory_usage); // replace with actual expected value",
+          "    assert_eq!(state.remap(&remap), expected_state_after_remap); // replace with actual expected value after remap",
+          "    assert!(state.transitions.iter().all(|&sid| sid == StateID(SmallIndex(0)))); // validate no transitions after empty remap",
+          "    assert!(state.transitions.iter().copied().zip(remap.iter()).all(|(sid, &remapped_sid)| sid == remapped_sid)); // validate mapping correctness",
+          "    assert_eq!(state, expected_state); // validate expected state after invoking remap with empty remap",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = State::Dense(DenseTransitions {",
+          "        transitions: Box::new((0..256).map(|i| StateID(SmallIndex(i))).collect::<Vec<_>>().into_boxed_slice()),",
+          "    });",
+          "    let remap: Vec<StateID> = (0..256).map(|i| StateID(SmallIndex(i))).collect(); // identity mapping",
+          "    state.remap(&remap);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(state.memory_usage(), expected_memory_usage);",
+          "    assert!(state.is_epsilon() == false);",
+          "    if let State::Dense(DenseTransitions { ref transitions }) = state {",
+          "    assert_eq!(transitions.len(), 256);",
+          "    for (index, sid) in transitions.iter().enumerate() {",
+          "    assert_eq!(*sid, StateID(SmallIndex(index as u32)));",
+          "    }",
+          "    }",
+          "    assert!(state.is_epsilon() == false);"
+        ],
+        "code": [
+          "{",
+          "    let mut state = State::Dense(DenseTransitions {",
+          "        transitions: Box::new((0..256).map(|i| StateID(SmallIndex(i))).collect::<Vec<_>>().into_boxed_slice()),",
+          "    });",
+          "    let remap: Vec<StateID> = (0..256).map(|i| StateID(SmallIndex(i))).collect(); // identity mapping",
+          "    state.remap(&remap);",
+          "    assert_eq!(state.memory_usage(), expected_memory_usage);",
+          "    assert!(state.is_epsilon() == false);",
+          "    if let State::Dense(DenseTransitions { ref transitions }) = state {",
+          "    assert_eq!(transitions.len(), 256);",
+          "    for (index, sid) in transitions.iter().enumerate() {",
+          "    assert_eq!(*sid, StateID(SmallIndex(index as u32)));",
+          "    }",
+          "    }",
+          "    assert!(state.is_epsilon() == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

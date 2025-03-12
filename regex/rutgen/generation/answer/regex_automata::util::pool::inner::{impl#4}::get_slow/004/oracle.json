@@ -1,0 +1,158 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestValue;",
+          "    ",
+          "    let pool: Pool<TestValue, fn() -> TestValue> = Pool {",
+          "        stack: Mutex::new(vec![Box::new(TestValue)]),",
+          "        create: || TestValue,",
+          "    };",
+          "",
+          "    let caller = 0; // Non-negative integer",
+          "    let owner = THREAD_ID_UNOWNED;",
+          "",
+          "    let guard = pool.get_slow(caller, owner);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(guard.pool, &pool);",
+          "    assert!(guard.value.is_some());",
+          "    assert_eq!(guard.value.as_ref().unwrap().type_id(), std::any::TypeId::of::<TestValue>());",
+          "    assert!(guard.discard == false);",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+          "    assert_eq!(COUNTER.load(Ordering::Relaxed), 3);"
+        ],
+        "code": [
+          "{",
+          "    struct TestValue;",
+          "    ",
+          "    let pool: Pool<TestValue, fn() -> TestValue> = Pool {",
+          "        stack: Mutex::new(vec![Box::new(TestValue)]),",
+          "        create: || TestValue,",
+          "    };",
+          "",
+          "    let caller = 0; // Non-negative integer",
+          "    let owner = THREAD_ID_UNOWNED;",
+          "",
+          "    let guard = pool.get_slow(caller, owner);",
+          "    assert_eq!(guard.pool, &pool);",
+          "    assert!(guard.value.is_some());",
+          "    assert_eq!(guard.value.as_ref().unwrap().type_id(), std::any::TypeId::of::<TestValue>());",
+          "    assert!(guard.discard == false);",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+          "    assert_eq!(COUNTER.load(Ordering::Relaxed), 3);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestValue;",
+          "",
+          "    let pool: Pool<TestValue, fn() -> TestValue> = Pool {",
+          "        stack: Mutex::new(vec![Box::new(TestValue)]),",
+          "        create: || TestValue,",
+          "    };",
+          "",
+          "    let caller = 1; // Non-negative odd integer",
+          "    let owner = THREAD_ID_UNOWNED;",
+          "",
+          "    let guard = pool.get_slow(caller, owner);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(owner, THREAD_ID_UNOWNED);",
+          "    assert!(pool.stacks.len() > 0);",
+          "    assert!(pool.stack.locked.load(Ordering::Acquire) == false);",
+          "    assert!(pool.stack.locked.load(Ordering::Acquire) == false);",
+          "    assert!(pool.stack.locked.load(Ordering::Acquire) == false);",
+          "    assert!(pool.get_slow(caller, owner).value.is_some());",
+          "    assert!(pool.get_slow(caller, owner).value.unwrap().is_a::<Box<TestValue>>());"
+        ],
+        "code": [
+          "{",
+          "    struct TestValue;",
+          "",
+          "    let pool: Pool<TestValue, fn() -> TestValue> = Pool {",
+          "        stack: Mutex::new(vec![Box::new(TestValue)]),",
+          "        create: || TestValue,",
+          "    };",
+          "",
+          "    let caller = 1; // Non-negative odd integer",
+          "    let owner = THREAD_ID_UNOWNED;",
+          "",
+          "    let guard = pool.get_slow(caller, owner);",
+          "    assert_eq!(owner, THREAD_ID_UNOWNED);",
+          "    assert!(pool.stacks.len() > 0);",
+          "    assert!(pool.stack.locked.load(Ordering::Acquire) == false);",
+          "    assert!(pool.stack.locked.load(Ordering::Acquire) == false);",
+          "    assert!(pool.stack.locked.load(Ordering::Acquire) == false);",
+          "    assert!(pool.get_slow(caller, owner).value.is_some());",
+          "    assert!(pool.get_slow(caller, owner).value.unwrap().is_a::<Box<TestValue>>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestValue;",
+          "",
+          "    let pool: Pool<TestValue, fn() -> TestValue> = Pool {",
+          "        stack: Mutex::new(vec![Box::new(TestValue); 10]), // Stack with 10 elements",
+          "        create: || TestValue,",
+          "    };",
+          "",
+          "    let caller = 2; // Non-negative integer",
+          "    let owner = THREAD_ID_UNOWNED;",
+          "",
+          "    let guard = pool.get_slow(caller, owner);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(guard.pool, &pool);",
+          "    assert!(guard.value.is_some());",
+          "    assert_eq!(guard.value.unwrap().type_id(), TypeId::of::<Box<TestValue>>());",
+          "    assert!(guard.discard == false);",
+          "    assert_eq!(COUNTER.load(Ordering::SeqCst), 3);",
+          "    assert!(pool.stack.lock().unwrap().len() == 9);"
+        ],
+        "code": [
+          "{",
+          "    struct TestValue;",
+          "",
+          "    let pool: Pool<TestValue, fn() -> TestValue> = Pool {",
+          "        stack: Mutex::new(vec![Box::new(TestValue); 10]), // Stack with 10 elements",
+          "        create: || TestValue,",
+          "    };",
+          "",
+          "    let caller = 2; // Non-negative integer",
+          "    let owner = THREAD_ID_UNOWNED;",
+          "",
+          "    let guard = pool.get_slow(caller, owner);",
+          "    assert_eq!(guard.pool, &pool);",
+          "    assert!(guard.value.is_some());",
+          "    assert_eq!(guard.value.unwrap().type_id(), TypeId::of::<Box<TestValue>>());",
+          "    assert!(guard.discard == false);",
+          "    assert_eq!(COUNTER.load(Ordering::SeqCst), 3);",
+          "    assert!(pool.stack.lock().unwrap().len() == 9);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

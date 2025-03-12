@@ -1,0 +1,33 @@
+{
+  "name": "regex_automata::nfa::thompson::compiler::{impl#0}::utf8",
+  "mod_info": {
+    "name": "nfa::thompson::compiler",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:60:1:60:14"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/nfa/thompson/compiler.rs:147:5:150:6",
+  "doc": "/// Whether to enable UTF-8 mode during search or not.\n///\n/// A regex engine is said to be in UTF-8 mode when it guarantees that\n/// all matches returned by it have spans consisting of only valid UTF-8.\n/// That is, it is impossible for a match span to be returned that\n/// contains any invalid UTF-8.\n///\n/// UTF-8 mode generally consists of two things:\n///\n/// 1. Whether the NFA's states are constructed such that all paths to a\n/// match state that consume at least one byte always correspond to valid\n/// UTF-8.\n/// 2. Whether all paths to a match state that do _not_ consume any bytes\n/// should always correspond to valid UTF-8 boundaries.\n///\n/// (1) is a guarantee made by whoever constructs the NFA.\n/// If you're parsing a regex from its concrete syntax, then\n/// [`syntax::Config::utf8`](crate::util::syntax::Config::utf8) can make\n/// this guarantee for you. It does it by returning an error if the regex\n/// pattern could every report a non-empty match span that contains invalid\n/// UTF-8. So long as `syntax::Config::utf8` mode is enabled and your regex\n/// successfully parses, then you're guaranteed that the corresponding NFA\n/// will only ever report non-empty match spans containing valid UTF-8.\n///\n/// (2) is a trickier guarantee because it cannot be enforced by the NFA\n/// state graph itself. Consider, for example, the regex `a*`. It matches\n/// the empty strings in `☃` at positions `0`, `1`, `2` and `3`, where\n/// positions `1` and `2` occur within the UTF-8 encoding of a codepoint,\n/// and thus correspond to invalid UTF-8 boundaries. Therefore, this\n/// guarantee must be made at a higher level than the NFA state graph\n/// itself. This crate deals with this case in each regex engine. Namely,\n/// when a zero-width match that splits a codepoint is found and UTF-8\n/// mode enabled, then it is ignored and the engine moves on looking for\n/// the next match.\n///\n/// Thus, UTF-8 mode is both a promise that the NFA built only reports\n/// non-empty matches that are valid UTF-8, and an *instruction* to regex\n/// engines that empty matches that split codepoints should be banned.\n///\n/// Because UTF-8 mode is fundamentally about avoiding invalid UTF-8 spans,\n/// it only makes sense to enable this option when you *know* your haystack\n/// is valid UTF-8. (For example, a `&str`.) Enabling UTF-8 mode and\n/// searching a haystack that contains invalid UTF-8 leads to **unspecified\n/// behavior**.\n///\n/// Therefore, it may make sense to enable `syntax::Config::utf8` while\n/// simultaneously *disabling* this option. That would ensure all non-empty\n/// match spans are valid UTF-8, but that empty match spans may still split\n/// a codepoint or match at other places that aren't valid UTF-8.\n///\n/// In general, this mode is only relevant if your regex can match the\n/// empty string. Most regexes don't.\n///\n/// This is enabled by default.\n///\n/// # Example\n///\n/// This example shows how UTF-8 mode can impact the match spans that may\n/// be reported in certain cases.\n///\n/// ```\n/// use regex_automata::{\n///     nfa::thompson::{self, pikevm::PikeVM},\n///     Match, Input,\n/// };\n///\n/// let re = PikeVM::new(\"\")?;\n/// let (mut cache, mut caps) = (re.create_cache(), re.create_captures());\n///\n/// // UTF-8 mode is enabled by default.\n/// let mut input = Input::new(\"☃\");\n/// re.search(&mut cache, &input, &mut caps);\n/// assert_eq!(Some(Match::must(0, 0..0)), caps.get_match());\n///\n/// // Even though an empty regex matches at 1..1, our next match is\n/// // 3..3 because 1..1 and 2..2 split the snowman codepoint (which is\n/// // three bytes long).\n/// input.set_start(1);\n/// re.search(&mut cache, &input, &mut caps);\n/// assert_eq!(Some(Match::must(0, 3..3)), caps.get_match());\n///\n/// // But if we disable UTF-8, then we'll get matches at 1..1 and 2..2:\n/// let re = PikeVM::builder()\n///     .thompson(thompson::Config::new().utf8(false))\n///     .build(\"\")?;\n/// re.search(&mut cache, &input, &mut caps);\n/// assert_eq!(Some(Match::must(0, 1..1)), caps.get_match());\n///\n/// input.set_start(2);\n/// re.search(&mut cache, &input, &mut caps);\n/// assert_eq!(Some(Match::must(0, 2..2)), caps.get_match());\n///\n/// input.set_start(3);\n/// re.search(&mut cache, &input, &mut caps);\n/// assert_eq!(Some(Match::must(0, 3..3)), caps.get_match());\n///\n/// input.set_start(4);\n/// re.search(&mut cache, &input, &mut caps);\n/// assert_eq!(None, caps.get_match());\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn utf8(mut self, yes: bool) -> Config {",
+    "    self.utf8 = Some(yes);",
+    "    self",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": "self",
+      "path": [
+        0
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

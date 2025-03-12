@@ -1,0 +1,101 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestType {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let data = TestType { value: 42 };",
+          "    let once_ref: OnceRef<TestType> = OnceRef::new();",
+          "    ",
+          "    let result = once_ref.get_or_try_init(|| Ok(&data));",
+          "    let _value = result.unwrap(); // Expected to be Ok(non-null reference to data)",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(*_value, data);",
+          "    assert_eq!(_value.value, 42);",
+          "    assert!(once_ref.inner.load(Ordering::Acquire).is_non_null());",
+          "    assert_eq!(once_ref.get(), Some(&_value));",
+          "    assert_eq!(once_ref.get_or_init(|| Ok(&data)), &_value);"
+        ],
+        "code": [
+          "{",
+          "    struct TestType {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let data = TestType { value: 42 };",
+          "    let once_ref: OnceRef<TestType> = OnceRef::new();",
+          "    ",
+          "    let result = once_ref.get_or_try_init(|| Ok(&data));",
+          "    let _value = result.unwrap(); // Expected to be Ok(non-null reference to data)",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(*_value, data);",
+          "    assert_eq!(_value.value, 42);",
+          "    assert!(once_ref.inner.load(Ordering::Acquire).is_non_null());",
+          "    assert_eq!(once_ref.get(), Some(&_value));",
+          "    assert_eq!(once_ref.get_or_init(|| Ok(&data)), &_value);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct DifferentTestType {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let another_data = DifferentTestType { value: 100 };",
+          "    let once_ref: OnceRef<DifferentTestType> = OnceRef::new();",
+          "    ",
+          "    let result = once_ref.get_or_try_init(|| Ok(&another_data));",
+          "    let _value = result.unwrap(); // Expected to be Ok(non-null reference to another_data)",
+          "}"
+        ],
+        "oracle": [
+          "    let once_ref: OnceRef<DifferentTestType> = OnceRef::new();",
+          "    assert!(once_ref.inner.load(Ordering::Acquire).is_null());",
+          "    let another_data = DifferentTestType { value: 100 };",
+          "    let result = once_ref.get_or_try_init(|| Ok(&another_data));",
+          "    assert!(result.is_ok());",
+          "    let _value = result.unwrap();",
+          "    assert!(ptr::eq(_value, &another_data));"
+        ],
+        "code": [
+          "{",
+          "    struct DifferentTestType {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let another_data = DifferentTestType { value: 100 };",
+          "    let once_ref: OnceRef<DifferentTestType> = OnceRef::new();",
+          "    ",
+          "    let result = once_ref.get_or_try_init(|| Ok(&another_data));",
+          "    let _value = result.unwrap(); // Expected to be Ok(non-null reference to another_data)",
+          "    let once_ref: OnceRef<DifferentTestType> = OnceRef::new();",
+          "    assert!(once_ref.inner.load(Ordering::Acquire).is_null());",
+          "    let another_data = DifferentTestType { value: 100 };",
+          "    let result = once_ref.get_or_try_init(|| Ok(&another_data));",
+          "    assert!(result.is_ok());",
+          "    let _value = result.unwrap();",
+          "    assert!(ptr::eq(_value, &another_data));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

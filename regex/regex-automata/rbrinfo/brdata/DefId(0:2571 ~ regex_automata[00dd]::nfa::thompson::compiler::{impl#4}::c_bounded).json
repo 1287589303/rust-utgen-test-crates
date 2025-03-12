@@ -1,0 +1,1935 @@
+{
+  "name": "regex_automata::nfa::thompson::compiler::{impl#4}::c_bounded",
+  "mod_info": {
+    "name": "nfa::thompson::compiler",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:60:1:60:14"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/nfa/thompson/compiler.rs:1162:5:1219:6",
+  "doc": "/// Compile the given expression such that it matches at least `min` times,\n/// but no more than `max` times.\n///\n/// When `greedy` is true, then the preference is for the expression to\n/// match as much as possible. Otherwise, it will match as little as\n/// possible.\n",
+  "code": [
+    "fn c_bounded(",
+    "    &self,",
+    "    expr: &Hir,",
+    "    greedy: bool,",
+    "    min: u32,",
+    "    max: u32,",
+    ") -> Result<ThompsonRef, BuildError> {",
+    "    let prefix = self.c_exactly(expr, min)?;",
+    "    if min == max {",
+    "        return Ok(prefix);",
+    "    }",
+    "",
+    "    // It is tempting here to compile the rest here as a concatenation",
+    "    // of zero-or-one matches. i.e., for `a{2,5}`, compile it as if it",
+    "    // were `aaa?a?a?`. The problem here is that it leads to this program:",
+    "    //",
+    "    //     >000000: 61 => 01",
+    "    //      000001: 61 => 02",
+    "    //      000002: union(03, 04)",
+    "    //      000003: 61 => 04",
+    "    //      000004: union(05, 06)",
+    "    //      000005: 61 => 06",
+    "    //      000006: union(07, 08)",
+    "    //      000007: 61 => 08",
+    "    //      000008: MATCH",
+    "    //",
+    "    // And effectively, once you hit state 2, the epsilon closure will",
+    "    // include states 3, 5, 6, 7 and 8, which is quite a bit. It is better",
+    "    // to instead compile it like so:",
+    "    //",
+    "    //     >000000: 61 => 01",
+    "    //      000001: 61 => 02",
+    "    //      000002: union(03, 08)",
+    "    //      000003: 61 => 04",
+    "    //      000004: union(05, 08)",
+    "    //      000005: 61 => 06",
+    "    //      000006: union(07, 08)",
+    "    //      000007: 61 => 08",
+    "    //      000008: MATCH",
+    "    //",
+    "    // So that the epsilon closure of state 2 is now just 3 and 8.",
+    "    let empty = self.add_empty()?;",
+    "    let mut prev_end = prefix.end;",
+    "    for _ in min..max {",
+    "        let union = if greedy {",
+    "            self.add_union()",
+    "        } else {",
+    "            self.add_union_reverse()",
+    "        }?;",
+    "        let compiled = self.c(expr)?;",
+    "        self.patch(prev_end, union)?;",
+    "        self.patch(union, compiled.start)?;",
+    "        self.patch(union, empty)?;",
+    "        prev_end = compiled.end;",
+    "    }",
+    "    self.patch(prev_end, empty)?;",
+    "    Ok(ThompsonRef { start: prefix.start, end: empty })",
+    "}"
+  ],
+  "size": {
+    "chain": 19,
+    "contra": 4,
+    "min_set": 11
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1169,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        6,
+        7,
+        97,
+        98,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 1170,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(prefix)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1203,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        14,
+        16,
+        17,
+        94,
+        95,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "true",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1206,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        27,
+        28,
+        31,
+        32,
+        34,
+        36,
+        37,
+        90,
+        91,
+        92,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "true",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1211,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        27,
+        28,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        42,
+        44,
+        45,
+        87,
+        88,
+        89,
+        92,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "true",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1211,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1212,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        27,
+        28,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        43,
+        46,
+        47,
+        48,
+        50,
+        52,
+        53,
+        85,
+        86,
+        89,
+        92,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "true",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1211,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1212,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, compiled.start)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1213,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        27,
+        28,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        43,
+        46,
+        47,
+        48,
+        51,
+        54,
+        55,
+        56,
+        58,
+        60,
+        61,
+        83,
+        84,
+        89,
+        92,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "true",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1211,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1212,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1213,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, empty)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1214,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        27,
+        28,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        43,
+        46,
+        47,
+        48,
+        51,
+        54,
+        55,
+        56,
+        59,
+        62,
+        63,
+        64,
+        66,
+        68,
+        69,
+        81,
+        82,
+        89,
+        92,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "true",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1211,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1212,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1213,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1214,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "false",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, empty)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1217,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        27,
+        28,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        43,
+        46,
+        47,
+        48,
+        51,
+        54,
+        55,
+        56,
+        59,
+        62,
+        63,
+        64,
+        67,
+        70,
+        20,
+        21,
+        22,
+        24,
+        26,
+        71,
+        72,
+        74,
+        76,
+        77,
+        79,
+        80,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "true",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1211,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1212,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1213,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1214,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "false",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1217,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start: prefix.start, end: empty })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        27,
+        28,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        43,
+        46,
+        47,
+        48,
+        51,
+        54,
+        55,
+        56,
+        59,
+        62,
+        63,
+        64,
+        67,
+        70,
+        20,
+        21,
+        22,
+        24,
+        26,
+        71,
+        72,
+        75,
+        78,
+        100
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "false",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1206,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        29,
+        30,
+        31,
+        32,
+        34,
+        36,
+        37,
+        90,
+        91,
+        92,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "false",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1211,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        29,
+        30,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        42,
+        44,
+        45,
+        87,
+        88,
+        89,
+        92,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "false",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1211,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1212,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        29,
+        30,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        43,
+        46,
+        47,
+        48,
+        50,
+        52,
+        53,
+        85,
+        86,
+        89,
+        92,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "false",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1211,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1212,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, compiled.start)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1213,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        29,
+        30,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        43,
+        46,
+        47,
+        48,
+        51,
+        54,
+        55,
+        56,
+        58,
+        60,
+        61,
+        83,
+        84,
+        89,
+        92,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "false",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1211,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1212,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1213,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, empty)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1214,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        29,
+        30,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        43,
+        46,
+        47,
+        48,
+        51,
+        54,
+        55,
+        56,
+        59,
+        62,
+        63,
+        64,
+        66,
+        68,
+        69,
+        81,
+        82,
+        89,
+        92,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "false",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1211,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1212,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1213,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1214,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "false",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, empty)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1217,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        29,
+        30,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        43,
+        46,
+        47,
+        48,
+        51,
+        54,
+        55,
+        56,
+        59,
+        62,
+        63,
+        64,
+        67,
+        70,
+        20,
+        21,
+        22,
+        24,
+        26,
+        71,
+        72,
+        74,
+        76,
+        77,
+        79,
+        80,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "greedy",
+          "norm": null,
+          "value": "false",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "if greedy {\n                self.add_union()\n            } else {\n                self.add_union_reverse()\n            }?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1206,
+          "bound": null
+        },
+        {
+          "cond": "self.c(expr)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1211,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1212,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1213,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(union, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1214,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "false",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1217,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start: prefix.start, end: empty })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        29,
+        30,
+        31,
+        32,
+        35,
+        38,
+        39,
+        40,
+        43,
+        46,
+        47,
+        48,
+        51,
+        54,
+        55,
+        56,
+        59,
+        62,
+        63,
+        64,
+        67,
+        70,
+        20,
+        21,
+        22,
+        24,
+        26,
+        71,
+        72,
+        75,
+        78,
+        100
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "false",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, empty)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1217,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        26,
+        71,
+        72,
+        74,
+        76,
+        77,
+        79,
+        80,
+        93,
+        96,
+        99,
+        100
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "self.c_exactly(expr, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1169,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 1170,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1203,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "false",
+          "line": 1205,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1217,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start: prefix.start, end: empty })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        10,
+        11,
+        12,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        26,
+        71,
+        72,
+        75,
+        78,
+        100
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

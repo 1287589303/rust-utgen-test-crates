@@ -1,0 +1,294 @@
+{
+  "name": "once_cell::unsync::{impl#8}::get_or_init",
+  "mod_info": {
+    "name": "unsync",
+    "loc": "src/lib.rs:383:1:859:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:586:9:595:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: self.get_or_try_init(|| Ok::<T, Void>(f())) matches Err(void) at line 591 is true\n"
+      ],
+      "input_infer": "Test input conditions or ranges: self must be uninitialized (None), f must be a closure that panics when called, and T must be a type that can result in an error to match the Err(void) case in get_or_try_init.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestType;",
+                "    let cell: OnceCell<TestType> = OnceCell::new();",
+                "    let _value = cell.get_or_init(|| panic!(\"This is a panic for testing\"));",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let cell: OnceCell<TestType> = OnceCell::new();",
+                "    let _value = cell.get_or_init(|| panic!(\"This is a panic for testing\"));",
+                "    }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    struct TestType;",
+                "    let cell: OnceCell<TestType> = OnceCell::new();",
+                "    let _value = cell.get_or_init(|| panic!(\"This is a panic for testing\"));",
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let cell: OnceCell<TestType> = OnceCell::new();",
+                "    let _value = cell.get_or_init(|| panic!(\"This is a panic for testing\"));",
+                "    }).is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    struct TestType;",
+                "    let cell: OnceCell<TestType> = OnceCell::new();",
+                "    let _value = cell.get_or_init(|| {",
+                "        cell.get_or_init(|| panic!(\"This should panic due to reentrancy\"));",
+                "        TestType",
+                "    });",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let cell: OnceCell<TestType> = OnceCell::new();",
+                "    let _value = cell.get_or_init(|| {",
+                "    cell.get_or_init(|| panic!(\"This should panic due to reentrancy\"));",
+                "    TestType",
+                "    });",
+                "    }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    struct TestType;",
+                "    let cell: OnceCell<TestType> = OnceCell::new();",
+                "    let _value = cell.get_or_init(|| {",
+                "        cell.get_or_init(|| panic!(\"This should panic due to reentrancy\"));",
+                "        TestType",
+                "    });",
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let cell: OnceCell<TestType> = OnceCell::new();",
+                "    let _value = cell.get_or_init(|| {",
+                "    cell.get_or_init(|| panic!(\"This should panic due to reentrancy\"));",
+                "    TestType",
+                "    });",
+                "    }).is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: self.get_or_try_init(|| Ok::<T, Void>(f())) matches Ok(val) at line 591 is true\n",
+        "precondition: self.get_or_try_init(|| Ok::<T, Void>(f())) matches Ok(val) at line 591 is true\n",
+        "expected return value/type: val\n"
+      ],
+      "input_infer": "self must be an instance of OnceCell<T> with inner initialized as None, f must be a closure returning a valid T type value, and invoking f must not panic or cause reentrant initialization.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let cell: OnceCell<i32> = OnceCell::new();",
+                "    let value = cell.get_or_init(|| 42);",
+                "    let _ = value; // Use the value to ensure it's being called",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell.get_or_init(|| 42), &42);",
+                "    let value = cell.get_or_init(|| 99);",
+                "    assert_eq!(value, &42);",
+                "    let panic_value = std::panic::catch_unwind(|| { cell.get_or_init(|| panic!()); });",
+                "    assert!(panic_value.is_err());",
+                "    assert_eq!(cell.get_or_init(|| 42), &42);"
+              ],
+              "code": [
+                "{",
+                "    let cell: OnceCell<i32> = OnceCell::new();",
+                "    let value = cell.get_or_init(|| 42);",
+                "    let _ = value; // Use the value to ensure it's being called",
+                "    assert_eq!(cell.get_or_init(|| 42), &42);",
+                "    let value = cell.get_or_init(|| 99);",
+                "    assert_eq!(value, &42);",
+                "    let panic_value = std::panic::catch_unwind(|| { cell.get_or_init(|| panic!()); });",
+                "    assert!(panic_value.is_err());",
+                "    assert_eq!(cell.get_or_init(|| 42), &42);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let cell: OnceCell<i32> = OnceCell::new();",
+                "    let value = cell.get_or_init(|| 0);",
+                "    let _ = value; // Use the value to ensure it's being called",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(value, &0);",
+                "    assert!(cell.get_or_try_init(|| Ok(1)).is_ok());",
+                "    let value_two = cell.get_or_init(|| 2);",
+                "    assert_eq!(value_two, &0);",
+                "    let value_three = cell.get_or_init(|| 3);",
+                "    assert_eq!(value_three, &0);",
+                "    let result = cell.get_or_try_init(|| Ok(4));",
+                "    assert_eq!(result, Ok(&0));",
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let _ = cell.get_or_init(|| panic!(\"error\"));",
+                "    }).is_err());",
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let _ = cell.get_or_init(|| { cell.get_or_init(|| 5); 6 });",
+                "    }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let cell: OnceCell<i32> = OnceCell::new();",
+                "    let value = cell.get_or_init(|| 0);",
+                "    let _ = value; // Use the value to ensure it's being called",
+                "    assert_eq!(value, &0);",
+                "    assert!(cell.get_or_try_init(|| Ok(1)).is_ok());",
+                "    let value_two = cell.get_or_init(|| 2);",
+                "    assert_eq!(value_two, &0);",
+                "    let value_three = cell.get_or_init(|| 3);",
+                "    assert_eq!(value_three, &0);",
+                "    let result = cell.get_or_try_init(|| Ok(4));",
+                "    assert_eq!(result, Ok(&0));",
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let _ = cell.get_or_init(|| panic!(\"error\"));",
+                "    }).is_err());",
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let _ = cell.get_or_init(|| { cell.get_or_init(|| 5); 6 });",
+                "    }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let cell: OnceCell<i32> = OnceCell::new();",
+                "    let value = cell.get_or_init(|| -1);",
+                "    let _ = value; // Use the value to ensure it's being called",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell.get_or_init(|| -1), &-1);",
+                "    assert_eq!(cell.get_or_init(|| 42), &-1);",
+                "    assert_eq!(cell.get_or_init(|| 0), &-1);",
+                "    assert_eq!(cell.get_or_init(|| -100), &-1);"
+              ],
+              "code": [
+                "{",
+                "    let cell: OnceCell<i32> = OnceCell::new();",
+                "    let value = cell.get_or_init(|| -1);",
+                "    let _ = value; // Use the value to ensure it's being called",
+                "    assert_eq!(cell.get_or_init(|| -1), &-1);",
+                "    assert_eq!(cell.get_or_init(|| 42), &-1);",
+                "    assert_eq!(cell.get_or_init(|| 0), &-1);",
+                "    assert_eq!(cell.get_or_init(|| -100), &-1);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let cell: OnceCell<u64> = OnceCell::new();",
+                "    let value = cell.get_or_init(|| 1_000_000_000);",
+                "    let _ = value; // Use the value to ensure it's being called",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell.get_or_init(|| 1_000_000_000), &1_000_000_000);",
+                "    assert!(cell.get_or_init(|| 5).is_some());",
+                "    assert_eq!(cell.get_or_init(|| 2), &1_000_000_000);",
+                "    assert!(std::panic::catch_unwind(|| { cell.get_or_init(|| panic!()) }).is_err());",
+                "    assert!(std::panic::catch_unwind(|| { cell.get_or_init(|| { cell.get_or_init(|| 5); 6 }) }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let cell: OnceCell<u64> = OnceCell::new();",
+                "    let value = cell.get_or_init(|| 1_000_000_000);",
+                "    let _ = value; // Use the value to ensure it's being called",
+                "    assert_eq!(cell.get_or_init(|| 1_000_000_000), &1_000_000_000);",
+                "    assert!(cell.get_or_init(|| 5).is_some());",
+                "    assert_eq!(cell.get_or_init(|| 2), &1_000_000_000);",
+                "    assert!(std::panic::catch_unwind(|| { cell.get_or_init(|| panic!()) }).is_err());",
+                "    assert!(std::panic::catch_unwind(|| { cell.get_or_init(|| { cell.get_or_init(|| 5); 6 }) }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let cell: OnceCell<String> = OnceCell::new();",
+                "    let value = cell.get_or_init(|| String::from(\"Hello, world!\"));",
+                "    let _ = value; // Use the value to ensure it's being called",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell.get(), None);",
+                "    let value = cell.get_or_init(|| String::from(\"Hello, world!\"));",
+                "    assert_eq!(cell.get(), Some(&String::from(\"Hello, world!\")));",
+                "    assert_eq!(value, &String::from(\"Hello, world!\"));",
+                "    let value_second = cell.get_or_init(|| String::from(\"Another value\"));",
+                "    assert_eq!(value_second, &String::from(\"Hello, world!\"));",
+                "    assert_eq!(cell.get(), Some(&String::from(\"Hello, world!\")));"
+              ],
+              "code": [
+                "{",
+                "    let cell: OnceCell<String> = OnceCell::new();",
+                "    let value = cell.get_or_init(|| String::from(\"Hello, world!\"));",
+                "    let _ = value; // Use the value to ensure it's being called",
+                "    assert_eq!(cell.get(), None);",
+                "    let value = cell.get_or_init(|| String::from(\"Hello, world!\"));",
+                "    assert_eq!(cell.get(), Some(&String::from(\"Hello, world!\")));",
+                "    assert_eq!(value, &String::from(\"Hello, world!\"));",
+                "    let value_second = cell.get_or_init(|| String::from(\"Another value\"));",
+                "    assert_eq!(value_second, &String::from(\"Hello, world!\"));",
+                "    assert_eq!(cell.get(), Some(&String::from(\"Hello, world!\")));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

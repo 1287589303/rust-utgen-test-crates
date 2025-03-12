@@ -1,0 +1,133 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\\x33\";",
+          "    let result = buf.get_f64_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 1.2f64);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert!(buf.has_remaining() == false);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\\x33\";",
+          "    let result = buf.get_f64_ne();",
+          "    assert_eq!(result, 1.2f64);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert!(buf.has_remaining() == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x33\\x33\\x33\\x33\\x33\\x33\\xF3\\x3F\";",
+          "    let result = buf.get_f64_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 1.2f64);",
+          "    assert!(buf.remaining() == 0);",
+          "    assert!(buf.has_remaining() == false);",
+          "    let buf_underflow: &[u8] = b\"\\x33\\x33\\x33\\x33\";",
+          "    let underflow_result = std::panic::catch_unwind(|| buf_underflow.get_f64_ne());",
+          "    assert!(underflow_result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x33\\x33\\x33\\x33\\x33\\x33\\xF3\\x3F\";",
+          "    let result = buf.get_f64_ne();",
+          "    assert_eq!(result, 1.2f64);",
+          "    assert!(buf.remaining() == 0);",
+          "    assert!(buf.has_remaining() == false);",
+          "    let buf_underflow: &[u8] = b\"\\x33\\x33\\x33\\x33\";",
+          "    let underflow_result = std::panic::catch_unwind(|| buf_underflow.get_f64_ne());",
+          "    assert!(underflow_result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x3F\\xF3\\x33\\x33\";",
+          "    let result = buf.get_f64_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 1.2f64);",
+          "    assert!(result.is_nan());",
+          "    assert!(result.is_finite());",
+          "    assert!(buf.remaining() < 8);",
+          "    assert!(buf.has_remaining() == false);",
+          "    assert!(panic_does_not_fit(&result));",
+          "    assert!(result.is_infinite());",
+          "    assert!(result.is_sign_positive());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x3F\\xF3\\x33\\x33\";",
+          "    let result = buf.get_f64_ne();",
+          "    assert_eq!(result, 1.2f64);",
+          "    assert!(result.is_nan());",
+          "    assert!(result.is_finite());",
+          "    assert!(buf.remaining() < 8);",
+          "    assert!(buf.has_remaining() == false);",
+          "    assert!(panic_does_not_fit(&result));",
+          "    assert!(result.is_infinite());",
+          "    assert!(result.is_sign_positive());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x7F\\xF0\\x00\\x00\\x00\\x00\\x00\\x00\"; // Maximum f64",
+          "    let result = buf.get_f64_ne();",
+          "",
+          "    let mut buf: &[u8] = b\"\\xFF\\xF0\\x00\\x00\\x00\\x00\\x00\\x00\"; // Minimum f64",
+          "    let result = buf.get_f64_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_f64_ne(), std::f64::MAX); // Test for maximum f64 value",
+          "    assert_eq!(buf.get_f64_ne(), std::f64::NEG_INFINITY); // Test for minimum f64 value",
+          "    assert_panics!(buf.get_f64_ne()); // Test for panic when not enough remaining data in buffer"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x7F\\xF0\\x00\\x00\\x00\\x00\\x00\\x00\"; // Maximum f64",
+          "    let result = buf.get_f64_ne();",
+          "",
+          "    let mut buf: &[u8] = b\"\\xFF\\xF0\\x00\\x00\\x00\\x00\\x00\\x00\"; // Minimum f64",
+          "    let result = buf.get_f64_ne();",
+          "    assert_eq!(buf.get_f64_ne(), std::f64::MAX); // Test for maximum f64 value",
+          "    assert_eq!(buf.get_f64_ne(), std::f64::NEG_INFINITY); // Test for minimum f64 value",
+          "    assert_panics!(buf.get_f64_ne()); // Test for panic when not enough remaining data in buffer",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,158 @@
+{
+  "name": "ryu::pretty::mantissa::write_mantissa_long",
+  "mod_info": {
+    "name": "pretty::mantissa",
+    "loc": "src/pretty/mod.rs:2:1:2:14"
+  },
+  "visible": true,
+  "loc": "src/pretty/mantissa.rs:5:1:41:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: (output >> 32) != 0 at line 6 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::ptr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    use std::ptr;",
+                "",
+                "    const DIGIT_TABLE: &[u8] = b\"0123456789\";",
+                "    ",
+                "    let mut output: u64 = 1_000_000_000_000; // output >> 32 != 0",
+                "    let mut result: [u8; 16] = [0; 16];",
+                "    let result_ptr = result.as_mut_ptr();",
+                "",
+                "    unsafe {",
+                "        write_mantissa_long(output, result_ptr);",
+                "    }",
+                "",
+                "    let expected_result = b\"1000000000\"; // Modify based on actual expected outcomes",
+                "    assert_eq!(&result[8..], expected_result); // Check the last 10 bytes for output",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    use std::ptr;",
+                "",
+                "    const DIGIT_TABLE: &[u8] = b\"0123456789\";",
+                "    ",
+                "    let mut output: u64 = 0xFFFFFFFF; // output >> 32 != 0 (maximum for a 32-bit value)",
+                "    let mut result: [u8; 16] = [0; 16];",
+                "    let result_ptr = result.as_mut_ptr();",
+                "",
+                "    unsafe {",
+                "        write_mantissa_long(output, result_ptr);",
+                "    }",
+                "",
+                "    let expected_result = b\"4294967295\"; // Modify based on actual expected outcomes",
+                "    assert_eq!(&result[8..], expected_result); // Check the last 10 bytes for output",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: (output >> 32) != 0 at line 6 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let output: u64 = 0;",
+                "    let mut result: [u8; 10] = [0; 10];",
+                "    let result_ptr: *mut u8 = result.as_mut_ptr().offset(10); // Point to end of the array for writing.",
+                "",
+                "    unsafe {",
+                "        write_mantissa_long(output, result_ptr);",
+                "    }",
+                "",
+                "    // Check that the output remains unchanged, since output is 0.",
+                "    assert_eq!(result, [0; 10]);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let output: u64 = 50_000_000; // Less than 100 million",
+                "    let mut result: [u8; 10] = [0; 10];",
+                "    let result_ptr: *mut u8 = result.as_mut_ptr().offset(10); // Point to end of the array for writing.",
+                "",
+                "    unsafe {",
+                "        write_mantissa_long(output, result_ptr);",
+                "    }",
+                "",
+                "    // Check that the output remains unchanged as the upper condition is not met.",
+                "    assert_eq!(result, [0; 10]);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let output: u64 = 99_999_999; // Just below 100 million",
+                "    let mut result: [u8; 10] = [0; 10];",
+                "    let result_ptr: *mut u8 = result.as_mut_ptr().offset(10); // Point to end of the array for writing.",
+                "",
+                "    unsafe {",
+                "        write_mantissa_long(output, result_ptr);",
+                "    }",
+                "",
+                "    // Check that the output remains unchanged as the upper condition is not met.",
+                "    assert_eq!(result, [0; 10]);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

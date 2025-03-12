@@ -1,0 +1,7834 @@
+{
+  "name": "regex_automata::hybrid::search::find_overlapping_fwd_imp",
+  "mod_info": {
+    "name": "hybrid::search",
+    "loc": "regex-automata/src/hybrid/mod.rs:144:1:144:12"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/hybrid/search.rs:466:1:564:2",
+  "doc": "",
+  "code": [
+    "fn find_overlapping_fwd_imp(",
+    "    dfa: &DFA,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    "    pre: Option<&'_ Prefilter>,",
+    "    state: &mut OverlappingState,",
+    ") -> Result<(), MatchError> {",
+    "    // See 'prefilter_restart' docs for explanation.",
+    "    let universal_start = dfa.get_nfa().look_set_prefix_any().is_empty();",
+    "    let mut sid = match state.id {",
+    "        None => {",
+    "            state.at = input.start();",
+    "            init_fwd(dfa, cache, input)?",
+    "        }",
+    "        Some(sid) => {",
+    "            if let Some(match_index) = state.next_match_index {",
+    "                let match_len = dfa.match_len(cache, sid);",
+    "                if match_index < match_len {",
+    "                    state.next_match_index = Some(match_index + 1);",
+    "                    let pattern = dfa.match_pattern(cache, sid, match_index);",
+    "                    state.mat = Some(HalfMatch::new(pattern, state.at));",
+    "                    return Ok(());",
+    "                }",
+    "            }",
+    "            // Once we've reported all matches at a given position, we need to",
+    "            // advance the search to the next position.",
+    "            state.at += 1;",
+    "            if state.at > input.end() {",
+    "                return Ok(());",
+    "            }",
+    "            sid",
+    "        }",
+    "    };",
+    "",
+    "    // NOTE: We don't optimize the crap out of this routine primarily because",
+    "    // it seems like most overlapping searches will have higher match counts,",
+    "    // and thus, throughput is perhaps not as important. But if you have a use",
+    "    // case for something faster, feel free to file an issue.",
+    "    cache.search_start(state.at);",
+    "    while state.at < input.end() {",
+    "        sid = dfa",
+    "            .next_state(cache, sid, input.haystack()[state.at])",
+    "            .map_err(|_| gave_up(state.at))?;",
+    "        if sid.is_tagged() {",
+    "            state.id = Some(sid);",
+    "            if sid.is_start() {",
+    "                if let Some(ref pre) = pre {",
+    "                    let span = Span::from(state.at..input.end());",
+    "                    match pre.find(input.haystack(), span) {",
+    "                        None => return Ok(()),",
+    "                        Some(ref span) => {",
+    "                            if span.start > state.at {",
+    "                                state.at = span.start;",
+    "                                if !universal_start {",
+    "                                    sid = prefilter_restart(",
+    "                                        dfa, cache, &input, state.at,",
+    "                                    )?;",
+    "                                }",
+    "                                continue;",
+    "                            }",
+    "                        }",
+    "                    }",
+    "                }",
+    "            } else if sid.is_match() {",
+    "                state.next_match_index = Some(1);",
+    "                let pattern = dfa.match_pattern(cache, sid, 0);",
+    "                state.mat = Some(HalfMatch::new(pattern, state.at));",
+    "                cache.search_finish(state.at);",
+    "                return Ok(());",
+    "            } else if sid.is_dead() {",
+    "                cache.search_finish(state.at);",
+    "                return Ok(());",
+    "            } else if sid.is_quit() {",
+    "                cache.search_finish(state.at);",
+    "                return Err(MatchError::quit(",
+    "                    input.haystack()[state.at],",
+    "                    state.at,",
+    "                ));",
+    "            } else {",
+    "                debug_assert!(sid.is_unknown());",
+    "                unreachable!(\"sid being unknown is a bug\");",
+    "            }",
+    "        }",
+    "        state.at += 1;",
+    "        cache.search_update(state.at);",
+    "    }",
+    "",
+    "    let result = eoi_fwd(dfa, cache, input, &mut sid, &mut state.mat);",
+    "    state.id = Some(sid);",
+    "    if state.mat.is_some() {",
+    "        // '1' is always correct here since if we get to this point, this",
+    "        // always corresponds to the first (index '0') match discovered at",
+    "        // this position. So the next match to report at this position (if",
+    "        // it exists) is at index '1'.",
+    "        state.next_match_index = Some(1);",
+    "    }",
+    "    cache.search_finish(input.end());",
+    "    result",
+    "}"
+  ],
+  "size": {
+    "chain": 64,
+    "contra": 30,
+    "min_set": 17
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "true",
+          "line": 493,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        29,
+        126,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 506,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        43,
+        45,
+        46,
+        123,
+        124,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        75,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        75,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "true",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        72,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "true",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        72,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "false",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "prefilter_restart(\n                                        dfa, cache, &input, state.at,\n                                    )?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 520,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        63,
+        64,
+        65,
+        67,
+        69,
+        70,
+        119,
+        120,
+        121,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "false",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "prefilter_restart(\n                                        dfa, cache, &input, state.at,\n                                    )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 520,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        63,
+        64,
+        65,
+        68,
+        71,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "false",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "prefilter_restart(\n                                        dfa, cache, &input, state.at,\n                                    )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 520,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        63,
+        64,
+        65,
+        68,
+        71,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "false",
+          "line": 517,
+          "bound": "span.start == state.at"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        74,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "false",
+          "line": 517,
+          "bound": "span.start == state.at"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        74,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        59,
+        61,
+        121,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 529,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        118,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "true",
+          "line": 535,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        84,
+        85,
+        117,
+        118,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "false",
+          "line": 535,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_quit()",
+          "norm": null,
+          "value": "true",
+          "line": 538,
+          "bound": null
+        }
+      ],
+      "ret": "Err(MatchError::quit(\n                    input.haystack()[state.at],\n                    state.at,\n                ))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        117,
+        118,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "false",
+          "line": 535,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_quit()",
+          "norm": null,
+          "value": "false",
+          "line": 538,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_unknown()",
+          "norm": null,
+          "value": "true",
+          "line": 545,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        86,
+        87,
+        94,
+        95,
+        96,
+        97,
+        100,
+        101,
+        102,
+        144
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "false",
+          "line": 535,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_quit()",
+          "norm": null,
+          "value": "false",
+          "line": 538,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_unknown()",
+          "norm": null,
+          "value": "false",
+          "line": 545,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        86,
+        87,
+        94,
+        95,
+        96,
+        98,
+        144
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "false",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        104,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "false",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        104,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "true",
+          "line": 483,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        126,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "true",
+          "line": 493,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        29,
+        126,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 506,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        43,
+        45,
+        46,
+        123,
+        124,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        75,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 26,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        75,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 27,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "true",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        72,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 28,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "true",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        72,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 29,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "false",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "prefilter_restart(\n                                        dfa, cache, &input, state.at,\n                                    )?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 520,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        63,
+        64,
+        65,
+        67,
+        69,
+        70,
+        119,
+        120,
+        121,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 30,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "false",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "prefilter_restart(\n                                        dfa, cache, &input, state.at,\n                                    )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 520,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        63,
+        64,
+        65,
+        68,
+        71,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 31,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "false",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "prefilter_restart(\n                                        dfa, cache, &input, state.at,\n                                    )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 520,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        63,
+        64,
+        65,
+        68,
+        71,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 32,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "false",
+          "line": 517,
+          "bound": "span.start == state.at"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        74,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 33,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "false",
+          "line": 517,
+          "bound": "span.start == state.at"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        74,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 34,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        59,
+        61,
+        121,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 35,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 529,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        118,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 36,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "true",
+          "line": 535,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        84,
+        85,
+        117,
+        118,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 37,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "false",
+          "line": 535,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_quit()",
+          "norm": null,
+          "value": "true",
+          "line": 538,
+          "bound": null
+        }
+      ],
+      "ret": "Err(MatchError::quit(\n                    input.haystack()[state.at],\n                    state.at,\n                ))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        117,
+        118,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 38,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "false",
+          "line": 535,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_quit()",
+          "norm": null,
+          "value": "false",
+          "line": 538,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_unknown()",
+          "norm": null,
+          "value": "true",
+          "line": 545,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        86,
+        87,
+        94,
+        95,
+        96,
+        97,
+        100,
+        101,
+        102,
+        144
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 39,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "false",
+          "line": 535,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_quit()",
+          "norm": null,
+          "value": "false",
+          "line": 538,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_unknown()",
+          "norm": null,
+          "value": "false",
+          "line": 545,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        86,
+        87,
+        94,
+        95,
+        96,
+        98,
+        144
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 40,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "false",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        104,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 41,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "false",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        104,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 42,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 43,
+      "conds": [
+        {
+          "cond": "state.id matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "let Some(match_index) = state.next_match_index",
+          "norm": null,
+          "value": "true",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "match_index < match_len",
+          "norm": null,
+          "value": "false",
+          "line": 483,
+          "bound": "match_index == match_len"
+        },
+        {
+          "cond": "state.at > input.end()",
+          "norm": "input.end() < state.at",
+          "value": "false",
+          "line": 493,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        17,
+        18,
+        19,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 44,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 478,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        12,
+        14,
+        15,
+        127,
+        128,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 45,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 506,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        43,
+        45,
+        46,
+        123,
+        124,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 46,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        75,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 47,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        75,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 48,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "true",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        72,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 49,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "true",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        72,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 50,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "false",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "prefilter_restart(\n                                        dfa, cache, &input, state.at,\n                                    )?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 520,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        63,
+        64,
+        65,
+        67,
+        69,
+        70,
+        119,
+        120,
+        121,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 51,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "false",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "prefilter_restart(\n                                        dfa, cache, &input, state.at,\n                                    )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 520,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        63,
+        64,
+        65,
+        68,
+        71,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 52,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "true",
+          "line": 517,
+          "bound": null
+        },
+        {
+          "cond": "universal_start",
+          "norm": null,
+          "value": "false",
+          "line": 519,
+          "bound": null
+        },
+        {
+          "cond": "prefilter_restart(\n                                        dfa, cache, &input, state.at,\n                                    )?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 520,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        62,
+        63,
+        64,
+        65,
+        68,
+        71,
+        73,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 53,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "false",
+          "line": 517,
+          "bound": "span.start == state.at"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        74,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 54,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "span.start > state.at",
+          "norm": null,
+          "value": "false",
+          "line": 517,
+          "bound": "span.start == state.at"
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        60,
+        74,
+        103,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 55,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "true",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 512,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 514,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        59,
+        61,
+        121,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 56,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 529,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        118,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 57,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "true",
+          "line": 535,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        84,
+        85,
+        117,
+        118,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 58,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "false",
+          "line": 535,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_quit()",
+          "norm": null,
+          "value": "true",
+          "line": 538,
+          "bound": null
+        }
+      ],
+      "ret": "Err(MatchError::quit(\n                    input.haystack()[state.at],\n                    state.at,\n                ))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        117,
+        118,
+        122,
+        125,
+        129,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 59,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "false",
+          "line": 535,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_quit()",
+          "norm": null,
+          "value": "false",
+          "line": 538,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_unknown()",
+          "norm": null,
+          "value": "true",
+          "line": 545,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        86,
+        87,
+        94,
+        95,
+        96,
+        97,
+        100,
+        101,
+        102,
+        144
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 60,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_start()",
+          "norm": null,
+          "value": "false",
+          "line": 511,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 529,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_dead()",
+          "norm": null,
+          "value": "false",
+          "line": 535,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_quit()",
+          "norm": null,
+          "value": "false",
+          "line": 538,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_unknown()",
+          "norm": null,
+          "value": "false",
+          "line": 545,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        49,
+        50,
+        76,
+        77,
+        82,
+        83,
+        86,
+        87,
+        94,
+        95,
+        96,
+        98,
+        144
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 61,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "false",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        104,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 62,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "true",
+          "line": 505,
+          "bound": null
+        },
+        {
+          "cond": "dfa\n            .next_state(cache, sid, input.haystack()[state.at])\n            .map_err(|_| gave_up(state.at))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 506,
+          "bound": null
+        },
+        {
+          "cond": "sid.is_tagged()",
+          "norm": null,
+          "value": "false",
+          "line": 509,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        47,
+        48,
+        104,
+        105,
+        106,
+        107,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 63,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 64,
+      "conds": [
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "state.id matches None",
+          "norm": null,
+          "value": "true",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "init_fwd(dfa, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 478,
+          "bound": null
+        },
+        {
+          "cond": "state.at < input.end()",
+          "norm": "input.end() > state.at",
+          "value": "false",
+          "line": 505,
+          "bound": "state.at == input.end()"
+        },
+        {
+          "cond": "state.mat.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 555,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        31,
+        32,
+        33,
+        34,
+        35,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115,
+        116,
+        130
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

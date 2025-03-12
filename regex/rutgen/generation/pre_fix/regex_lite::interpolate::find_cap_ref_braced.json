@@ -1,0 +1,923 @@
+{
+  "name": "regex_lite::interpolate::find_cap_ref_braced",
+  "mod_info": {
+    "name": "interpolate",
+    "loc": "regex-lite/src/lib.rs:879:1:879:17"
+  },
+  "visible": false,
+  "loc": "regex-lite/src/interpolate.rs:248:1:272:2",
+  "fn_tests": [
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: (*left_val == *right_val) at line 40 is true\n",
+        "precondition: rep.get(i).map_or(false, |&b| b != b'}') at line 251 is true\n",
+        "precondition: rep.get(i).map_or(false, |&b| b != b'}') at line 251 is false\n",
+        "precondition: rep.get(i).map_or(false, |&b| b == b'}') at line 254 is false\n",
+        "expected return value/type: None\n"
+      ],
+      "input_infer": "rep as a byte array containing an opening brace at index i-1, followed by at least one byte that is not a closing brace before eventually reaching a closing brace, and invalid UTF-8 content within the braces\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"${foo\\xFF\"; // Invalid UTF-8",
+                "    let i = 4; // Index 4 points to 'f' which is not a closing brace",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"${foo\\xFF\"; // Invalid UTF-8",
+                "    let i = 4; // Index 4 points to 'f' which is not a closing brace",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"${foo\"; // No closing brace",
+                "    let i = 4; // Index 4 is beyond the tracking of the closing",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"${foo\"; // No closing brace",
+                "    let i = 4; // Index 4 is beyond the tracking of the closing",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"${\"; // Only opening brace without any content",
+                "    let i = 2; // Index 2 is a closing brace check",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"${\"; // Only opening brace without any content",
+                "    let i = 2; // Index 2 is a closing brace check",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"${}\"; // Valid braces but empty content",
+                "    let i = 2; // Index 2 points to } which is invalid as per assertions",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_none());"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"${}\"; // Valid braces but empty content",
+                "    let i = 2; // Index 2 points to } which is invalid as per assertions",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert!(result.is_none());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "precondition: (*left_val == *right_val) at line 40 is true\n",
+        "precondition: rep.get(i).map_or(false, |&b| b != b'}') at line 251 is false\n",
+        "precondition: rep.get(i).map_or(false, |&b| b == b'}') at line 254 is true\n",
+        "precondition: core::str::from_utf8(&rep[start..i]) matches Err(_) at line 261 is true\n",
+        "precondition: core::str::from_utf8(&rep[start..i]) matches Err(_) at line 261 is true\n",
+        "expected return value/type: None\n"
+      ],
+      "input_infer": "rep: &[u8] containing an opening brace '{' followed by non-UTF-8 byte sequences before a closing brace '}', and index i pointing just after the opening brace.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"{\\xFF\\xFE\\xFD}\"; // Non-UTF-8 characters between the braces",
+                "    let i: usize = 1; // Points after the '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"{\\xFF\\xFE\\xFD}\"; // Non-UTF-8 characters between the braces",
+                "    let i: usize = 1; // Points after the '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"{\\x00\\x01\\x02}\"; // Non-UTF-8 byte sequences before the closing brace",
+                "    let i: usize = 1; // Points after the '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"{\\x00\\x01\\x02}\"; // Non-UTF-8 byte sequences before the closing brace",
+                "    let i: usize = 1; // Points after the '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"{}\"; // Successfully finds empty braced reference",
+                "    let i: usize = 0; // Points at the opening brace",
+                "    let result = find_cap_ref_braced(rep, i + 1);",
+                "}"
+              ],
+              "oracle": [
+                "    let rep: &[u8] = b\"{foo}\"; // Valid braced reference",
+                "    let i: usize = 4; // Points at the closing brace",
+                "    let result = find_cap_ref_braced(rep, i); // Expects Some(CaptureRef) with Ref::Named(\"foo\")",
+                "    ",
+                "    let rep: &[u8] = b\"{123}\"; // Valid braced reference with number",
+                "    let i: usize = 4; // Points at the closing brace",
+                "    let result = find_cap_ref_braced(rep, i); // Expects Some(CaptureRef) with Ref::Number(123)",
+                "    ",
+                "    let rep: &[u8] = b\"{invalid\\xFF}\"; // Invalid UTF-8 within braces",
+                "    let i: usize = 13; // Points at the closing brace",
+                "    let result = find_cap_ref_braced(rep, i); // Expects None due to invalid UTF-8",
+                "    ",
+                "    let rep: &[u8] = b\"{foo\"; // Missing closing brace",
+                "    let i: usize = 4; // Points at the end of the string",
+                "    let result = find_cap_ref_braced(rep, i); // Expects None due to missing '}'",
+                "    ",
+                "    let rep: &[u8] = b\"{\\xFF}\"; // Invalid UTF-8 within braces",
+                "    let i: usize = 4; // Points at the closing brace",
+                "    let result = find_cap_ref_braced(rep, i); // Expects None due to invalid UTF-8",
+                "    ",
+                "    let rep: &[u8] = b\"{}\"; // Successfully finds empty braced reference",
+                "    let i: usize = 1; // Points at the end of the braces",
+                "    let result = find_cap_ref_braced(rep, i); // Expects None due to empty content"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"{}\"; // Successfully finds empty braced reference",
+                "    let i: usize = 0; // Points at the opening brace",
+                "    let result = find_cap_ref_braced(rep, i + 1);",
+                "    let rep: &[u8] = b\"{foo}\"; // Valid braced reference",
+                "    let i: usize = 4; // Points at the closing brace",
+                "    let result = find_cap_ref_braced(rep, i); // Expects Some(CaptureRef) with Ref::Named(\"foo\")",
+                "    ",
+                "    let rep: &[u8] = b\"{123}\"; // Valid braced reference with number",
+                "    let i: usize = 4; // Points at the closing brace",
+                "    let result = find_cap_ref_braced(rep, i); // Expects Some(CaptureRef) with Ref::Number(123)",
+                "    ",
+                "    let rep: &[u8] = b\"{invalid\\xFF}\"; // Invalid UTF-8 within braces",
+                "    let i: usize = 13; // Points at the closing brace",
+                "    let result = find_cap_ref_braced(rep, i); // Expects None due to invalid UTF-8",
+                "    ",
+                "    let rep: &[u8] = b\"{foo\"; // Missing closing brace",
+                "    let i: usize = 4; // Points at the end of the string",
+                "    let result = find_cap_ref_braced(rep, i); // Expects None due to missing '}'",
+                "    ",
+                "    let rep: &[u8] = b\"{\\xFF}\"; // Invalid UTF-8 within braces",
+                "    let i: usize = 4; // Points at the closing brace",
+                "    let result = find_cap_ref_braced(rep, i); // Expects None due to invalid UTF-8",
+                "    ",
+                "    let rep: &[u8] = b\"{}\"; // Successfully finds empty braced reference",
+                "    let i: usize = 1; // Points at the end of the braces",
+                "    let result = find_cap_ref_braced(rep, i); // Expects None due to empty content",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"{\\xFF}\"; // Non-UTF-8 single byte inside braces",
+                "    let i: usize = 1; // Points after the '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"{\\xFF}\"; // Non-UTF-8 single byte inside braces",
+                "    let i: usize = 1; // Points after the '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"{\\xF0\\x28\\x8C\\x28}\"; // Invalid UTF-8 sequence inside braces",
+                "    let i: usize = 1; // Points after the '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"{\\xF0\\x28\\x8C\\x28}\"; // Invalid UTF-8 sequence inside braces",
+                "    let i: usize = 1; // Points after the '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"{\"; // Only the opening brace, no closing",
+                "    let i: usize = 1; // Points after the '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(find_cap_ref_braced(b\"{\", 1), None);",
+                "    assert_eq!(find_cap_ref_braced(b\"{invalid_utf8\", 1), None);",
+                "    assert_eq!(find_cap_ref_braced(b\"{\\xFF\", 1), None);",
+                "    assert_eq!(find_cap_ref_braced(b\"{\\x80\", 1), None);",
+                "    assert_eq!(find_cap_ref_braced(b\"{foo}\", 1), None);",
+                "    assert_eq!(find_cap_ref_braced(b\"{1}\", 1), None);"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"{\"; // Only the opening brace, no closing",
+                "    let i: usize = 1; // Points after the '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(find_cap_ref_braced(b\"{\", 1), None);",
+                "    assert_eq!(find_cap_ref_braced(b\"{invalid_utf8\", 1), None);",
+                "    assert_eq!(find_cap_ref_braced(b\"{\\xFF\", 1), None);",
+                "    assert_eq!(find_cap_ref_braced(b\"{\\x80\", 1), None);",
+                "    assert_eq!(find_cap_ref_braced(b\"{foo}\", 1), None);",
+                "    assert_eq!(find_cap_ref_braced(b\"{1}\", 1), None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "precondition: (*left_val == *right_val) at line 40 is true\n",
+        "precondition: rep.get(i).map_or(false, |&b| b != b'}') at line 251 is false\n",
+        "precondition: rep.get(i).map_or(false, |&b| b == b'}') at line 254 is true\n",
+        "precondition: core::str::from_utf8(&rep[start..i]) matches Ok(cap) at line 261 is true\n",
+        "precondition: cap.parse::<usize>() matches Err(_) at line 266 is true\n",
+        "expected return value/type: Some(CaptureRef {\n        cap: match cap.parse::<usize>() {\n            Ok(i) => Ref::Number(i),\n            Err(_) => Ref::Named(cap),\n        },\n        end: i + 1,\n    })\n"
+      ],
+      "input_infer": "rep: &[u8] containing valid UTF-8 string with non-numeric braced reference like b\"${foo1}\" and i as the position right after '{' with a range ensuring a closing brace '}' exists immediately after the string\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"${foo1}\";",
+                "    let i = 3; // Position right after '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    let rep: &[u8] = b\"${foo1}\";",
+                "    let i = 3;",
+                "    let expected_capture = Ref::Named(\"foo1\");",
+                "    let expected_end = 7;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result.is_some(), true);",
+                "    assert_eq!(result.unwrap().cap, expected_capture);",
+                "    assert_eq!(result.unwrap().end, expected_end);"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"${foo1}\";",
+                "    let i = 3; // Position right after '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    let rep: &[u8] = b\"${foo1}\";",
+                "    let i = 3;",
+                "    let expected_capture = Ref::Named(\"foo1\");",
+                "    let expected_end = 7;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result.is_some(), true);",
+                "    assert_eq!(result.unwrap().cap, expected_capture);",
+                "    assert_eq!(result.unwrap().end, expected_end);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"${bar!\";",
+                "    let i = 3; // Position right after '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"bar!\"), end: 7 }));"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"${bar!\";",
+                "    let i = 3; // Position right after '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"bar!\"), end: 7 }));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"${}\";",
+                "    let i = 3; // Position right after '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"\"), end: 4 }));"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"${}\";",
+                "    let i = 3; // Position right after '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"\"), end: 4 }));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"${some_long_name}\";",
+                "    let i = 3; // Position right after '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"some_long_name\"), end: 20 }));"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"${some_long_name}\";",
+                "    let i = 3; // Position right after '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"some_long_name\"), end: 20 }));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = b\"${\\xFF}\";",
+                "    let i = 3; // Position right after '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"\\xFF\"), end: 5 }));"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = b\"${\\xFF}\";",
+                "    let i = 3; // Position right after '{'",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"\\xFF\"), end: 5 }));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "precondition: (*left_val == *right_val) at line 40 is true\n",
+        "precondition: rep.get(i).map_or(false, |&b| b != b'}') at line 251 is false\n",
+        "precondition: rep.get(i).map_or(false, |&b| b == b'}') at line 254 is true\n",
+        "precondition: core::str::from_utf8(&rep[start..i]) matches Ok(cap) at line 261 is true\n",
+        "precondition: cap.parse::<usize>() matches Ok(i) at line 266 is true\n",
+        "precondition: cap.parse::<usize>() matches Ok(i) at line 266 is true\n",
+        "expected return value/type: Some(CaptureRef {\n        cap: match cap.parse::<usize>() {\n            Ok(i) => Ref::Number(i),\n            Err(_) => Ref::Named(cap),\n        },\n        end: i + 1,\n    })\n"
+      ],
+      "input_infer": "rep: &[b'{', b'0', b'}'], i: 1\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep = &[b'{', b'0', b'}'];",
+                "    let i = 1;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    let rep = &[b'{', b'0', b'}'];",
+                "    let i = 1;",
+                "    let expected = Some(CaptureRef { cap: Ref::Number(0), end: 3 });",
+                "    assert_eq!(result, expected);"
+              ],
+              "code": [
+                "{",
+                "    let rep = &[b'{', b'0', b'}'];",
+                "    let i = 1;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    let rep = &[b'{', b'0', b'}'];",
+                "    let i = 1;",
+                "    let expected = Some(CaptureRef { cap: Ref::Number(0), end: 3 });",
+                "    assert_eq!(result, expected);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep = &[b'{', b'a', b'b', b'}'];",
+                "    let i = 1;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"ab\"), end: 4 }));"
+              ],
+              "code": [
+                "{",
+                "    let rep = &[b'{', b'a', b'b', b'}'];",
+                "    let i = 1;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"ab\"), end: 4 }));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep = &[b'{', b'1', b'2', b'3', b'}'];",
+                "    let i = 1;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Number(123), end: 5 }));"
+              ],
+              "code": [
+                "{",
+                "    let rep = &[b'{', b'1', b'2', b'3', b'}'];",
+                "    let i = 1;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Number(123), end: 5 }));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep = &[b'{', b'f', b'o', b'o', b'_', b'1', b'}'];",
+                "    let i = 1;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    let expected = Some(CaptureRef { cap: Ref::Number(1), end: 7 });",
+                "    assert_eq!(result, expected);"
+              ],
+              "code": [
+                "{",
+                "    let rep = &[b'{', b'f', b'o', b'o', b'_', b'1', b'}'];",
+                "    let i = 1;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    let expected = Some(CaptureRef { cap: Ref::Number(1), end: 7 });",
+                "    assert_eq!(result, expected);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep = &[b'{', b'@', b'1', b'}'];",
+                "    let i = 1;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    let rep = &[b'{', b'@', b'1', b'}'];",
+                "    let i = 1;",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Number(1), end: 4 }));",
+                "    assert!(rep.get(i).map_or(false, |&b| b != b'}') == false);",
+                "    assert!(rep.get(i + 3).map_or(false, |&b| b == b'}') == true);",
+                "    assert!(core::str::from_utf8(&rep[1..3]).is_ok());",
+                "    assert!(cap.parse::<usize>().is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let rep = &[b'{', b'@', b'1', b'}'];",
+                "    let i = 1;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    let rep = &[b'{', b'@', b'1', b'}'];",
+                "    let i = 1;",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Number(1), end: 4 }));",
+                "    assert!(rep.get(i).map_or(false, |&b| b != b'}') == false);",
+                "    assert!(rep.get(i + 3).map_or(false, |&b| b == b'}') == true);",
+                "    assert!(core::str::from_utf8(&rep[1..3]).is_ok());",
+                "    assert!(cap.parse::<usize>().is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 8,
+      "prompt_conds": [
+        "precondition: (*left_val == *right_val) at line 40 is true\n",
+        "precondition: rep.get(i).map_or(false, |&b| b != b'}') at line 251 is false\n",
+        "precondition: rep.get(i).map_or(false, |&b| b == b'}') at line 254 is false\n",
+        "expected return value/type: None\n"
+      ],
+      "input_infer": "rep = [b'{', b'f', b'o', b'o', b'1', b'}', b'other data'], i = 5\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = &[b'{', b'f', b'o', b'o', b'1', b'}', b'o', b't', b'h', b'e', b'r', b' ', b'd', b'a', b't', b'a'];",
+                "    let i: usize = 5;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);",
+                "    let rep: &[u8] = &[b'{', b'f', b'o', b'o', b'1', b'}'];",
+                "    let i: usize = 5;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert!(result.is_none());",
+                "    let rep: &[u8] = &[b'{', b'a', b'b', b'c'];",
+                "    let i: usize = 3;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert!(result.is_none());",
+                "    let rep: &[u8] = &[b'{', b'f', b'o', b'o', b'1', b'}', b'}'];",
+                "    let i: usize = 5;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert!(result.is_none());"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = &[b'{', b'f', b'o', b'o', b'1', b'}', b'o', b't', b'h', b'e', b'r', b' ', b'd', b'a', b't', b'a'];",
+                "    let i: usize = 5;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, None);",
+                "    let rep: &[u8] = &[b'{', b'f', b'o', b'o', b'1', b'}'];",
+                "    let i: usize = 5;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert!(result.is_none());",
+                "    let rep: &[u8] = &[b'{', b'a', b'b', b'c'];",
+                "    let i: usize = 3;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert!(result.is_none());",
+                "    let rep: &[u8] = &[b'{', b'f', b'o', b'o', b'1', b'}', b'}'];",
+                "    let i: usize = 5;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert!(result.is_none());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let rep: &[u8] = &[b'{', b'\\xff', b'\\xfe', b'\\xfd', b'}'];",
+                "    let i: usize = 4;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let rep: &[u8] = &[b'{', b'\\xff', b'\\xfe', b'\\xfd', b'}'];",
+                "    let i: usize = 4;",
+                "    let result = find_cap_ref_braced(rep, i);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 9,
+      "prompt_conds": [
+        "precondition: (*left_val == *right_val) at line 40 is false\n"
+      ],
+      "input_infer": "rep: valid UTF-8 byte array with at least one valid braced reference format (e.g., b\"${name}\") or a single character followed by a closing brace, and i: any valid index where rep[i-1] == b'{', excluding cases where the brace is not followed by a valid closing brace or invalid UTF-8 segments.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: &[u8] = b\"${foo}\";",
+                "    let index = 4; // index where '}' is expected after '{'",
+                "    let result = find_cap_ref_braced(input, index);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"foo\"), end: 5 }));",
+                "    ",
+                "    let input: &[u8] = b\"${123}\";",
+                "    let index = 4;",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Number(123), end: 5 }));",
+                "    ",
+                "    let input: &[u8] = b\"${invalid\\xFF}\";",
+                "    let index = 4;",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, None);",
+                "    ",
+                "    let input: &[u8] = b\"${}\";",
+                "    let index = 4;",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, None);",
+                "    ",
+                "    let input: &[u8] = b\"${foo\";",
+                "    let index = 4;",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, None);",
+                "    ",
+                "    let input: &[u8] = b\"foo}\";",
+                "    let index = 3;",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let input: &[u8] = b\"${foo}\";",
+                "    let index = 4; // index where '}' is expected after '{'",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Named(\"foo\"), end: 5 }));",
+                "    ",
+                "    let input: &[u8] = b\"${123}\";",
+                "    let index = 4;",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Number(123), end: 5 }));",
+                "    ",
+                "    let input: &[u8] = b\"${invalid\\xFF}\";",
+                "    let index = 4;",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, None);",
+                "    ",
+                "    let input: &[u8] = b\"${}\";",
+                "    let index = 4;",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, None);",
+                "    ",
+                "    let input: &[u8] = b\"${foo\";",
+                "    let index = 4;",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, None);",
+                "    ",
+                "    let input: &[u8] = b\"foo}\";",
+                "    let index = 3;",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: &[u8] = b\"${123}\";",
+                "    let index = 4; // index where '}' is expected after '{'",
+                "    let result = find_cap_ref_braced(input, index);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Number(123), end: 5 }));"
+              ],
+              "code": [
+                "{",
+                "    let input: &[u8] = b\"${123}\";",
+                "    let index = 4; // index where '}' is expected after '{'",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, Some(CaptureRef { cap: Ref::Number(123), end: 5 }));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: &[u8] = b\"${foo\";",
+                "    let index = 4; // index after '{', but no closing '}'",
+                "    let result = find_cap_ref_braced(input, index);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_none());",
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let input: &[u8] = b\"${foo\";",
+                "    let index = 4; // index after '{', but no closing '}'",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert!(result.is_none());",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: &[u8] = b\"${\\xFF}\";",
+                "    let index = 4; // index where '}' is expected after '{'",
+                "    let result = find_cap_ref_braced(input, index);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let input: &[u8] = b\"${\\xFF}\";",
+                "    let index = 4; // index where '}' is expected after '{'",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: &[u8] = b\"${}\";",
+                "    let index = 3; // index where '}' is expected after '{'",
+                "    let result = find_cap_ref_braced(input, index);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);",
+                "    assert_eq!(rep[0..4], b\"${}\");",
+                "    assert_eq!(i, 3);",
+                "    assert!(result.is_none());",
+                "    assert!(matches!(result, None));"
+              ],
+              "code": [
+                "{",
+                "    let input: &[u8] = b\"${}\";",
+                "    let index = 3; // index where '}' is expected after '{'",
+                "    let result = find_cap_ref_braced(input, index);",
+                "    assert_eq!(result, None);",
+                "    assert_eq!(rep[0..4], b\"${}\");",
+                "    assert_eq!(i, 3);",
+                "    assert!(result.is_none());",
+                "    assert!(matches!(result, None));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01 hello\"[..];",
+          "    let result = buf.try_get_int_le(1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Ok(0x01_i64), result);",
+          "    assert_eq!(0, buf.remaining());",
+          "    assert_eq!(Err(TryGetError{requested: 2, available: 0}), buf.try_get_int_le(2));",
+          "    assert_eq!(Err(TryGetError{requested: 3, available: 0}), buf.try_get_int_le(3));",
+          "    assert_eq!(Err(TryGetError{requested: 4, available: 0}), buf.try_get_int_le(4));",
+          "    assert_panics!(|| buf.try_get_int_le(9));"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01 hello\"[..];",
+          "    let result = buf.try_get_int_le(1);",
+          "    assert_eq!(Ok(0x01_i64), result);",
+          "    assert_eq!(0, buf.remaining());",
+          "    assert_eq!(Err(TryGetError{requested: 2, available: 0}), buf.try_get_int_le(2));",
+          "    assert_eq!(Err(TryGetError{requested: 3, available: 0}), buf.try_get_int_le(3));",
+          "    assert_eq!(Err(TryGetError{requested: 4, available: 0}), buf.try_get_int_le(4));",
+          "    assert_panics!(|| buf.try_get_int_le(9));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08 hello\"[..];",
+          "    let result = buf.try_get_int_le(8);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Ok(0x0807060504030201_i64), result);",
+          "    assert_eq!(0, buf.remaining());",
+          "    assert_eq!(Err(TryGetError{requested: 9, available: 0}), buf.try_get_int_le(9));",
+          "    assert_eq!(0, buf.remaining());",
+          "    assert_eq!(Err(TryGetError{requested: 1, available: 0}), buf.try_get_int_le(1));",
+          "    assert_eq!(0, buf.remaining());",
+          "    assert!(panic_does_not_fit(8, 9).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08 hello\"[..];",
+          "    let result = buf.try_get_int_le(8);",
+          "    assert_eq!(Ok(0x0807060504030201_i64), result);",
+          "    assert_eq!(0, buf.remaining());",
+          "    assert_eq!(Err(TryGetError{requested: 9, available: 0}), buf.try_get_int_le(9));",
+          "    assert_eq!(0, buf.remaining());",
+          "    assert_eq!(Err(TryGetError{requested: 1, available: 0}), buf.try_get_int_le(1));",
+          "    assert_eq!(0, buf.remaining());",
+          "    assert!(panic_does_not_fit(8, 9).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\\x02\"[..];",
+          "    let result = buf.try_get_int_le(3);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(TryGetError { requested: 4, available: 2 }));",
+          "    assert_eq!(buf.remaining(), 2);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\\x02\"[..];",
+          "    let result = buf.try_get_int_le(3);",
+          "    assert_eq!(result, Err(TryGetError { requested: 4, available: 2 }));",
+          "    assert_eq!(buf.remaining(), 2);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\"[..];",
+          "    let _ = buf.try_get_int_le(9);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Err(TryGetError{requested: 9, available: 8}), buf.try_get_int_le(9));",
+          "    assert_eq!(8, buf.remaining());",
+          "    assert!(buf.has_remaining());",
+          "    assert!(buf.get_mut(..9).is_none());",
+          "    assert_eq!(Ok(()), buf.try_copy_to_slice(&mut []));"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\"[..];",
+          "    let _ = buf.try_get_int_le(9);",
+          "    assert_eq!(Err(TryGetError{requested: 9, available: 8}), buf.try_get_int_le(9));",
+          "    assert_eq!(8, buf.remaining());",
+          "    assert!(buf.has_remaining());",
+          "    assert!(buf.get_mut(..9).is_none());",
+          "    assert_eq!(Ok(()), buf.try_copy_to_slice(&mut []));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,372 @@
+{
+  "name": "regex_automata::util::wire::shl",
+  "mod_info": {
+    "name": "util::wire",
+    "loc": "regex-automata/src/util/mod.rs:46:1:46:14"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/util/wire.rs:831:1:842:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: u32::try_from(b)\n        .map_err(|_| DeserializeError::arithmetic_overflow(what))? at line 836 is Err/None\n"
+      ],
+      "input_infer": "b < 0 or b > 32\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let a: usize = 1;",
+                "    let b: usize = usize::MAX; // This will cause an overflow in `u32::try_from(b)`",
+                "    let what: &'static str = \"test case with negative shift\";",
+                "    let _result = shl(a, b, what);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(_result.is_err());",
+                "    assert_eq!(_result.unwrap_err(), DeserializeError::arithmetic_overflow(\"test case with negative shift\"));"
+              ],
+              "code": [
+                "{",
+                "    let a: usize = 1;",
+                "    let b: usize = usize::MAX; // This will cause an overflow in `u32::try_from(b)`",
+                "    let what: &'static str = \"test case with negative shift\";",
+                "    let _result = shl(a, b, what);",
+                "    assert!(_result.is_err());",
+                "    assert_eq!(_result.unwrap_err(), DeserializeError::arithmetic_overflow(\"test case with negative shift\"));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let a: usize = 1;",
+                "    let b: usize = 33; // This exceeds the valid range for a left shift",
+                "    let what: &'static str = \"test case with shift greater than 32\";",
+                "    let _result = shl(a, b, what);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, Err(DeserializeError::arithmetic_overflow(\"test case with shift greater than 32\")));"
+              ],
+              "code": [
+                "{",
+                "    let a: usize = 1;",
+                "    let b: usize = 33; // This exceeds the valid range for a left shift",
+                "    let what: &'static str = \"test case with shift greater than 32\";",
+                "    let _result = shl(a, b, what);",
+                "    assert_eq!(_result, Err(DeserializeError::arithmetic_overflow(\"test case with shift greater than 32\")));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: u32::try_from(b)\n        .map_err(|_| DeserializeError::arithmetic_overflow(what))? at line 836 is Ok/Some\n",
+        "precondition: a.checked_shl(amount) matches Some(c) at line 838 is true\n",
+        "precondition: a.checked_shl(amount) matches Some(c) at line 838 is true\n",
+        "expected return value/type: Ok(c)\n"
+      ],
+      "input_infer": "0 <= a <= usize::MAX, 0 <= b <= 31, what = valid static string\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let a: usize = 1;",
+                "    let b: usize = 0;",
+                "    let what: &'static str = \"test_case_0\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(1);",
+                "    assert_eq!(result, expected);",
+                "}"
+              ],
+              "oracle": [
+                "    let a: usize = 1;",
+                "    let b: usize = 0;",
+                "    let what: &'static str = \"test_case_0\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(1);",
+                "    assert_eq!(result, expected);"
+              ],
+              "code": [
+                "{",
+                "    let a: usize = 1;",
+                "    let b: usize = 0;",
+                "    let what: &'static str = \"test_case_0\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(1);",
+                "    assert_eq!(result, expected);",
+                "    let a: usize = 1;",
+                "    let b: usize = 0;",
+                "    let what: &'static str = \"test_case_0\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(1);",
+                "    assert_eq!(result, expected);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let a: usize = 2;",
+                "    let b: usize = 1;",
+                "    let what: &'static str = \"test_case_1\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(4);",
+                "    assert_eq!(result, expected);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(shl(2, 1, \"test_case_1\"), Ok(4));",
+                "    assert_eq!(shl(4, 2, \"test_case_2\"), Ok(16));",
+                "    assert_eq!(shl(1, 0, \"test_case_3\"), Ok(1));",
+                "    assert_eq!(shl(8, 1, \"test_case_4\"), Ok(16));",
+                "    assert_eq!(shl(16, 3, \"test_case_5\"), Ok(128));",
+                "    assert_eq!(shl(0, 5, \"test_case_6\"), Ok(0));",
+                "    assert_eq!(shl(3, 2, \"test_case_7\"), Ok(12));",
+                "    assert_eq!(shl(7, 1, \"test_case_8\"), Ok(14));",
+                "    assert_eq!(shl(15, 1, \"test_case_9\"), Ok(30));",
+                "    assert_eq!(shl(31, 0, \"test_case_10\"), Ok(31));"
+              ],
+              "code": [
+                "{",
+                "    let a: usize = 2;",
+                "    let b: usize = 1;",
+                "    let what: &'static str = \"test_case_1\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(4);",
+                "    assert_eq!(result, expected);",
+                "    assert_eq!(shl(2, 1, \"test_case_1\"), Ok(4));",
+                "    assert_eq!(shl(4, 2, \"test_case_2\"), Ok(16));",
+                "    assert_eq!(shl(1, 0, \"test_case_3\"), Ok(1));",
+                "    assert_eq!(shl(8, 1, \"test_case_4\"), Ok(16));",
+                "    assert_eq!(shl(16, 3, \"test_case_5\"), Ok(128));",
+                "    assert_eq!(shl(0, 5, \"test_case_6\"), Ok(0));",
+                "    assert_eq!(shl(3, 2, \"test_case_7\"), Ok(12));",
+                "    assert_eq!(shl(7, 1, \"test_case_8\"), Ok(14));",
+                "    assert_eq!(shl(15, 1, \"test_case_9\"), Ok(30));",
+                "    assert_eq!(shl(31, 0, \"test_case_10\"), Ok(31));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let a: usize = 3;",
+                "    let b: usize = 2;",
+                "    let what: &'static str = \"test_case_2\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(12);",
+                "    assert_eq!(result, expected);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(shl(3, 2, \"test_case_2\"), Ok(12));"
+              ],
+              "code": [
+                "{",
+                "    let a: usize = 3;",
+                "    let b: usize = 2;",
+                "    let what: &'static str = \"test_case_2\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(12);",
+                "    assert_eq!(result, expected);",
+                "    assert_eq!(shl(3, 2, \"test_case_2\"), Ok(12));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let a: usize = usize::MAX >> 1; // Ensures enough room for shifting",
+                "    let b: usize = 1;",
+                "    let what: &'static str = \"test_case_3\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(usize::MAX);",
+                "    assert_eq!(result, expected);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(shl(usize::MAX >> 1, 1, \"test_case_3\"), Ok(usize::MAX));"
+              ],
+              "code": [
+                "{",
+                "    let a: usize = usize::MAX >> 1; // Ensures enough room for shifting",
+                "    let b: usize = 1;",
+                "    let what: &'static str = \"test_case_3\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(usize::MAX);",
+                "    assert_eq!(result, expected);",
+                "    assert_eq!(shl(usize::MAX >> 1, 1, \"test_case_3\"), Ok(usize::MAX));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let a: usize = 15;",
+                "    let b: usize = 3;",
+                "    let what: &'static str = \"test_case_4\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(120);",
+                "    assert_eq!(result, expected);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(shl(15, 3, \"test_case_4\"), Ok(120));"
+              ],
+              "code": [
+                "{",
+                "    let a: usize = 15;",
+                "    let b: usize = 3;",
+                "    let what: &'static str = \"test_case_4\";",
+                "    let result = shl(a, b, what);",
+                "    let expected = Ok(120);",
+                "    assert_eq!(result, expected);",
+                "    assert_eq!(shl(15, 3, \"test_case_4\"), Ok(120));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: u32::try_from(b)\n        .map_err(|_| DeserializeError::arithmetic_overflow(what))? at line 836 is Ok/Some\n",
+        "precondition: a.checked_shl(amount) matches None at line 838 is true\n",
+        "expected return value/type: Err(DeserializeError::arithmetic_overflow(what))\n"
+      ],
+      "input_infer": "a: 0 to (usize::MAX >> 1), b: 32 to 64, what: \"test\"\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let a: usize = 1; // a is small enough",
+                "    let b: usize = 32; // b is at the threshold of causing overflow",
+                "    let what: &'static str = \"test\";",
+                "    let result = shl(a, b, what);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(DeserializeError::arithmetic_overflow(\"test\")));"
+              ],
+              "code": [
+                "{",
+                "    let a: usize = 1; // a is small enough",
+                "    let b: usize = 32; // b is at the threshold of causing overflow",
+                "    let what: &'static str = \"test\";",
+                "    let result = shl(a, b, what);",
+                "    assert_eq!(result, Err(DeserializeError::arithmetic_overflow(\"test\")));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let a: usize = usize::MAX >> 1; // a is at its maximum without overflow",
+                "    let b: usize = 32; // b is at the threshold of causing overflow",
+                "    let what: &'static str = \"test\";",
+                "    let result = shl(a, b, what);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(DeserializeError::arithmetic_overflow(what)));"
+              ],
+              "code": [
+                "{",
+                "    let a: usize = usize::MAX >> 1; // a is at its maximum without overflow",
+                "    let b: usize = 32; // b is at the threshold of causing overflow",
+                "    let what: &'static str = \"test\";",
+                "    let result = shl(a, b, what);",
+                "    assert_eq!(result, Err(DeserializeError::arithmetic_overflow(what)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let a: usize = usize::MAX >> 1; // a is at its maximum",
+                "    let b: usize = 64; // b definitely causes overflow",
+                "    let what: &'static str = \"test\";",
+                "    let result = shl(a, b, what);",
+                "}"
+              ],
+              "oracle": [
+                "    result.unwrap_err().is_arithmetic_overflow();",
+                "    result.unwrap_err().contains(\"test\");",
+                "    result.unwrap_err().kind() == DeserializeErrorKind::ArithmeticOverflow { what: \"test\" };",
+                "    result.is_err();",
+                "    result.err().unwrap() == DeserializeError::arithmetic_overflow(\"test\");"
+              ],
+              "code": [
+                "{",
+                "    let a: usize = usize::MAX >> 1; // a is at its maximum",
+                "    let b: usize = 64; // b definitely causes overflow",
+                "    let what: &'static str = \"test\";",
+                "    let result = shl(a, b, what);",
+                "    result.unwrap_err().is_arithmetic_overflow();",
+                "    result.unwrap_err().contains(\"test\");",
+                "    result.unwrap_err().kind() == DeserializeErrorKind::ArithmeticOverflow { what: \"test\" };",
+                "    result.is_err();",
+                "    result.err().unwrap() == DeserializeError::arithmetic_overflow(\"test\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

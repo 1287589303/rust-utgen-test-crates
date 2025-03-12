@@ -1,0 +1,188 @@
+{
+  "name": "quote::to_tokens::{impl#8}::to_tokens",
+  "mod_info": {
+    "name": "to_tokens",
+    "loc": "src/lib.rs:112:1:112:15"
+  },
+  "visible": true,
+  "loc": "src/to_tokens.rs:125:5:127:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "Input conditions: test with i8 values including -128, 0, 127, as well as out of range values -129, 128.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct(i8);",
+                "    let value = TestStruct(-128);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    tokens.len() == 1",
+                "    tokens.to_string() == \"-128i8\""
+              ],
+              "code": [
+                "{",
+                "   struct TestStruct(i8);",
+                "   impl ToTokens for TestStruct {",
+                "       fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "           tokens.append(Literal::i8_unsuffixed(self.0));",
+                "       }",
+                "   }",
+                "   let value = TestStruct(-128);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct(i8);",
+                "    let value = TestStruct(0);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    tokens.to_string() == \"0i8\"",
+                "    tokens.is_empty() == false",
+                "    tokens.len() > 0",
+                "    tokens.clone().into_iter().count() == 1",
+                "    matches!(tokens.into_iter().next(), Some(TokenTree::Literal(_)))"
+              ],
+              "code": [
+                "{",
+                "   struct TestStruct(i8);",
+                " ",
+                "   impl ToTokens for TestStruct {",
+                "       fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "           self.0.to_tokens(tokens);",
+                "       }",
+                "   }",
+                "   ",
+                "   let value = TestStruct(0);",
+                "   let mut tokens = TokenStream::new();",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct(i8);",
+                "    let value = TestStruct(127);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(tokens.to_string(), \"127i8\");",
+                "    assert!(tokens.is_empty() == false);",
+                "    assert!(tokens.iter().count() == 1);",
+                "    assert!(tokens.to_string().contains(\"i8\"));",
+                "    assert!(tokens.to_string().contains(\"127\"));"
+              ],
+              "code": [
+                "{",
+                "    struct TestStruct(i8);",
+                "    let value = TestStruct(127);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "    assert_eq!(tokens.to_string(), \"127i8\");",
+                "    assert!(tokens.is_empty() == false);",
+                "   assert!(tokens.to_string().split_whitespace().count() == 2);  ",
+                "   assert!(tokens.to_string().contains(\"i8\"));  ",
+                "   assert!(tokens.to_string().contains(\"127\"));  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    struct TestStruct(i8);",
+                "    let value = TestStruct(-129);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    tokens.is_empty(); // Ensure tokens are empty before calling to_tokens",
+                "    let expected = TokenStream::from(Literal::i8_suffixed(-129)); // Expected token stream after calling to_tokens",
+                "    assert_eq!(tokens.to_string(), expected.to_string()); // Validate generated tokens match expected for valid input"
+              ],
+              "code": [
+                "{",
+                "   struct TestStruct(i8);",
+                "   ",
+                "   impl ToTokens for TestStruct {",
+                "       fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "           tokens.append(Literal::i8_suffixed(self.0));",
+                "       }",
+                "   }",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    struct TestStruct(i8);",
+                "    let value = TestStruct(128);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    struct TestStruct(i8);",
+                "    let value = TestStruct(128);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "    }).is_err());"
+              ],
+              "code": [
+                "{",
+                "  struct TestStruct(i16);",
+                "  ",
+                "  impl ToTokens for TestStruct {",
+                "      fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "          self.0.to_tokens(tokens);",
+                "      }",
+                "  }",
+                "  ",
+                "  let value = TestStruct(128);",
+                "  let mut tokens = TokenStream::new();",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+pub fn remove(self, look: Look) -> LookSet {
+        LookSet { bits: self.bits & !look.as_repr() }
+    }

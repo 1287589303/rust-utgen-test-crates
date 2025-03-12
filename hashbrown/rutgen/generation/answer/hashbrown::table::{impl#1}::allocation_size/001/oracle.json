@@ -1,0 +1,164 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let table: HashTable<i32> = HashTable::new_in(Global);",
+          "    let size = table.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(size, 0);"
+        ],
+        "code": [
+          "{",
+          "    let table: HashTable<i32> = HashTable::new_in(Global);",
+          "    let size = table.allocation_size();",
+          "    assert_eq!(size, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table: HashTable<i32> = HashTable::new_in(Global);",
+          "    table.insert(1, 42, |x| *x);",
+          "    let size = table.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(size, expected_size);",
+          "    let expected_size = std::mem::size_of::<RawTable<i32>>() + std::mem::size_of::<i32>();",
+          "    assert!(size > 0);",
+          "    table.clear();",
+          "    assert_eq!(table.allocation_size(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut table: HashTable<i32> = HashTable::new_in(Global);",
+          "    table.insert(1, 42, |x| *x);",
+          "    let size = table.allocation_size();",
+          "    assert_eq!(size, expected_size);",
+          "    let expected_size = std::mem::size_of::<RawTable<i32>>() + std::mem::size_of::<i32>();",
+          "    assert!(size > 0);",
+          "    table.clear();",
+          "    assert_eq!(table.allocation_size(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let max_capacity: usize = 1024;",
+          "    let mut table: HashTable<i32> = HashTable::with_capacity_in(max_capacity, Global);",
+          "    for i in 0..max_capacity {",
+          "        table.insert(i as u64, i as i32, |x| *x);",
+          "    }",
+          "    let size = table.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(size > 0);",
+          "    assert!(size >= table.len() * std::mem::size_of::<i32>());",
+          "    assert!(size <= max_capacity * std::mem::size_of::<i32>());",
+          "    assert_eq!(size % std::mem::align_of::<i32>(), 0);",
+          "    assert!(size < 2 * max_capacity * std::mem::size_of::<i32>());"
+        ],
+        "code": [
+          "{",
+          "    let max_capacity: usize = 1024;",
+          "    let mut table: HashTable<i32> = HashTable::with_capacity_in(max_capacity, Global);",
+          "    for i in 0..max_capacity {",
+          "        table.insert(i as u64, i as i32, |x| *x);",
+          "    }",
+          "    let size = table.allocation_size();",
+          "    assert!(size > 0);",
+          "    assert!(size >= table.len() * std::mem::size_of::<i32>());",
+          "    assert!(size <= max_capacity * std::mem::size_of::<i32>());",
+          "    assert_eq!(size % std::mem::align_of::<i32>(), 0);",
+          "    assert!(size < 2 * max_capacity * std::mem::size_of::<i32>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let initial_capacity: usize = 256;",
+          "    let mut table: HashTable<i32> = HashTable::with_capacity_in(initial_capacity, Global);",
+          "    for i in 0..initial_capacity {",
+          "        table.insert(i as u64, i as i32, |x| *x);",
+          "    }",
+          "    table.shrink_to_fit(|x| *x);",
+          "    let size = table.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(size >= table.len() * std::mem::size_of::<i32>());",
+          "    assert!(size <= initial_capacity * std::mem::size_of::<i32>());",
+          "    assert_eq!(size % std::mem::align_of::<i32>(), 0);",
+          "    assert_eq!(size, table.raw.allocation_size());"
+        ],
+        "code": [
+          "{",
+          "    let initial_capacity: usize = 256;",
+          "    let mut table: HashTable<i32> = HashTable::with_capacity_in(initial_capacity, Global);",
+          "    for i in 0..initial_capacity {",
+          "        table.insert(i as u64, i as i32, |x| *x);",
+          "    }",
+          "    table.shrink_to_fit(|x| *x);",
+          "    let size = table.allocation_size();",
+          "    assert!(size >= table.len() * std::mem::size_of::<i32>());",
+          "    assert!(size <= initial_capacity * std::mem::size_of::<i32>());",
+          "    assert_eq!(size % std::mem::align_of::<i32>(), 0);",
+          "    assert_eq!(size, table.raw.allocation_size());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct CustomAllocator;",
+          "    impl Allocator for CustomAllocator { /* Implementation here */ }",
+          "    ",
+          "    let table: HashTable<i32, CustomAllocator> = HashTable::new_in(CustomAllocator);",
+          "    let size = table.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    size == 0",
+          "    size > 0"
+        ],
+        "code": [
+          "{",
+          "    struct CustomAllocator;",
+          "    impl Allocator for CustomAllocator { /* Implementation here */ }",
+          "    ",
+          "    let table: HashTable<i32, CustomAllocator> = HashTable::new_in(CustomAllocator);",
+          "    let size = table.allocation_size();",
+          "    size == 0",
+          "    size > 0",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,190 @@
+{
+  "name": "quote::to_tokens::{impl#11}::to_tokens",
+  "mod_info": {
+    "name": "to_tokens",
+    "loc": "src/lib.rs:112:1:112:15"
+  },
+  "visible": true,
+  "loc": "src/to_tokens.rs:143:5:145:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "Input conditions for `to_tokens(&self, tokens: &mut TokenStream)` are: self must be an i64 with valid values, including boundary values (-2^63, 0, 2^63-1) and edge cases (i64::MIN, i64::MAX).\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct(i64);",
+                "    let value = TestStruct(i64::MIN);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    tokens.append(Literal::i64_suffixed(i64::MIN));",
+                "    assert_eq!(tokens.to_string(), \"i64::MIN\");",
+                "    let value = TestStruct(0);",
+                "    tokens.clear();",
+                "    value.to_tokens(&mut tokens);",
+                "    tokens.append(Literal::i64_suffixed(0));",
+                "    assert_eq!(tokens.to_string(), \"0\");",
+                "    let value = TestStruct(i64::MAX);",
+                "    tokens.clear();",
+                "    value.to_tokens(&mut tokens);",
+                "    tokens.append(Literal::i64_suffixed(i64::MAX));",
+                "    assert_eq!(tokens.to_string(), \"i64::MAX\");"
+              ],
+              "code": [
+                "{",
+                "   struct TestStruct(i64);",
+                "   ",
+                "   impl ToTokens for TestStruct {",
+                "       fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "           tokens.append(Literal::i64_suffixed(self.0));",
+                "       }",
+                "   }",
+                "   let value = TestStruct(i64::MIN);",
+                "   let mut tokens = TokenStream::new();",
+                "   value.to_tokens(&mut tokens);",
+                "   tokens.append(Literal::i64_suffixed(i64::MIN));",
+                "   assert_eq!(tokens.to_string(), \"i64::MIN\");",
+                "   let value = TestStruct(0);",
+                "   tokens = TokenStream::new();  ",
+                "   value.to_tokens(&mut tokens);  ",
+                "   tokens.append(Literal::i64_suffixed(0));  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct(i64);",
+                "    let value = TestStruct(0);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    let value = TestStruct(0);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "    assert_eq!(tokens.to_string(), \"0\");"
+              ],
+              "code": [
+                "{",
+                "   struct TestStruct(i64);",
+                "   ",
+                "   impl ToTokens for TestStruct {",
+                "       fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "           self.0.to_tokens(tokens);",
+                "       }",
+                "   }",
+                "   let value = TestStruct(0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct(i64);",
+                "    let value = TestStruct(i64::MAX);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(tokens.to_string(), \"9223372036854775807\");",
+                "    assert!(tokens.clone().into_iter().count() > 0);",
+                "    assert!(tokens.iter().any(|t| matches!(t, TokenTree::Literal(_))));",
+                "    assert!(tokens.iter().any(|t| t.to_string() == \"9223372036854775807\"));",
+                "    assert!(tokens.iter().all(|t| if let TokenTree::Literal(lit) = t { lit.to_string().parse::<i64>().is_ok() } else { true }));"
+              ],
+              "code": [
+                "{",
+                "   struct TestStruct(i64);",
+                "   ",
+                "   impl ToTokens for TestStruct {",
+                "       fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "           self.0.to_tokens(tokens);",
+                "       }",
+                "   }",
+                "   ",
+                "   let value = TestStruct(i64::MAX);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct(i64);",
+                "    let value = TestStruct(-1);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    tokens.assert_eq(Literal::i64_suffixed(-1));"
+              ],
+              "code": [
+                "{",
+                "   struct TestStruct(i64);  ",
+                "   let value = TestStruct(-1);  ",
+                "   let mut tokens = TokenStream::new();  ",
+                "   value.to_tokens(&mut tokens);  ",
+                "   assert_eq!(tokens.to_string(), Literal::i64_suffixed(-1).to_string());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct(i64);",
+                "    let value = TestStruct(1);",
+                "    let mut tokens = TokenStream::new();",
+                "    value.to_tokens(&mut tokens);",
+                "}"
+              ],
+              "oracle": [
+                "    tokens.len() == 1",
+                "    tokens.to_string() == \"1\"",
+                "    tokens.into_iter().next().unwrap() == TokenTree::Literal(Literal::i64_suffixed(1))"
+              ],
+              "code": [
+                "{",
+                "   struct TestStruct(i64);",
+                "   ",
+                "   impl ToTokens for TestStruct {",
+                "       fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "           self.0.to_tokens(tokens);",
+                "       }",
+                "   }",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

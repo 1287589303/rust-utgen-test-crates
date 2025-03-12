@@ -1,0 +1,214 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let vec = vec![1u8, 2, 3];",
+          "    let atomic_ptr = AtomicPtr::new(vec.as_ptr() as *mut ());",
+          "    let len = vec.len();",
+          "    unsafe {",
+          "        let result = owned_to_mut(&atomic_ptr, vec.as_ptr(), len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.len(), 3);",
+          "    assert_eq!(result.as_slice(), [1u8, 2, 3]);",
+          "    assert!(result.capacity() >= 3);",
+          "    assert!(!result.is_empty());",
+          "    assert_eq!(result.kind(), KIND_VEC);",
+          "    assert_eq!(result.ptr.as_ptr(), vec.as_ptr());",
+          "    assert_eq!(unsafe { result.get_vec_pos() }, 0);"
+        ],
+        "code": [
+          "{",
+          "    let vec = vec![1u8, 2, 3];",
+          "    let atomic_ptr = AtomicPtr::new(vec.as_ptr() as *mut ());",
+          "    let len = vec.len();",
+          "    unsafe {",
+          "        let result = owned_to_mut(&atomic_ptr, vec.as_ptr(), len);",
+          "    }",
+          "    assert_eq!(result.len(), 3);",
+          "    assert_eq!(result.as_slice(), [1u8, 2, 3]);",
+          "    assert!(result.capacity() >= 3);",
+          "    assert!(!result.is_empty());",
+          "    assert_eq!(result.kind(), KIND_VEC);",
+          "    assert_eq!(result.ptr.as_ptr(), vec.as_ptr());",
+          "    assert_eq!(unsafe { result.get_vec_pos() }, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let vec: Vec<u8> = Vec::new();",
+          "    let atomic_ptr = AtomicPtr::new(vec.as_ptr() as *mut ());",
+          "    let len = vec.len();",
+          "    unsafe {",
+          "        let result = owned_to_mut(&atomic_ptr, vec.as_ptr(), len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.len(), 0);",
+          "    assert!(result.is_empty());",
+          "    assert_eq!(result.capacity(), 0);",
+          "    assert_eq!(result.ptr.as_ptr(), vec.as_ptr());",
+          "    assert_eq!(result.data, invalid_ptr(original_capacity_to_repr(0) << ORIGINAL_CAPACITY_OFFSET | KIND_VEC));"
+        ],
+        "code": [
+          "{",
+          "    let vec: Vec<u8> = Vec::new();",
+          "    let atomic_ptr = AtomicPtr::new(vec.as_ptr() as *mut ());",
+          "    let len = vec.len();",
+          "    unsafe {",
+          "        let result = owned_to_mut(&atomic_ptr, vec.as_ptr(), len);",
+          "    }",
+          "    assert_eq!(result.len(), 0);",
+          "    assert!(result.is_empty());",
+          "    assert_eq!(result.capacity(), 0);",
+          "    assert_eq!(result.ptr.as_ptr(), vec.as_ptr());",
+          "    assert_eq!(result.data, invalid_ptr(original_capacity_to_repr(0) << ORIGINAL_CAPACITY_OFFSET | KIND_VEC));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let vec = vec![0u8; 1024]; // Assuming this is a valid size",
+          "    let atomic_ptr = AtomicPtr::new(vec.as_ptr() as *mut ());",
+          "    let len = vec.len();",
+          "    unsafe {",
+          "        let result = owned_to_mut(&atomic_ptr, vec.as_ptr(), len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    let expected_len = 1024;",
+          "    let expected_data = vec![0u8; expected_len];",
+          "    let result_slice = result.as_slice();",
+          "    assert_eq!(result.len(), expected_len);",
+          "    assert_eq!(result_slice, expected_data.as_slice());",
+          "    assert!(result.is_empty() == false);",
+          "    assert!(result.capacity() >= expected_len);",
+          "    assert!(NonNull::new(result.ptr).is_some());",
+          "    assert!(result.ptr != atomic_ptr.load(Ordering::Relaxed));"
+        ],
+        "code": [
+          "{",
+          "    let vec = vec![0u8; 1024]; // Assuming this is a valid size",
+          "    let atomic_ptr = AtomicPtr::new(vec.as_ptr() as *mut ());",
+          "    let len = vec.len();",
+          "    unsafe {",
+          "        let result = owned_to_mut(&atomic_ptr, vec.as_ptr(), len);",
+          "    }",
+          "    let expected_len = 1024;",
+          "    let expected_data = vec![0u8; expected_len];",
+          "    let result_slice = result.as_slice();",
+          "    assert_eq!(result.len(), expected_len);",
+          "    assert_eq!(result_slice, expected_data.as_slice());",
+          "    assert!(result.is_empty() == false);",
+          "    assert!(result.capacity() >= expected_len);",
+          "    assert!(NonNull::new(result.ptr).is_some());",
+          "    assert!(result.ptr != atomic_ptr.load(Ordering::Relaxed));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let atomic_ptr = AtomicPtr::new(core::ptr::null_mut());",
+          "    let len = 10; // Arbitrary value",
+          "    unsafe {",
+          "        let result = owned_to_mut(&atomic_ptr, core::ptr::null(), len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    let atomic_ptr = AtomicPtr::new(core::ptr::null_mut());",
+          "    let len = 10;",
+          "    let result = owned_to_mut(&atomic_ptr, core::ptr::null(), len);",
+          "    assert_eq!(result.len(), 0);",
+          "    assert!(result.capacity() > 0);",
+          "    assert!(result.is_empty());",
+          "    assert_eq!(result.as_slice(), []);"
+        ],
+        "code": [
+          "{",
+          "    let atomic_ptr = AtomicPtr::new(core::ptr::null_mut());",
+          "    let len = 10; // Arbitrary value",
+          "    unsafe {",
+          "        let result = owned_to_mut(&atomic_ptr, core::ptr::null(), len);",
+          "    }",
+          "    let atomic_ptr = AtomicPtr::new(core::ptr::null_mut());",
+          "    let len = 10;",
+          "    let result = owned_to_mut(&atomic_ptr, core::ptr::null(), len);",
+          "    assert_eq!(result.len(), 0);",
+          "    assert!(result.capacity() > 0);",
+          "    assert!(result.is_empty());",
+          "    assert_eq!(result.as_slice(), []);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let vec = vec![1u8, 2, 3];",
+          "    let atomic_ptr = AtomicPtr::new(vec.as_ptr() as *mut ());",
+          "    let len = 2; // Valid length less than the allocated size",
+          "    unsafe {",
+          "        let result = owned_to_mut(&atomic_ptr, vec.as_ptr(), len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    let expected_result = BytesMut::from_vec(vec![1u8, 2]);",
+          "    assert_eq!(result.len(), expected_result.len());",
+          "    assert_eq!(result.as_slice(), expected_result.as_slice());",
+          "    let expected_capacity = vec.capacity();",
+          "    assert_eq!(result.capacity(), expected_capacity);",
+          "    assert!(!result.is_empty());",
+          "    assert!(result.len() < vec.len());"
+        ],
+        "code": [
+          "{",
+          "    let vec = vec![1u8, 2, 3];",
+          "    let atomic_ptr = AtomicPtr::new(vec.as_ptr() as *mut ());",
+          "    let len = 2; // Valid length less than the allocated size",
+          "    unsafe {",
+          "        let result = owned_to_mut(&atomic_ptr, vec.as_ptr(), len);",
+          "    }",
+          "    let expected_result = BytesMut::from_vec(vec![1u8, 2]);",
+          "    assert_eq!(result.len(), expected_result.len());",
+          "    assert_eq!(result.as_slice(), expected_result.as_slice());",
+          "    let expected_capacity = vec.capacity();",
+          "    assert_eq!(result.capacity(), expected_capacity);",
+          "    assert!(!result.is_empty());",
+          "    assert!(result.len() < vec.len());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

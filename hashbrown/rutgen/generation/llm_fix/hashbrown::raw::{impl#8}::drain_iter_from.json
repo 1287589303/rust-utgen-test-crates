@@ -1,0 +1,366 @@
+{
+  "name": "hashbrown::raw::{impl#8}::drain_iter_from",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:74:1:74:9"
+  },
+  "visible": true,
+  "loc": "src/raw/mod.rs:1330:5:1338:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: (*left_val == *right_val) at line 40 is true\n",
+        "expected return value/type: RawDrain {\n            iter,\n            table: mem::replace(&mut self.table, RawTableInner::NEW),\n            orig_table: NonNull::from(&mut self.table),\n            marker: PhantomData,\n        }\n"
+      ],
+      "input_infer": "Valid RawIter<T> objects where iter.len() equals the current length of the RawTable<T, A>, and ensure RawTable<T, A> has items present in its table before invocation.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestAllocator;",
+                "",
+                "    unsafe impl Allocator for TestAllocator {",
+                "        fn allocate(&self, _layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "            Ok(NonNull::new_unchecked(std::ptr::null_mut()))",
+                "        }",
+                "",
+                "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
+                "    }",
+                "",
+                "    let alloc = TestAllocator;",
+                "    let mut table: RawTable<u32, TestAllocator> = RawTable::with_capacity_in(4, alloc);",
+                "    // Adding some items to the table to ensure it has elements",
+                "    let mut hashes = vec![1u64, 2u64, 3u64];",
+                "    for hash in hashes.clone() {",
+                "        table.insert(hash, 10, |&x| x);",
+                "    }",
+                "    ",
+                "    // Creating a valid RawIter<T> object",
+                "    let iter = unsafe { table.iter() };",
+                "",
+                "    // Calling drain_iter_from with valid parameters",
+                "    unsafe {",
+                "        let drain = table.drain_iter_from(iter);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(drain.iter.len(), table.len());",
+                "    assert_eq!(drain.table.bucket_mask, table.table.bucket_mask);",
+                "    assert!(drain.orig_table != NonNull::dangling());",
+                "    assert!(drain.marker == PhantomData::<&RawTable<u32, TestAllocator>>::default());"
+              ],
+              "code": [
+                "{",
+                "    struct TestAllocator;",
+                "",
+                "    unsafe impl Allocator for TestAllocator {",
+                "        fn allocate(&self, _layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "            Ok(NonNull::new_unchecked(std::ptr::null_mut()))",
+                "        }",
+                "",
+                "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
+                "    }",
+                "",
+                "    let alloc = TestAllocator;",
+                "    let mut table: RawTable<u32, TestAllocator> = RawTable::with_capacity_in(4, alloc);",
+                "    // Adding some items to the table to ensure it has elements",
+                "    let mut hashes = vec![1u64, 2u64, 3u64];",
+                "    for hash in hashes.clone() {",
+                "        table.insert(hash, 10, |&x| x);",
+                "    }",
+                "    ",
+                "    // Creating a valid RawIter<T> object",
+                "    let iter = unsafe { table.iter() };",
+                "",
+                "    // Calling drain_iter_from with valid parameters",
+                "    unsafe {",
+                "        let drain = table.drain_iter_from(iter);",
+                "    }",
+                "    assert_eq!(drain.iter.len(), table.len());",
+                "    assert_eq!(drain.table.bucket_mask, table.table.bucket_mask);",
+                "    assert!(drain.orig_table != NonNull::dangling());",
+                "    assert!(drain.marker == PhantomData::<&RawTable<u32, TestAllocator>>::default());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestAllocator;",
+                "",
+                "    unsafe impl Allocator for TestAllocator {",
+                "        fn allocate(&self, _layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "            Ok(NonNull::new_unchecked(std::ptr::null_mut()))",
+                "        }",
+                "",
+                "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
+                "    }",
+                "",
+                "    let alloc = TestAllocator;",
+                "    let mut table: RawTable<u32, TestAllocator> = RawTable::with_capacity_in(4, alloc);",
+                "    // Adding some items to the table to ensure it has elements",
+                "    let mut hashes = vec![1u64, 2u64, 3u64];",
+                "    for hash in hashes.clone() {",
+                "        table.insert(hash, 10, |&x| x);",
+                "    }",
+                "",
+                "    // Creating an empty RawIter<T> object",
+                "    let iter = unsafe {",
+                "        let empty_iter = table.iter();",
+                "        RawIter {",
+                "            iter: empty_iter.iter, // Mimicking an empty iterator",
+                "            items: 0,",
+                "        }",
+                "    };",
+                "",
+                "    // Calling drain_iter_from with an iterator length that matches table length",
+                "    unsafe {",
+                "        let drain = table.drain_iter_from(iter);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(drain.iter.len(), table.len());",
+                "    assert_eq!(drain.table, mem::replace(&mut table.table, RawTableInner::NEW));",
+                "    assert_eq!(drain.orig_table, NonNull::from(&table.table));",
+                "    assert_eq!(drain.marker, PhantomData);"
+              ],
+              "code": [
+                "{",
+                "    struct TestAllocator;",
+                "",
+                "    unsafe impl Allocator for TestAllocator {",
+                "        fn allocate(&self, _layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "            Ok(NonNull::new_unchecked(std::ptr::null_mut()))",
+                "        }",
+                "",
+                "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
+                "    }",
+                "",
+                "    let alloc = TestAllocator;",
+                "    let mut table: RawTable<u32, TestAllocator> = RawTable::with_capacity_in(4, alloc);",
+                "    // Adding some items to the table to ensure it has elements",
+                "    let mut hashes = vec![1u64, 2u64, 3u64];",
+                "    for hash in hashes.clone() {",
+                "        table.insert(hash, 10, |&x| x);",
+                "    }",
+                "",
+                "    // Creating an empty RawIter<T> object",
+                "    let iter = unsafe {",
+                "        let empty_iter = table.iter();",
+                "        RawIter {",
+                "            iter: empty_iter.iter, // Mimicking an empty iterator",
+                "            items: 0,",
+                "        }",
+                "    };",
+                "",
+                "    // Calling drain_iter_from with an iterator length that matches table length",
+                "    unsafe {",
+                "        let drain = table.drain_iter_from(iter);",
+                "    }",
+                "    assert_eq!(drain.iter.len(), table.len());",
+                "    assert_eq!(drain.table, mem::replace(&mut table.table, RawTableInner::NEW));",
+                "    assert_eq!(drain.orig_table, NonNull::from(&table.table));",
+                "    assert_eq!(drain.marker, PhantomData);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: (*left_val == *right_val) at line 40 is false\n"
+      ],
+      "input_infer": "Invalid iterator for the `RawTable` with zero elements (len = 0), an iterator with length greater than current table length (len > current length), valid iterator pointing to an element (len > 0), non-default allocator providing special edge cases.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let table: RawTable<u64> = RawTable::new_in(Global);",
+                "    let iter = RawIter { iter: RawIterRange::new(), items: 0 };",
+                "    unsafe {",
+                "        table.drain_iter_from(iter);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(panic::catch_unwind(|| {",
+                "    let table: RawTable<u64> = RawTable::new_in(Global);",
+                "    let iter = RawIter { iter: RawIterRange::new(), items: 0 };",
+                "    unsafe {",
+                "    table.drain_iter_from(iter);",
+                "    }",
+                "    }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let table: RawTable<u64> = RawTable::new_in(Global);",
+                "    let iter = RawIter { iter: RawIterRange::new(), items: 0 };",
+                "    unsafe {",
+                "        table.drain_iter_from(iter);",
+                "    }",
+                "    assert!(panic::catch_unwind(|| {",
+                "    let table: RawTable<u64> = RawTable::new_in(Global);",
+                "    let iter = RawIter { iter: RawIterRange::new(), items: 0 };",
+                "    unsafe {",
+                "    table.drain_iter_from(iter);",
+                "    }",
+                "    }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+                "    let iter = RawIter { iter: RawIterRange::new(), items: 6 }; // items greater than table",
+                "    unsafe {",
+                "        table.drain_iter_from(iter);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(unsafe { table.len() }, 5);",
+                "    assert!(unsafe { table.is_empty() } == false);",
+                "    assert!(unsafe { table.capacity() } >= 5);",
+                "    assert!(unsafe { table.iter().items } == 6);",
+                "    assert!(unsafe { table.drain_iter_from(iter).len() } == 0);",
+                "    assert!(unsafe { table.table.items } == 0);"
+              ],
+              "code": [
+                "{",
+                "    let table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+                "    let iter = RawIter { iter: RawIterRange::new(), items: 6 }; // items greater than table",
+                "    unsafe {",
+                "        table.drain_iter_from(iter);",
+                "    }",
+                "    assert_eq!(unsafe { table.len() }, 5);",
+                "    assert!(unsafe { table.is_empty() } == false);",
+                "    assert!(unsafe { table.capacity() } >= 5);",
+                "    assert!(unsafe { table.iter().items } == 6);",
+                "    assert!(unsafe { table.drain_iter_from(iter).len() } == 0);",
+                "    assert!(unsafe { table.table.items } == 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+                "    unsafe {",
+                "        table.insert(1, 10, |x| *x);",
+                "        table.insert(2, 20, |x| *x);",
+                "        let iter = table.iter(); // getting a valid iterator",
+                "        table.drain_iter_from(iter); // should not panic",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(table.len() == 2);",
+                "    assert!(table.is_empty() == false);",
+                "    assert!(table.capacity() >= 5);",
+                "    assert!(table.buckets() > 0);",
+                "    assert!(unsafe { table.iter().len() == 0 });",
+                "    assert_eq!(unsafe { table.capacity() }, 5);",
+                "    assert!(unsafe { table.is_bucket_full(0) == false });",
+                "    assert!(unsafe { table.is_bucket_full(1) == false });",
+                "    assert!(unsafe { table.is_bucket_full(2) == false });"
+              ],
+              "code": [
+                "{",
+                "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+                "    unsafe {",
+                "        table.insert(1, 10, |x| *x);",
+                "        table.insert(2, 20, |x| *x);",
+                "        let iter = table.iter(); // getting a valid iterator",
+                "        table.drain_iter_from(iter); // should not panic",
+                "    }",
+                "    assert!(table.len() == 2);",
+                "    assert!(table.is_empty() == false);",
+                "    assert!(table.capacity() >= 5);",
+                "    assert!(table.buckets() > 0);",
+                "    assert!(unsafe { table.iter().len() == 0 });",
+                "    assert_eq!(unsafe { table.capacity() }, 5);",
+                "    assert!(unsafe { table.is_bucket_full(0) == false });",
+                "    assert!(unsafe { table.is_bucket_full(1) == false });",
+                "    assert!(unsafe { table.is_bucket_full(2) == false });",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+                "    let iter = RawIter { iter: RawIterRange::new(), items: 1 }; // items greater than actual elements",
+                "    unsafe {",
+                "        table.drain_iter_from(iter); // should not panic as this is a valid call",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+                "    let iter = RawIter { iter: RawIterRange::new(), items: 1 };",
+                "    unsafe {",
+                "    assert!(std::panic::catch_unwind(|| table.drain_iter_from(iter)).is_ok()); // should not panic",
+                "    assert_eq!(table.len(), 0); // table should be empty after drain",
+                "    }"
+              ],
+              "code": [
+                "{",
+                "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+                "    let iter = RawIter { iter: RawIterRange::new(), items: 1 }; // items greater than actual elements",
+                "    unsafe {",
+                "        table.drain_iter_from(iter); // should not panic as this is a valid call",
+                "    }",
+                "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+                "    let iter = RawIter { iter: RawIterRange::new(), items: 1 };",
+                "    unsafe {",
+                "    assert!(std::panic::catch_unwind(|| table.drain_iter_from(iter)).is_ok()); // should not panic",
+                "    assert_eq!(table.len(), 0); // table should be empty after drain",
+                "    }",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

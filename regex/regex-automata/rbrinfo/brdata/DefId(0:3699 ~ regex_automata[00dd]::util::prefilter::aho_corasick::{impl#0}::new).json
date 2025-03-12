@@ -1,0 +1,492 @@
+{
+  "name": "regex_automata::util::prefilter::aho_corasick::{impl#0}::new",
+  "mod_info": {
+    "name": "util::prefilter::aho_corasick",
+    "loc": "regex-automata/src/util/prefilter/mod.rs:36:1:36:18"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/util/prefilter/aho_corasick.rs:15:5:79:6",
+  "doc": "",
+  "code": [
+    "pub(crate) fn new<B: AsRef<[u8]>>(",
+    "    kind: MatchKind,",
+    "    needles: &[B],",
+    ") -> Option<AhoCorasick> {",
+    "    #[cfg(not(feature = \"perf-literal-multisubstring\"))]",
+    "    {",
+    "        None",
+    "    }",
+    "    #[cfg(feature = \"perf-literal-multisubstring\")]",
+    "    {",
+    "        // We used to use `aho_corasick::MatchKind::Standard` here when",
+    "        // `kind` was `MatchKind::All`, but this is not correct. The",
+    "        // \"standard\" Aho-Corasick match semantics are to report a match",
+    "        // immediately as soon as it is seen, but `All` isn't like that.",
+    "        // In particular, with \"standard\" semantics, given the needles",
+    "        // \"abc\" and \"b\" and the haystack \"abc,\" it would report a match",
+    "        // at offset 1 before a match at offset 0. This is never what we",
+    "        // want in the context of the regex engine, regardless of whether",
+    "        // we have leftmost-first or 'all' semantics. Namely, we always",
+    "        // want the leftmost match.",
+    "        let ac_match_kind = match kind {",
+    "            MatchKind::LeftmostFirst | MatchKind::All => {",
+    "                aho_corasick::MatchKind::LeftmostFirst",
+    "            }",
+    "        };",
+    "        // This is kind of just an arbitrary number, but basically, if we",
+    "        // have a small enough set of literals, then we try to use the VERY",
+    "        // memory hungry DFA. Otherwise, we whimp out and use an NFA. The",
+    "        // upshot is that the NFA is quite lean and decently fast. Faster",
+    "        // than a naive Aho-Corasick NFA anyway.",
+    "        let ac_kind = if needles.len() <= 500 {",
+    "            aho_corasick::AhoCorasickKind::DFA",
+    "        } else {",
+    "            aho_corasick::AhoCorasickKind::ContiguousNFA",
+    "        };",
+    "        let result = aho_corasick::AhoCorasick::builder()",
+    "            .kind(Some(ac_kind))",
+    "            .match_kind(ac_match_kind)",
+    "            .start_kind(aho_corasick::StartKind::Both)",
+    "            // We try to handle all of the prefilter cases in the super",
+    "            // module, and only use Aho-Corasick for the actual automaton.",
+    "            // The aho-corasick crate does have some extra prefilters,",
+    "            // namely, looking for rare bytes to feed to memchr{,2,3}",
+    "            // instead of just the first byte. If we end up wanting",
+    "            // those---and they are somewhat tricky to implement---then",
+    "            // we could port them to this crate.",
+    "            //",
+    "            // The main reason for doing things this way is so we have a",
+    "            // complete and easy to understand picture of which prefilters",
+    "            // are available and how they work. Otherwise it seems too",
+    "            // easy to get into a situation where we have a prefilter",
+    "            // layered on top of prefilter, and that might have unintended",
+    "            // consequences.",
+    "            .prefilter(false)",
+    "            .build(needles);",
+    "        let ac = match result {",
+    "            Ok(ac) => ac,",
+    "            Err(_err) => {",
+    "                debug!(\"aho-corasick prefilter failed to build: {}\", _err);",
+    "                return None;",
+    "            }",
+    "        };",
+    "        Some(AhoCorasick { ac })",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "kind matches MatchKind::LeftmostFirst",
+          "norm": null,
+          "value": "true",
+          "line": 35,
+          "bound": null
+        },
+        {
+          "cond": "needles.len() <= 500",
+          "norm": "500 >= needles.len()",
+          "value": "true",
+          "line": 45,
+          "bound": "needles.len() == 500"
+        },
+        {
+          "cond": "result matches Err(_err)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        15,
+        22,
+        23
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "kind matches MatchKind::LeftmostFirst",
+          "norm": null,
+          "value": "true",
+          "line": 35,
+          "bound": null
+        },
+        {
+          "cond": "needles.len() <= 500",
+          "norm": "500 >= needles.len()",
+          "value": "true",
+          "line": 45,
+          "bound": "needles.len() == 500"
+        },
+        {
+          "cond": "result matches Ok(ac)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        },
+        {
+          "cond": "result matches Ok(ac)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        }
+      ],
+      "ret": "Some(AhoCorasick { ac })",
+      "path": [
+        0,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "kind matches MatchKind::LeftmostFirst",
+          "norm": null,
+          "value": "true",
+          "line": 35,
+          "bound": null
+        },
+        {
+          "cond": "needles.len() <= 500",
+          "norm": "500 >= needles.len()",
+          "value": "false",
+          "line": 45,
+          "bound": null
+        },
+        {
+          "cond": "result matches Err(_err)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        15,
+        22,
+        23
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "kind matches MatchKind::LeftmostFirst",
+          "norm": null,
+          "value": "true",
+          "line": 35,
+          "bound": null
+        },
+        {
+          "cond": "needles.len() <= 500",
+          "norm": "500 >= needles.len()",
+          "value": "false",
+          "line": 45,
+          "bound": null
+        },
+        {
+          "cond": "result matches Ok(ac)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        },
+        {
+          "cond": "result matches Ok(ac)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        }
+      ],
+      "ret": "Some(AhoCorasick { ac })",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "kind matches MatchKind::All",
+          "norm": null,
+          "value": "true",
+          "line": 35,
+          "bound": null
+        },
+        {
+          "cond": "needles.len() <= 500",
+          "norm": "500 >= needles.len()",
+          "value": "true",
+          "line": 45,
+          "bound": "needles.len() == 500"
+        },
+        {
+          "cond": "result matches Err(_err)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        15,
+        22,
+        23
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "kind matches MatchKind::All",
+          "norm": null,
+          "value": "true",
+          "line": 35,
+          "bound": null
+        },
+        {
+          "cond": "needles.len() <= 500",
+          "norm": "500 >= needles.len()",
+          "value": "true",
+          "line": 45,
+          "bound": "needles.len() == 500"
+        },
+        {
+          "cond": "result matches Ok(ac)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        },
+        {
+          "cond": "result matches Ok(ac)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        }
+      ],
+      "ret": "Some(AhoCorasick { ac })",
+      "path": [
+        0,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "kind matches MatchKind::All",
+          "norm": null,
+          "value": "true",
+          "line": 35,
+          "bound": null
+        },
+        {
+          "cond": "needles.len() <= 500",
+          "norm": "500 >= needles.len()",
+          "value": "false",
+          "line": 45,
+          "bound": null
+        },
+        {
+          "cond": "result matches Err(_err)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        15,
+        22,
+        23
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "kind matches MatchKind::All",
+          "norm": null,
+          "value": "true",
+          "line": 35,
+          "bound": null
+        },
+        {
+          "cond": "needles.len() <= 500",
+          "norm": "500 >= needles.len()",
+          "value": "false",
+          "line": 45,
+          "bound": null
+        },
+        {
+          "cond": "result matches Ok(ac)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        },
+        {
+          "cond": "result matches Ok(ac)",
+          "norm": null,
+          "value": "true",
+          "line": 70,
+          "bound": null
+        }
+      ],
+      "ret": "Some(AhoCorasick { ac })",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let once_box = OnceBox::with_value(Box::new(TestStruct { value: 42 }));",
+          "    let result = once_box.get_or_try_init(|| Err(\"Should not be called\"));",
+          "}"
+        ],
+        "oracle": [
+          "    let once_box = OnceBox::with_value(Box::new(TestStruct { value: 42 }));",
+          "    let result = once_box.get_or_try_init(|| Err(\"Should not be called\"));",
+          "    assert_eq!(result.unwrap().value, 42);"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let once_box = OnceBox::with_value(Box::new(TestStruct { value: 42 }));",
+          "    let result = once_box.get_or_try_init(|| Err(\"Should not be called\"));",
+          "    let once_box = OnceBox::with_value(Box::new(TestStruct { value: 42 }));",
+          "    let result = once_box.get_or_try_init(|| Err(\"Should not be called\"));",
+          "    assert_eq!(result.unwrap().value, 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let once_box = OnceBox::new();",
+          "    let result1 = once_box.get_or_try_init(|| Ok(Box::new(TestStruct { value: 42 })));",
+          "    let result2 = once_box.get_or_try_init(|| Ok(Box::new(TestStruct { value: 43 })));",
+          "    assert_eq!(result1.unwrap().value, 42);",
+          "    assert_eq!(result2.unwrap().value, 42);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(once_box.inner.load(Ordering::Acquire).is_not_null());",
+          "    let result = once_box.get_or_try_init(|| Ok(Box::new(TestStruct { value: 100 })));",
+          "    assert_eq!(result.unwrap().value, 42);",
+          "    let result = once_box.get_or_try_init(|| Ok(Box::new(TestStruct { value: 101 })));",
+          "    assert_eq!(result.unwrap().value, 42);"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let once_box = OnceBox::new();",
+          "    let result1 = once_box.get_or_try_init(|| Ok(Box::new(TestStruct { value: 42 })));",
+          "    let result2 = once_box.get_or_try_init(|| Ok(Box::new(TestStruct { value: 43 })));",
+          "    assert_eq!(result1.unwrap().value, 42);",
+          "    assert_eq!(result2.unwrap().value, 42);",
+          "    assert!(once_box.inner.load(Ordering::Acquire).is_not_null());",
+          "    let result = once_box.get_or_try_init(|| Ok(Box::new(TestStruct { value: 100 })));",
+          "    assert_eq!(result.unwrap().value, 42);",
+          "    let result = once_box.get_or_try_init(|| Ok(Box::new(TestStruct { value: 101 })));",
+          "    assert_eq!(result.unwrap().value, 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let once_box = OnceBox::new();",
+          "    // Simulate a failure",
+          "    let _ = once_box.get_or_try_init(|| Err(\"Initialization failed\"));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(once_box.inner.load(Ordering::Acquire).is_null() == false);",
+          "    let ptr = once_box.inner.load(Ordering::Acquire);",
+          "    assert!(ptr != ptr::null_mut());",
+          "    assert!(once_box.get_or_try_init(|| Err(\"Initialization failed\")).is_err());",
+          "    assert!(once_box.get_or_try_init(|| Ok(Box::new(TestStruct { value: 42 }))).is_ok());",
+          "    assert!(once_box.get().unwrap().value == 42);"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let once_box = OnceBox::new();",
+          "    // Simulate a failure",
+          "    let _ = once_box.get_or_try_init(|| Err(\"Initialization failed\"));",
+          "    assert!(once_box.inner.load(Ordering::Acquire).is_null() == false);",
+          "    let ptr = once_box.inner.load(Ordering::Acquire);",
+          "    assert!(ptr != ptr::null_mut());",
+          "    assert!(once_box.get_or_try_init(|| Err(\"Initialization failed\")).is_err());",
+          "    assert!(once_box.get_or_try_init(|| Ok(Box::new(TestStruct { value: 42 }))).is_ok());",
+          "    assert!(once_box.get().unwrap().value == 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

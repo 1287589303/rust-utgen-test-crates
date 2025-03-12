@@ -1,0 +1,178 @@
+{
+  "name": "regex_automata::util::pool::{impl#1}::get",
+  "mod_info": {
+    "name": "util::pool",
+    "loc": "regex-automata/src/util/mod.rs:40:1:40:14"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/util/pool.rs:181:5:183:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "expected return value/type: PoolGuard(self.0.get())\n"
+      ],
+      "input_infer": "T should be a type that implements Send, F should be a function compatible with the signature fn() -> T, and the pool must contain at least one T value for stack conditions; also test cases should be considered for an empty stack and concurrent access scenarios.\n",
+      "answers": [
+        {
+          "uses": [
+            "use std::thread;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestType;",
+                "    let create_fn = || TestType;",
+                "    let pool = Pool::<TestType, _>::new(create_fn);",
+                "    pool.stack.lock().unwrap().push(Box::new(TestType));",
+                "    let guard = pool.get();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(guard.value.is_some());",
+                "    assert!(std::ptr::eq(guard.value.as_ref().unwrap().as_ref(), pool.stack.lock().unwrap().last().unwrap().as_ref()));",
+                "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+                "    let guard_value = guard.value.take().unwrap();",
+                "    drop(guard);",
+                "    assert_eq!(pool.stack.lock().unwrap().len(), 1);",
+                "    assert!(std::ptr::eq(pool.stack.lock().unwrap().last().unwrap().as_ref(), guard_value.as_ref()));"
+              ],
+              "code": [
+                "{",
+                "    struct TestType;",
+                "    let create_fn = || TestType;",
+                "    let pool = Pool::<TestType, _>::new(create_fn);",
+                "    pool.stack.lock().unwrap().push(Box::new(TestType));",
+                "    let guard = pool.get();",
+                "    assert!(guard.value.is_some());",
+                "    assert!(std::ptr::eq(guard.value.as_ref().unwrap().as_ref(), pool.stack.lock().unwrap().last().unwrap().as_ref()));",
+                "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+                "    let guard_value = guard.value.take().unwrap();",
+                "    drop(guard);",
+                "    assert_eq!(pool.stack.lock().unwrap().len(), 1);",
+                "    assert!(std::ptr::eq(pool.stack.lock().unwrap().last().unwrap().as_ref(), guard_value.as_ref()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestType;",
+                "    let create_fn = || TestType;",
+                "    let pool = Pool::<TestType, _>::new(create_fn);",
+                "    let guard = pool.get();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(guard.pool == &pool);",
+                "    assert!(guard.value.is_some());",
+                "    assert!(std::mem::size_of::<PoolGuard<TestType, _>>() > 0);",
+                "    let value = guard.value.take();",
+                "    assert!(value.is_some());",
+                "    assert!(std::any::TypeId::of::<TestType>() == std::any::TypeId::of_val(value.as_ref().unwrap().as_ref()));",
+                "    assert!(pool.get().value.is_none());"
+              ],
+              "code": [
+                "{",
+                "    struct TestType;",
+                "    let create_fn = || TestType;",
+                "    let pool = Pool::<TestType, _>::new(create_fn);",
+                "    let guard = pool.get();",
+                "    assert!(guard.pool == &pool);",
+                "    assert!(guard.value.is_some());",
+                "    assert!(std::mem::size_of::<PoolGuard<TestType, _>>() > 0);",
+                "    let value = guard.value.take();",
+                "    assert!(value.is_some());",
+                "    assert!(std::any::TypeId::of::<TestType>() == std::any::TypeId::of_val(value.as_ref().unwrap().as_ref()));",
+                "    assert!(pool.get().value.is_none());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::thread;",
+                "    struct TestType;",
+                "    let create_fn = || TestType;",
+                "    let pool = Pool::<TestType, _>::new(create_fn);",
+                "    ",
+                "    pool.stack.lock().unwrap().push(Box::new(TestType));",
+                "    let handles: Vec<_> = (0..10)",
+                "        .map(|_| {",
+                "            let pool_clone = &pool;",
+                "            thread::spawn(move || {",
+                "                let guard = pool_clone.get();",
+                "            })",
+                "        })",
+                "        .collect();",
+                "",
+                "    for handle in handles {",
+                "        handle.join().unwrap();",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(std::any::type_name::<PoolGuard<TestType, fn() -> TestType>>(), \"regex_automata::PoolGuard\");",
+                "    let guard = pool.get();",
+                "    assert!(guard.value.is_some());",
+                "    let stack_len_after_get = pool.stack.lock().unwrap().len();",
+                "    assert_eq!(stack_len_after_get, 0);",
+                "    drop(guard);",
+                "    let stack_len_after_drop = pool.stack.lock().unwrap().len();",
+                "    assert_eq!(stack_len_after_drop, 1);",
+                "    let guard2 = pool.get();",
+                "    assert!(guard2.value.is_some());",
+                "    assert!(guard.value != guard2.value);"
+              ],
+              "code": [
+                "{",
+                "    use std::thread;",
+                "    struct TestType;",
+                "    let create_fn = || TestType;",
+                "    let pool = Pool::<TestType, _>::new(create_fn);",
+                "    ",
+                "    pool.stack.lock().unwrap().push(Box::new(TestType));",
+                "    let handles: Vec<_> = (0..10)",
+                "        .map(|_| {",
+                "            let pool_clone = &pool;",
+                "            thread::spawn(move || {",
+                "                let guard = pool_clone.get();",
+                "            })",
+                "        })",
+                "        .collect();",
+                "",
+                "    for handle in handles {",
+                "        handle.join().unwrap();",
+                "    }",
+                "    assert_eq!(std::any::type_name::<PoolGuard<TestType, fn() -> TestType>>(), \"regex_automata::PoolGuard\");",
+                "    let guard = pool.get();",
+                "    assert!(guard.value.is_some());",
+                "    let stack_len_after_get = pool.stack.lock().unwrap().len();",
+                "    assert_eq!(stack_len_after_get, 0);",
+                "    drop(guard);",
+                "    let stack_len_after_drop = pool.stack.lock().unwrap().len();",
+                "    assert_eq!(stack_len_after_drop, 1);",
+                "    let guard2 = pool.get();",
+                "    assert!(guard2.value.is_some());",
+                "    assert!(guard.value != guard2.value);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

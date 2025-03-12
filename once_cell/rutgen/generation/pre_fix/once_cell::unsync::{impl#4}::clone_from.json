@@ -1,0 +1,258 @@
+{
+  "name": "once_cell::unsync::{impl#4}::clone_from",
+  "mod_info": {
+    "name": "unsync",
+    "loc": "src/lib.rs:383:1:859:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:446:9:451:10",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: (self.get_mut(), source.get()) matches _ at line 449 is true\n"
+      ],
+      "input_infer": "self.get_mut() returns None or source.get() returns None\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let source = OnceCell::with_value(42);",
+                "    let mut self_none: OnceCell<i32> = OnceCell::new();",
+                "    self_none.clone_from(&source);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(self_none.get().is_none());",
+                "    assert_eq!(self_none.clone().get(), Some(&42));"
+              ],
+              "code": [
+                "{",
+                "    let source = OnceCell::with_value(42);",
+                "    let mut self_none: OnceCell<i32> = OnceCell::new();",
+                "    self_none.clone_from(&source);",
+                "    assert!(self_none.get().is_none());",
+                "    assert_eq!(self_none.clone().get(), Some(&42));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut self_some = OnceCell::with_value(42);",
+                "    let source: OnceCell<i32> = OnceCell::new();",
+                "    self_some.clone_from(&source);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(self_some.get(), None);",
+                "    assert!(self_some.get_mut().is_some());",
+                "    assert_eq!(source.get(), None);",
+                "    assert_eq!(self_some.try_insert(0), Ok(&0));",
+                "    assert_eq!(source.get(), Some(&0));",
+                "    assert!(self_some.get_mut().is_some());",
+                "    assert_eq!(self_some.get(), Some(&0));",
+                "    assert_eq!(self_some.clone(), self_some);"
+              ],
+              "code": [
+                "{",
+                "    let mut self_some = OnceCell::with_value(42);",
+                "    let source: OnceCell<i32> = OnceCell::new();",
+                "    self_some.clone_from(&source);",
+                "    assert_eq!(self_some.get(), None);",
+                "    assert!(self_some.get_mut().is_some());",
+                "    assert_eq!(source.get(), None);",
+                "    assert_eq!(self_some.try_insert(0), Ok(&0));",
+                "    assert_eq!(source.get(), Some(&0));",
+                "    assert!(self_some.get_mut().is_some());",
+                "    assert_eq!(self_some.get(), Some(&0));",
+                "    assert_eq!(self_some.clone(), self_some);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let source: OnceCell<i32> = OnceCell::new();",
+                "    let mut self_none: OnceCell<i32> = OnceCell::new();",
+                "    self_none.clone_from(&source);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(self_none.get(), None);",
+                "    assert_eq!(source.get(), None);",
+                "    assert!(self_none.get_mut().is_none());",
+                "    assert!(self_none.get().is_none());"
+              ],
+              "code": [
+                "{",
+                "    let source: OnceCell<i32> = OnceCell::new();",
+                "    let mut self_none: OnceCell<i32> = OnceCell::new();",
+                "    self_none.clone_from(&source);",
+                "    assert_eq!(self_none.get(), None);",
+                "    assert_eq!(source.get(), None);",
+                "    assert!(self_none.get_mut().is_none());",
+                "    assert!(self_none.get().is_none());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: (self.get_mut(), source.get()) matches (Some(this), Some(source)) at line 447 is true\n"
+      ],
+      "input_infer": "self.get_mut() must return Some(reference to a mutable T) and source.get() must return Some(reference to T) with T types being Clone; both objects must be initialized and not already moved or taken.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestData {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    impl Clone for TestData {",
+                "        fn clone(&self) -> Self {",
+                "            TestData { value: self.value }",
+                "        }",
+                "    }",
+                "",
+                "    let mut cell1 = OnceCell::new();",
+                "    let cell2 = OnceCell::with_value(TestData { value: 42 });",
+                "",
+                "    // Set cell1 with a cloned value from cell2",
+                "    cell1.set(TestData { value: 42 }).unwrap();",
+                "",
+                "    // Clone cell2 into cell1; asserts that both cells have valid mutable references",
+                "    cell1.clone_from(&cell2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell1.get(), Some(&TestData { value: 42 }));",
+                "    assert_eq!(cell2.get(), Some(&TestData { value: 42 }));",
+                "    assert!(cell1.get_mut().is_some());",
+                "    assert!(cell2.get().is_some());",
+                "    assert_eq!(cell1.get().unwrap().value, cell2.get().unwrap().value);",
+                "    assert_eq!(cell1.get_mut().unwrap().value, cell2.get().unwrap().value);",
+                "    assert!(cell1.get_mut().unwrap().value == cell2.get().unwrap().value);",
+                "    assert!(cell1.get_mut().is_some() && cell2.get().is_some());"
+              ],
+              "code": [
+                "{",
+                "    struct TestData {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    impl Clone for TestData {",
+                "        fn clone(&self) -> Self {",
+                "            TestData { value: self.value }",
+                "        }",
+                "    }",
+                "",
+                "    let mut cell1 = OnceCell::new();",
+                "    let cell2 = OnceCell::with_value(TestData { value: 42 });",
+                "",
+                "    // Set cell1 with a cloned value from cell2",
+                "    cell1.set(TestData { value: 42 }).unwrap();",
+                "",
+                "    // Clone cell2 into cell1; asserts that both cells have valid mutable references",
+                "    cell1.clone_from(&cell2);",
+                "    assert_eq!(cell1.get(), Some(&TestData { value: 42 }));",
+                "    assert_eq!(cell2.get(), Some(&TestData { value: 42 }));",
+                "    assert!(cell1.get_mut().is_some());",
+                "    assert!(cell2.get().is_some());",
+                "    assert_eq!(cell1.get().unwrap().value, cell2.get().unwrap().value);",
+                "    assert_eq!(cell1.get_mut().unwrap().value, cell2.get().unwrap().value);",
+                "    assert!(cell1.get_mut().unwrap().value == cell2.get().unwrap().value);",
+                "    assert!(cell1.get_mut().is_some() && cell2.get().is_some());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestData {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    impl Clone for TestData {",
+                "        fn clone(&self) -> Self {",
+                "            TestData { value: self.value }",
+                "        }",
+                "    }",
+                "",
+                "    let mut cell1 = OnceCell::new();",
+                "    let cell2 = OnceCell::with_value(TestData { value: 100 });",
+                "",
+                "    // Set cell1 with a different value",
+                "    cell1.set(TestData { value: 50 }).unwrap();",
+                "",
+                "    // Clone cell2 into cell1; asserts that both cells have valid mutable references",
+                "    cell1.clone_from(&cell2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(cell1.get(), Some(&TestData { value: 100 }));",
+                "    assert_eq!(cell2.get(), Some(&TestData { value: 100 }));",
+                "    assert_ne!(cell1.get(), Some(&TestData { value: 50 }));"
+              ],
+              "code": [
+                "{",
+                "    struct TestData {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    impl Clone for TestData {",
+                "        fn clone(&self) -> Self {",
+                "            TestData { value: self.value }",
+                "        }",
+                "    }",
+                "",
+                "    let mut cell1 = OnceCell::new();",
+                "    let cell2 = OnceCell::with_value(TestData { value: 100 });",
+                "",
+                "    // Set cell1 with a different value",
+                "    cell1.set(TestData { value: 50 }).unwrap();",
+                "",
+                "    // Clone cell2 into cell1; asserts that both cells have valid mutable references",
+                "    cell1.clone_from(&cell2);",
+                "    assert_eq!(cell1.get(), Some(&TestData { value: 100 }));",
+                "    assert_eq!(cell2.get(), Some(&TestData { value: 100 }));",
+                "    assert_ne!(cell1.get(), Some(&TestData { value: 50 }));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

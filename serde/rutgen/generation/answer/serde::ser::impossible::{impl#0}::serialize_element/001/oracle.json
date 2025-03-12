@@ -1,0 +1,202 @@
+[
+  {
+    "uses": [
+      "use futures::future::ready;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct EmptyStruct;",
+          "",
+          "    let mut serializer = Impossible::<(), Error> { void: Void, ok: PhantomData, error: PhantomData };",
+          "    let value = EmptyStruct;",
+          "    let _ = serializer.serialize_element(&value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(serializer.serialize_element(&value).is_err());",
+          "    assert_eq!(serializer.serialize_element(&value), Err(Error));",
+          "    assert!(matches!(serializer.serialize_element(&value), Err(_)));",
+          "    assert!(std::mem::size_of::<Error>() > 0);",
+          "    assert!(std::mem::size_of::<void>() == 0);",
+          "    assert!(std::mem::size_of::<EmptyStruct>() > 0);"
+        ],
+        "code": [
+          "{",
+          "    struct EmptyStruct;",
+          "",
+          "    let mut serializer = Impossible::<(), Error> { void: Void, ok: PhantomData, error: PhantomData };",
+          "    let value = EmptyStruct;",
+          "    let _ = serializer.serialize_element(&value);",
+          "    assert!(serializer.serialize_element(&value).is_err());",
+          "    assert_eq!(serializer.serialize_element(&value), Err(Error));",
+          "    assert!(matches!(serializer.serialize_element(&value), Err(_)));",
+          "    assert!(std::mem::size_of::<Error>() > 0);",
+          "    assert!(std::mem::size_of::<void>() == 0);",
+          "    assert!(std::mem::size_of::<EmptyStruct>() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct NestedStruct {",
+          "        field: u32,",
+          "    }",
+          "",
+          "    struct OuterStruct {",
+          "        nested: NestedStruct,",
+          "    }",
+          "",
+          "    let mut serializer = Impossible::<(), Error> { void: Void, ok: PhantomData, error: PhantomData };",
+          "    let value = OuterStruct { nested: NestedStruct { field: 42 } };",
+          "    let _ = serializer.serialize_element(&value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(serializer.serialize_element(&value).is_err());",
+          "    assert_eq!(serializer.end().is_err(), true);",
+          "    assert_eq!(serializer.error, PhantomData);"
+        ],
+        "code": [
+          "{",
+          "    struct NestedStruct {",
+          "        field: u32,",
+          "    }",
+          "",
+          "    struct OuterStruct {",
+          "        nested: NestedStruct,",
+          "    }",
+          "",
+          "    let mut serializer = Impossible::<(), Error> { void: Void, ok: PhantomData, error: PhantomData };",
+          "    let value = OuterStruct { nested: NestedStruct { field: 42 } };",
+          "    let _ = serializer.serialize_element(&value);",
+          "    assert!(serializer.serialize_element(&value).is_err());",
+          "    assert_eq!(serializer.end().is_err(), true);",
+          "    assert_eq!(serializer.error, PhantomData);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut serializer = Impossible::<(), Error> { void: Void, ok: PhantomData, error: PhantomData };",
+          "    let value = (1, \"test\");",
+          "    let _ = serializer.serialize_element(&value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(serializer.serialize_element(&value).is_ok(), true);",
+          "    assert_eq!(serializer.serialize_element(&value).err().is_none(), false);",
+          "    assert!(matches!(serializer.serialize_element(&value), Err(Error)));",
+          "    assert!(matches!(serializer.serialize_element(&value), Ok(())));",
+          "    assert!(serializer.serialize_element(&value).is_err() || serializer.serialize_element(&value).is_ok());",
+          "    assert!(serializer.serialize_element::<(i32, &str)>(&value).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let mut serializer = Impossible::<(), Error> { void: Void, ok: PhantomData, error: PhantomData };",
+          "    let value = (1, \"test\");",
+          "    let _ = serializer.serialize_element(&value);",
+          "    assert_eq!(serializer.serialize_element(&value).is_ok(), true);",
+          "    assert_eq!(serializer.serialize_element(&value).err().is_none(), false);",
+          "    assert!(matches!(serializer.serialize_element(&value), Err(Error)));",
+          "    assert!(matches!(serializer.serialize_element(&value), Ok(())));",
+          "    assert!(serializer.serialize_element(&value).is_err() || serializer.serialize_element(&value).is_ok());",
+          "    assert!(serializer.serialize_element::<(i32, &str)>(&value).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    enum MyEnum {",
+          "        Variant1,",
+          "        Variant2(u32),",
+          "    }",
+          "",
+          "    let mut serializer = Impossible::<(), Error> { void: Void, ok: PhantomData, error: PhantomData };",
+          "    let value = MyEnum::Variant2(10);",
+          "    let _ = serializer.serialize_element(&value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(serializer.serialize_element(&value).is_err());",
+          "    let error = serializer.serialize_element(&value).unwrap_err();",
+          "    assert_eq!(error.to_string(), \"expected an impossible error\");",
+          "    let another_value = MyEnum::Variant1;",
+          "    assert!(serializer.serialize_element(&another_value).is_err());"
+        ],
+        "code": [
+          "{",
+          "    enum MyEnum {",
+          "        Variant1,",
+          "        Variant2(u32),",
+          "    }",
+          "",
+          "    let mut serializer = Impossible::<(), Error> { void: Void, ok: PhantomData, error: PhantomData };",
+          "    let value = MyEnum::Variant2(10);",
+          "    let _ = serializer.serialize_element(&value);",
+          "    assert!(serializer.serialize_element(&value).is_err());",
+          "    let error = serializer.serialize_element(&value).unwrap_err();",
+          "    assert_eq!(error.to_string(), \"expected an impossible error\");",
+          "    let another_value = MyEnum::Variant1;",
+          "    assert!(serializer.serialize_element(&another_value).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use futures::future::ready;",
+          "",
+          "    let mut serializer = Impossible::<(), Error> { void: Void, ok: PhantomData, error: PhantomData };",
+          "    let value = ready(3);",
+          "    let _ = serializer.serialize_element(&value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(serializer.serialize_element(&value).is_err());",
+          "    assert_eq!(serializer.serialize_element(&value).unwrap_err(), Error);",
+          "    assert!(matches!(serializer.serialize_element(&value).err(), Some(Error)));",
+          "    assert!(serializer.serialize_element(&value).is_ok() == false);",
+          "    assert!(serializer.serialize_element(&value).unwrap().is_none());",
+          "    assert_eq!(serializer.serialize_element(&value), Err(Error));"
+        ],
+        "code": [
+          "{",
+          "    use futures::future::ready;",
+          "",
+          "    let mut serializer = Impossible::<(), Error> { void: Void, ok: PhantomData, error: PhantomData };",
+          "    let value = ready(3);",
+          "    let _ = serializer.serialize_element(&value);",
+          "    assert!(serializer.serialize_element(&value).is_err());",
+          "    assert_eq!(serializer.serialize_element(&value).unwrap_err(), Error);",
+          "    assert!(matches!(serializer.serialize_element(&value).err(), Some(Error)));",
+          "    assert!(serializer.serialize_element(&value).is_ok() == false);",
+          "    assert!(serializer.serialize_element(&value).unwrap().is_none());",
+          "    assert_eq!(serializer.serialize_element(&value), Err(Error));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

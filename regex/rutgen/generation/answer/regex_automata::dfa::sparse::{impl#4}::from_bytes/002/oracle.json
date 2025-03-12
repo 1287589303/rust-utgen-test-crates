@@ -1,0 +1,219 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[];",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"error message related to invalid slice\");",
+          "    assert_eq!(result.unwrap().1, 0);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[];",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"error message related to invalid slice\");",
+          "    assert_eq!(result.unwrap().1, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[/* minimal valid serialized DFA bytes */];",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert!(result.unwrap().0.has_empty() == false);",
+          "    assert!(result.unwrap().0.is_utf8() == true);",
+          "    assert!(result.unwrap().0.is_always_start_anchored() == false);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[/* minimal valid serialized DFA bytes */];",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert!(result.unwrap().0.has_empty() == false);",
+          "    assert!(result.unwrap().0.is_utf8() == true);",
+          "    assert!(result.unwrap().0.is_always_start_anchored() == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[/* maximal valid serialized DFA bytes */]; // Assume this is a valid maximum size.",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert!(result.unwrap().0.pattern_len() > 0);",
+          "    assert!(result.unwrap().1 > 0);",
+          "    assert!(dfa.tt.validate(&dfa.special).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[/* maximal valid serialized DFA bytes */]; // Assume this is a valid maximum size.",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_ok());",
+          "    assert!(result.unwrap().0.pattern_len() > 0);",
+          "    assert!(result.unwrap().1 > 0);",
+          "    assert!(dfa.tt.validate(&dfa.special).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0x00, 0x01, 0x02]; // Example of malformed byte sequence not produced by serialization APIs.",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind(), DeserializeErrorKind::InvalidData);",
+          "    assert_eq!(result.unwrap_err().message(), \"found sparse state tagged as special but wasn't actually special\");",
+          "    assert_eq!(result.unwrap_err().state_ids(), &[]);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0x00, 0x01, 0x02]; // Example of malformed byte sequence not produced by serialization APIs.",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind(), DeserializeErrorKind::InvalidData);",
+          "    assert_eq!(result.unwrap_err().message(), \"found sparse state tagged as special but wasn't actually special\");",
+          "    assert_eq!(result.unwrap_err().state_ids(), &[]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[/* valid serialized DFA bytes but with incorrect endianness */];",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"endian mismatch error message\");"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[/* valid serialized DFA bytes but with incorrect endianness */];",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"endian mismatch error message\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0xFF, 0xFE, 0xFD]; // Non-UTF8 byte sequences representing a potential input.",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"max should not be greater than or equal to sparse bytes\");",
+          "    assert!(dfa.tt.validate(&dfa.special).is_err());",
+          "    assert!(dfa.st.validate(&dfa.special, &seen).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0xFF, 0xFE, 0xFD]; // Non-UTF8 byte sequences representing a potential input.",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"max should not be greater than or equal to sparse bytes\");",
+          "    assert!(dfa.tt.validate(&dfa.special).is_err());",
+          "    assert!(dfa.st.validate(&dfa.special, &seen).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[/* serialized DFA that touches the outer bounds of state identifiers */];",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.err(), None);",
+          "    let (dfa, nread) = result.unwrap();",
+          "    assert!(dfa.tt.validate(&dfa.special).is_err());",
+          "    assert!(nread > 0);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[/* serialized DFA that touches the outer bounds of state identifiers */];",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.err(), None);",
+          "    let (dfa, nread) = result.unwrap();",
+          "    assert!(dfa.tt.validate(&dfa.special).is_err());",
+          "    assert!(nread > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[/* serialized DFA with nonexistent transition weights */];",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: &[u8] = &[/* serialized DFA with nonexistent transition weights */];",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[/* serialized DFA with nonexistent transition weights */];",
+          "    let result = DFA::from_bytes(slice);",
+          "    let slice: &[u8] = &[/* serialized DFA with nonexistent transition weights */];",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

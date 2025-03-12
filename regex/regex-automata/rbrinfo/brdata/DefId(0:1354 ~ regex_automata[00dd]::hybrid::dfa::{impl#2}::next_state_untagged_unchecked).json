@@ -1,0 +1,80 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#2}::next_state_untagged_unchecked",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:1415:5:1425:6",
+  "doc": "/// Transitions from the current state to the next state, eliding bounds\n/// checks, given the next byte of input and a state ID that is not tagged.\n///\n/// The only reason to use this routine is performance. In particular, the\n/// `next_state` method needs to do some additional checks, among them is\n/// to account for identifiers to states that are not yet computed. In\n/// such a case, the transition is computed on the fly. However, if it is\n/// known that the `current` state ID is untagged, then these checks can be\n/// omitted.\n///\n/// Since this routine does not compute states on the fly, it does not\n/// modify the cache and thus cannot return an error. Consequently, `cache`\n/// does not need to be mutable and it is possible for this routine to\n/// return a state ID corresponding to the special \"unknown\" state. In\n/// this case, it is the caller's responsibility to use the prior state\n/// ID and `input` with `next_state` in order to force the computation of\n/// the unknown transition. Otherwise, trying to use the \"unknown\" state\n/// ID will just result in transitioning back to itself, and thus never\n/// terminating. (This is technically a special exemption to the state ID\n/// validity rules, but is permissible since this routine is guarateed to\n/// never mutate the given `cache`, and thus the identifier is guaranteed\n/// to remain valid.)\n///\n/// See [`LazyStateID`] for more details on what it means for a state ID\n/// to be tagged. Also, see\n/// [`next_state_untagged`](DFA::next_state_untagged)\n/// for this same idea, but with memory safety guaranteed by retaining\n/// bounds checks.\n///\n/// # State identifier validity\n///\n/// The only valid value for `current` is an **untagged** lazy\n/// state ID returned by the most recent call to `next_state`,\n/// `next_state_untagged`, `next_state_untagged_unchecked`,\n/// `start_state_forward` or `state_state_reverse` for the given `cache`.\n/// Any state ID returned from prior calls to these routines (with the\n/// same `cache`) is considered invalid (even if it gives an appearance\n/// of working). State IDs returned from _any_ prior call for different\n/// `cache` values are also always invalid.\n///\n/// The returned ID is always a valid ID when `current` refers to a valid\n/// ID, although it may be tagged. Moreover, this routine is defined for\n/// all possible values of `input`.\n///\n/// Not all validity rules are checked, even in debug mode. Callers are\n/// required to uphold these rules themselves.\n///\n/// Violating these state ID validity rules will not sacrifice memory\n/// safety, but _may_ produce an incorrect result or a panic.\n///\n/// # Safety\n///\n/// Callers of this method must guarantee that `current` refers to a valid\n/// state ID according to the rules described above. If `current` is not a\n/// valid state ID for this automaton, then calling this routine may result\n/// in undefined behavior.\n///\n/// If `current` is valid, then the ID returned is valid for all possible\n/// values of `input`.\n",
+  "code": [
+    "pub unsafe fn next_state_untagged_unchecked(",
+    "    &self,",
+    "    cache: &Cache,",
+    "    current: LazyStateID,",
+    "    input: u8,",
+    ") -> LazyStateID {",
+    "    debug_assert!(!current.is_tagged());",
+    "    let class = usize::from(self.classes.get(input));",
+    "    let offset = current.as_usize_unchecked() + class;",
+    "    *cache.trans.get_unchecked(offset)",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "current.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 1421,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        13
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "current.is_tagged()",
+          "norm": null,
+          "value": "false",
+          "line": 1421,
+          "bound": null
+        }
+      ],
+      "ret": "*cache.trans.get_unchecked(offset)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

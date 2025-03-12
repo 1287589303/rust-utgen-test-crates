@@ -1,0 +1,88 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#2}::next_eoi_state",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:1506:5:1519:6",
+  "doc": "/// Transitions from the current state to the next state for the special\n/// EOI symbol.\n///\n/// The given cache is used to either reuse pre-computed state\n/// transitions, or to store this newly computed transition for future\n/// reuse. Thus, this routine guarantees that it will never return a state\n/// ID that has an \"unknown\" tag.\n///\n/// This routine must be called at the end of every search in a correct\n/// implementation of search. Namely, lazy DFAs in this crate delay matches\n/// by one byte in order to support look-around operators. Thus, after\n/// reaching the end of a haystack, a search implementation must follow one\n/// last EOI transition.\n///\n/// It is best to think of EOI as an additional symbol in the alphabet of a\n/// DFA that is distinct from every other symbol. That is, the alphabet of\n/// lazy DFAs in this crate has a logical size of 257 instead of 256, where\n/// 256 corresponds to every possible inhabitant of `u8`. (In practice, the\n/// physical alphabet size may be smaller because of alphabet compression\n/// via equivalence classes, but EOI is always represented somehow in the\n/// alphabet.)\n///\n/// # State identifier validity\n///\n/// The only valid value for `current` is the lazy state ID returned\n/// by the most recent call to `next_state`, `next_state_untagged`,\n/// `next_state_untagged_unchecked`, `start_state_forward` or\n/// `state_state_reverse` for the given `cache`. Any state ID returned from\n/// prior calls to these routines (with the same `cache`) is considered\n/// invalid (even if it gives an appearance of working). State IDs returned\n/// from _any_ prior call for different `cache` values are also always\n/// invalid.\n///\n/// The returned ID is always a valid ID when `current` refers to a valid\n/// ID.\n///\n/// These validity rules are not checked, even in debug mode. Callers are\n/// required to uphold these rules themselves.\n///\n/// Violating these state ID validity rules will not sacrifice memory\n/// safety, but _may_ produce an incorrect result or a panic.\n///\n/// # Panics\n///\n/// If the given ID does not refer to a valid state, then this routine\n/// may panic but it also may not panic and instead return an invalid or\n/// incorrect ID.\n///\n/// # Example\n///\n/// This shows a simplistic example for walking a DFA for a given haystack,\n/// and then finishing the search with the final EOI transition.\n///\n/// ```\n/// use regex_automata::{hybrid::dfa::DFA, Input};\n///\n/// let dfa = DFA::new(r\"[a-z]+r\")?;\n/// let mut cache = dfa.create_cache();\n/// let haystack = \"bar\".as_bytes();\n///\n/// // The start state is determined by inspecting the position and the\n/// // initial bytes of the haystack.\n/// let mut sid = dfa.start_state_forward(\n///     &mut cache, &Input::new(haystack),\n/// )?;\n/// // Walk all the bytes in the haystack.\n/// for &b in haystack {\n///     sid = dfa.next_state(&mut cache, sid, b)?;\n/// }\n/// // Matches are always delayed by 1 byte, so we must explicitly walk\n/// // the special \"EOI\" transition at the end of the search. Without this\n/// // final transition, the assert below will fail since the DFA will not\n/// // have entered a match state yet!\n/// sid = dfa.next_eoi_state(&mut cache, sid)?;\n/// assert!(sid.is_match());\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn next_eoi_state(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    current: LazyStateID,",
+    ") -> Result<LazyStateID, CacheError> {",
+    "    let eoi = self.classes.eoi().as_usize();",
+    "    let offset = current.as_usize_untagged() + eoi;",
+    "    let sid = cache.trans[offset];",
+    "    if !sid.is_unknown() {",
+    "        return Ok(sid);",
+    "    }",
+    "    let unit = self.classes.eoi();",
+    "    Lazy::new(self, cache).cache_next_state(current, unit)",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "sid.is_unknown()",
+          "norm": null,
+          "value": "true",
+          "line": 1514,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "sid.is_unknown()",
+          "norm": null,
+          "value": "false",
+          "line": 1514,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(sid)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

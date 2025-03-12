@@ -1,0 +1,144 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut dst = [0; 6];",
+          "    {",
+          "        let mut buf = &mut UninitSlice::new(&mut dst[..]);",
+          "        buf.put_slice(b\"hello\");",
+          "        // The call should succeed, and we will assume a proper check follows.",
+          "    }",
+          "    // After the operation, dst should equal b\"hello\\0\"",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.remaining_mut(), 1);",
+          "    assert_eq!(&dst, b\"hello\\0\");",
+          "    assert!(buf.remaining_mut() >= 0);",
+          "    assert!(src.len() > 0);",
+          "    assert!(src.is_empty() == false);",
+          "    assert!(src.len() == 5);",
+          "    assert!(buf.remaining_mut() == 1);"
+        ],
+        "code": [
+          "{",
+          "    let mut dst = [0; 6];",
+          "    {",
+          "        let mut buf = &mut UninitSlice::new(&mut dst[..]);",
+          "        buf.put_slice(b\"hello\");",
+          "        // The call should succeed, and we will assume a proper check follows.",
+          "    }",
+          "    // After the operation, dst should equal b\"hello\\0\"",
+          "    assert_eq!(buf.remaining_mut(), 1);",
+          "    assert_eq!(&dst, b\"hello\\0\");",
+          "    assert!(buf.remaining_mut() >= 0);",
+          "    assert!(src.len() > 0);",
+          "    assert!(src.is_empty() == false);",
+          "    assert!(src.len() == 5);",
+          "    assert!(buf.remaining_mut() == 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut dst = [0; 6];",
+          "    {",
+          "        let mut buf = &mut UninitSlice::new(&mut dst[..]);",
+          "        buf.put_slice(b\"hi\");",
+          "        // Another operation ensuring no panic occurs.",
+          "    }",
+          "    // Expecting dst to have modified bytes, should still handle corner cases as expected.",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.remaining_mut(), 4);",
+          "    assert_eq!(&dst, b\"hi\\0\\0\\0\\0\");",
+          "    buf.put_slice(b\"hey\");",
+          "    assert_eq!(dst, [b'h', b'i', b'h', b'e', b'y', 0]);",
+          "    assert_eq!(buf.remaining_mut(), 0);",
+          "    buf.put_slice(b\"\");",
+          "    assert_eq!(dst, [b'h', b'i', b'h', b'e', b'y', 0]);"
+        ],
+        "code": [
+          "{",
+          "    let mut dst = [0; 6];",
+          "    {",
+          "        let mut buf = &mut UninitSlice::new(&mut dst[..]);",
+          "        buf.put_slice(b\"hi\");",
+          "        // Another operation ensuring no panic occurs.",
+          "    }",
+          "    // Expecting dst to have modified bytes, should still handle corner cases as expected.",
+          "    assert_eq!(buf.remaining_mut(), 4);",
+          "    assert_eq!(&dst, b\"hi\\0\\0\\0\\0\");",
+          "    buf.put_slice(b\"hey\");",
+          "    assert_eq!(dst, [b'h', b'i', b'h', b'e', b'y', 0]);",
+          "    assert_eq!(buf.remaining_mut(), 0);",
+          "    buf.put_slice(b\"\");",
+          "    assert_eq!(dst, [b'h', b'i', b'h', b'e', b'y', 0]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut dst = [0; 6];",
+          "    {",
+          "        let mut buf = &mut UninitSlice::new(&mut dst[..]);",
+          "        buf.put_slice(b\"\");",
+          "        // No operations should mutate dst, but the function should handle this without panic.",
+          "    }",
+          "    // Expecting dst to still be unchanged i.e., equals to [0, 0, 0, 0, 0, 0]",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(&dst, &[0, 0, 0, 0, 0, 0]);",
+          "    let mut buf = &mut UninitSlice::new(&mut dst[..]);",
+          "    buf.put_slice(b\"hello\");",
+          "    assert_eq!(1, buf.remaining_mut());",
+          "    assert_eq!(&dst, b\"hello\\0\");",
+          "    buf.put_slice(b\"world\");",
+          "    assert_eq!(1, buf.remaining_mut());",
+          "    assert_eq!(&dst, b\"hello\\0\");",
+          "    buf.put_slice(b\"\");",
+          "    assert_eq!(&dst, b\"hello\\0\");"
+        ],
+        "code": [
+          "{",
+          "    let mut dst = [0; 6];",
+          "    {",
+          "        let mut buf = &mut UninitSlice::new(&mut dst[..]);",
+          "        buf.put_slice(b\"\");",
+          "        // No operations should mutate dst, but the function should handle this without panic.",
+          "    }",
+          "    // Expecting dst to still be unchanged i.e., equals to [0, 0, 0, 0, 0, 0]",
+          "    assert_eq!(&dst, &[0, 0, 0, 0, 0, 0]);",
+          "    let mut buf = &mut UninitSlice::new(&mut dst[..]);",
+          "    buf.put_slice(b\"hello\");",
+          "    assert_eq!(1, buf.remaining_mut());",
+          "    assert_eq!(&dst, b\"hello\\0\");",
+          "    buf.put_slice(b\"world\");",
+          "    assert_eq!(1, buf.remaining_mut());",
+          "    assert_eq!(&dst, b\"hello\\0\");",
+          "    buf.put_slice(b\"\");",
+          "    assert_eq!(&dst, b\"hello\\0\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

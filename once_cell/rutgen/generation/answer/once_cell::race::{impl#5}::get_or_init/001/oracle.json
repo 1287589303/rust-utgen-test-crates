@@ -1,0 +1,111 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestData {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let once_ref: OnceRef<TestData> = OnceRef::new();",
+          "    let value_provider = || {",
+          "        let data = TestData { value: 42 };",
+          "        &data",
+          "    };",
+          "",
+          "    once_ref.get_or_init(value_provider);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(once_ref.get().is_none());",
+          "    let result = once_ref.get_or_try_init(|| Ok::<&TestData, ()>(value_provider()));",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err(), Some(()));"
+        ],
+        "code": [
+          "{",
+          "    struct TestData {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let once_ref: OnceRef<TestData> = OnceRef::new();",
+          "    let value_provider = || {",
+          "        let data = TestData { value: 42 };",
+          "        &data",
+          "    };",
+          "",
+          "    once_ref.get_or_init(value_provider);",
+          "    assert!(once_ref.get().is_none());",
+          "    let result = once_ref.get_or_try_init(|| Ok::<&TestData, ()>(value_provider()));",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err(), Some(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestData {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let once_ref: OnceRef<TestData> = OnceRef::new();",
+          "    let initial_data = TestData { value: 100 };",
+          "    // Simulating the set function directly to initialize the inner pointer",
+          "    let _ = once_ref.set(&initial_data);",
+          "",
+          "    let value_provider = || {",
+          "        let data = TestData { value: 21 };",
+          "        &data",
+          "    };",
+          "",
+          "    once_ref.get_or_init(value_provider);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(once_ref.get().unwrap().value, 100);",
+          "    assert!(once_ref.get_or_init(value_provider) as *const _ != std::ptr::null());",
+          "    assert!(once_ref.get().unwrap().value == 100);",
+          "    assert!(once_ref.get().is_some());",
+          "    assert!(once_ref.get_or_init(value_provider) as *const _ == once_ref.get().unwrap() as *const _);"
+        ],
+        "code": [
+          "{",
+          "    struct TestData {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let once_ref: OnceRef<TestData> = OnceRef::new();",
+          "    let initial_data = TestData { value: 100 };",
+          "    // Simulating the set function directly to initialize the inner pointer",
+          "    let _ = once_ref.set(&initial_data);",
+          "",
+          "    let value_provider = || {",
+          "        let data = TestData { value: 21 };",
+          "        &data",
+          "    };",
+          "",
+          "    once_ref.get_or_init(value_provider);",
+          "    assert_eq!(once_ref.get().unwrap().value, 100);",
+          "    assert!(once_ref.get_or_init(value_provider) as *const _ != std::ptr::null());",
+          "    assert!(once_ref.get().unwrap().value == 100);",
+          "    assert!(once_ref.get().is_some());",
+          "    assert!(once_ref.get_or_init(value_provider) as *const _ == once_ref.get().unwrap() as *const _);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

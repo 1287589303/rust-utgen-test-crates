@@ -1,0 +1,176 @@
+{
+  "serde_derive_internals/src/attr.rs:263:21:263:32": [
+    {
+      "For": {
+        "iter_var": "attr",
+        "iter_range": "&item.attrs"
+      }
+    }
+  ],
+  "serde_derive_internals/src/attr.rs:276:16:501:15": [
+    {
+      "Bool": {
+        "Other": "let Err(err) = attr.parse_nested_meta(|meta| {\n                if meta.path == RENAME {\n                    // #[serde(rename = \"foo\")]\n                    // #[serde(rename(serialize = \"foo\", deserialize = \"bar\"))]\n                    let (ser, de) = get_renames(cx, RENAME, &meta)?;\n                    ser_name.set_opt(&meta.path, ser.as_ref().map(Name::from));\n                    de_name.set_opt(&meta.path, de.as_ref().map(Name::from));\n                } else if meta.path == RENAME_ALL {\n                    // #[serde(rename_all = \"foo\")]\n                    // #[serde(rename_all(serialize = \"foo\", deserialize = \"bar\"))]\n                    let one_name = meta.input.peek(Token![=]);\n                    let (ser, de) = get_renames(cx, RENAME_ALL, &meta)?;\n                    if let Some(ser) = ser {\n                        match RenameRule::from_str(&ser.value()) {\n                            Ok(rename_rule) => rename_all_ser_rule.set(&meta.path, rename_rule),\n                            Err(err) => cx.error_spanned_by(ser, err),\n                        }\n                    }\n                    if let Some(de) = de {\n                        match RenameRule::from_str(&de.value()) {\n                            Ok(rename_rule) => rename_all_de_rule.set(&meta.path, rename_rule),\n                            Err(err) => {\n                                if !one_name {\n                                    cx.error_spanned_by(de, err);\n                                }\n                            }\n                        }\n                    }\n                } else if meta.path == RENAME_ALL_FIELDS {\n                    // #[serde(rename_all_fields = \"foo\")]\n                    // #[serde(rename_all_fields(serialize = \"foo\", deserialize = \"bar\"))]\n                    let one_name = meta.input.peek(Token![=]);\n                    let (ser, de) = get_renames(cx, RENAME_ALL_FIELDS, &meta)?;\n\n                    match item.data {\n                        syn::Data::Enum(_) => {\n                            if let Some(ser) = ser {\n                                match RenameRule::from_str(&ser.value()) {\n                                    Ok(rename_rule) => {\n                                        rename_all_fields_ser_rule.set(&meta.path, rename_rule);\n                                    }\n                                    Err(err) => cx.error_spanned_by(ser, err),\n                                }\n                            }\n                            if let Some(de) = de {\n                                match RenameRule::from_str(&de.value()) {\n                                    Ok(rename_rule) => {\n                                        rename_all_fields_de_rule.set(&meta.path, rename_rule);\n                                    }\n                                    Err(err) => {\n                                        if !one_name {\n                                            cx.error_spanned_by(de, err);\n                                        }\n                                    }\n                                }\n                            }\n                        }\n                        syn::Data::Struct(_) => {\n                            let msg = \"#[serde(rename_all_fields)] can only be used on enums\";\n                            cx.syn_error(meta.error(msg));\n                        }\n                        syn::Data::Union(_) => {\n                            let msg = \"#[serde(rename_all_fields)] can only be used on enums\";\n                            cx.syn_error(meta.error(msg));\n                        }\n                    }\n                } else if meta.path == TRANSPARENT {\n                    // #[serde(transparent)]\n                    transparent.set_true(meta.path);\n                } else if meta.path == DENY_UNKNOWN_FIELDS {\n                    // #[serde(deny_unknown_fields)]\n                    deny_unknown_fields.set_true(meta.path);\n                } else if meta.path == DEFAULT {\n                    if meta.input.peek(Token![=]) {\n                        // #[serde(default = \"...\")]\n                        if let Some(path) = parse_lit_into_expr_path(cx, DEFAULT, &meta)? {\n                            match &item.data {\n                                syn::Data::Struct(syn::DataStruct { fields, .. }) => match fields {\n                                    syn::Fields::Named(_) | syn::Fields::Unnamed(_) => {\n                                        default.set(&meta.path, Default::Path(path));\n                                    }\n                                    syn::Fields::Unit => {\n                                        let msg = \"#[serde(default = \\\"...\\\")] can only be used on structs that have fields\";\n                                        cx.syn_error(meta.error(msg));\n                                    }\n                                },\n                                syn::Data::Enum(_) => {\n                                    let msg = \"#[serde(default = \\\"...\\\")] can only be used on structs\";\n                                    cx.syn_error(meta.error(msg));\n                                }\n                                syn::Data::Union(_) => {\n                                    let msg = \"#[serde(default = \\\"...\\\")] can only be used on structs\";\n                                    cx.syn_error(meta.error(msg));\n                                }\n                            }\n                        }\n                    } else {\n                        // #[serde(default)]\n                        match &item.data {\n                            syn::Data::Struct(syn::DataStruct { fields, .. }) => match fields {\n                                syn::Fields::Named(_) | syn::Fields::Unnamed(_) => {\n                                    default.set(meta.path, Default::Default);\n                                }\n                                syn::Fields::Unit => {\n                                    let msg = \"#[serde(default)] can only be used on structs that have fields\";\n                                    cx.error_spanned_by(fields, msg);\n                                }\n                            },\n                            syn::Data::Enum(_) => {\n                                let msg = \"#[serde(default)] can only be used on structs\";\n                                cx.syn_error(meta.error(msg));\n                            }\n                            syn::Data::Union(_) => {\n                                let msg = \"#[serde(default)] can only be used on structs\";\n                                cx.syn_error(meta.error(msg));\n                            }\n                        }\n                    }\n                } else if meta.path == BOUND {\n                    // #[serde(bound = \"T: SomeBound\")]\n                    // #[serde(bound(serialize = \"...\", deserialize = \"...\"))]\n                    let (ser, de) = get_where_predicates(cx, &meta)?;\n                    ser_bound.set_opt(&meta.path, ser);\n                    de_bound.set_opt(&meta.path, de);\n                } else if meta.path == UNTAGGED {\n                    // #[serde(untagged)]\n                    match item.data {\n                        syn::Data::Enum(_) => {\n                            untagged.set_true(&meta.path);\n                        }\n                        syn::Data::Struct(_) => {\n                            let msg = \"#[serde(untagged)] can only be used on enums\";\n                            cx.syn_error(meta.error(msg));\n                        }\n                        syn::Data::Union(_) => {\n                            let msg = \"#[serde(untagged)] can only be used on enums\";\n                            cx.syn_error(meta.error(msg));\n                        }\n                    }\n                } else if meta.path == TAG {\n                    // #[serde(tag = \"type\")]\n                    if let Some(s) = get_lit_str(cx, TAG, &meta)? {\n                        match &item.data {\n                            syn::Data::Enum(_) => {\n                                internal_tag.set(&meta.path, s.value());\n                            }\n                            syn::Data::Struct(syn::DataStruct { fields, .. }) => match fields {\n                                syn::Fields::Named(_) => {\n                                    internal_tag.set(&meta.path, s.value());\n                                }\n                                syn::Fields::Unnamed(_) | syn::Fields::Unit => {\n                                    let msg = \"#[serde(tag = \\\"...\\\")] can only be used on enums and structs with named fields\";\n                                    cx.syn_error(meta.error(msg));\n                                }\n                            },\n                            syn::Data::Union(_) => {\n                                let msg = \"#[serde(tag = \\\"...\\\")] can only be used on enums and structs with named fields\";\n                                cx.syn_error(meta.error(msg));\n                            }\n                        }\n                    }\n                } else if meta.path == CONTENT {\n                    // #[serde(content = \"c\")]\n                    if let Some(s) = get_lit_str(cx, CONTENT, &meta)? {\n                        match &item.data {\n                            syn::Data::Enum(_) => {\n                                content.set(&meta.path, s.value());\n                            }\n                            syn::Data::Struct(_) => {\n                                let msg = \"#[serde(content = \\\"...\\\")] can only be used on enums\";\n                                cx.syn_error(meta.error(msg));\n                            }\n                            syn::Data::Union(_) => {\n                                let msg = \"#[serde(content = \\\"...\\\")] can only be used on enums\";\n                                cx.syn_error(meta.error(msg));\n                            }\n                        }\n                    }\n                } else if meta.path == FROM {\n                    // #[serde(from = \"Type\")]\n                    if let Some(from_ty) = parse_lit_into_ty(cx, FROM, &meta)? {\n                        type_from.set_opt(&meta.path, Some(from_ty));\n                    }\n                } else if meta.path == TRY_FROM {\n                    // #[serde(try_from = \"Type\")]\n                    if let Some(try_from_ty) = parse_lit_into_ty(cx, TRY_FROM, &meta)? {\n                        type_try_from.set_opt(&meta.path, Some(try_from_ty));\n                    }\n                } else if meta.path == INTO {\n                    // #[serde(into = \"Type\")]\n                    if let Some(into_ty) = parse_lit_into_ty(cx, INTO, &meta)? {\n                        type_into.set_opt(&meta.path, Some(into_ty));\n                    }\n                } else if meta.path == REMOTE {\n                    // #[serde(remote = \"...\")]\n                    if let Some(path) = parse_lit_into_path(cx, REMOTE, &meta)? {\n                        if is_primitive_path(&path, \"Self\") {\n                            remote.set(&meta.path, item.ident.clone().into());\n                        } else {\n                            remote.set(&meta.path, path);\n                        }\n                    }\n                } else if meta.path == FIELD_IDENTIFIER {\n                    // #[serde(field_identifier)]\n                    field_identifier.set_true(&meta.path);\n                } else if meta.path == VARIANT_IDENTIFIER {\n                    // #[serde(variant_identifier)]\n                    variant_identifier.set_true(&meta.path);\n                } else if meta.path == CRATE {\n                    // #[serde(crate = \"foo\")]\n                    if let Some(path) = parse_lit_into_path(cx, CRATE, &meta)? {\n                        serde_path.set(&meta.path, path);\n                    }\n                } else if meta.path == EXPECTING {\n                    // #[serde(expecting = \"a message\")]\n                    if let Some(s) = get_lit_str(cx, EXPECTING, &meta)? {\n                        expecting.set(&meta.path, s.value());\n                    }\n                } else {\n                    let path = meta.path.to_token_stream().to_string().replace(' ', \"\");\n                    return Err(\n                        meta.error(format_args!(\"unknown serde container attribute `{}`\", path))\n                    );\n                }\n                Ok(())\n            })"
+      }
+    }
+  ],
+  "/home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:457:9:460:10": [
+    {
+      "Match": {
+        "match_source": "serde_derive_internals/src/attr.rs:266:30:266:40",
+        "match_str": "&attr.meta",
+        "match_kind": {
+          "Enum": [
+            "Path",
+            "List",
+            "NameValue"
+          ]
+        },
+        "arms": {
+          "serde_derive_internals/src/attr.rs:266:42:266:63": {
+            "pat": {
+              "pat_str": "syn::Meta::Path(path)",
+              "kind": {
+                "Enum": 0
+              }
+            },
+            "guard": {
+              "serde_derive_internals/src/attr.rs:266:67:266:89": [
+                {
+                  "Bool": {
+                    "Binary": {
+                      "kind": "Eq",
+                      "expr": "path == NON_EXHAUSTIVE",
+                      "lhs": "path",
+                      "rhs": "NON_EXHAUSTIVE",
+                      "cmp_with_int": false
+                    }
+                  }
+                }
+              ]
+            },
+            "body_source": null
+          },
+          "/home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:459:13:459:14": {
+            "pat": {
+              "pat_str": "_",
+              "kind": "Wild"
+            },
+            "guard": null,
+            "body_source": null
+          }
+        }
+      }
+    }
+  ],
+  "serde_derive_internals/src/attr.rs:270:16:270:54": [
+    {
+      "Bool": {
+        "Other": "let syn::Meta::List(meta) = &attr.meta"
+      }
+    }
+  ],
+  "serde_derive_internals/src/attr.rs:507:21:507:32": [
+    {
+      "For": {
+        "iter_var": "attr",
+        "iter_range": "&item.attrs"
+      }
+    }
+  ],
+  "serde_derive_internals/src/attr.rs:266:67:266:89": [
+    {
+      "Bool": {
+        "Binary": {
+          "kind": "Eq",
+          "expr": "path == NON_EXHAUSTIVE",
+          "lhs": "path",
+          "rhs": "NON_EXHAUSTIVE",
+          "cmp_with_int": false
+        }
+      }
+    }
+  ],
+  "serde_derive_internals/src/attr.rs:266:30:266:40": [
+    {
+      "Match": {
+        "match_source": "serde_derive_internals/src/attr.rs:266:30:266:40",
+        "match_str": "&attr.meta",
+        "match_kind": {
+          "Enum": [
+            "Path",
+            "List",
+            "NameValue"
+          ]
+        },
+        "arms": {
+          "serde_derive_internals/src/attr.rs:266:42:266:63": {
+            "pat": {
+              "pat_str": "syn::Meta::Path(path)",
+              "kind": {
+                "Enum": 0
+              }
+            },
+            "guard": {
+              "serde_derive_internals/src/attr.rs:266:67:266:89": [
+                {
+                  "Bool": {
+                    "Binary": {
+                      "kind": "Eq",
+                      "expr": "path == NON_EXHAUSTIVE",
+                      "lhs": "path",
+                      "rhs": "NON_EXHAUSTIVE",
+                      "cmp_with_int": false
+                    }
+                  }
+                }
+              ]
+            },
+            "body_source": null
+          },
+          "/home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:459:13:459:14": {
+            "pat": {
+              "pat_str": "_",
+              "kind": "Wild"
+            },
+            "guard": null,
+            "body_source": null
+          }
+        }
+      }
+    }
+  ],
+  "serde_derive_internals/src/attr.rs:264:16:264:36": [
+    {
+      "Bool": {
+        "Binary": {
+          "kind": "Ne",
+          "expr": "attr.path() != SERDE",
+          "lhs": "attr.path()",
+          "rhs": "SERDE",
+          "cmp_with_int": false
+        }
+      }
+    }
+  ],
+  "serde_derive_internals/src/attr.rs:271:20:271:42": [
+    {
+      "Bool": {
+        "Other": "meta.tokens.is_empty()"
+      }
+    }
+  ],
+  "serde_derive_internals/src/attr.rs:508:16:508:35": [
+    {
+      "Bool": {
+        "Binary": {
+          "kind": "Eq",
+          "expr": "attr.path() == REPR",
+          "lhs": "attr.path()",
+          "rhs": "REPR",
+          "cmp_with_int": false
+        }
+      }
+    }
+  ]
+}

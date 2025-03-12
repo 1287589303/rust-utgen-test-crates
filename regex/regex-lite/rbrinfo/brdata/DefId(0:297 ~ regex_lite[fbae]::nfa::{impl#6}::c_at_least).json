@@ -1,0 +1,2148 @@
+{
+  "name": "regex_lite::nfa::{impl#6}::c_at_least",
+  "mod_info": {
+    "name": "nfa",
+    "loc": "regex-lite/src/lib.rs:880:1:880:9"
+  },
+  "visible": false,
+  "loc": "regex-lite/src/nfa.rs:443:5:503:6",
+  "doc": "/// Compile the given expression such that it may be matched `n` or more\n/// times, where `n` can be any integer. (Although a particularly large\n/// integer is likely to run afoul of any configured size limits.)\n///\n/// When `greedy` is true, then the preference is for the expression to\n/// match as much as possible. Otherwise, it will match as little as\n/// possible.\n",
+  "code": [
+    "fn c_at_least(",
+    "    &self,",
+    "    hir: &Hir,",
+    "    greedy: bool,",
+    "    n: u32,",
+    ") -> Result<ThompsonRef, Error> {",
+    "    if n == 0 {",
+    "        // When the expression cannot match the empty string, then we",
+    "        // can get away with something much simpler: just one 'alt'",
+    "        // instruction that optionally repeats itself. But if the expr",
+    "        // can match the empty string... see below.",
+    "        if !hir.is_match_empty() {",
+    "            let splits = self.add(State::Splits {",
+    "                targets: vec![],",
+    "                reverse: !greedy,",
+    "            })?;",
+    "            let compiled = self.c(hir)?;",
+    "            self.patch(splits, compiled.start)?;",
+    "            self.patch(compiled.end, splits)?;",
+    "            return Ok(ThompsonRef { start: splits, end: splits });",
+    "        }",
+    "",
+    "        // What's going on here? Shouldn't x* be simpler than this? It",
+    "        // turns out that when implementing leftmost-first (Perl-like)",
+    "        // match semantics, x* results in an incorrect preference order",
+    "        // when computing the transitive closure of states if and only if",
+    "        // 'x' can match the empty string. So instead, we compile x* as",
+    "        // (x+)?, which preserves the correct preference order.",
+    "        //",
+    "        // See: https://github.com/rust-lang/regex/issues/779",
+    "        let compiled = self.c(hir)?;",
+    "        let plus =",
+    "            self.add(State::Splits { targets: vec![], reverse: !greedy })?;",
+    "        self.patch(compiled.end, plus)?;",
+    "        self.patch(plus, compiled.start)?;",
+    "",
+    "        let question =",
+    "            self.add(State::Splits { targets: vec![], reverse: !greedy })?;",
+    "        let empty = self.add_empty()?;",
+    "        self.patch(question, compiled.start)?;",
+    "        self.patch(question, empty)?;",
+    "        self.patch(plus, empty)?;",
+    "        Ok(ThompsonRef { start: question, end: empty })",
+    "    } else if n == 1 {",
+    "        let compiled = self.c(hir)?;",
+    "        let splits =",
+    "            self.add(State::Splits { targets: vec![], reverse: !greedy })?;",
+    "        self.patch(compiled.end, splits)?;",
+    "        self.patch(splits, compiled.start)?;",
+    "        Ok(ThompsonRef { start: compiled.start, end: splits })",
+    "    } else {",
+    "        let prefix = self.c_exactly(hir, n - 1)?;",
+    "        let last = self.c(hir)?;",
+    "        let splits =",
+    "            self.add(State::Splits { targets: vec![], reverse: !greedy })?;",
+    "        self.patch(prefix.end, last.start)?;",
+    "        self.patch(last.end, splits)?;",
+    "        self.patch(splits, last.start)?;",
+    "        Ok(ThompsonRef { start: prefix.start, end: splits })",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 27,
+    "contra": 0,
+    "min_set": 27
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 473,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        35,
+        36,
+        38,
+        40,
+        41,
+        191,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 473,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 475,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        47,
+        49,
+        50,
+        190,
+        191,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 473,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, plus)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 476,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        48,
+        51,
+        52,
+        54,
+        56,
+        57,
+        190,
+        191,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 473,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, plus)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 476,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(plus, compiled.start)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 477,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        48,
+        51,
+        52,
+        55,
+        58,
+        59,
+        61,
+        63,
+        64,
+        190,
+        191,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 473,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, plus)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 476,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(plus, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 477,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 480,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        48,
+        51,
+        52,
+        55,
+        58,
+        59,
+        62,
+        65,
+        66,
+        67,
+        68,
+        70,
+        72,
+        73,
+        189,
+        190,
+        191,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 473,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, plus)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 476,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(plus, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 477,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 481,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        48,
+        51,
+        52,
+        55,
+        58,
+        59,
+        62,
+        65,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        77,
+        79,
+        80,
+        188,
+        189,
+        190,
+        191,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 473,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, plus)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 476,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(plus, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 477,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(question, compiled.start)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 482,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        48,
+        51,
+        52,
+        55,
+        58,
+        59,
+        62,
+        65,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        78,
+        81,
+        82,
+        84,
+        86,
+        87,
+        188,
+        189,
+        190,
+        191,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 473,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, plus)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 476,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(plus, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 477,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(question, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 482,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(question, empty)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 483,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        48,
+        51,
+        52,
+        55,
+        58,
+        59,
+        62,
+        65,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        78,
+        81,
+        82,
+        85,
+        88,
+        89,
+        91,
+        93,
+        94,
+        188,
+        189,
+        190,
+        191,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 473,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, plus)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 476,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(plus, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 477,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(question, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 482,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(question, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 483,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(plus, empty)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 484,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        48,
+        51,
+        52,
+        55,
+        58,
+        59,
+        62,
+        65,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        78,
+        81,
+        82,
+        85,
+        88,
+        89,
+        92,
+        95,
+        96,
+        98,
+        100,
+        101,
+        188,
+        189,
+        190,
+        191,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 473,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 475,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, plus)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 476,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(plus, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 477,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 481,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(question, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 482,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(question, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 483,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(plus, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 484,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start: question, end: empty })",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        48,
+        51,
+        52,
+        55,
+        58,
+        59,
+        62,
+        65,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        78,
+        81,
+        82,
+        85,
+        88,
+        89,
+        92,
+        95,
+        96,
+        99,
+        181,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits {\n                    targets: vec![],\n                    reverse: !greedy,\n                })?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 455,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        12,
+        13,
+        193,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits {\n                    targets: vec![],\n                    reverse: !greedy,\n                })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 455,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 459,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        11,
+        14,
+        15,
+        17,
+        19,
+        20,
+        192,
+        193,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits {\n                    targets: vec![],\n                    reverse: !greedy,\n                })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 455,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 459,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, compiled.start)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 460,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        11,
+        14,
+        15,
+        18,
+        21,
+        22,
+        24,
+        26,
+        27,
+        192,
+        193,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits {\n                    targets: vec![],\n                    reverse: !greedy,\n                })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 455,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 459,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 460,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, splits)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 461,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        11,
+        14,
+        15,
+        18,
+        21,
+        22,
+        25,
+        28,
+        29,
+        31,
+        33,
+        34,
+        192,
+        193,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "hir.is_match_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 454,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits {\n                    targets: vec![],\n                    reverse: !greedy,\n                })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 455,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 459,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 460,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, splits)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 461,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start: splits, end: splits })",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        11,
+        14,
+        15,
+        18,
+        21,
+        22,
+        25,
+        28,
+        29,
+        32,
+        192,
+        193,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "false",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 487,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        102,
+        103,
+        104,
+        105,
+        107,
+        109,
+        110,
+        186,
+        187,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "false",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 487,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 489,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        102,
+        103,
+        104,
+        105,
+        108,
+        111,
+        112,
+        113,
+        114,
+        116,
+        118,
+        119,
+        185,
+        186,
+        187,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "false",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 487,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 489,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, splits)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 490,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        102,
+        103,
+        104,
+        105,
+        108,
+        111,
+        112,
+        113,
+        114,
+        117,
+        120,
+        121,
+        123,
+        125,
+        126,
+        185,
+        186,
+        187,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "false",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 487,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 489,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, splits)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 490,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, compiled.start)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 491,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        102,
+        103,
+        104,
+        105,
+        108,
+        111,
+        112,
+        113,
+        114,
+        117,
+        120,
+        121,
+        124,
+        127,
+        128,
+        130,
+        132,
+        133,
+        185,
+        186,
+        187,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "false",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 487,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 489,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(compiled.end, splits)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 490,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 491,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start: compiled.start, end: splits })",
+      "path": [
+        0,
+        102,
+        103,
+        104,
+        105,
+        108,
+        111,
+        112,
+        113,
+        114,
+        117,
+        120,
+        121,
+        124,
+        127,
+        128,
+        131,
+        180,
+        181,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "true",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c_exactly(hir, n - 1)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 494,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        102,
+        134,
+        135,
+        136,
+        137,
+        139,
+        141,
+        142,
+        184,
+        187,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "true",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c_exactly(hir, n - 1)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 494,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 495,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        102,
+        134,
+        135,
+        136,
+        137,
+        140,
+        143,
+        144,
+        146,
+        148,
+        149,
+        183,
+        184,
+        187,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "true",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c_exactly(hir, n - 1)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 494,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 495,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 497,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        102,
+        134,
+        135,
+        136,
+        137,
+        140,
+        143,
+        144,
+        147,
+        150,
+        151,
+        152,
+        153,
+        155,
+        157,
+        158,
+        182,
+        183,
+        184,
+        187,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "true",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c_exactly(hir, n - 1)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 494,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 495,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 497,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prefix.end, last.start)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 498,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        102,
+        134,
+        135,
+        136,
+        137,
+        140,
+        143,
+        144,
+        147,
+        150,
+        151,
+        152,
+        153,
+        156,
+        159,
+        160,
+        162,
+        164,
+        165,
+        182,
+        183,
+        184,
+        187,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "true",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c_exactly(hir, n - 1)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 494,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 495,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 497,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prefix.end, last.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 498,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(last.end, splits)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 499,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        102,
+        134,
+        135,
+        136,
+        137,
+        140,
+        143,
+        144,
+        147,
+        150,
+        151,
+        152,
+        153,
+        156,
+        159,
+        160,
+        163,
+        166,
+        167,
+        169,
+        171,
+        172,
+        182,
+        183,
+        184,
+        187,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 26,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "true",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c_exactly(hir, n - 1)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 494,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 495,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 497,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prefix.end, last.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 498,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(last.end, splits)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 499,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, last.start)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 500,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        102,
+        134,
+        135,
+        136,
+        137,
+        140,
+        143,
+        144,
+        147,
+        150,
+        151,
+        152,
+        153,
+        156,
+        159,
+        160,
+        163,
+        166,
+        167,
+        170,
+        173,
+        174,
+        176,
+        178,
+        179,
+        182,
+        183,
+        184,
+        187,
+        194,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 27,
+      "conds": [
+        {
+          "cond": "n == 0",
+          "norm": "0 == n",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "n == 1",
+          "norm": "1 == n",
+          "value": "true",
+          "line": 486,
+          "bound": null
+        },
+        {
+          "cond": "self.c_exactly(hir, n - 1)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 494,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 495,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 497,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prefix.end, last.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 498,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(last.end, splits)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 499,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, last.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 500,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start: prefix.start, end: splits })",
+      "path": [
+        0,
+        102,
+        134,
+        135,
+        136,
+        137,
+        140,
+        143,
+        144,
+        147,
+        150,
+        151,
+        152,
+        153,
+        156,
+        159,
+        160,
+        163,
+        166,
+        167,
+        170,
+        173,
+        174,
+        177,
+        180,
+        181,
+        195
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

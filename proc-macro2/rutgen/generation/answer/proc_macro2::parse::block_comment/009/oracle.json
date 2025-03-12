@@ -1,0 +1,226 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* comment1 /* comment2 */ comment3 */\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), false);",
+          "    assert!(matches!(result, Err(Reject)));",
+          "    assert!(cursor.starts_with(\"/*\"));",
+          "    assert!(cursor.as_bytes().len() > 0);",
+          "    assert!(cursor.as_bytes()[0] == b'/');",
+          "    assert!(cursor.as_bytes()[1] == b'*');",
+          "    assert!(cursor.as_bytes().len() > 2);",
+          "    assert!(result.unwrap_err().is_err());"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* comment1 /* comment2 */ comment3 */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result.is_ok(), false);",
+          "    assert!(matches!(result, Err(Reject)));",
+          "    assert!(cursor.starts_with(\"/*\"));",
+          "    assert!(cursor.as_bytes().len() > 0);",
+          "    assert!(cursor.as_bytes()[0] == b'/');",
+          "    assert!(cursor.as_bytes()[1] == b'*');",
+          "    assert!(cursor.as_bytes().len() > 2);",
+          "    assert!(result.unwrap_err().is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* comment1 /* comment2 */ comment3\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), (Cursor { rest: \" comment3\" }, \"/* comment1 /* comment2 */\"));",
+          "    assert!(cursor.starts_with(\"/*\"));",
+          "    assert!(cursor.as_bytes().len() > 0);",
+          "    assert!(input.starts_with(\"/*\"));",
+          "    assert!(i < upper);",
+          "    assert_eq!(bytes[i], b'/');",
+          "    assert_eq!(bytes[i + 1], b'*');",
+          "    assert!(result.is_err());",
+          "    assert!(depth == 0);",
+          "    assert!(i >= upper);"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* comment1 /* comment2 */ comment3\" };",
+          "    let result = block_comment(cursor);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), (Cursor { rest: \" comment3\" }, \"/* comment1 /* comment2 */\"));",
+          "    assert!(cursor.starts_with(\"/*\"));",
+          "    assert!(cursor.as_bytes().len() > 0);",
+          "    assert!(input.starts_with(\"/*\"));",
+          "    assert!(i < upper);",
+          "    assert_eq!(bytes[i], b'/');",
+          "    assert_eq!(bytes[i + 1], b'*');",
+          "    assert!(result.is_err());",
+          "    assert!(depth == 0);",
+          "    assert!(i >= upper);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* comment1 */\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok((Cursor { rest: \"\" }, \"/* comment1 */\")));",
+          "    ",
+          "    let cursor = Cursor { rest: \"/* nested /* comment */ */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \"\" }, \"/* nested /* comment */ */\")));",
+          "    ",
+          "    let cursor = Cursor { rest: \"/* comment without closing\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Err(Reject));",
+          "    ",
+          "    let cursor = Cursor { rest: \"/* /* /* comment */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \"*/\" }, \"/* /* */\")));",
+          "    ",
+          "    let cursor = Cursor { rest: \"/* comment */ some text\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \" some text\" }, \"/* comment */\")));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* comment1 */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \"\" }, \"/* comment1 */\")));",
+          "    ",
+          "    let cursor = Cursor { rest: \"/* nested /* comment */ */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \"\" }, \"/* nested /* comment */ */\")));",
+          "    ",
+          "    let cursor = Cursor { rest: \"/* comment without closing\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Err(Reject));",
+          "    ",
+          "    let cursor = Cursor { rest: \"/* /* /* comment */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \"*/\" }, \"/* /* */\")));",
+          "    ",
+          "    let cursor = Cursor { rest: \"/* comment */ some text\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \" some text\" }, \"/* comment */\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* /* /* nested comment */ */ */\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    let cursor = Cursor { rest: \"/* /* /* nested comment */ */ */\" }; // precondition: input.starts_with(\"/*\") is true",
+          "    let result = block_comment(cursor); // precondition: i < upper is true",
+          "    assert!(result.is_ok()); // expected return value/type: Ok((Cursor, &str))",
+          "    let (new_cursor, comment) = result.unwrap(); // proceeding with values from the Ok result",
+          "    assert_eq!(comment, \"/* /* nested comment */ */\"); // verifying extracted comment",
+          "    let cursor_after = new_cursor; // cursor advanced after parsing",
+          "    assert!(cursor_after.starts_with(\"*/\")); // confirming the cursor starts with closing comment",
+          "    let depth_check_cursor = Cursor { rest: \"/* /*\" }; // new cursor to test nested comments",
+          "    let depth_check_result = block_comment(depth_check_cursor); // precondition: input.starts_with(\"/*\") is true",
+          "    assert!(depth_check_result.is_err()); // expected return value/type: Err(Reject)",
+          "    let single_comment_cursor = Cursor { rest: \"/* single comment */\" }; // testing with a single comment",
+          "    let single_comment_result = block_comment(single_comment_cursor); // precondition: input.starts_with(\"/*\") is true",
+          "    assert!(single_comment_result.is_ok()); // expected return value/type: Ok((Cursor, &str))",
+          "    let empty_cursor = Cursor { rest: \"/*\" }; // testing for incomplete comment",
+          "    let empty_result = block_comment(empty_cursor); // precondition: input.starts_with(\"/*\") is true",
+          "    assert!(empty_result.is_err()); // expected return value/type: Err(Reject)"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* /* /* nested comment */ */ */\" };",
+          "    let result = block_comment(cursor);",
+          "    let cursor = Cursor { rest: \"/* /* /* nested comment */ */ */\" }; // precondition: input.starts_with(\"/*\") is true",
+          "    let result = block_comment(cursor); // precondition: i < upper is true",
+          "    assert!(result.is_ok()); // expected return value/type: Ok((Cursor, &str))",
+          "    let (new_cursor, comment) = result.unwrap(); // proceeding with values from the Ok result",
+          "    assert_eq!(comment, \"/* /* nested comment */ */\"); // verifying extracted comment",
+          "    let cursor_after = new_cursor; // cursor advanced after parsing",
+          "    assert!(cursor_after.starts_with(\"*/\")); // confirming the cursor starts with closing comment",
+          "    let depth_check_cursor = Cursor { rest: \"/* /*\" }; // new cursor to test nested comments",
+          "    let depth_check_result = block_comment(depth_check_cursor); // precondition: input.starts_with(\"/*\") is true",
+          "    assert!(depth_check_result.is_err()); // expected return value/type: Err(Reject)",
+          "    let single_comment_cursor = Cursor { rest: \"/* single comment */\" }; // testing with a single comment",
+          "    let single_comment_result = block_comment(single_comment_cursor); // precondition: input.starts_with(\"/*\") is true",
+          "    assert!(single_comment_result.is_ok()); // expected return value/type: Ok((Cursor, &str))",
+          "    let empty_cursor = Cursor { rest: \"/*\" }; // testing for incomplete comment",
+          "    let empty_result = block_comment(empty_cursor); // precondition: input.starts_with(\"/*\") is true",
+          "    assert!(empty_result.is_err()); // expected return value/type: Err(Reject)",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* unclosed comment\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.unwrap_err().eq(&Reject), true);",
+          "    assert!(cursor.rest.starts_with(\"/* unclosed comment\"));",
+          "    assert_eq!(cursor.rest.len(), 20);",
+          "    assert!(cursor.is_empty() == false);",
+          "    assert!(cursor.starts_with(\"/*\"));",
+          "    assert!(cursor.as_bytes().len() > 0);",
+          "    assert!(cursor.len() > 0);",
+          "    assert!(cursor.chars().count() > 0);"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* unclosed comment\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.unwrap_err().eq(&Reject), true);",
+          "    assert!(cursor.rest.starts_with(\"/* unclosed comment\"));",
+          "    assert_eq!(cursor.rest.len(), 20);",
+          "    assert!(cursor.is_empty() == false);",
+          "    assert!(cursor.starts_with(\"/*\"));",
+          "    assert!(cursor.as_bytes().len() > 0);",
+          "    assert!(cursor.len() > 0);",
+          "    assert!(cursor.chars().count() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

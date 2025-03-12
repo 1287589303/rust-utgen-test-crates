@@ -1,0 +1,475 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#1}::try_search_fwd",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:589:5:618:6",
+  "doc": "/// Executes a forward search and returns the end position of the leftmost\n/// match that is found. If no match exists, then `None` is returned.\n///\n/// In particular, this method continues searching even after it enters\n/// a match state. The search only terminates once it has reached the\n/// end of the input or when it has entered a dead or quit state. Upon\n/// termination, the position of the last byte seen while still in a match\n/// state is returned.\n///\n/// # Errors\n///\n/// This routine errors if the search could not complete. This can occur\n/// in a number of circumstances:\n///\n/// * The configuration of the lazy DFA may permit it to \"quit\" the search.\n/// For example, setting quit bytes or enabling heuristic support for\n/// Unicode word boundaries. The default configuration does not enable any\n/// option that could result in the lazy DFA quitting.\n/// * The configuration of the lazy DFA may also permit it to \"give up\"\n/// on a search if it makes ineffective use of its transition table\n/// cache. The default configuration does not enable this by default,\n/// although it is typically a good idea to.\n/// * When the provided `Input` configuration is not supported. For\n/// example, by providing an unsupported anchor mode.\n///\n/// When a search returns an error, callers cannot know whether a match\n/// exists or not.\n///\n/// # Example\n///\n/// This example shows how to run a basic search.\n///\n/// ```\n/// use regex_automata::{hybrid::dfa::DFA, HalfMatch, Input};\n///\n/// let dfa = DFA::new(\"foo[0-9]+\")?;\n/// let mut cache = dfa.create_cache();\n/// let expected = HalfMatch::must(0, 8);\n/// assert_eq!(Some(expected), dfa.try_search_fwd(\n///     &mut cache, &Input::new(\"foo12345\"))?,\n/// );\n///\n/// // Even though a match is found after reading the first byte (`a`),\n/// // the leftmost first match semantics demand that we find the earliest\n/// // match that prefers earlier parts of the pattern over later parts.\n/// let dfa = DFA::new(\"abc|a\")?;\n/// let mut cache = dfa.create_cache();\n/// let expected = HalfMatch::must(0, 3);\n/// assert_eq!(Some(expected), dfa.try_search_fwd(\n///     &mut cache, &Input::new(\"abc\"))?,\n/// );\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// # Example: specific pattern search\n///\n/// This example shows how to build a lazy multi-DFA that permits searching\n/// for specific patterns.\n///\n/// ```\n/// use regex_automata::{\n///     hybrid::dfa::DFA,\n///     Anchored, HalfMatch, PatternID, Input,\n/// };\n///\n/// let dfa = DFA::builder()\n///     .configure(DFA::config().starts_for_each_pattern(true))\n///     .build_many(&[\"[a-z0-9]{6}\", \"[a-z][a-z0-9]{5}\"])?;\n/// let mut cache = dfa.create_cache();\n/// let haystack = \"foo123\";\n///\n/// // Since we are using the default leftmost-first match and both\n/// // patterns match at the same starting position, only the first pattern\n/// // will be returned in this case when doing a search for any of the\n/// // patterns.\n/// let expected = Some(HalfMatch::must(0, 6));\n/// let got = dfa.try_search_fwd(&mut cache, &Input::new(haystack))?;\n/// assert_eq!(expected, got);\n///\n/// // But if we want to check whether some other pattern matches, then we\n/// // can provide its pattern ID.\n/// let expected = Some(HalfMatch::must(1, 6));\n/// let input = Input::new(haystack)\n///     .anchored(Anchored::Pattern(PatternID::must(1)));\n/// let got = dfa.try_search_fwd(&mut cache, &input)?;\n/// assert_eq!(expected, got);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// # Example: specifying the bounds of a search\n///\n/// This example shows how providing the bounds of a search can produce\n/// different results than simply sub-slicing the haystack.\n///\n/// ```\n/// use regex_automata::{hybrid::dfa::DFA, HalfMatch, Input};\n///\n/// // N.B. We disable Unicode here so that we use a simple ASCII word\n/// // boundary. Alternatively, we could enable heuristic support for\n/// // Unicode word boundaries since our haystack is pure ASCII.\n/// let dfa = DFA::new(r\"(?-u)\\b[0-9]{3}\\b\")?;\n/// let mut cache = dfa.create_cache();\n/// let haystack = \"foo123bar\";\n///\n/// // Since we sub-slice the haystack, the search doesn't know about the\n/// // larger context and assumes that `123` is surrounded by word\n/// // boundaries. And of course, the match position is reported relative\n/// // to the sub-slice as well, which means we get `3` instead of `6`.\n/// let expected = Some(HalfMatch::must(0, 3));\n/// let got = dfa.try_search_fwd(\n///     &mut cache,\n///     &Input::new(&haystack[3..6]),\n/// )?;\n/// assert_eq!(expected, got);\n///\n/// // But if we provide the bounds of the search within the context of the\n/// // entire haystack, then the search can take the surrounding context\n/// // into account. (And if we did find a match, it would be reported\n/// // as a valid offset into `haystack` instead of its sub-slice.)\n/// let expected = None;\n/// let got = dfa.try_search_fwd(\n///     &mut cache,\n///     &Input::new(haystack).range(3..6),\n/// )?;\n/// assert_eq!(expected, got);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn try_search_fwd(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    ") -> Result<Option<HalfMatch>, MatchError> {",
+    "    let utf8empty = self.get_nfa().has_empty() && self.get_nfa().is_utf8();",
+    "    let hm = match search::find_fwd(self, cache, input)? {",
+    "        None => return Ok(None),",
+    "        Some(hm) if !utf8empty => return Ok(Some(hm)),",
+    "        Some(hm) => hm,",
+    "    };",
+    "    // We get to this point when we know our DFA can match the empty string",
+    "    // AND when UTF-8 mode is enabled. In this case, we skip any matches",
+    "    // whose offset splits a codepoint. Such a match is necessarily a",
+    "    // zero-width match, because UTF-8 mode requires the underlying NFA",
+    "    // to be built such that all non-empty matches span valid UTF-8.",
+    "    // Therefore, any match that ends in the middle of a codepoint cannot",
+    "    // be part of a span of valid UTF-8 and thus must be an empty match.",
+    "    // In such cases, we skip it, so as not to report matches that split a",
+    "    // codepoint.",
+    "    //",
+    "    // Note that this is not a checked assumption. Callers *can* provide an",
+    "    // NFA with UTF-8 mode enabled but produces non-empty matches that span",
+    "    // invalid UTF-8. But doing so is documented to result in unspecified",
+    "    // behavior.",
+    "    empty::skip_splits_fwd(input, hm, hm.offset(), |input| {",
+    "        let got = search::find_fwd(self, cache, input)?;",
+    "        Ok(got.map(|hm| (hm, hm.offset())))",
+    "    })",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 4,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 594,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 595,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        13,
+        14,
+        26,
+        27,
+        28,
+        29
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 594,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)? matches Some(hm)",
+          "norm": null,
+          "value": "true",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 597,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        12,
+        17,
+        20,
+        21,
+        18,
+        23,
+        24,
+        25,
+        29
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 594,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)? matches Some(hm)",
+          "norm": null,
+          "value": "true",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 597,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        12,
+        17,
+        20,
+        22,
+        27,
+        28,
+        29
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 594,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 595,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        12,
+        16,
+        19,
+        27,
+        28,
+        29
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 594,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 595,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        11,
+        13,
+        14,
+        26,
+        27,
+        28,
+        29
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 594,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)? matches Some(hm)",
+          "norm": null,
+          "value": "true",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 597,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        12,
+        17,
+        20,
+        21,
+        18,
+        23,
+        24,
+        25,
+        29
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 594,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)? matches Some(hm)",
+          "norm": null,
+          "value": "true",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 597,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        12,
+        17,
+        20,
+        22,
+        27,
+        28,
+        29
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 594,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 595,
+          "bound": null
+        },
+        {
+          "cond": "search::find_fwd(self, cache, input)? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 595,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        12,
+        16,
+        19,
+        27,
+        28,
+        29
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

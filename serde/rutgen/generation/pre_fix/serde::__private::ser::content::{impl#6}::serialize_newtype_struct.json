@@ -1,0 +1,267 @@
+{
+  "name": "serde::__private::ser::content::{impl#6}::serialize_newtype_struct",
+  "mod_info": {
+    "name": "__private::ser::content",
+    "loc": "serde/src/private/ser.rs:337:1:987:2"
+  },
+  "visible": true,
+  "loc": "serde/src/private/ser.rs:656:9:664:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: value.serialize(self) matches Err(err) at line 662 is true\n",
+        "expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "self = ContentSerializer<E>, name: &'static str = \"test\", value: &T where T: ?Sized + Serialize that leads to Err(err) when calling value.serialize(self)\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct ErrorStub;",
+                "",
+                "    impl ser::Error for ErrorStub {",
+                "        fn custom<T>(_: T) -> Self {",
+                "            ErrorStub",
+                "        }",
+                "    }",
+                "",
+                "    let serializer = ContentSerializer::<ErrorStub> {",
+                "        error: PhantomData,",
+                "    };",
+                "",
+                "    struct FailingSerialize;",
+                "",
+                "    impl Serialize for FailingSerialize {",
+                "        fn serialize<S>(&self, _: S) -> Result<Content, S::Error>",
+                "        where",
+                "            S: Serializer,",
+                "        {",
+                "            Err(ErrorStub::custom(\"serialization failed\"))",
+                "        }",
+                "    }",
+                "",
+                "    let value = FailingSerialize;",
+                "    let result = serializer.serialize_newtype_struct(\"test\", &value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap().to_string(), \"serialization failed\");",
+                "    assert!(result.err().is_some());"
+              ],
+              "code": [
+                "{",
+                "    struct ErrorStub;",
+                "",
+                "    impl ser::Error for ErrorStub {",
+                "        fn custom<T>(_: T) -> Self {",
+                "            ErrorStub",
+                "        }",
+                "    }",
+                "",
+                "    let serializer = ContentSerializer::<ErrorStub> {",
+                "        error: PhantomData,",
+                "    };",
+                "",
+                "    struct FailingSerialize;",
+                "",
+                "    impl Serialize for FailingSerialize {",
+                "        fn serialize<S>(&self, _: S) -> Result<Content, S::Error>",
+                "        where",
+                "            S: Serializer,",
+                "        {",
+                "            Err(ErrorStub::custom(\"serialization failed\"))",
+                "        }",
+                "    }",
+                "",
+                "    let value = FailingSerialize;",
+                "    let result = serializer.serialize_newtype_struct(\"test\", &value);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap().to_string(), \"serialization failed\");",
+                "    assert!(result.err().is_some());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: value.serialize(self) matches Ok(val) at line 662 is true\n",
+        "expected return value/type: Ok(Content::NewtypeStruct(\n                name,\n                Box::new(tri!(value.serialize(self))),\n            ))\n"
+      ],
+      "input_infer": "value must be non-null and implement Serialize; name must be a valid &'static str; expected return type should be Result<Content, E> where E is the implemented error type.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestValue;",
+                "    ",
+                "    impl Serialize for TestValue {",
+                "        fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {",
+                "            serializer.serialize_str(\"test\")",
+                "        }",
+                "    }",
+                "",
+                "    let content_serializer = ContentSerializer { error: PhantomData::<()>::default() };",
+                "    let name = \"test_struct\";",
+                "    let value = TestValue;",
+                "",
+                "    let _ = content_serializer.serialize_newtype_struct(name, &value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_,",
+                "    Ok(Content::NewtypeStruct(",
+                "    \"test_struct\",",
+                "    Box::new(tri!(value.serialize(content_serializer))),",
+                "    ))",
+                "    );"
+              ],
+              "code": [
+                "{",
+                "    struct TestValue;",
+                "    ",
+                "    impl Serialize for TestValue {",
+                "        fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {",
+                "            serializer.serialize_str(\"test\")",
+                "        }",
+                "    }",
+                "",
+                "    let content_serializer = ContentSerializer { error: PhantomData::<()>::default() };",
+                "    let name = \"test_struct\";",
+                "    let value = TestValue;",
+                "",
+                "    let _ = content_serializer.serialize_newtype_struct(name, &value);",
+                "    assert_eq!(_,",
+                "    Ok(Content::NewtypeStruct(",
+                "    \"test_struct\",",
+                "    Box::new(tri!(value.serialize(content_serializer))),",
+                "    ))",
+                "    );",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct StringValue;",
+                "",
+                "    impl Serialize for StringValue {",
+                "        fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {",
+                "            serializer.serialize_str(\"string_value\")",
+                "        }",
+                "    }",
+                "",
+                "    let content_serializer = ContentSerializer { error: PhantomData::<()>::default() };",
+                "    let name = \"string_struct\";",
+                "    let value = StringValue;",
+                "",
+                "    let _ = content_serializer.serialize_newtype_struct(name, &value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(content_serializer.serialize_newtype_struct(name, &value), Ok(Content::NewtypeStruct(name, Box::new(Content::Str(\"string_value\")))));"
+              ],
+              "code": [
+                "{",
+                "    struct StringValue;",
+                "",
+                "    impl Serialize for StringValue {",
+                "        fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {",
+                "            serializer.serialize_str(\"string_value\")",
+                "        }",
+                "    }",
+                "",
+                "    let content_serializer = ContentSerializer { error: PhantomData::<()>::default() };",
+                "    let name = \"string_struct\";",
+                "    let value = StringValue;",
+                "",
+                "    let _ = content_serializer.serialize_newtype_struct(name, &value);",
+                "    assert_eq!(content_serializer.serialize_newtype_struct(name, &value), Ok(Content::NewtypeStruct(name, Box::new(Content::Str(\"string_value\")))));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct BoolValue;",
+                "",
+                "    impl Serialize for BoolValue {",
+                "        fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {",
+                "            serializer.serialize_bool(true)",
+                "        }",
+                "    }",
+                "",
+                "    let content_serializer = ContentSerializer { error: PhantomData::<()>::default() };",
+                "    let name = \"bool_struct\";",
+                "    let value = BoolValue;",
+                "",
+                "    let _ = content_serializer.serialize_newtype_struct(name, &value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(",
+                "    content_serializer.serialize_newtype_struct(name, &value),",
+                "    Ok(Content::NewtypeStruct(",
+                "    name,",
+                "    Box::new(Content::Bool(true))",
+                "    ))",
+                "    );"
+              ],
+              "code": [
+                "{",
+                "    struct BoolValue;",
+                "",
+                "    impl Serialize for BoolValue {",
+                "        fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {",
+                "            serializer.serialize_bool(true)",
+                "        }",
+                "    }",
+                "",
+                "    let content_serializer = ContentSerializer { error: PhantomData::<()>::default() };",
+                "    let name = \"bool_struct\";",
+                "    let value = BoolValue;",
+                "",
+                "    let _ = content_serializer.serialize_newtype_struct(name, &value);",
+                "    assert_eq!(",
+                "    content_serializer.serialize_newtype_struct(name, &value),",
+                "    Ok(Content::NewtypeStruct(",
+                "    name,",
+                "    Box::new(Content::Bool(true))",
+                "    ))",
+                "    );",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

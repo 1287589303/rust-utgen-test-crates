@@ -1,0 +1,170 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "// Mock formatter to simulate an unreachable write closure",
+      "struct MockFormatter {",
+      "    write_result: Result<(), std::fmt::Error>,",
+      "}",
+      "",
+      "impl MockFormatter {",
+      "    fn new() -> Self {",
+      "        Self { write_result: Err(std::fmt::Error) }",
+      "    }",
+      "}",
+      "",
+      "impl core::fmt::Write for MockFormatter {",
+      "    fn write_str(&mut self, _s: &str) -> core::fmt::Result {",
+      "        self.write_result.clone()",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let accels: Accels<&[u32]> = Accels { accels: &[] };",
+          "    let mock_formatter = &mut MockFormatter::new();",
+          "    let _ = accels.fmt(mock_formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(accels.fmt(mock_formatter), Err(std::fmt::Error)));",
+          "    assert_eq!(mock_formatter.write_result, Err(std::fmt::Error));",
+          "    assert_eq!(accels.len(), 0);",
+          "    assert_eq!(accels.memory_usage(), 0);",
+          "    assert!(accels.iter().next().is_none());",
+          "    assert!(accels.get(0).is_none());",
+          "    assert!(accels.validate().is_err());",
+          "    assert_eq!(accels.write_to_len(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let accels: Accels<&[u32]> = Accels { accels: &[] };",
+          "    let mock_formatter = &mut MockFormatter::new();",
+          "    let _ = accels.fmt(mock_formatter);",
+          "    assert!(matches!(accels.fmt(mock_formatter), Err(std::fmt::Error)));",
+          "    assert_eq!(mock_formatter.write_result, Err(std::fmt::Error));",
+          "    assert_eq!(accels.len(), 0);",
+          "    assert_eq!(accels.memory_usage(), 0);",
+          "    assert!(accels.iter().next().is_none());",
+          "    assert!(accels.get(0).is_none());",
+          "    assert!(accels.validate().is_err());",
+          "    assert_eq!(accels.write_to_len(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let accels: Accels<&[u32]> = Accels { accels: &[0] };",
+          "    let mock_formatter = &mut MockFormatter::new();",
+          "    let _ = accels.fmt(mock_formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(mock_formatter.write_result.is_err(), true);",
+          "    assert_eq!(accels.len(), 1);",
+          "    assert_eq!(accels.as_ref().accels[0], 0);",
+          "    assert_eq!(accels.memory_usage(), core::mem::size_of::<AccelTy>() + core::mem::size_of::<usize>());",
+          "    assert_eq!(accels.write_to_len(), ACCEL_LEN);",
+          "    assert_eq!(accels.iter().i, 0);",
+          "    assert!(accels.validate().is_err());"
+        ],
+        "code": [
+          "{",
+          "    let accels: Accels<&[u32]> = Accels { accels: &[0] };",
+          "    let mock_formatter = &mut MockFormatter::new();",
+          "    let _ = accels.fmt(mock_formatter);",
+          "    assert_eq!(mock_formatter.write_result.is_err(), true);",
+          "    assert_eq!(accels.len(), 1);",
+          "    assert_eq!(accels.as_ref().accels[0], 0);",
+          "    assert_eq!(accels.memory_usage(), core::mem::size_of::<AccelTy>() + core::mem::size_of::<usize>());",
+          "    assert_eq!(accels.write_to_len(), ACCEL_LEN);",
+          "    assert_eq!(accels.iter().i, 0);",
+          "    assert!(accels.validate().is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let accels: Accels<&[u32]> = Accels { accels: &[u32::MAX] };",
+          "    let mock_formatter = &mut MockFormatter::new();",
+          "    let _ = accels.fmt(mock_formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(mock_formatter.write_result.is_err(), true);",
+          "    assert_eq!(mock_formatter.write_result.unwrap_err().to_string(), \"\");",
+          "    assert_eq!(accels.len(), 1);",
+          "    assert_eq!(accels.as_ref().accels, &[u32::MAX]);",
+          "    assert_eq!(accels.memory_usage(), core::mem::size_of::<u32>() + core::mem::size_of::<usize>());",
+          "    assert!(accels.validate().is_err());",
+          "    assert_eq!(accels.write_to_len(), 0);",
+          "    assert!(accels.as_bytes().is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let accels: Accels<&[u32]> = Accels { accels: &[u32::MAX] };",
+          "    let mock_formatter = &mut MockFormatter::new();",
+          "    let _ = accels.fmt(mock_formatter);",
+          "    assert_eq!(mock_formatter.write_result.is_err(), true);",
+          "    assert_eq!(mock_formatter.write_result.unwrap_err().to_string(), \"\");",
+          "    assert_eq!(accels.len(), 1);",
+          "    assert_eq!(accels.as_ref().accels, &[u32::MAX]);",
+          "    assert_eq!(accels.memory_usage(), core::mem::size_of::<u32>() + core::mem::size_of::<usize>());",
+          "    assert!(accels.validate().is_err());",
+          "    assert_eq!(accels.write_to_len(), 0);",
+          "    assert!(accels.as_bytes().is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let accels: Accels<&[u32]> = Accels { accels: &[1, 2, 3] };",
+          "    let mock_formatter = &mut MockFormatter::new();",
+          "    let _ = accels.fmt(mock_formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(accels.fmt(mock_formatter), Err(_)));",
+          "    assert_eq!(mock_formatter.write_result, Err(std::fmt::Error));",
+          "    assert!(matches!(accels.iter().next(), None));",
+          "    assert_eq!(accels.len(), 3);",
+          "    assert!(accels.as_bytes().is_empty());",
+          "    assert!(matches!(accels.write_to(&mut []), Err(_)));",
+          "    assert!(matches!(accels.validate(), Err(_)));"
+        ],
+        "code": [
+          "{",
+          "    let accels: Accels<&[u32]> = Accels { accels: &[1, 2, 3] };",
+          "    let mock_formatter = &mut MockFormatter::new();",
+          "    let _ = accels.fmt(mock_formatter);",
+          "    assert!(matches!(accels.fmt(mock_formatter), Err(_)));",
+          "    assert_eq!(mock_formatter.write_result, Err(std::fmt::Error));",
+          "    assert!(matches!(accels.iter().next(), None));",
+          "    assert_eq!(accels.len(), 3);",
+          "    assert!(accels.as_bytes().is_empty());",
+          "    assert!(matches!(accels.write_to(&mut []), Err(_)));",
+          "    assert!(matches!(accels.validate(), Err(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

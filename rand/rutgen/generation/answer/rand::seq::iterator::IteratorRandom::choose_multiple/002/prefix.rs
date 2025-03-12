@@ -1,0 +1,114 @@
+// Answer 0
+
+#[test]
+fn test_choose_multiple_non_empty_iter_with_exact_amount() {
+    struct TestIterator {
+        data: Vec<i32>,
+        index: usize,
+    }
+
+    impl Iterator for TestIterator {
+        type Item = i32;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.index < self.data.len() {
+                let val = self.data[self.index];
+                self.index += 1;
+                Some(val)
+            } else {
+                None
+            }
+        }
+    }
+
+    struct DummyRng {
+        value: usize,
+    }
+
+    impl Rng for DummyRng {
+        fn random_range(&mut self, range: std::ops::Range<usize>) -> usize {
+            // Returns the lower bound of the range for simplicity
+            range.start
+        }
+    }
+
+    let iter = TestIterator { data: vec![1, 2, 3, 4, 5], index: 0 };
+    let mut rng = DummyRng { value: 0 };
+    let amount = 5;
+    let result = iter.choose_multiple(&mut rng, amount);
+}
+
+#[test]
+fn test_choose_multiple_partial_iter() {
+    struct TestIterator {
+        data: Vec<i32>,
+        index: usize,
+    }
+
+    impl Iterator for TestIterator {
+        type Item = i32;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.index < self.data.len() {
+                let val = self.data[self.index];
+                self.index += 1;
+                Some(val)
+            } else {
+                None
+            }
+        }
+    }
+
+    struct DummyRng {
+        value: usize,
+    }
+
+    impl Rng for DummyRng {
+        fn random_range(&mut self, range: std::ops::Range<usize>) -> usize {
+            range.start
+        }
+    }
+
+    let iter = TestIterator { data: vec![1, 2, 3], index: 0 };
+    let mut rng = DummyRng { value: 0 };
+    let amount = 5;
+    let result = iter.choose_multiple(&mut rng, amount);
+}
+
+#[test]
+fn test_choose_multiple_zero_amount() {
+    struct TestIterator {
+        data: Vec<i32>,
+        index: usize,
+    }
+
+    impl Iterator for TestIterator {
+        type Item = i32;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.index < self.data.len() {
+                let val = self.data[self.index];
+                self.index += 1;
+                Some(val)
+            } else {
+                None
+            }
+        }
+    }
+
+    struct DummyRng {
+        value: usize,
+    }
+
+    impl Rng for DummyRng {
+        fn random_range(&mut self, range: std::ops::Range<usize>) -> usize {
+            range.start
+        }
+    }
+
+    let iter = TestIterator { data: vec![1, 2, 3, 4, 5], index: 0 };
+    let mut rng = DummyRng { value: 0 };
+    let amount = 0;
+    let result = iter.choose_multiple(&mut rng, amount);
+}
+

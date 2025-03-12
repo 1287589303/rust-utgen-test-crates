@@ -1,0 +1,64 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+          "",
+          "    let lifetime = TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize::new(0), // Initialize ref_cnt to 0",
+          "        drop: dummy_drop,",
+          "    };",
+          "",
+          "    let owned_ptr: *mut () = &lifetime as *const _ as *mut (); // Cast to pointer",
+          "",
+          "    // Call the function under test",
+          "    owned_drop_impl(owned_ptr);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(std::panic::catch_unwind(|| owned_drop_impl(owned_ptr)).is_err(), true);",
+          "    let old_cnt = lifetime.ref_cnt.load(Ordering::SeqCst);",
+          "    assert_eq!(old_cnt, 0);"
+        ],
+        "code": [
+          "{",
+          "    struct TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+          "",
+          "    let lifetime = TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize::new(0), // Initialize ref_cnt to 0",
+          "        drop: dummy_drop,",
+          "    };",
+          "",
+          "    let owned_ptr: *mut () = &lifetime as *const _ as *mut (); // Cast to pointer",
+          "",
+          "    // Call the function under test",
+          "    owned_drop_impl(owned_ptr);",
+          "    assert_eq!(std::panic::catch_unwind(|| owned_drop_impl(owned_ptr)).is_err(), true);",
+          "    let old_cnt = lifetime.ref_cnt.load(Ordering::SeqCst);",
+          "    assert_eq!(old_cnt, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

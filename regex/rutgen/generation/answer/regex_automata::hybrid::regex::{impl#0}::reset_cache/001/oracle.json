@@ -1,0 +1,204 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"\\w\").unwrap();",
+          "    let mut cache = re.create_cache();",
+          "    re.reset_cache(&mut cache);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(cache.clear_count, 0);",
+          "    assert_eq!(cache.forward.memory_usage(), 0);",
+          "    assert_eq!(cache.reverse.memory_usage(), 0);",
+          "    assert!(cache.forward.states.is_empty());",
+          "    assert!(cache.reverse.states.is_empty());",
+          "    assert_eq!(cache.bytes_searched, 0);",
+          "    assert!(cache.progress.is_none());"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"\\w\").unwrap();",
+          "    let mut cache = re.create_cache();",
+          "    re.reset_cache(&mut cache);",
+          "    assert_eq!(cache.clear_count, 0);",
+          "    assert_eq!(cache.forward.memory_usage(), 0);",
+          "    assert_eq!(cache.reverse.memory_usage(), 0);",
+          "    assert!(cache.forward.states.is_empty());",
+          "    assert!(cache.reverse.states.is_empty());",
+          "    assert_eq!(cache.bytes_searched, 0);",
+          "    assert!(cache.progress.is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re1 = Regex::new(r\"\\w\").unwrap();",
+          "    let re2 = Regex::new(r\"\\W\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "",
+          "    re1.reset_cache(&mut cache);",
+          "    re2.reset_cache(&mut cache);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(re1.reset_cache(&mut cache).is_none());",
+          "    assert!(re2.reset_cache(&mut cache).is_none());",
+          "    assert_eq!(cache.forward.clear_count, 0);",
+          "    assert_eq!(cache.reverse.clear_count, 0);",
+          "    assert_eq!(cache.bytes_searched, 0);",
+          "    assert!(cache.progress.is_none());",
+          "    assert!(cache.forward.states.is_empty());",
+          "    assert!(cache.reverse.states.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let re1 = Regex::new(r\"\\w\").unwrap();",
+          "    let re2 = Regex::new(r\"\\W\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "",
+          "    re1.reset_cache(&mut cache);",
+          "    re2.reset_cache(&mut cache);",
+          "    assert!(re1.reset_cache(&mut cache).is_none());",
+          "    assert!(re2.reset_cache(&mut cache).is_none());",
+          "    assert_eq!(cache.forward.clear_count, 0);",
+          "    assert_eq!(cache.reverse.clear_count, 0);",
+          "    assert_eq!(cache.bytes_searched, 0);",
+          "    assert!(cache.progress.is_none());",
+          "    assert!(cache.forward.states.is_empty());",
+          "    assert!(cache.reverse.states.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let re1 = Regex::new(r\"\\w\").unwrap();",
+          "    let re2 = Regex::new(r\"\\W\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    re1.reset_cache(&mut cache);",
+          "    re2.reset_cache(&mut cache); // Should panic",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Regex::new(r\"\\w\").is_ok(), true);",
+          "    assert_eq!(Regex::new(r\"\\W\").is_ok(), true);",
+          "    let mut cache = Regex::new(r\"\\w\").unwrap().create_cache();",
+          "    assert_no_panic(|| Regex::new(r\"\\W\").unwrap().reset_cache(&mut cache)); // No panic expected",
+          "    cache.reset_cache(&mut cache); // Should not panic",
+          "    assert!(std::panic::catch_unwind(|| Regex::new(r\"\\W\").unwrap().reset_cache(&mut cache)).is_err(), \"Expected panic when resetting cache with different Regex\");"
+        ],
+        "code": [
+          "{",
+          "    let re1 = Regex::new(r\"\\w\").unwrap();",
+          "    let re2 = Regex::new(r\"\\W\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    re1.reset_cache(&mut cache);",
+          "    re2.reset_cache(&mut cache); // Should panic",
+          "    assert_eq!(Regex::new(r\"\\w\").is_ok(), true);",
+          "    assert_eq!(Regex::new(r\"\\W\").is_ok(), true);",
+          "    let mut cache = Regex::new(r\"\\w\").unwrap().create_cache();",
+          "    assert_no_panic(|| Regex::new(r\"\\W\").unwrap().reset_cache(&mut cache)); // No panic expected",
+          "    cache.reset_cache(&mut cache); // Should not panic",
+          "    assert!(std::panic::catch_unwind(|| Regex::new(r\"\\W\").unwrap().reset_cache(&mut cache)).is_err(), \"Expected panic when resetting cache with different Regex\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"abc\").unwrap();",
+          "    let mut cache = re.create_cache();",
+          "    assert_eq!(Some(Match::must(0, 0..3)), re.find(&mut cache, \"abc\"));",
+          "    re.reset_cache(&mut cache);",
+          "    assert_eq!(Some(Match::must(0, 0..3)), re.find(&mut cache, \"abc\"));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Regex::new(r\"abc\").is_ok(), true);",
+          "    let re = Regex::new(r\"abc\").unwrap();",
+          "    let mut cache = re.create_cache();",
+          "    assert_eq!(re.find(&mut cache, \"abc\"), Some(Match::must(0, 0..3)));",
+          "    re.reset_cache(&mut cache);",
+          "    assert_eq!(re.find(&mut cache, \"abc\"), Some(Match::must(0, 0..3)));",
+          "    assert_eq!(re.find(&mut cache, \"abcd\"), None);",
+          "    assert_eq!(re.find(&mut cache, \"ab\"), None);",
+          "    assert_eq!(re.find(&mut cache, \"\"), None);"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"abc\").unwrap();",
+          "    let mut cache = re.create_cache();",
+          "    assert_eq!(Some(Match::must(0, 0..3)), re.find(&mut cache, \"abc\"));",
+          "    re.reset_cache(&mut cache);",
+          "    assert_eq!(Some(Match::must(0, 0..3)), re.find(&mut cache, \"abc\"));",
+          "    assert_eq!(Regex::new(r\"abc\").is_ok(), true);",
+          "    let re = Regex::new(r\"abc\").unwrap();",
+          "    let mut cache = re.create_cache();",
+          "    assert_eq!(re.find(&mut cache, \"abc\"), Some(Match::must(0, 0..3)));",
+          "    re.reset_cache(&mut cache);",
+          "    assert_eq!(re.find(&mut cache, \"abc\"), Some(Match::must(0, 0..3)));",
+          "    assert_eq!(re.find(&mut cache, \"abcd\"), None);",
+          "    assert_eq!(re.find(&mut cache, \"ab\"), None);",
+          "    assert_eq!(re.find(&mut cache, \"\"), None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"[a-z]\").unwrap();",
+          "    let mut cache = re.create_cache();",
+          "    cache.clear_count = 0; // Reset clear count",
+          "    re.reset_cache(&mut cache);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(cache.clear_count, 0);",
+          "    assert!(cache.forward.states.is_empty());",
+          "    assert!(cache.reverse.states.is_empty());",
+          "    assert_eq!(cache.bytes_searched, 0);",
+          "    assert_eq!(cache.progress, None);",
+          "    assert_ne!(cache.forward.quitset, cache.reverse.quitset);"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"[a-z]\").unwrap();",
+          "    let mut cache = re.create_cache();",
+          "    cache.clear_count = 0; // Reset clear count",
+          "    re.reset_cache(&mut cache);",
+          "    assert_eq!(cache.clear_count, 0);",
+          "    assert!(cache.forward.states.is_empty());",
+          "    assert!(cache.reverse.states.is_empty());",
+          "    assert_eq!(cache.bytes_searched, 0);",
+          "    assert_eq!(cache.progress, None);",
+          "    assert_ne!(cache.forward.quitset, cache.reverse.quitset);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

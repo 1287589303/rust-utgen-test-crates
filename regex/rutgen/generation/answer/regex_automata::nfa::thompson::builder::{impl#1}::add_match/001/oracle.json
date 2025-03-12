@@ -1,0 +1,231 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.add_match();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(builder.add_match().is_err());",
+          "    assert!(builder.states.is_empty());",
+          "    assert!(builder.memory_states == 0);",
+          "    assert!(builder.pattern_id.is_none());"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.add_match();",
+          "    assert!(builder.add_match().is_err());",
+          "    assert!(builder.states.is_empty());",
+          "    assert!(builder.memory_states == 0);",
+          "    assert!(builder.pattern_id.is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    let _ = builder.add_match().unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    builder.start_pattern().unwrap();",
+          "    assert!(builder.add_match().is_err());",
+          "    builder.finish_pattern(builder.current_pattern_id()).unwrap();"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    let _ = builder.add_match().unwrap();",
+          "    builder.start_pattern().unwrap();",
+          "    assert!(builder.add_match().is_err());",
+          "    builder.finish_pattern(builder.current_pattern_id()).unwrap();",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    for _ in 0..=u32::MAX {",
+          "        let _ = builder.add_match();",
+          "    }",
+          "    let result = builder.add_match();",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "oracle": [
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    for _ in 0..=u32::MAX {",
+          "    let _ = builder.add_match();",
+          "    }",
+          "    let result = builder.add_match();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::StateIdentifierExhausted);",
+          "    assert_eq!(builder.memory_usage(), expected_memory_usage);"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    for _ in 0..=u32::MAX {",
+          "        let _ = builder.add_match();",
+          "    }",
+          "    let result = builder.add_match();",
+          "    assert!(result.is_err());",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    for _ in 0..=u32::MAX {",
+          "    let _ = builder.add_match();",
+          "    }",
+          "    let result = builder.add_match();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::StateIdentifierExhausted);",
+          "    assert_eq!(builder.memory_usage(), expected_memory_usage);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.set_size_limit(Some(0)).unwrap(); // Set size limit to 0",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    let result = builder.add_match();",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::SizeLimitExceeded);"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.set_size_limit(Some(0)).unwrap(); // Set size limit to 0",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    let result = builder.add_match();",
+          "    assert!(result.is_err());",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::SizeLimitExceeded);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    builder.memory_states = 100; // Set the memory state usage to exactly 100",
+          "    builder.set_size_limit(Some(100)).unwrap();",
+          "    let result = builder.add_match();",
+          "    assert!(result.is_ok());",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    builder.memory_states = 200;",
+          "    builder.set_size_limit(Some(150)).unwrap();",
+          "    assert!(result.is_err());",
+          "    builder.memory_states = 100;",
+          "    builder.set_size_limit(None).unwrap();",
+          "    assert!(result.is_ok());",
+          "    builder.clear();",
+          "    assert!(builder.pattern_len() == 0);",
+          "    builder.add_match().unwrap();",
+          "    assert!(builder.get_size_limit().is_none());",
+          "    builder.finish_pattern(builder.start_pattern().unwrap()).unwrap();"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    builder.memory_states = 100; // Set the memory state usage to exactly 100",
+          "    builder.set_size_limit(Some(100)).unwrap();",
+          "    let result = builder.add_match();",
+          "    assert!(result.is_ok());",
+          "    assert!(result.is_err());",
+          "    builder.memory_states = 200;",
+          "    builder.set_size_limit(Some(150)).unwrap();",
+          "    assert!(result.is_err());",
+          "    builder.memory_states = 100;",
+          "    builder.set_size_limit(None).unwrap();",
+          "    assert!(result.is_ok());",
+          "    builder.clear();",
+          "    assert!(builder.pattern_len() == 0);",
+          "    builder.add_match().unwrap();",
+          "    assert!(builder.get_size_limit().is_none());",
+          "    builder.finish_pattern(builder.start_pattern().unwrap()).unwrap();",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    for _ in 0..u32::MAX - 1 {",
+          "        let _ = builder.add_match().unwrap();",
+          "    }",
+          "    let result = builder.add_match();",
+          "    assert!(result.is_ok());",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(builder.memory_usage() < Some(usize::MAX));",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind, BuildErrorKind::TooManyStates);",
+          "    assert!(builder.states.len() < u32::MAX as usize);",
+          "    assert!(builder.pattern_len() > 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let _ = builder.start_pattern().unwrap();",
+          "    for _ in 0..u32::MAX - 1 {",
+          "        let _ = builder.add_match().unwrap();",
+          "    }",
+          "    let result = builder.add_match();",
+          "    assert!(result.is_ok());",
+          "    assert!(builder.memory_usage() < Some(usize::MAX));",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind, BuildErrorKind::TooManyStates);",
+          "    assert!(builder.states.len() < u32::MAX as usize);",
+          "    assert!(builder.pattern_len() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

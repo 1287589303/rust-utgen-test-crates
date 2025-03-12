@@ -1,0 +1,134 @@
+{
+  "name": "bytes::buf::buf_impl::Buf::get_i32_le",
+  "mod_info": {
+    "name": "buf::buf_impl",
+    "loc": "src/buf/mod.rs:17:1:17:14"
+  },
+  "visible": true,
+  "loc": "src/buf/buf_impl.rs:580:5:582:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "Test input conditions or ranges: buffer with at least 4 bytes for valid case, exactly 4 bytes for boundary case, and fewer than 4 bytes for panic case.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\xA1\\xA0\\x09\\x08 hello\"[..];",
+                "    let result = buf.get_i32_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, 0x0809A0A1);",
+                "    assert_eq!(buf.remaining(), 6);",
+                "    assert!(buf.has_remaining());",
+                "    assert!(buf.get_i32_le().is_ok());",
+                "    buf.advance(4);",
+                "    assert_eq!(buf.remaining(), 2);",
+                "    assert!(!buf.has_remaining());",
+                "    let result = buf.get_i32_le();",
+                "    assert!(matches!(result, Err(TryGetError { requested: 4, available: 0 })));"
+              ],
+              "code": [
+                "{",
+                "   let mut buf: &[u8] = &b\"\\xA1\\xA0\\x09\\x08 hello\"[..];",
+                "   let result = buf.get_i32_le();",
+                "   assert_eq!(result, 0x0809A0A1);",
+                "   assert_eq!(buf.remaining(), 6);",
+                "   assert!(buf.has_remaining());",
+                "   let result = buf.get_i32_le(); // Store the result since it's called again",
+                "   assert_eq!(result, 0x0809A0A1); // Check that it matches the expected value",
+                "   buf.advance(4);",
+                "   assert_eq!(buf.remaining(), 2);",
+                "   assert!(!buf.has_remaining());",
+                "   let result = buf.get_i32_le();",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x01\\x02\\x03\\x04\"[..];",
+                "    let result = buf.get_i32_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, 0x04030201);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    assert!(buf.has_remaining() == false);",
+                "    assert_eq!(buf.chunk(), &[]);",
+                "    let mut buf: &[u8] = &b\"\\x01\\x02\"[..];",
+                "    let result = buf.try_get_i32_le();",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap().requested, 4);",
+                "    assert_eq!(result.err().unwrap().available, 2);",
+                "    buf.advance(2);",
+                "    assert!(buf.has_remaining() == false);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x01\\x02\\x03\\x04\"[..];",
+                "    let result = buf.get_i32_le();",
+                "    assert_eq!(result, 0x04030201);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    assert!(buf.has_remaining() == false);",
+                "    assert_eq!(buf.chunk(), &[]);",
+                "    let mut buf: &[u8] = &b\"\\x01\\x02\"[..];",
+                "    let result = buf.try_get_i32_le();",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap().requested, 4);",
+                "    assert_eq!(result.err().unwrap().available, 2);",
+                "    buf.advance(2);",
+                "    assert!(buf.has_remaining() == false);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x01\\x02\"[..];",
+                "    let result = buf.get_i32_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(panic_does_not_fit(result, 4, buf.remaining()));",
+                "    assert_eq!(buf.remaining(), 2);",
+                "    assert_eq!(TryGetError { requested: 4, available: 2 }, TryGetError::from(result));",
+                "    assert!(buf.has_remaining() == false);",
+                "    assert_eq!(buf.chunk(), &b\"\\x01\\x02\"[..]);"
+              ],
+              "code": [
+                "{",
+                "   let mut buf: &[u8] = &b\"\\x01\\x02\"[..];",
+                "   let result = buf.get_i32_le();",
+                "   assert!(panic_does_not_fit(4, buf.remaining()));",
+                "   assert_eq!(buf.remaining(), 2);",
+                "   assert_eq!(TryGetError { requested: 4, available: 2 }, TryGetError::from(result));",
+                "   assert!(buf.has_remaining() == false);",
+                "   assert_eq!(buf.chunk(), &b\"\\x01\\x02\"[..]);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

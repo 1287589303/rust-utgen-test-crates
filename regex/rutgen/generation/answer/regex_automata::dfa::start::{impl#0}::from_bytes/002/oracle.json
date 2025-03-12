@@ -1,0 +1,180 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &0u32.to_ne_bytes(); // Valid input for StartKind::Both",
+          "    let _result = StartKind::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let slice_valid_both = &0u32.to_ne_bytes(); // Test input for StartKind::Both",
+          "    let result_valid_both = StartKind::from_bytes(slice_valid_both);",
+          "    assert_eq!(result_valid_both, Ok((StartKind::Both, 4)));",
+          "    ",
+          "    let slice_invalid_u32 = &1u32.to_ne_bytes()[..3]; // Invalid length to trigger buffer error",
+          "    let result_invalid_length = StartKind::from_bytes(slice_invalid_u32);",
+          "    assert!(result_invalid_length.is_err());",
+          "    ",
+          "    let slice_invalid_kind = &[3u8, 0, 0, 0]; // Invalid start kind",
+          "    let result_invalid_kind = StartKind::from_bytes(slice_invalid_kind);",
+          "    assert_eq!(result_invalid_kind, Err(DeserializeError::generic(\"unrecognized start kind\")));",
+          "    ",
+          "    let slice_valid_unanchored = &1u32.to_ne_bytes(); // Valid input for StartKind::Unanchored",
+          "    let result_valid_unanchored = StartKind::from_bytes(slice_valid_unanchored);",
+          "    assert_eq!(result_valid_unanchored, Ok((StartKind::Unanchored, 4)));",
+          "    ",
+          "    let slice_valid_anchored = &2u32.to_ne_bytes(); // Valid input for StartKind::Anchored",
+          "    let result_valid_anchored = StartKind::from_bytes(slice_valid_anchored);",
+          "    assert_eq!(result_valid_anchored, Ok((StartKind::Anchored, 4)));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &0u32.to_ne_bytes(); // Valid input for StartKind::Both",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    let slice_valid_both = &0u32.to_ne_bytes(); // Test input for StartKind::Both",
+          "    let result_valid_both = StartKind::from_bytes(slice_valid_both);",
+          "    assert_eq!(result_valid_both, Ok((StartKind::Both, 4)));",
+          "    ",
+          "    let slice_invalid_u32 = &1u32.to_ne_bytes()[..3]; // Invalid length to trigger buffer error",
+          "    let result_invalid_length = StartKind::from_bytes(slice_invalid_u32);",
+          "    assert!(result_invalid_length.is_err());",
+          "    ",
+          "    let slice_invalid_kind = &[3u8, 0, 0, 0]; // Invalid start kind",
+          "    let result_invalid_kind = StartKind::from_bytes(slice_invalid_kind);",
+          "    assert_eq!(result_invalid_kind, Err(DeserializeError::generic(\"unrecognized start kind\")));",
+          "    ",
+          "    let slice_valid_unanchored = &1u32.to_ne_bytes(); // Valid input for StartKind::Unanchored",
+          "    let result_valid_unanchored = StartKind::from_bytes(slice_valid_unanchored);",
+          "    assert_eq!(result_valid_unanchored, Ok((StartKind::Unanchored, 4)));",
+          "    ",
+          "    let slice_valid_anchored = &2u32.to_ne_bytes(); // Valid input for StartKind::Anchored",
+          "    let result_valid_anchored = StartKind::from_bytes(slice_valid_anchored);",
+          "    assert_eq!(result_valid_anchored, Ok((StartKind::Anchored, 4)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &1u32.to_ne_bytes(); // Valid input for StartKind::Unanchored",
+          "    let _result = StartKind::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(StartKind::from_bytes(&0u32.to_ne_bytes()), Ok((StartKind::Both, 4)));",
+          "    assert_eq!(StartKind::from_bytes(&1u32.to_ne_bytes()), Ok((StartKind::Unanchored, 4)));",
+          "    assert_eq!(StartKind::from_bytes(&2u32.to_ne_bytes()), Ok((StartKind::Anchored, 4)));",
+          "    assert!(matches!(StartKind::from_bytes(&3u32.to_ne_bytes()), Err(DeserializeError(_))));",
+          "    assert!(matches!(StartKind::from_bytes(&[0; 3]), Err(DeserializeError(_))));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &1u32.to_ne_bytes(); // Valid input for StartKind::Unanchored",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    assert_eq!(StartKind::from_bytes(&0u32.to_ne_bytes()), Ok((StartKind::Both, 4)));",
+          "    assert_eq!(StartKind::from_bytes(&1u32.to_ne_bytes()), Ok((StartKind::Unanchored, 4)));",
+          "    assert_eq!(StartKind::from_bytes(&2u32.to_ne_bytes()), Ok((StartKind::Anchored, 4)));",
+          "    assert!(matches!(StartKind::from_bytes(&3u32.to_ne_bytes()), Err(DeserializeError(_))));",
+          "    assert!(matches!(StartKind::from_bytes(&[0; 3]), Err(DeserializeError(_))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &2u32.to_ne_bytes(); // Valid input for StartKind::Anchored",
+          "    let _result = StartKind::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result, Ok((StartKind::Anchored, size_of::<u32>())));",
+          "    let slice: &[u8] = &[0; 3]; // Invalid input to trigger check_slice_len failure",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    assert!(matches!(_result, Err(DeserializeError(_))));",
+          "    let slice: &[u8] = &[1u32.to_ne_bytes(), 0]; // Valid input for StartKind::Unanchored",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    assert_eq!(_result, Ok((StartKind::Unanchored, size_of::<u32>())));",
+          "    let slice: &[u8] = &[3u32.to_ne_bytes()]; // Invalid input to trigger unrecognized start kind",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    assert!(matches!(_result, Err(DeserializeError(_))));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &2u32.to_ne_bytes(); // Valid input for StartKind::Anchored",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    assert_eq!(_result, Ok((StartKind::Anchored, size_of::<u32>())));",
+          "    let slice: &[u8] = &[0; 3]; // Invalid input to trigger check_slice_len failure",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    assert!(matches!(_result, Err(DeserializeError(_))));",
+          "    let slice: &[u8] = &[1u32.to_ne_bytes(), 0]; // Valid input for StartKind::Unanchored",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    assert_eq!(_result, Ok((StartKind::Unanchored, size_of::<u32>())));",
+          "    let slice: &[u8] = &[3u32.to_ne_bytes()]; // Invalid input to trigger unrecognized start kind",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    assert!(matches!(_result, Err(DeserializeError(_))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &3u32.to_ne_bytes(); // Invalid input to trigger unrecognized start kind error",
+          "    let _result = StartKind::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(StartKind::from_bytes(&3u32.to_ne_bytes()), Err(DeserializeError::generic(\"unrecognized start kind\")));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &3u32.to_ne_bytes(); // Invalid input to trigger unrecognized start kind error",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    assert_eq!(StartKind::from_bytes(&3u32.to_ne_bytes()), Err(DeserializeError::generic(\"unrecognized start kind\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0u8; 3]; // Buffer is smaller than required",
+          "    let _result = StartKind::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(StartKind::from_bytes(&[0u8; 3]), Err(_)));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0u8; 3]; // Buffer is smaller than required",
+          "    let _result = StartKind::from_bytes(slice);",
+          "    assert!(matches!(StartKind::from_bytes(&[0u8; 3]), Err(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

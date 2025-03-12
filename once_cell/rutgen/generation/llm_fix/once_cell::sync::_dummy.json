@@ -1,0 +1,127 @@
+{
+  "name": "once_cell::sync::_dummy",
+  "mod_info": {
+    "name": "sync",
+    "loc": "src/lib.rs:863:1:1409:2"
+  },
+  "visible": false,
+  "loc": "src/lib.rs:1408:5:1408:19",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "Test input conditions or ranges: struct definitions with a single field of type *mut (), implementation of Sync for those structs, and invocation of share() with instances of once_cell::sync::OnceCell and once_cell::sync::Lazy, using compiler flags that enforce type safety and correctness checks.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct S(*mut ());",
+                "    unsafe impl Sync for S {}",
+                "",
+                "    fn share<T: Sync>(_: &T) {}",
+                "",
+                "    share(&once_cell::sync::OnceCell::<S>::new());",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    struct S(*mut ());",
+                "    unsafe impl Sync for S {}",
+                "    ",
+                "    fn share<T: Sync>(_: &T) {}",
+                "    ",
+                "    share(&once_cell::sync::OnceCell::<S>::new());",
+                "    }).is_err());",
+                "    ",
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    struct S(*mut ());",
+                "    unsafe impl Sync for S {}",
+                "    ",
+                "    fn share<T: Sync>(_: &T) {}",
+                "    ",
+                "    share(&once_cell::sync::Lazy::<S>::new(|| unimplemented!()));",
+                "    }).is_err());"
+              ],
+              "code": [
+                "{",
+                " struct S(*mut ());",
+                " unsafe impl Sync for S {}",
+                " ",
+                " fn share<T: Sync>(_: &T) {}",
+                " use once_cell::sync::{OnceCell, Lazy}; // Import OnceCell and Lazy",
+                " share(&OnceCell::<S>::new());",
+                "   assert!(std::panic::catch_unwind(|| {",
+                "   struct S(*mut ());",
+                "   unsafe impl Sync for S {}",
+                "   ",
+                "   fn share<T: Sync>(_: &T) {}",
+                "   ",
+                " share(&OnceCell::<S>::new());",
+                "   }).is_err());",
+                "   ",
+                "   assert!(std::panic::catch_unwind(|| {",
+                "   struct S(*mut ());",
+                "   unsafe impl Sync for S {}",
+                "   ",
+                "   fn share<T: Sync>(_: &T) {}",
+                "   ",
+                "   share(&Lazy::<S>::new(|| unimplemented!())); // Use Lazy imported above",
+                "   }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct S(*mut ());",
+                "    unsafe impl Sync for S {}",
+                "",
+                "    fn share<T: Sync>(_: &T) {}",
+                "",
+                "    share(&once_cell::sync::Lazy::<S>::new(|| unimplemented!()));",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(std::panic::catch_unwind(|| {",
+                "    let _ = once_cell::sync::Lazy::<S>::new(|| unimplemented!());",
+                "    }).is_err(), true);",
+                "    ",
+                "    assert_eq!(std::panic::catch_unwind(|| {",
+                "    share(&once_cell::sync::OnceCell::<S>::new());",
+                "    }).is_err(), true);"
+              ],
+              "code": [
+                "{  ",
+                "   struct S(Box<()>);",
+                "   // No need for unsafe impl as Box implements Send and Sync",
+                "",
+                "   fn share<T: Sync>(_: &T) {}",
+                "",
+                "  share(&Lazy::<S>::new(|| unimplemented!()));",
+                "  assert_eq!(std::panic::catch_unwind(|| {",
+                "  let _ = Lazy::<S>::new(|| unimplemented!());",
+                "   }).is_err(), true);",
+                "   ",
+                "  assert_eq!(std::panic::catch_unwind(|| {",
+                "   share(&OnceCell::<S>::new());  ",
+                "   }).is_err(), true);  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

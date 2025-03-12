@@ -1,0 +1,162 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = &[0x41]; // 'A'",
+          "    decode(bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    decode(&[]); // None",
+          "    decode(&[0x80]); // Some(Err(128))",
+          "    decode(&[0xC0]); // Some(Err(192))",
+          "    decode(&[0xE0, 0xA0, 0x80]); // Some(Ok('␀'))",
+          "    decode(&[0xF0, 0xA0, 0x80, 0x80]); // Some(Ok('␀'))",
+          "    decode(&[0xC1]); // Some(Err(193))",
+          "    decode(&[0xE1, 0x80]); // Some(Err(225))",
+          "    decode(&[0xF5]); // Some(Err(245))",
+          "    decode(&[0xFF]); // Some(Err(255))"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = &[0x41]; // 'A'",
+          "    decode(bytes);",
+          "    decode(&[]); // None",
+          "    decode(&[0x80]); // Some(Err(128))",
+          "    decode(&[0xC0]); // Some(Err(192))",
+          "    decode(&[0xE0, 0xA0, 0x80]); // Some(Ok('␀'))",
+          "    decode(&[0xF0, 0xA0, 0x80, 0x80]); // Some(Ok('␀'))",
+          "    decode(&[0xC1]); // Some(Err(193))",
+          "    decode(&[0xE1, 0x80]); // Some(Err(225))",
+          "    decode(&[0xF5]); // Some(Err(245))",
+          "    decode(&[0xFF]); // Some(Err(255))",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = &[0xC2, 0xA0]; // Valid sequence length 2, but short (only 1 byte provided)",
+          "    decode(&bytes[..1]);",
+          "}"
+        ],
+        "oracle": [
+          "    decode(&[0xC2, 0xA0]) == Some(Err(0xC2));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = &[0xC2, 0xA0]; // Valid sequence length 2, but short (only 1 byte provided)",
+          "    decode(&bytes[..1]);",
+          "    decode(&[0xC2, 0xA0]) == Some(Err(0xC2));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = &[0xE2, 0x82, 0xAC]; // Valid sequence length 3, but short (only 2 bytes provided)",
+          "    decode(&bytes[..2]);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode(&[0xE2, 0x82]), Some(Err(0xE2)));",
+          "    assert_eq!(decode(&[0xC2]), Some(Ok('B')));",
+          "    assert_eq!(decode(&[0xE2]), Some(Err(0xE2)));",
+          "    assert_eq!(decode(&[0xF0, 0x9F, 0x92, 0xA9]), Some(Err(0xF0)));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = &[0xE2, 0x82, 0xAC]; // Valid sequence length 3, but short (only 2 bytes provided)",
+          "    decode(&bytes[..2]);",
+          "    assert_eq!(decode(&[0xE2, 0x82]), Some(Err(0xE2)));",
+          "    assert_eq!(decode(&[0xC2]), Some(Ok('B')));",
+          "    assert_eq!(decode(&[0xE2]), Some(Err(0xE2)));",
+          "    assert_eq!(decode(&[0xF0, 0x9F, 0x92, 0xA9]), Some(Err(0xF0)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = &[0xF0, 0x9F, 0x92, 0xA9]; // Valid sequence length 4, but short (only 3 bytes provided)",
+          "    decode(&bytes[..3]);",
+          "}"
+        ],
+        "oracle": [
+          "    let result = decode(&bytes[..3]); assert_eq!(result, Some(Err(0xF0)));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = &[0xF0, 0x9F, 0x92, 0xA9]; // Valid sequence length 4, but short (only 3 bytes provided)",
+          "    decode(&bytes[..3]);",
+          "    let result = decode(&bytes[..3]); assert_eq!(result, Some(Err(0xF0)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = &[0xC0]; // Invalid first byte for a two-byte character, expect Err for 0xC0",
+          "    decode(bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes: &[u8] = &[]; // Empty slice, expect None",
+          "    assert_eq!(decode(bytes), None);",
+          "    ",
+          "    let bytes: &[u8] = &[0xC0]; // Invalid first byte for a two-byte character, expect Some(Err(0xC0))",
+          "    assert_eq!(decode(bytes), Some(Err(0xC0)));",
+          "    ",
+          "    let bytes: &[u8] = &[0xE2, 0x82]; // Incomplete UTF-8 sequence, expect Some(Err(0xE2))",
+          "    assert_eq!(decode(bytes), Some(Err(0xE2)));",
+          "    ",
+          "    let bytes: &[u8] = &[0xF0, 0x90, 0x80]; // Incomplete four-byte UTF-8 sequence, expect Some(Err(0xF0))",
+          "    assert_eq!(decode(bytes), Some(Err(0xF0)));",
+          "    ",
+          "    let bytes: &[u8] = &[0xD0, 0x80]; // Valid two-byte character, expect Some(Ok('\\u{080}'))",
+          "    assert_eq!(decode(bytes), Some(Ok('\\u{080}')));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = &[0xC0]; // Invalid first byte for a two-byte character, expect Err for 0xC0",
+          "    decode(bytes);",
+          "    let bytes: &[u8] = &[]; // Empty slice, expect None",
+          "    assert_eq!(decode(bytes), None);",
+          "    ",
+          "    let bytes: &[u8] = &[0xC0]; // Invalid first byte for a two-byte character, expect Some(Err(0xC0))",
+          "    assert_eq!(decode(bytes), Some(Err(0xC0)));",
+          "    ",
+          "    let bytes: &[u8] = &[0xE2, 0x82]; // Incomplete UTF-8 sequence, expect Some(Err(0xE2))",
+          "    assert_eq!(decode(bytes), Some(Err(0xE2)));",
+          "    ",
+          "    let bytes: &[u8] = &[0xF0, 0x90, 0x80]; // Incomplete four-byte UTF-8 sequence, expect Some(Err(0xF0))",
+          "    assert_eq!(decode(bytes), Some(Err(0xF0)));",
+          "    ",
+          "    let bytes: &[u8] = &[0xD0, 0x80]; // Valid two-byte character, expect Some(Ok('\\u{080}'))",
+          "    assert_eq!(decode(bytes), Some(Ok('\\u{080}')));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

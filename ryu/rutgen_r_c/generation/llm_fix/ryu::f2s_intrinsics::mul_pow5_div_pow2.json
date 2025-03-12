@@ -1,0 +1,128 @@
+{
+  "name": "ryu::f2s_intrinsics::mul_pow5_div_pow2",
+  "mod_info": {
+    "name": "f2s_intrinsics",
+    "loc": "src/lib.rs:116:1:116:20"
+  },
+  "visible": true,
+  "loc": "src/f2s_intrinsics.rs:101:1:113:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: i < d2s::DOUBLE_POW5_SPLIT.len() as u32 at line 110 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use crate::d2s;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    #[cfg(feature = \"small\")]",
+                "    {",
+                "        use crate::d2s;",
+                "        ",
+                "        let m: u32 = 10;",
+                "        let i: u32 = 1;",
+                "        let j: i32 = 33;",
+                "        ",
+                "        // Assuming that d2s::compute_pow5(i) will produce a valid result",
+                "        let result = mul_pow5_div_pow2(m, i, j);",
+                "        ",
+                "        assert!(result >= 0); // Asserting that the result is non-negative (valid u32)",
+                "    }",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    #[cfg(not(feature = \"small\"))]",
+                "    {",
+                "        use crate::d2s;",
+                "        ",
+                "        let m: u32 = 10;",
+                "        let i: u32 = 0; // Ensure i is valid for DOUBLE_POW5_SPLIT",
+                "        let j: i32 = 33;",
+                "        ",
+                "        // Check if the assumption is valid",
+                "        assert!(i < d2s::DOUBLE_POW5_SPLIT.len() as u32);",
+                "        ",
+                "        let result = mul_pow5_div_pow2(m, i, j);",
+                "        ",
+                "        assert!(result >= 0); // Asserting that the result is non-negative (valid u32)",
+                "    }",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: i < d2s::DOUBLE_POW5_SPLIT.len() as u32 at line 110 is false, with bound i == d2s::DOUBLE_POW5_SPLIT.len() as u32\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct D2S {",
+                "        double_pow5_split: Vec<(u64, u64)>,",
+                "    }",
+                "",
+                "    impl D2S {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                double_pow5_split: vec![(1, 2), (3, 4)], // Sample data with length 2",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    let d2s = D2S::new();",
+                "    let i = d2s.double_pow5_split.len() as u32; // This should cause a panic",
+                "    let m = 1u32;",
+                "    let j = 33; // Any value greater than 32 would work as long as it passes the shift assertion",
+                "",
+                "    unsafe { ",
+                "        ryu::mul_pow5_div_pow2(m, i, j); ",
+                "    }",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,580 @@
+{
+  "name": "rand_core::le::read_u64_into",
+  "mod_info": {
+    "name": "le",
+    "loc": "rand_core/src/lib.rs:45:1:45:12"
+  },
+  "visible": true,
+  "loc": "rand_core/src/le.rs:35:1:40:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: src.len() >= 8 * dst.len() at line 36 is true, with bound src.len() == 8 * dst.len()\n",
+        "precondition: (out, chunk) in dst.iter_mut().zip(src.chunks_exact(8)) at line 37 is true\n",
+        "precondition: (out, chunk) in dst.iter_mut().zip(src.chunks_exact(8)) at line 37 is false\n"
+      ],
+      "input_infer": "src: length must be >= 0 and a multiple of 8, dst: length must be >= 0; valid ranges: src.len() == 8 * dst.len(), src.len() > 8 * dst.len(), or src.len() less than 8 * dst.len() with dst being empty.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let src: Vec<u8> = (0..16).map(|x| x as u8).collect(); // src.len() == 16",
+                "    let mut dst: [u64; 2] = [0; 2]; // dst.len() == 2",
+                "    read_u64_into(&src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(dst[0], 0x0000000000000000); // First 8 bytes of src converted to u64",
+                "    assert_eq!(dst[1], 0x0000000000000001); // Next 8 bytes of src converted to u64",
+                "    assert!(src.len() >= 8 * dst.len()); // Verify precondition for src and dst lengths",
+                "    assert!(dst.len() == 2); // Ensure the length of dst is as expected",
+                "    assert!(src.len() == 16); // Check that the length of src is correct"
+              ],
+              "code": [
+                "{",
+                "    let src: Vec<u8> = (0..16).map(|x| x as u8).collect(); // src.len() == 16",
+                "    let mut dst: [u64; 2] = [0; 2]; // dst.len() == 2",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst[0], 0x0000000000000000); // First 8 bytes of src converted to u64",
+                "    assert_eq!(dst[1], 0x0000000000000001); // Next 8 bytes of src converted to u64",
+                "    assert!(src.len() >= 8 * dst.len()); // Verify precondition for src and dst lengths",
+                "    assert!(dst.len() == 2); // Ensure the length of dst is as expected",
+                "    assert!(src.len() == 16); // Check that the length of src is correct",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let src: Vec<u8> = (0..15).map(|x| x as u8).collect(); // src.len() == 15",
+                "    let mut dst: [u64; 2] = [0; 2]; // dst.len() == 2",
+                "    let result = std::panic::catch_unwind(|| {",
+                "        read_u64_into(&src, &mut dst);",
+                "    });",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| { read_u64_into(&src, &mut dst) }).is_err()); // tests insufficient src for dst case",
+                "    let src: Vec<u8> = (0..16).map(|x| x as u8).collect(); // src.len() == 16 for sufficient case",
+                "    let mut dst: [u64; 2] = [0; 2]; // dst.len() == 2",
+                "    read_u64_into(&src, &mut dst); // should succeed",
+                "    assert_eq!(dst[0], 0x0102030405060708); // verifies first 8 bytes converted to u64",
+                "    assert_eq!(dst[1], 0x090a0b0c0d0e0f10); // verifies second 8 bytes converted to u64",
+                "    let src: Vec<u8> = (0..8).map(|x| x as u8).collect(); // src.len() == 8 for exactly enough",
+                "    let mut dst: [u64; 1] = [0; 1]; // dst.len() == 1",
+                "    read_u64_into(&src, &mut dst); // should succeed",
+                "    assert_eq!(dst[0], 0x0706050403020100); // verifies byte conversion to u64",
+                "    let src: Vec<u8> = (0..7).map(|x| x as u8).collect(); // src.len() == 7 for insufficient case",
+                "    let mut dst: [u64; 1] = [0; 1]; // dst.len() == 1",
+                "    let result = std::panic::catch_unwind(|| {",
+                "    read_u64_into(&src, &mut dst);",
+                "    });",
+                "    assert!(result.is_err()); // tests insufficient src for dst case with less than 8 bytes",
+                "    let src: Vec<u8> = (0..24).map(|x| x as u8).collect(); // src.len() == 24 for extra",
+                "    let mut dst: [u64; 3] = [0; 3]; // dst.len() == 3",
+                "    read_u64_into(&src, &mut dst); // should succeed",
+                "    assert_eq!(dst[0], 0x0102030405060708); // verifies first 8 bytes",
+                "    assert_eq!(dst[1], 0x090a0b0c0d0e0f10); // verifies second 8 bytes",
+                "    assert_eq!(dst[2], 0x1011121314151617); // verifies third 8 bytes"
+              ],
+              "code": [
+                "{",
+                "    let src: Vec<u8> = (0..15).map(|x| x as u8).collect(); // src.len() == 15",
+                "    let mut dst: [u64; 2] = [0; 2]; // dst.len() == 2",
+                "    let result = std::panic::catch_unwind(|| {",
+                "        read_u64_into(&src, &mut dst);",
+                "    });",
+                "    assert!(result.is_err());",
+                "    assert!(std::panic::catch_unwind(|| { read_u64_into(&src, &mut dst) }).is_err()); // tests insufficient src for dst case",
+                "    let src: Vec<u8> = (0..16).map(|x| x as u8).collect(); // src.len() == 16 for sufficient case",
+                "    let mut dst: [u64; 2] = [0; 2]; // dst.len() == 2",
+                "    read_u64_into(&src, &mut dst); // should succeed",
+                "    assert_eq!(dst[0], 0x0102030405060708); // verifies first 8 bytes converted to u64",
+                "    assert_eq!(dst[1], 0x090a0b0c0d0e0f10); // verifies second 8 bytes converted to u64",
+                "    let src: Vec<u8> = (0..8).map(|x| x as u8).collect(); // src.len() == 8 for exactly enough",
+                "    let mut dst: [u64; 1] = [0; 1]; // dst.len() == 1",
+                "    read_u64_into(&src, &mut dst); // should succeed",
+                "    assert_eq!(dst[0], 0x0706050403020100); // verifies byte conversion to u64",
+                "    let src: Vec<u8> = (0..7).map(|x| x as u8).collect(); // src.len() == 7 for insufficient case",
+                "    let mut dst: [u64; 1] = [0; 1]; // dst.len() == 1",
+                "    let result = std::panic::catch_unwind(|| {",
+                "    read_u64_into(&src, &mut dst);",
+                "    });",
+                "    assert!(result.is_err()); // tests insufficient src for dst case with less than 8 bytes",
+                "    let src: Vec<u8> = (0..24).map(|x| x as u8).collect(); // src.len() == 24 for extra",
+                "    let mut dst: [u64; 3] = [0; 3]; // dst.len() == 3",
+                "    read_u64_into(&src, &mut dst); // should succeed",
+                "    assert_eq!(dst[0], 0x0102030405060708); // verifies first 8 bytes",
+                "    assert_eq!(dst[1], 0x090a0b0c0d0e0f10); // verifies second 8 bytes",
+                "    assert_eq!(dst[2], 0x1011121314151617); // verifies third 8 bytes",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let src: Vec<u8> = vec![]; // src.len() == 0",
+                "    let mut dst: [u64; 0] = []; // dst.len() == 0",
+                "    read_u64_into(&src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(dst.len() == 0); // Ensure dst has size 0 when src is empty",
+                "    assert!(src.len() == 0); // Ensure src has size 0 when dst is empty",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(&src, &mut dst)).is_ok()); // Expect no panic with empty inputs",
+                "    ",
+                "    let src: Vec<u8> = vec![0, 0, 0, 0, 0, 0, 0, 0]; // src.len() == 8",
+                "    let mut dst: [u64; 1] = [0]; // dst.len() == 1",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst[0], 0); // Ensure the first element in dst is correctly read",
+                "    ",
+                "    let src: Vec<u8> = vec![1, 0, 0, 0, 0, 0, 0, 0]; // src.len() == 8",
+                "    let mut dst: [u64; 1] = [0]; // dst.len() == 1",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst[0], 1); // Ensure the first element in dst is correctly read",
+                "    ",
+                "    let src: Vec<u8> = vec![0, 0, 0, 0, 0, 0, 0, 1]; // src.len() == 8",
+                "    let mut dst: [u64; 1] = [0]; // dst.len() == 1",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst[0], 72057594037927936); // Ensure the first element in dst is correctly read",
+                "    ",
+                "    let src: Vec<u8> = vec![0; 24]; // src.len() == 24",
+                "    let mut dst: [u64; 3] = [0; 3]; // dst.len() == 3",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst, [0, 0, 0]); // Ensure all elements in dst are correctly read",
+                "    ",
+                "    let src: Vec<u8> = vec![i as u8 for i in 0..32]; // src.len() == 32",
+                "    let mut dst: [u64; 4] = [0; 4]; // dst.len() == 4",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst, [0x07060504030201, 0x0f0e0d0c0b0a09, 0x17161514131211, 0x1f1e1d1c1b1a19]); // Ensure elements in dst are correctly read"
+              ],
+              "code": [
+                "{",
+                "    let src: Vec<u8> = vec![]; // src.len() == 0",
+                "    let mut dst: [u64; 0] = []; // dst.len() == 0",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert!(dst.len() == 0); // Ensure dst has size 0 when src is empty",
+                "    assert!(src.len() == 0); // Ensure src has size 0 when dst is empty",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(&src, &mut dst)).is_ok()); // Expect no panic with empty inputs",
+                "    ",
+                "    let src: Vec<u8> = vec![0, 0, 0, 0, 0, 0, 0, 0]; // src.len() == 8",
+                "    let mut dst: [u64; 1] = [0]; // dst.len() == 1",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst[0], 0); // Ensure the first element in dst is correctly read",
+                "    ",
+                "    let src: Vec<u8> = vec![1, 0, 0, 0, 0, 0, 0, 0]; // src.len() == 8",
+                "    let mut dst: [u64; 1] = [0]; // dst.len() == 1",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst[0], 1); // Ensure the first element in dst is correctly read",
+                "    ",
+                "    let src: Vec<u8> = vec![0, 0, 0, 0, 0, 0, 0, 1]; // src.len() == 8",
+                "    let mut dst: [u64; 1] = [0]; // dst.len() == 1",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst[0], 72057594037927936); // Ensure the first element in dst is correctly read",
+                "    ",
+                "    let src: Vec<u8> = vec![0; 24]; // src.len() == 24",
+                "    let mut dst: [u64; 3] = [0; 3]; // dst.len() == 3",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst, [0, 0, 0]); // Ensure all elements in dst are correctly read",
+                "    ",
+                "    let src: Vec<u8> = vec![i as u8 for i in 0..32]; // src.len() == 32",
+                "    let mut dst: [u64; 4] = [0; 4]; // dst.len() == 4",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert_eq!(dst, [0x07060504030201, 0x0f0e0d0c0b0a09, 0x17161514131211, 0x1f1e1d1c1b1a19]); // Ensure elements in dst are correctly read",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let src: Vec<u8> = (0..24).map(|x| x as u8).collect(); // src.len() == 24",
+                "    let mut dst: [u64; 3] = [0; 3]; // dst.len() == 3",
+                "    read_u64_into(&src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(dst[0] == 0x0001020304050607);",
+                "    assert!(dst[1] == 0x000708090A0B0C0D);",
+                "    assert!(dst[2] == 0x000E0F1011121314);",
+                "    assert!(dst.len() == 3);",
+                "    assert!(src.len() == 24);",
+                "    assert!(dst.iter().all(|&x| x <= u64::MAX));",
+                "    assert!(src.len() >= 8 * dst.len());",
+                "    assert!(src.chunks_exact(8).len() == dst.len());"
+              ],
+              "code": [
+                "{",
+                "    let src: Vec<u8> = (0..24).map(|x| x as u8).collect(); // src.len() == 24",
+                "    let mut dst: [u64; 3] = [0; 3]; // dst.len() == 3",
+                "    read_u64_into(&src, &mut dst);",
+                "    assert!(dst[0] == 0x0001020304050607);",
+                "    assert!(dst[1] == 0x000708090A0B0C0D);",
+                "    assert!(dst[2] == 0x000E0F1011121314);",
+                "    assert!(dst.len() == 3);",
+                "    assert!(src.len() == 24);",
+                "    assert!(dst.iter().all(|&x| x <= u64::MAX));",
+                "    assert!(src.len() >= 8 * dst.len());",
+                "    assert!(src.chunks_exact(8).len() == dst.len());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: src.len() >= 8 * dst.len() at line 36 is true, with bound src.len() == 8 * dst.len()\n",
+        "precondition: (out, chunk) in dst.iter_mut().zip(src.chunks_exact(8)) at line 37 is false\n"
+      ],
+      "input_infer": "src: size 0 or less, dst: size 0; src: size 8, dst: size 1; src: size 16, dst: size 2; src: size 24, dst: size 3; src: size 8, dst: size 0; dst: size 1, src: size 7; src: size 15; dst: size 2 where src.len() < 8 * dst.len();\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let src: &[u8] = &[];",
+                "    let mut dst: &mut [u64] = &mut [];",
+                "    read_u64_into(src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(&[0u8; 8], &mut [0u64; 1])).is_err());",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(&[], &mut [0u64; 1])).is_err());",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(&[0u8; 16], &mut [0u64; 3])).is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let src: &[u8] = &[];",
+                "    let mut dst: &mut [u64] = &mut [];",
+                "    read_u64_into(src, &mut dst);",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(&[0u8; 8], &mut [0u64; 1])).is_err());",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(&[], &mut [0u64; 1])).is_err());",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(&[0u8; 16], &mut [0u64; 3])).is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0, 0];",
+                "    let mut dst: &mut [u64] = &mut [0];",
+                "    read_u64_into(src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(dst.len() == 1);",
+                "    assert_eq!(dst[0], 1);",
+                "    assert!(src.len() == 8);",
+                "    assert!(src.len() >= 8 * dst.len());",
+                "    assert!(dst.iter().all(|&x| x == 0));"
+              ],
+              "code": [
+                "{",
+                "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0, 0];",
+                "    let mut dst: &mut [u64] = &mut [0];",
+                "    read_u64_into(src, &mut dst);",
+                "    assert!(dst.len() == 1);",
+                "    assert_eq!(dst[0], 1);",
+                "    assert!(src.len() == 8);",
+                "    assert!(src.len() >= 8 * dst.len());",
+                "    assert!(dst.iter().all(|&x| x == 0));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0];",
+                "    let mut dst: &mut [u64] = &mut [0, 0];",
+                "    read_u64_into(src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(dst[0], 1);",
+                "    assert_eq!(dst[1], 2);",
+                "    assert!(std::panic::catch_unwind(|| { let _ = read_u64_into(&src[..8], &mut [0]); }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0];",
+                "    let mut dst: &mut [u64] = &mut [0, 0];",
+                "    read_u64_into(src, &mut dst);",
+                "    assert_eq!(dst[0], 1);",
+                "    assert_eq!(dst[1], 2);",
+                "    assert!(std::panic::catch_unwind(|| { let _ = read_u64_into(&src[..8], &mut [0]); }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0];",
+                "    let mut dst: &mut [u64] = &mut [0, 0, 0];",
+                "    read_u64_into(src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(dst[0], 1);",
+                "    assert_eq!(dst[1], 2);",
+                "    assert_eq!(dst[2], 3);"
+              ],
+              "code": [
+                "{",
+                "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0];",
+                "    let mut dst: &mut [u64] = &mut [0, 0, 0];",
+                "    read_u64_into(src, &mut dst);",
+                "    assert_eq!(dst[0], 1);",
+                "    assert_eq!(dst[1], 2);",
+                "    assert_eq!(dst[2], 3);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let src: &[u8] = &[];",
+                "    let mut dst: &mut [u64] = &mut [0];",
+                "    read_u64_into(src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(src.len(), 8 * dst.len());",
+                "    assert!(src.len() >= 8 * dst.len());",
+                "    assert!(dst.len() == 0);",
+                "    assert!(src.len() == 0);",
+                "    assert!(dst.is_empty());",
+                "    assert!(src.is_empty());",
+                "    assert!(src.len() < 8 * dst.len());",
+                "    assert!(dst.len() > 0);"
+              ],
+              "code": [
+                "{",
+                "    let src: &[u8] = &[];",
+                "    let mut dst: &mut [u64] = &mut [0];",
+                "    read_u64_into(src, &mut dst);",
+                "    assert_eq!(src.len(), 8 * dst.len());",
+                "    assert!(src.len() >= 8 * dst.len());",
+                "    assert!(dst.len() == 0);",
+                "    assert!(src.len() == 0);",
+                "    assert!(dst.is_empty());",
+                "    assert!(src.is_empty());",
+                "    assert!(src.len() < 8 * dst.len());",
+                "    assert!(dst.len() > 0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0];",
+                "    let mut dst: &mut [u64] = &mut [0, 0];",
+                "    read_u64_into(src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(dst, &[0, 0]);",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(src, &mut dst)).is_err());",
+                "    src.len() >= 8 * dst.len();",
+                "    dst.iter().all(|&x| x == 0);",
+                "    assert!(src.chunks_exact(8).count() < dst.len());",
+                "    assert!(dst.len() == 2);",
+                "    assert!(dst.len() > 0);",
+                "    assert!(src.len() == 7);",
+                "    assert!(src.len() < 8 * dst.len());",
+                "    assert!(out.len() < dst.len());"
+              ],
+              "code": [
+                "{",
+                "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0];",
+                "    let mut dst: &mut [u64] = &mut [0, 0];",
+                "    read_u64_into(src, &mut dst);",
+                "    assert_eq!(dst, &[0, 0]);",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(src, &mut dst)).is_err());",
+                "    src.len() >= 8 * dst.len();",
+                "    dst.iter().all(|&x| x == 0);",
+                "    assert!(src.chunks_exact(8).count() < dst.len());",
+                "    assert!(dst.len() == 2);",
+                "    assert!(dst.len() > 0);",
+                "    assert!(src.len() == 7);",
+                "    assert!(src.len() < 8 * dst.len());",
+                "    assert!(out.len() < dst.len());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0, 0];",
+                "    let mut dst: &mut [u64] = &mut [];",
+                "    read_u64_into(src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(src, &mut dst)).is_err());",
+                "    dst.len().eq(&0);"
+              ],
+              "code": [
+                "{",
+                "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0, 0];",
+                "    let mut dst: &mut [u64] = &mut [];",
+                "    read_u64_into(src, &mut dst);",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(src, &mut dst)).is_err());",
+                "    dst.len().eq(&0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: src.len() >= 8 * dst.len() at line 36 is false\n"
+      ],
+      "input_infer": "src: any byte slice with length < 8 * dst.len(), dst: any mutable slice of u64 with positive length\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let src: &[u8] = &[1, 2, 3]; // Length is 3",
+                "    let mut dst: [u64; 1] = [0]; // dst has length 1, requires src of length at least 8",
+                "    read_u64_into(src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let src: &[u8] = &[1, 2, 3];",
+                "    let mut dst: [u64; 1] = [0];",
+                "    read_u64_into(src, &mut dst);",
+                "    }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let src: &[u8] = &[1, 2, 3]; // Length is 3",
+                "    let mut dst: [u64; 1] = [0]; // dst has length 1, requires src of length at least 8",
+                "    read_u64_into(src, &mut dst);",
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let src: &[u8] = &[1, 2, 3];",
+                "    let mut dst: [u64; 1] = [0];",
+                "    read_u64_into(src, &mut dst);",
+                "    }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let src: &[u8] = &[1, 2, 3, 4, 5, 6, 7]; // Length is 7",
+                "    let mut dst: [u64; 1] = [0]; // dst has length 1",
+                "    read_u64_into(src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(panic::catch_unwind(|| read_u64_into(&[1, 2, 3, 4, 5, 6, 7], &mut [0])).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let src: &[u8] = &[1, 2, 3, 4, 5, 6, 7]; // Length is 7",
+                "    let mut dst: [u64; 1] = [0]; // dst has length 1",
+                "    read_u64_into(src, &mut dst);",
+                "    assert!(panic::catch_unwind(|| read_u64_into(&[1, 2, 3, 4, 5, 6, 7], &mut [0])).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let src: &[u8] = &[1, 2, 3, 4, 5, 6]; // Length is 6",
+                "    let mut dst: [u64; 2] = [0, 0]; // dst has length 2, requires src of length at least 16",
+                "    read_u64_into(src, &mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(&[1, 2, 3, 4, 5, 6], &mut [0u64; 2])).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let src: &[u8] = &[1, 2, 3, 4, 5, 6]; // Length is 6",
+                "    let mut dst: [u64; 2] = [0, 0]; // dst has length 2, requires src of length at least 16",
+                "    read_u64_into(src, &mut dst);",
+                "    assert!(std::panic::catch_unwind(|| read_u64_into(&[1, 2, 3, 4, 5, 6], &mut [0u64; 2])).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

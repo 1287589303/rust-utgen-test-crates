@@ -1,0 +1,5215 @@
+{
+  "name": "regex_automata::nfa::thompson::backtrack::{impl#4}::search_imp",
+  "mod_info": {
+    "name": "nfa::thompson::backtrack",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:57:1:57:19"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/nfa/thompson/backtrack.rs:1357:5:1416:6",
+  "doc": "/// The implementation of standard leftmost backtracking search.\n///\n/// Capturing group spans are written to 'caps', but only if requested.\n/// 'caps' can be one of three things: 1) totally empty, in which case, we\n/// only report the pattern that matched or 2) only has slots for recording\n/// the overall match offsets for any pattern or 3) has all slots available\n/// for recording the spans of any groups participating in a match.\n",
+  "code": [
+    "fn search_imp(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    "    slots: &mut [Option<NonMaxUsize>],",
+    ") -> Result<Option<HalfMatch>, MatchError> {",
+    "    // Unlike in the PikeVM, we write our capturing group spans directly",
+    "    // into the caller's captures groups. So we have to make sure we're",
+    "    // starting with a blank slate first. In the PikeVM, we avoid this",
+    "    // by construction: the spans that are copied to every slot in the",
+    "    // 'Captures' value already account for presence/absence. In this",
+    "    // backtracker, we write directly into the caller provided slots, where",
+    "    // as in the PikeVM, we write into scratch space first and only copy",
+    "    // them to the caller provided slots when a match is found.",
+    "    for slot in slots.iter_mut() {",
+    "        *slot = None;",
+    "    }",
+    "    cache.setup_search(&self, input)?;",
+    "    if input.is_done() {",
+    "        return Ok(None);",
+    "    }",
+    "    let (anchored, start_id) = match input.get_anchored() {",
+    "        // Only way we're unanchored is if both the caller asked for an",
+    "        // unanchored search *and* the pattern is itself not anchored.",
+    "        Anchored::No => (",
+    "            self.nfa.is_always_start_anchored(),",
+    "            // We always use the anchored starting state here, even if",
+    "            // doing an unanchored search. The \"unanchored\" part of it is",
+    "            // implemented in the loop below, by simply trying the next",
+    "            // byte offset if the previous backtracking exploration failed.",
+    "            self.nfa.start_anchored(),",
+    "        ),",
+    "        Anchored::Yes => (true, self.nfa.start_anchored()),",
+    "        Anchored::Pattern(pid) => match self.nfa.start_pattern(pid) {",
+    "            None => return Ok(None),",
+    "            Some(sid) => (true, sid),",
+    "        },",
+    "    };",
+    "    if anchored {",
+    "        let at = input.start();",
+    "        return Ok(self.backtrack(cache, input, at, start_id, slots));",
+    "    }",
+    "    let pre = self.get_config().get_prefilter();",
+    "    let mut at = input.start();",
+    "    while at <= input.end() {",
+    "        if let Some(ref pre) = pre {",
+    "            let span = Span::from(at..input.end());",
+    "            match pre.find(input.haystack(), span) {",
+    "                None => break,",
+    "                Some(ref span) => at = span.start,",
+    "            }",
+    "        }",
+    "        if let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+    "        {",
+    "            return Ok(Some(hm));",
+    "        }",
+    "        at += 1;",
+    "    }",
+    "    Ok(None)",
+    "}"
+  ],
+  "size": {
+    "chain": 48,
+    "contra": 30,
+    "min_set": 8
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1374,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        13,
+        15,
+        16,
+        68,
+        69,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "true",
+          "line": 1375,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1395,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(self.backtrack(cache, input, at, start_id, slots))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        37,
+        38,
+        39,
+        67,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        55,
+        57,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        33,
+        35,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1395,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(self.backtrack(cache, input, at, start_id, slots))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        37,
+        38,
+        39,
+        67,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        55,
+        57,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1395,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(self.backtrack(cache, input, at, start_id, slots))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        37,
+        38,
+        39,
+        67,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        55,
+        57,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "true",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1374,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        13,
+        15,
+        16,
+        68,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 26,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "true",
+          "line": 1375,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 27,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1395,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(self.backtrack(cache, input, at, start_id, slots))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        37,
+        38,
+        39,
+        67,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 28,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 29,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 30,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 31,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 32,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        55,
+        57,
+        66,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 33,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches Some(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        34,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 34,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Pattern(pid)",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.start_pattern(pid) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1390,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        25,
+        31,
+        33,
+        35,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 35,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1395,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(self.backtrack(cache, input, at, start_id, slots))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        37,
+        38,
+        39,
+        67,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 36,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 37,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 38,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 39,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 40,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        55,
+        57,
+        66,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 41,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::Yes",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        24,
+        29,
+        30,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 42,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1395,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(self.backtrack(cache, input, at, start_id, slots))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        37,
+        38,
+        39,
+        67,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 43,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 44,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 45,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        63,
+        64,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 46,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches Some(ref span)",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "let Some(hm) = self.backtrack(cache, input, at, start_id, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 1409,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        61,
+        62,
+        67,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 47,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1401,
+          "bound": "at == input.end()"
+        },
+        {
+          "cond": "let Some(ref pre) = pre",
+          "norm": null,
+          "value": "true",
+          "line": 1402,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        },
+        {
+          "cond": "pre.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1404,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        55,
+        57,
+        66,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 48,
+      "conds": [
+        {
+          "cond": "slot in slots.iter_mut()",
+          "norm": null,
+          "value": "false",
+          "line": 1371,
+          "bound": null
+        },
+        {
+          "cond": "cache.setup_search(&self, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1374,
+          "bound": null
+        },
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1375,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1378,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1395,
+          "bound": null
+        },
+        {
+          "cond": "at <= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1401,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        20,
+        21,
+        23,
+        26,
+        27,
+        28,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        65,
+        66,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

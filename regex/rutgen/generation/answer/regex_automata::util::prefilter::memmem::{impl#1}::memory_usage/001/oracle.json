@@ -1,0 +1,171 @@
+[
+  {
+    "uses": [
+      "use crate::util::search::Span;",
+      "use super::*;"
+    ],
+    "has_test_mod": true,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "        #[cfg(all(feature = \"std\", feature = \"perf-literal-substring\"))]",
+          "        {",
+          "            let needle = b\"test\"; // Example needle of length 4",
+          "            let finder = memchr::memmem::Finder::new(needle);",
+          "            let memmem = Memmem { finder };",
+          "",
+          "            let usage = memmem.memory_usage();",
+          "            // Uncomment the assertion line if needed for validation",
+          "            // assert_eq!(usage, needle.len());",
+          "        }",
+          "    }"
+        ],
+        "oracle": [
+          "    assert_eq!(usage, needle.len());",
+          "    assert_eq!(memmem.memory_usage(), 4);",
+          "    assert!(memmem.memory_usage() > 0);",
+          "    #[cfg(not(all(feature = \"std\", feature = \"perf-literal-substring\")))] {",
+          "    let memmem = Memmem { _unused: () };",
+          "    // Ensure that unreachable is invoked which stops the execution flow",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "        #[cfg(all(feature = \"std\", feature = \"perf-literal-substring\"))]",
+          "        {",
+          "            let needle = b\"test\"; // Example needle of length 4",
+          "            let finder = memchr::memmem::Finder::new(needle);",
+          "            let memmem = Memmem { finder };",
+          "",
+          "            let usage = memmem.memory_usage();",
+          "            // Uncomment the assertion line if needed for validation",
+          "            // assert_eq!(usage, needle.len());",
+          "        }",
+          "    assert_eq!(usage, needle.len());",
+          "    assert_eq!(memmem.memory_usage(), 4);",
+          "    assert!(memmem.memory_usage() > 0);",
+          "    #[cfg(not(all(feature = \"std\", feature = \"perf-literal-substring\")))] {",
+          "    let memmem = Memmem { _unused: () };",
+          "    // Ensure that unreachable is invoked which stops the execution flow",
+          "    }",
+          "    }"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    #[cfg(not(all(feature = \"std\", feature = \"perf-literal-substring\")))]",
+          "    {",
+          "        let memmem = Memmem { _unused: () };",
+          "        let _usage = memmem.memory_usage(); ",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let memmem = Memmem { _unused: () };",
+          "    let _usage = memmem.memory_usage();",
+          "    }).is_err());",
+          "    ",
+          "    #[cfg(all(feature = \"std\", feature = \"perf-literal-substring\"))]",
+          "    {",
+          "    let memmem = Memmem { finder: /* instantiate with a valid finder */ };",
+          "    let usage = memmem.memory_usage();",
+          "    assert_eq!(usage, memmem.finder.needle().len());",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    #[cfg(not(all(feature = \"std\", feature = \"perf-literal-substring\")))]",
+          "    {",
+          "        let memmem = Memmem { _unused: () };",
+          "        let _usage = memmem.memory_usage(); ",
+          "    }",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let memmem = Memmem { _unused: () };",
+          "    let _usage = memmem.memory_usage();",
+          "    }).is_err());",
+          "    ",
+          "    #[cfg(all(feature = \"std\", feature = \"perf-literal-substring\"))]",
+          "    {",
+          "    let memmem = Memmem { finder: /* instantiate with a valid finder */ };",
+          "    let usage = memmem.memory_usage();",
+          "    assert_eq!(usage, memmem.finder.needle().len());",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "        #[cfg(all(feature = \"std\", feature = \"perf-literal-substring\"))]",
+          "        {",
+          "            let needles = vec![",
+          "                b\"\",               // Length 0",
+          "                b\"a\",              // Length 1",
+          "                b\"example\",        // Length 7",
+          "                b\"Rust is great!\", // Length 15",
+          "            ];",
+          "",
+          "            for needle in needles {",
+          "                let finder = memchr::memmem::Finder::new(needle);",
+          "                let memmem = Memmem { finder };",
+          "",
+          "                let usage = memmem.memory_usage();",
+          "                // Uncomment the assertion line if needed for validation",
+          "                // assert_eq!(usage, needle.len());",
+          "            }",
+          "        }",
+          "    }"
+        ],
+        "oracle": [
+          "    assert_eq!(memmem.memory_usage(), 0); // When feature \"std\" and \"perf-literal-substring\" are not enabled",
+          "    assert_eq!(memmem.memory_usage(), b\"\".len()); // For needle b\"\", expecting usage to be 0",
+          "    assert_eq!(memmem.memory_usage(), b\"a\".len()); // For needle b\"a\", expecting usage to be 1",
+          "    assert_eq!(memmem.memory_usage(), b\"example\".len()); // For needle b\"example\", expecting usage to be 7",
+          "    assert_eq!(memmem.memory_usage(), b\"Rust is great!\".len()); // For needle b\"Rust is great!\", expecting usage to be 15"
+        ],
+        "code": [
+          "{",
+          "        #[cfg(all(feature = \"std\", feature = \"perf-literal-substring\"))]",
+          "        {",
+          "            let needles = vec![",
+          "                b\"\",               // Length 0",
+          "                b\"a\",              // Length 1",
+          "                b\"example\",        // Length 7",
+          "                b\"Rust is great!\", // Length 15",
+          "            ];",
+          "",
+          "            for needle in needles {",
+          "                let finder = memchr::memmem::Finder::new(needle);",
+          "                let memmem = Memmem { finder };",
+          "",
+          "                let usage = memmem.memory_usage();",
+          "                // Uncomment the assertion line if needed for validation",
+          "                // assert_eq!(usage, needle.len());",
+          "            }",
+          "        }",
+          "    assert_eq!(memmem.memory_usage(), 0); // When feature \"std\" and \"perf-literal-substring\" are not enabled",
+          "    assert_eq!(memmem.memory_usage(), b\"\".len()); // For needle b\"\", expecting usage to be 0",
+          "    assert_eq!(memmem.memory_usage(), b\"a\".len()); // For needle b\"a\", expecting usage to be 1",
+          "    assert_eq!(memmem.memory_usage(), b\"example\".len()); // For needle b\"example\", expecting usage to be 7",
+          "    assert_eq!(memmem.memory_usage(), b\"Rust is great!\".len()); // For needle b\"Rust is great!\", expecting usage to be 15",
+          "    }"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

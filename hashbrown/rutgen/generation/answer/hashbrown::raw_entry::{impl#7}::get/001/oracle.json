@@ -1,0 +1,211 @@
+[
+  {
+    "uses": [
+      "use std::hash::Hash;",
+      "use hashbrown::hash_map::HashMap;",
+      "use std::collections::hash_map::DefaultHasher;",
+      "use std::hash::Hasher;",
+      "use hashbrown::hash_map::RawEntryMut;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::DefaultHasher;",
+          "    use std::hash::{Hash, Hasher};",
+          "    ",
+          "    let mut map: HashMap<&str, u32> = [(\"key1\", 42), (\"key2\", 84)].into();",
+          "    let hash_builder = DefaultHasher::new();",
+          "    ",
+          "    match map.raw_entry_mut().from_key(&\"key1\") {",
+          "        RawEntryMut::Vacant(_) => panic!(),",
+          "        RawEntryMut::Occupied(o) => {",
+          "            let value: &u32 = o.get();",
+          "        }",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value, &42);",
+          "    let o: &RawOccupiedEntryMut<&str, u32, DefaultHasher> = match map.raw_entry_mut().from_key(&\"key1\") { RawEntryMut::Occupied(o) => o, _ => panic!() };",
+          "    assert_eq!(o.get(), &42);",
+          "    let o: &RawOccupiedEntryMut<&str, u32, DefaultHasher> = match map.raw_entry_mut().from_key(&\"key2\") { RawEntryMut::Occupied(o) => o, _ => panic!() };",
+          "    assert_eq!(o.get(), &84);"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::DefaultHasher;",
+          "    use std::hash::{Hash, Hasher};",
+          "    ",
+          "    let mut map: HashMap<&str, u32> = [(\"key1\", 42), (\"key2\", 84)].into();",
+          "    let hash_builder = DefaultHasher::new();",
+          "    ",
+          "    match map.raw_entry_mut().from_key(&\"key1\") {",
+          "        RawEntryMut::Vacant(_) => panic!(),",
+          "        RawEntryMut::Occupied(o) => {",
+          "            let value: &u32 = o.get();",
+          "        }",
+          "    }",
+          "    assert_eq!(value, &42);",
+          "    let o: &RawOccupiedEntryMut<&str, u32, DefaultHasher> = match map.raw_entry_mut().from_key(&\"key1\") { RawEntryMut::Occupied(o) => o, _ => panic!() };",
+          "    assert_eq!(o.get(), &42);",
+          "    let o: &RawOccupiedEntryMut<&str, u32, DefaultHasher> = match map.raw_entry_mut().from_key(&\"key2\") { RawEntryMut::Occupied(o) => o, _ => panic!() };",
+          "    assert_eq!(o.get(), &84);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::DefaultHasher;",
+          "",
+          "    let mut map: HashMap<i32, u32> = [(1, 100), (2, 200)].into();",
+          "    let hash_builder = DefaultHasher::new();",
+          "    ",
+          "    match map.raw_entry_mut().from_key(&1) {",
+          "        RawEntryMut::Vacant(_) => panic!(),",
+          "        RawEntryMut::Occupied(o) => {",
+          "            let value: &u32 = o.get();",
+          "        }",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(o.get(), &100);",
+          "    let value: &u32 = o.get();",
+          "    assert_eq!(value, &100);",
+          "    assert_eq!(o.get(), &200);"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::DefaultHasher;",
+          "",
+          "    let mut map: HashMap<i32, u32> = [(1, 100), (2, 200)].into();",
+          "    let hash_builder = DefaultHasher::new();",
+          "    ",
+          "    match map.raw_entry_mut().from_key(&1) {",
+          "        RawEntryMut::Vacant(_) => panic!(),",
+          "        RawEntryMut::Occupied(o) => {",
+          "            let value: &u32 = o.get();",
+          "        }",
+          "    }",
+          "    assert_eq!(o.get(), &100);",
+          "    let value: &u32 = o.get();",
+          "    assert_eq!(value, &100);",
+          "    assert_eq!(o.get(), &200);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::DefaultHasher;",
+          "",
+          "    let mut map: HashMap<&str, u32> = [(\"key1\", 42)].into();",
+          "    let hash_builder = DefaultHasher::new();",
+          "    ",
+          "    match map.raw_entry_mut().from_key(&\"nonexistent\") {",
+          "        RawEntryMut::Vacant(_) => {",
+          "            // Here, we expect to be in a non-occupied state",
+          "        },",
+          "        RawEntryMut::Occupied(_) => panic!(),",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(map.raw_entry_mut().from_key(&\"key1\").get(), &42);",
+          "    assert!(matches!(map.raw_entry_mut().from_key(&\"key1\"), RawEntryMut::Occupied(_)));",
+          "    assert!(matches!(map.raw_entry_mut().from_key(&\"nonexistent\"), RawEntryMut::Vacant(_)));"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::DefaultHasher;",
+          "",
+          "    let mut map: HashMap<&str, u32> = [(\"key1\", 42)].into();",
+          "    let hash_builder = DefaultHasher::new();",
+          "    ",
+          "    match map.raw_entry_mut().from_key(&\"nonexistent\") {",
+          "        RawEntryMut::Vacant(_) => {",
+          "            // Here, we expect to be in a non-occupied state",
+          "        },",
+          "        RawEntryMut::Occupied(_) => panic!(),",
+          "    }",
+          "    assert_eq!(map.raw_entry_mut().from_key(&\"key1\").get(), &42);",
+          "    assert!(matches!(map.raw_entry_mut().from_key(&\"key1\"), RawEntryMut::Occupied(_)));",
+          "    assert!(matches!(map.raw_entry_mut().from_key(&\"nonexistent\"), RawEntryMut::Vacant(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::DefaultHasher;",
+          "",
+          "    let mut map: HashMap<&str, i32> = [(\"large_key\", 500)].into();",
+          "    let hash_builder = DefaultHasher::new();",
+          "    ",
+          "    match map.raw_entry_mut().from_key(&\"large_key\") {",
+          "        RawEntryMut::Vacant(_) => panic!(),",
+          "        RawEntryMut::Occupied(o) => {",
+          "            let value: &i32 = o.get();",
+          "        }",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value, &500);",
+          "    let value: &i32 = o.get();",
+          "    assert!(!value.is_null());",
+          "    assert_eq!(std::mem::size_of_val(value), std::mem::size_of::<i32>());",
+          "    let reference: &i32 = o.get();",
+          "    assert_eq!(*reference, 500);",
+          "    assert_eq!(o.get() as *const i32, &map[\"large_key\"] as *const i32);"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::DefaultHasher;",
+          "",
+          "    let mut map: HashMap<&str, i32> = [(\"large_key\", 500)].into();",
+          "    let hash_builder = DefaultHasher::new();",
+          "    ",
+          "    match map.raw_entry_mut().from_key(&\"large_key\") {",
+          "        RawEntryMut::Vacant(_) => panic!(),",
+          "        RawEntryMut::Occupied(o) => {",
+          "            let value: &i32 = o.get();",
+          "        }",
+          "    }",
+          "    assert_eq!(value, &500);",
+          "    let value: &i32 = o.get();",
+          "    assert!(!value.is_null());",
+          "    assert_eq!(std::mem::size_of_val(value), std::mem::size_of::<i32>());",
+          "    let reference: &i32 = o.get();",
+          "    assert_eq!(*reference, 500);",
+          "    assert_eq!(o.get() as *const i32, &map[\"large_key\"] as *const i32);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

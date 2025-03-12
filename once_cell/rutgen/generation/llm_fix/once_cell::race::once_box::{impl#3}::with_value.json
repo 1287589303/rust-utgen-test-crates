@@ -1,0 +1,190 @@
+{
+  "name": "once_cell::race::once_box::{impl#3}::with_value",
+  "mod_info": {
+    "name": "race::once_box",
+    "loc": "src/race.rs:321:1:460:2"
+  },
+  "visible": true,
+  "loc": "src/race.rs:361:9:363:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "expected return value/type: OnceBox { inner: AtomicPtr::new(Box::into_raw(value)), ghost: PhantomData }\n"
+      ],
+      "input_infer": "value: Any valid Box<T> that is not null, testing both valid objects and edge cases like Box::new(0) for T being an integer, and large Box<T> allocations or None to ensure robustness against invalid inputs.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let value = Box::new(42);",
+                "    let once_box = OnceBox::with_value(value);",
+                "    let _inner = once_box.inner.load(Ordering::SeqCst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst), Box::into_raw(Box::new(42)));",
+                "    assert!(once_box.ghost.is_none());",
+                "    assert!(once_box.inner.load(Ordering::SeqCst).is_non_null());",
+                "    assert_eq!(std::mem::size_of::<OnceBox<i32>>(), std::mem::size_of::<AtomicPtr<i32>>() + std::mem::size_of::<PhantomData<Option<Box<i32>>>>());",
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst) as *const i32, Box::into_raw(Box::new(42)));",
+                "    assert!(once_box.inner.load(Ordering::SeqCst) as *const i32 != ptr::null());"
+              ],
+              "code": [
+                "{",
+                "    let value = Box::new(42);",
+                "    let once_box = OnceBox::with_value(value);",
+                "    let _inner = once_box.inner.load(Ordering::SeqCst);",
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst), Box::into_raw(Box::new(42)));",
+                "    assert!(once_box.ghost.is_none());",
+                "    assert!(once_box.inner.load(Ordering::SeqCst).is_non_null());",
+                "    assert_eq!(std::mem::size_of::<OnceBox<i32>>(), std::mem::size_of::<AtomicPtr<i32>>() + std::mem::size_of::<PhantomData<Option<Box<i32>>>>());",
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst) as *const i32, Box::into_raw(Box::new(42)));",
+                "    assert!(once_box.inner.load(Ordering::SeqCst) as *const i32 != ptr::null());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let value = Box::new(0);",
+                "    let once_box = OnceBox::with_value(value);",
+                "    let _inner = once_box.inner.load(Ordering::SeqCst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(once_box.inner.load(Ordering::SeqCst).is_non_null());",
+                "    assert_eq!(unsafe { *once_box.inner.load(Ordering::SeqCst) }, 0);",
+                "    assert!(std::mem::size_of::<OnceBox<i32>>() > 0);",
+                "    assert!(std::mem::size_of::<OnceBox<()>>() > 0);"
+              ],
+              "code": [
+                "{",
+                "    let value = Box::new(0);",
+                "    let once_box = OnceBox::with_value(value);",
+                "    let _inner = once_box.inner.load(Ordering::SeqCst);",
+                "   assert!(!once_box.inner.load(Ordering::SeqCst).is_null());",
+                "   assert_eq!(unsafe { *once_box.inner.load(Ordering::SeqCst) }, 0);",
+                "   assert!(std::mem::size_of::<OnceBox<i32>>() > 0);",
+                "    assert!(std::mem::size_of::<OnceBox<()>>() > 0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let value = Box::new(1_000_000);",
+                "    let once_box = OnceBox::with_value(value);",
+                "    let _inner = once_box.inner.load(Ordering::SeqCst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst), Box::into_raw(Box::new(1_000_000)));",
+                "    assert!(once_box.ghost == PhantomData);",
+                "    assert!(!once_box.inner.is_null());",
+                "    assert_eq!(unsafe { *once_box.inner.load(Ordering::SeqCst) }, 1_000_000);",
+                "    assert!(once_box.inner.load(Ordering::SeqCst) == once_box.inner.load(Ordering::SeqCst));"
+              ],
+              "code": [
+                "{",
+                "    let value = Box::new(1_000_000);",
+                "    let once_box = OnceBox::with_value(value);",
+                "   let inner_ptr = once_box.inner.load(Ordering::SeqCst);  ",
+                "   assert_eq!(inner_ptr, Box::into_raw(Box::new(1_000_000)));  ",
+                "   assert!(once_box.ghost == PhantomData);  ",
+                "   assert!(!inner_ptr.is_null());  ",
+                "   assert_eq!(unsafe { *inner_ptr }, 1_000_000);  ",
+                "   assert!(inner_ptr == inner_ptr);  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(Debug)]",
+                "    struct LargeStruct {",
+                "        data: [u8; 1024],",
+                "    }",
+                "    let value = Box::new(LargeStruct { data: [0; 1024] });",
+                "    let once_box = OnceBox::with_value(value);",
+                "    let _inner = once_box.inner.load(Ordering::SeqCst);",
+                "}"
+              ],
+              "oracle": [
+                "    let value = Box::new(LargeStruct { data: [0; 1024] });",
+                "    let once_box = OnceBox::with_value(value);",
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst), Box::into_raw(value));",
+                "    assert!(once_box.ghost.is_none());",
+                "    assert!(once_box.inner.load(Ordering::SeqCst).is_not_null());",
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst) as *const LargeStruct, Box::into_raw(value));"
+              ],
+              "code": [
+                "{",
+                "    #[derive(Debug)]",
+                "    struct LargeStruct {",
+                "        data: [u8; 1024],",
+                "    }",
+                "    let value = Box::new(LargeStruct { data: [0; 1024] });",
+                "    let once_box = OnceBox::with_value(value);",
+                "    let _inner = once_box.inner.load(Ordering::SeqCst);",
+                "    let value = Box::new(LargeStruct { data: [0; 1024] });",
+                "    let once_box = OnceBox::with_value(value);",
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst), Box::into_raw(value));",
+                "    assert!(once_box.ghost.is_none());",
+                "   assert!(!once_box.inner.load(Ordering::SeqCst).is_null());  ",
+                "   assert_eq!(once_box.inner.load(Ordering::SeqCst) as *const LargeStruct, Box::into_raw(value));  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let value: Box<i32> = unsafe { Box::from_raw(std::ptr::null_mut()) };",
+                "    let _once_box = OnceBox::with_value(value);",
+                "}"
+              ],
+              "oracle": [
+                "    let value: Box<i32> = Box::new(10);",
+                "    let once_box = OnceBox::with_value(value);",
+                "    assert!(!once_box.inner.load(Ordering::Relaxed).is_null());",
+                "    assert_eq!(*unsafe { &*once_box.inner.load(Ordering::Relaxed) }, 10);"
+              ],
+              "code": [
+                "{",
+                "    let value: Box<i32> = unsafe { Box::from_raw(std::ptr::null_mut()) };",
+                "    let _once_box = OnceBox::with_value(value);",
+                "    let value: Box<i32> = Box::new(10);",
+                "    let once_box = OnceBox::with_value(value);",
+                "    assert!(!once_box.inner.load(Ordering::Relaxed).is_null());",
+                "    assert_eq!(*unsafe { &*once_box.inner.load(Ordering::Relaxed) }, 10);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

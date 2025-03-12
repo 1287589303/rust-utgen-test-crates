@@ -1,0 +1,50 @@
+{
+  "name": "regex_automata::nfa::thompson::backtrack::{impl#2}::max_haystack_len",
+  "mod_info": {
+    "name": "nfa::thompson::backtrack",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:57:1:57:19"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/nfa/thompson/backtrack.rs:817:5:828:6",
+  "doc": "/// Returns the maximum haystack length supported by this backtracker.\n///\n/// This routine is a function of both [`Config::visited_capacity`] and the\n/// internal size of the backtracker's NFA.\n///\n/// # Example\n///\n/// This example shows how the maximum haystack length can vary depending\n/// on the size of the regex itself. Note though that the specific maximum\n/// values here are not an API guarantee. The default visited capacity is\n/// subject to change and not covered by semver.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{\n///     nfa::thompson::backtrack::BoundedBacktracker,\n///     Match, MatchError,\n/// };\n///\n/// // If you're only using ASCII, you get a big budget.\n/// let re = BoundedBacktracker::new(r\"(?-u)\\w+\")?;\n/// let mut cache = re.create_cache();\n/// assert_eq!(re.max_haystack_len(), 299_592);\n/// // Things work up to the max.\n/// let mut haystack = \"a\".repeat(299_592);\n/// let expected = Some(Ok(Match::must(0, 0..299_592)));\n/// assert_eq!(expected, re.try_find_iter(&mut cache, &haystack).next());\n/// // But you'll get an error if you provide a haystack that's too big.\n/// // Notice that we use the 'try_find_iter' routine instead, which\n/// // yields Result<Match, MatchError> instead of Match.\n/// haystack.push('a');\n/// let expected = Some(Err(MatchError::haystack_too_long(299_593)));\n/// assert_eq!(expected, re.try_find_iter(&mut cache, &haystack).next());\n///\n/// // Unicode inflates the size of the underlying NFA quite a bit, and\n/// // thus means that the backtracker can only handle smaller haystacks,\n/// // assuming that the visited capacity remains unchanged.\n/// let re = BoundedBacktracker::new(r\"\\w+\")?;\n/// assert!(re.max_haystack_len() <= 7_000);\n/// // But we can increase the visited capacity to handle bigger haystacks!\n/// let re = BoundedBacktracker::builder()\n///     .configure(BoundedBacktracker::config().visited_capacity(1<<20))\n///     .build(r\"\\w+\")?;\n/// assert!(re.max_haystack_len() >= 25_000);\n/// assert!(re.max_haystack_len() <= 28_000);\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn max_haystack_len(&self) -> usize {",
+    "    // The capacity given in the config is \"bytes of heap memory,\" but the",
+    "    // capacity we use here is \"number of bits.\" So convert the capacity in",
+    "    // bytes to the capacity in bits.",
+    "    let capacity = 8 * self.get_config().get_visited_capacity();",
+    "    let blocks = div_ceil(capacity, Visited::BLOCK_SIZE);",
+    "    let real_capacity = blocks.saturating_mul(Visited::BLOCK_SIZE);",
+    "    // It's possible for `real_capacity` to be smaller than the number of",
+    "    // NFA states for particularly large regexes, so we saturate towards",
+    "    // zero.",
+    "    (real_capacity / self.nfa.states().len()).saturating_sub(1)",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

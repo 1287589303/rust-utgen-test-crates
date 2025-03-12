@@ -1,0 +1,64 @@
+{
+  "name": "url::path_segments::{impl#1}::extend",
+  "mod_info": {
+    "name": "path_segments",
+    "loc": "url/src/lib.rs:219:1:219:19"
+  },
+  "visible": true,
+  "loc": "url/src/path_segments.rs:236:5:266:6",
+  "doc": "/// Append each segment from the given iterator at the end of this URL’s path.\n///\n/// Each segment is percent-encoded like in `Url::parse` or `Url::join`,\n/// except that `%` and `/` characters are also encoded (to `%25` and `%2F`).\n/// This is unlike `Url::parse` where `%` is left as-is in case some of the input\n/// is already percent-encoded, and `/` denotes a path segment separator.)\n///\n/// Note that, in addition to slashes between new segments,\n/// this always adds a slash between the existing path and the new segments\n/// *except* if the existing path is `\"/\"`.\n/// If the previous last segment was empty (if the path had a trailing slash)\n/// the path after `.extend()` will contain two consecutive slashes.\n/// If that is undesired, call `.pop_if_empty()` first.\n///\n/// To obtain a behavior similar to `Url::join`, call `.pop()` unconditionally first.\n///\n/// Returns `&mut Self` so that method calls can be chained.\n///\n/// Example:\n///\n/// ```rust\n/// use url::Url;\n///\n/// # #[cfg(feature = \"std\")]\n/// # use std::error::Error;\n/// # #[cfg(not(feature = \"std\"))]\n/// # use core::error::Error;\n///\n/// # fn run() -> Result<(), Box<dyn Error>> {\n/// let mut url = Url::parse(\"https://github.com/\")?;\n/// let org = \"servo\";\n/// let repo = \"rust-url\";\n/// let issue_number = \"188\";\n/// url.path_segments_mut().map_err(|_| \"cannot be base\")?\n///     .extend(&[org, repo, \"issues\", issue_number]);\n/// assert_eq!(url.as_str(), \"https://github.com/servo/rust-url/issues/188\");\n/// # Ok(())\n/// # }\n/// # run().unwrap();\n/// ```\n///\n/// In order to make sure that parsing the serialization of an URL gives the same URL,\n/// a segment is ignored if it is `\".\"` or `\"..\"`:\n///\n/// ```rust\n/// use url::Url;\n///\n/// # #[cfg(feature = \"std\")]\n/// # use std::error::Error;\n/// # #[cfg(not(feature = \"std\"))]\n/// # use core::error::Error;\n///\n/// # fn run() -> Result<(), Box<dyn Error>> {\n/// let mut url = Url::parse(\"https://github.com/servo\")?;\n/// url.path_segments_mut().map_err(|_| \"cannot be base\")?\n///     .extend(&[\"..\", \"rust-url\", \".\", \"pulls\"]);\n/// assert_eq!(url.as_str(), \"https://github.com/servo/rust-url/pulls\");\n/// # Ok(())\n/// # }\n/// # run().unwrap();\n/// ```\n",
+  "code": [
+    "pub fn extend<I>(&mut self, segments: I) -> &mut Self",
+    "where",
+    "    I: IntoIterator,",
+    "    I::Item: AsRef<str>,",
+    "{",
+    "    let scheme_type = SchemeType::from(self.url.scheme());",
+    "    let path_start = self.url.path_start as usize;",
+    "    self.url.mutate(|parser| {",
+    "        parser.context = parser::Context::PathSegmentSetter;",
+    "        for segment in segments {",
+    "            let segment = segment.as_ref();",
+    "            if matches!(segment, \".\" | \"..\") {",
+    "                continue;",
+    "            }",
+    "            if parser.serialization.len() > path_start + 1",
+    "                // Non special url's path might still be empty",
+    "                || parser.serialization.len() == path_start",
+    "            {",
+    "                parser.serialization.push('/');",
+    "            }",
+    "            let mut has_host = true; // FIXME account for this?",
+    "            parser.parse_path(",
+    "                scheme_type,",
+    "                &mut has_host,",
+    "                path_start,",
+    "                parser::Input::new_no_trim(segment),",
+    "            );",
+    "        }",
+    "    });",
+    "    self",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": "self",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

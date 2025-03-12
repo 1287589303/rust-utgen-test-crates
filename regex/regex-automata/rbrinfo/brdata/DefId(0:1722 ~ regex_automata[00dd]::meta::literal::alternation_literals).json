@@ -1,0 +1,1858 @@
+{
+  "name": "regex_automata::meta::literal::alternation_literals",
+  "mod_info": {
+    "name": "meta::literal",
+    "loc": "regex-automata/src/meta/mod.rs:56:1:56:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/meta/literal.rs:15:1:81:2",
+  "doc": "/// Pull out an alternation of literals from the given sequence of HIR\n/// expressions.\n///\n/// There are numerous ways for this to fail. Generally, this only applies\n/// to regexes of the form 'foo|bar|baz|...|quux'. It can also fail if there\n/// are \"too few\" alternates, in which case, the regex engine is likely faster.\n///\n/// And currently, this only returns something when 'hirs.len() == 1'.\n",
+  "code": [
+    "pub(crate) fn alternation_literals(",
+    "    info: &RegexInfo,",
+    "    hirs: &[&Hir],",
+    ") -> Option<Vec<Vec<u8>>> {",
+    "    use regex_syntax::hir::{HirKind, Literal};",
+    "",
+    "    // Might as well skip the work below if we know we can't build an",
+    "    // Aho-Corasick searcher.",
+    "    if !cfg!(feature = \"perf-literal-multisubstring\") {",
+    "        return None;",
+    "    }",
+    "    // This is pretty hacky, but basically, if `is_alternation_literal` is",
+    "    // true, then we can make several assumptions about the structure of our",
+    "    // HIR. This is what justifies the `unreachable!` statements below.",
+    "    if hirs.len() != 1",
+    "        || !info.props()[0].look_set().is_empty()",
+    "        || info.props()[0].explicit_captures_len() > 0",
+    "        || !info.props()[0].is_alternation_literal()",
+    "        || info.config().get_match_kind() != MatchKind::LeftmostFirst",
+    "    {",
+    "        return None;",
+    "    }",
+    "    let hir = &hirs[0];",
+    "    let alts = match *hir.kind() {",
+    "        HirKind::Alternation(ref alts) => alts,",
+    "        _ => return None, // one literal isn't worth it",
+    "    };",
+    "",
+    "    let mut lits = vec![];",
+    "    for alt in alts {",
+    "        let mut lit = vec![];",
+    "        match *alt.kind() {",
+    "            HirKind::Literal(Literal(ref bytes)) => {",
+    "                lit.extend_from_slice(bytes)",
+    "            }",
+    "            HirKind::Concat(ref exprs) => {",
+    "                for e in exprs {",
+    "                    match *e.kind() {",
+    "                        HirKind::Literal(Literal(ref bytes)) => {",
+    "                            lit.extend_from_slice(bytes);",
+    "                        }",
+    "                        _ => unreachable!(\"expected literal, got {:?}\", e),",
+    "                    }",
+    "                }",
+    "            }",
+    "            _ => unreachable!(\"expected literal or concat, got {:?}\", alt),",
+    "        }",
+    "        lits.push(lit);",
+    "    }",
+    "    // Why do this? Well, when the number of literals is small, it's likely",
+    "    // that we'll use the lazy DFA which is in turn likely to be faster than",
+    "    // Aho-Corasick in such cases. Primarily because Aho-Corasick doesn't have",
+    "    // a \"lazy DFA\" but either a contiguous NFA or a full DFA. We rarely use",
+    "    // the latter because it is so hungry (in time and space), and the former",
+    "    // is decently fast, but not as fast as a well oiled lazy DFA.",
+    "    //",
+    "    // However, once the number starts getting large, the lazy DFA is likely",
+    "    // to start thrashing because of the modest default cache size. When",
+    "    // exactly does this happen? Dunno. But at whatever point that is (we make",
+    "    // a guess below based on ad hoc benchmarking), we'll want to cut over to",
+    "    // Aho-Corasick, where even the contiguous NFA is likely to do much better.",
+    "    if lits.len() < 3000 {",
+    "        debug!(\"skipping Aho-Corasick because there are too few literals\");",
+    "        return None;",
+    "    }",
+    "    Some(lits)",
+    "}"
+  ],
+  "size": {
+    "chain": 16,
+    "contra": 6,
+    "min_set": 12
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "true",
+          "line": 29,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        4,
+        26,
+        77
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "true",
+          "line": 31,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        15,
+        26,
+        77
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "true",
+          "line": 33,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        25,
+        26,
+        77
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "false",
+          "line": 39,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        30,
+        76,
+        77
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "true",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Literal(Literal(ref bytes))",
+          "norm": null,
+          "value": "false",
+          "line": 47,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "false",
+          "line": 50,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 60,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        42,
+        43,
+        44,
+        65,
+        66,
+        79,
+        80,
+        81
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "true",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "e in exprs",
+          "norm": null,
+          "value": "true",
+          "line": 51,
+          "bound": null
+        },
+        {
+          "cond": "*e.kind() matches HirKind::Literal(Literal(ref bytes))",
+          "norm": null,
+          "value": "false",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "*e.kind() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 56,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        42,
+        43,
+        46,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        58,
+        59,
+        63,
+        64,
+        79,
+        80,
+        81
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "true",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "e in exprs",
+          "norm": null,
+          "value": "true",
+          "line": 51,
+          "bound": null
+        },
+        {
+          "cond": "*e.kind() matches HirKind::Literal(Literal(ref bytes))",
+          "norm": null,
+          "value": "true",
+          "line": 52,
+          "bound": null
+        },
+        {
+          "cond": "*e.kind() matches HirKind::Literal(Literal(ref bytes))",
+          "norm": null,
+          "value": "true",
+          "line": 52,
+          "bound": null
+        },
+        {
+          "cond": "e in exprs",
+          "norm": null,
+          "value": "false",
+          "line": 51,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "false",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "lits.len() < 3000",
+          "norm": "3000 > lits.len()",
+          "value": "true",
+          "line": 76,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        42,
+        43,
+        46,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        58,
+        60,
+        61,
+        62,
+        51,
+        52,
+        53,
+        55,
+        57,
+        67,
+        68,
+        69,
+        35,
+        36,
+        37,
+        39,
+        41,
+        70,
+        71,
+        75,
+        76,
+        77
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "true",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "e in exprs",
+          "norm": null,
+          "value": "true",
+          "line": 51,
+          "bound": null
+        },
+        {
+          "cond": "*e.kind() matches HirKind::Literal(Literal(ref bytes))",
+          "norm": null,
+          "value": "true",
+          "line": 52,
+          "bound": null
+        },
+        {
+          "cond": "*e.kind() matches HirKind::Literal(Literal(ref bytes))",
+          "norm": null,
+          "value": "true",
+          "line": 52,
+          "bound": null
+        },
+        {
+          "cond": "e in exprs",
+          "norm": null,
+          "value": "false",
+          "line": 51,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "false",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "lits.len() < 3000",
+          "norm": "3000 > lits.len()",
+          "value": "false",
+          "line": 76,
+          "bound": "lits.len() == 3000"
+        }
+      ],
+      "ret": "Some(lits)",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        42,
+        43,
+        46,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        58,
+        60,
+        61,
+        62,
+        51,
+        52,
+        53,
+        55,
+        57,
+        67,
+        68,
+        69,
+        35,
+        36,
+        37,
+        39,
+        41,
+        70,
+        72,
+        73,
+        74,
+        77
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "true",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "e in exprs",
+          "norm": null,
+          "value": "false",
+          "line": 51,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "false",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "lits.len() < 3000",
+          "norm": "3000 > lits.len()",
+          "value": "true",
+          "line": 76,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        42,
+        43,
+        46,
+        49,
+        50,
+        51,
+        52,
+        53,
+        55,
+        57,
+        67,
+        68,
+        69,
+        35,
+        36,
+        37,
+        39,
+        41,
+        70,
+        71,
+        75,
+        76,
+        77
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "true",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Concat(ref exprs)",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "e in exprs",
+          "norm": null,
+          "value": "false",
+          "line": 51,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "false",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "lits.len() < 3000",
+          "norm": "3000 > lits.len()",
+          "value": "false",
+          "line": 76,
+          "bound": "lits.len() == 3000"
+        }
+      ],
+      "ret": "Some(lits)",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        42,
+        43,
+        46,
+        49,
+        50,
+        51,
+        52,
+        53,
+        55,
+        57,
+        67,
+        68,
+        69,
+        35,
+        36,
+        37,
+        39,
+        41,
+        70,
+        72,
+        73,
+        74,
+        77
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "true",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Literal(Literal(ref bytes))",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Literal(Literal(ref bytes))",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "false",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "lits.len() < 3000",
+          "norm": "3000 > lits.len()",
+          "value": "true",
+          "line": 76,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        42,
+        43,
+        45,
+        47,
+        48,
+        67,
+        68,
+        69,
+        35,
+        36,
+        37,
+        39,
+        41,
+        70,
+        71,
+        75,
+        76,
+        77
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "true",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Literal(Literal(ref bytes))",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "*alt.kind() matches HirKind::Literal(Literal(ref bytes))",
+          "norm": null,
+          "value": "true",
+          "line": 46,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "false",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "lits.len() < 3000",
+          "norm": "3000 > lits.len()",
+          "value": "false",
+          "line": 76,
+          "bound": "lits.len() == 3000"
+        }
+      ],
+      "ret": "Some(lits)",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        42,
+        43,
+        45,
+        47,
+        48,
+        67,
+        68,
+        69,
+        35,
+        36,
+        37,
+        39,
+        41,
+        70,
+        72,
+        73,
+        74,
+        77
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "false",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "lits.len() < 3000",
+          "norm": "3000 > lits.len()",
+          "value": "true",
+          "line": 76,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        39,
+        41,
+        70,
+        71,
+        75,
+        76,
+        77
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "true",
+          "line": 32,
+          "bound": null
+        },
+        {
+          "cond": "info.config().get_match_kind() != MatchKind::LeftmostFirst",
+          "norm": "MatchKind::LeftmostFirst != info.config().get_match_kind()",
+          "value": "false",
+          "line": 33,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "*hir.kind() matches HirKind::Alternation(ref alts)",
+          "norm": null,
+          "value": "true",
+          "line": 38,
+          "bound": null
+        },
+        {
+          "cond": "alt in alts",
+          "norm": null,
+          "value": "false",
+          "line": 44,
+          "bound": null
+        },
+        {
+          "cond": "lits.len() < 3000",
+          "norm": "3000 > lits.len()",
+          "value": "false",
+          "line": 76,
+          "bound": "lits.len() == 3000"
+        }
+      ],
+      "ret": "Some(lits)",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        39,
+        41,
+        70,
+        72,
+        73,
+        74,
+        77
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 30,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].explicit_captures_len() > 0",
+          "norm": "0 < info.props()[0].explicit_captures_len()",
+          "value": "false",
+          "line": 31,
+          "bound": "info.props()[0].explicit_captures_len() == 0"
+        },
+        {
+          "cond": "info.props()[0].is_alternation_literal()",
+          "norm": null,
+          "value": "false",
+          "line": 32,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        21,
+        26,
+        77
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 29,
+          "bound": null
+        },
+        {
+          "cond": "info.props()[0].look_set().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 30,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        26,
+        77
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

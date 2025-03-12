@@ -1,0 +1,130 @@
+{
+  "name": "bytes::bytes::owned_box_and_drop",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1123:1:1126:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "ptr should be a valid, non-null pointer to an instance of Owned<T> or NULL to test the boundary case of invalid memory access.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let owned_instance = Box::new(Owned { lifetime: OwnedLifetime, owner: Vec::new() });",
+                "    let ptr = Box::into_raw(owned_instance) as *mut ();",
+                "    unsafe {",
+                "        owned_box_and_drop::<Vec<u8>>(ptr);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(ptr.is_null() == false);",
+                "    assert_eq!(unsafe { Box::from_raw(ptr as *mut Owned<Vec<u8>>).owner.len() }, 0);",
+                "    assert!(std::panic::catch_unwind(|| { owned_box_and_drop::<Vec<u8>>(ptr); }).is_ok());",
+                "    assert!(unsafe { ptr.is_null() });",
+                "    assert!(unsafe { owned_box_and_drop::<Vec<u8>>(ptr) }.is_ok());",
+                "    assert!(Box::from_raw(ptr as *mut Owned<Vec<u8>>).owner.is_empty());",
+                "    assert!(std::panic::catch_unwind(|| { drop(Box::from_raw(ptr as *mut Owned<Vec<u8>>)) }).is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let owned_instance = Box::new(Owned { lifetime: OwnedLifetime, owner: Vec::new() });",
+                "    let ptr = Box::into_raw(owned_instance) as *mut ();",
+                "    unsafe {",
+                "        owned_box_and_drop::<Vec<u8>>(ptr);",
+                "    }",
+                "    assert!(ptr.is_null() == false);",
+                "    assert_eq!(unsafe { Box::from_raw(ptr as *mut Owned<Vec<u8>>).owner.len() }, 0);",
+                "    assert!(std::panic::catch_unwind(|| { owned_box_and_drop::<Vec<u8>>(ptr); }).is_ok());",
+                "    assert!(unsafe { ptr.is_null() });",
+                "    assert!(unsafe { owned_box_and_drop::<Vec<u8>>(ptr) }.is_ok());",
+                "    assert!(Box::from_raw(ptr as *mut Owned<Vec<u8>>).owner.is_empty());",
+                "    assert!(std::panic::catch_unwind(|| { drop(Box::from_raw(ptr as *mut Owned<Vec<u8>>)) }).is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let ptr: *mut () = std::ptr::null_mut();",
+                "    unsafe {",
+                "        owned_box_and_drop::<Vec<u8>>(ptr);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(std::panic::catch_unwind(|| unsafe { owned_box_and_drop::<Vec<u8>>(std::ptr::null_mut()) }).is_err(), true);"
+              ],
+              "code": [
+                "{",
+                "    let ptr: *mut () = std::ptr::null_mut();",
+                "    unsafe {",
+                "        owned_box_and_drop::<Vec<u8>>(ptr);",
+                "    }",
+                "    assert_eq!(std::panic::catch_unwind(|| unsafe { owned_box_and_drop::<Vec<u8>>(std::ptr::null_mut()) }).is_err(), true);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let owned_instance = Box::new(Owned { lifetime: OwnedLifetime, owner: String::from(\"Test\") });",
+                "    let ptr = Box::into_raw(owned_instance) as *mut ();",
+                "    unsafe {",
+                "        owned_box_and_drop::<String>(ptr);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(owned_box_and_drop::<String>(ptr).is_none());",
+                "    let result: Option<Box<Owned<String>>> = unsafe { Box::from_raw(ptr as *mut Owned<String>) };",
+                "    assert!(result.is_none());",
+                "    assert_eq!(result.owner, String::from(\"Test\"));",
+                "    assert!(ptr.is_null());",
+                "    assert_eq!(result.lifetime, OwnedLifetime);",
+                "    assert!(mem::align_of::<Owned<String>>() >= mem::align_of::<String>());"
+              ],
+              "code": [
+                "{  ",
+                "    let owned_instance = Box::new(Owned { lifetime: OwnedLifetime { ref_cnt: AtomicUsize::new(1), drop: static_drop }, owner: String::from(\"Test\") });  ",
+                "    let ptr = Box::into_raw(owned_instance) as *mut ();  ",
+                "    unsafe {  ",
+                "        owned_box_and_drop::<String>(ptr);  ",
+                "    }  ",
+                "    assert!(owned_box_and_drop::<String>(ptr).is_none());  ",
+                "    let result: Option<Box<Owned<String>>> = unsafe { Box::from_raw(ptr as *mut Owned<String>) };  ",
+                "    assert!(result.is_none());  ",
+                "    assert_eq!(result.owner, String::from(\"Test\"));  ",
+                "    assert!(ptr.is_null());  ",
+                "    assert_eq!(result.lifetime.ref_cnt.load(Ordering::Relaxed), 1);  ",
+                "    assert!(mem::align_of::<Owned<String>>() >= mem::align_of::<String>());  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

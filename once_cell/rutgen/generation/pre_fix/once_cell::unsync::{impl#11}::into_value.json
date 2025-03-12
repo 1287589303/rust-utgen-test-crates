@@ -1,0 +1,217 @@
+{
+  "name": "once_cell::unsync::{impl#11}::into_value",
+  "mod_info": {
+    "name": "unsync",
+    "loc": "src/lib.rs:383:1:859:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:749:9:755:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "Lazy<T, F> initialized with a function F, where T can be any type, and test conditions include: F = valid function returning T, F = function returning T with panics, and F = function returning non-initialized state; additionally test with: Lazy<T, F> not initialized, Lazy<T, F> previously poisoned, Lazy<T, F> initialized with non-default types (e.g., Option<T>, Box<T>), and check return types for Result<T, F>.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let lazy = Lazy::new(|| 42);",
+                "    let value = lazy.into_value().unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(value, 42);",
+                "    assert!(lazy.cell.get().is_some());",
+                "    assert!(lazy.init.get().is_none());",
+                "    let lazy_poisoned = Lazy::new(|| panic!(\"poisoned\"));",
+                "    let result = lazy_poisoned.into_value();",
+                "    assert!(result.is_err());",
+                "    assert!(matches!(result.unwrap_err(), f if f as *const _ == lazy_poisoned.init.get().unwrap() as *const _));"
+              ],
+              "code": [
+                "{",
+                "    let lazy = Lazy::new(|| 42);",
+                "    let value = lazy.into_value().unwrap();",
+                "    assert_eq!(value, 42);",
+                "    assert!(lazy.cell.get().is_some());",
+                "    assert!(lazy.init.get().is_none());",
+                "    let lazy_poisoned = Lazy::new(|| panic!(\"poisoned\"));",
+                "    let result = lazy_poisoned.into_value();",
+                "    assert!(result.is_err());",
+                "    assert!(matches!(result.unwrap_err(), f if f as *const _ == lazy_poisoned.init.get().unwrap() as *const _));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let lazy = Lazy::new(|| panic!(\"Initialization failed\"));",
+                "    let result = lazy.into_value();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), lazy.init.take().unwrap());",
+                "    assert_eq!(result.unwrap_err(), panic!(\"Initialization failed\"));"
+              ],
+              "code": [
+                "{",
+                "    let lazy = Lazy::new(|| panic!(\"Initialization failed\"));",
+                "    let result = lazy.into_value();",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), lazy.init.take().unwrap());",
+                "    assert_eq!(result.unwrap_err(), panic!(\"Initialization failed\"));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let lazy = Lazy::<i32>::new(|| 0); // Note: Using a zero function to represent non-initialized",
+                "    let result = lazy.into_value();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result.is_err(), true); // Check that the result is an error for a non-initialized Lazy",
+                "    assert!(matches!(result, Err(_))); // Ensure the result is of type Err",
+                "    assert_eq!(result.unwrap_err(), lazy.init.take().unwrap()); // The error should be the initialization function",
+                "    assert_eq!(lazy.cell.into_inner(), None); // Ensure the cell is still empty"
+              ],
+              "code": [
+                "{",
+                "    let lazy = Lazy::<i32>::new(|| 0); // Note: Using a zero function to represent non-initialized",
+                "    let result = lazy.into_value();",
+                "    assert_eq!(result.is_err(), true); // Check that the result is an error for a non-initialized Lazy",
+                "    assert!(matches!(result, Err(_))); // Ensure the result is of type Err",
+                "    assert_eq!(result.unwrap_err(), lazy.init.take().unwrap()); // The error should be the initialization function",
+                "    assert_eq!(lazy.cell.into_inner(), None); // Ensure the cell is still empty",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let lazy = Lazy::new(|| panic!(\"Previously poisoned\"));",
+                "    let result_before = lazy.into_value(); // Initialize, should panic",
+                "    let result_after = lazy.into_value();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(lazy.init.get().is_some()); // Check that init function is set before first call",
+                "    let result_before = std::panic::catch_unwind(|| lazy.into_value()); // Catch panic from first call",
+                "    assert!(result_before.is_err()); // Check that the first call returned an error",
+                "    assert_eq!(result_before.unwrap_err().as_ref(), Some(&|| panic!(\"Previously poisoned\"))); // Validate the error matches the expected function",
+                "    ",
+                "    let result_after = std::panic::catch_unwind(|| lazy.into_value()); // Catch panic from second call",
+                "    assert!(result_after.is_err()); // Check that the second call also returned an error",
+                "    assert_eq!(result_after.unwrap_err().as_ref(), Some(&|| panic!(\"Previously poisoned\"))); // Validate the error remains consistent"
+              ],
+              "code": [
+                "{",
+                "    let lazy = Lazy::new(|| panic!(\"Previously poisoned\"));",
+                "    let result_before = lazy.into_value(); // Initialize, should panic",
+                "    let result_after = lazy.into_value();",
+                "    assert!(lazy.init.get().is_some()); // Check that init function is set before first call",
+                "    let result_before = std::panic::catch_unwind(|| lazy.into_value()); // Catch panic from first call",
+                "    assert!(result_before.is_err()); // Check that the first call returned an error",
+                "    assert_eq!(result_before.unwrap_err().as_ref(), Some(&|| panic!(\"Previously poisoned\"))); // Validate the error matches the expected function",
+                "    ",
+                "    let result_after = std::panic::catch_unwind(|| lazy.into_value()); // Catch panic from second call",
+                "    assert!(result_after.is_err()); // Check that the second call also returned an error",
+                "    assert_eq!(result_after.unwrap_err().as_ref(), Some(&|| panic!(\"Previously poisoned\"))); // Validate the error remains consistent",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let lazy = Lazy::new(|| Some(\"Hello\".to_string()));",
+                "    let value = lazy.into_value().unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(value == \"Hello\".to_string());",
+                "    assert!(lazy.into_value().is_err());",
+                "    let lazy_uninitialized: Lazy<String> = Lazy::new(|| panic!(\"Shouldn't be called\"));",
+                "    assert!(lazy_uninitialized.into_value().is_err());",
+                "    let lazy_poisoned = Lazy::new(|| { panic!(\"Poisoned!\"); });",
+                "    assert!(matches!(lazy_poisoned.into_value(), Err(_)));",
+                "    let lazy_value = Lazy::new(|| \"Initialized\".to_string());",
+                "    assert!(lazy_value.into_value().unwrap() == \"Initialized\".to_string());"
+              ],
+              "code": [
+                "{",
+                "    let lazy = Lazy::new(|| Some(\"Hello\".to_string()));",
+                "    let value = lazy.into_value().unwrap();",
+                "    assert!(value == \"Hello\".to_string());",
+                "    assert!(lazy.into_value().is_err());",
+                "    let lazy_uninitialized: Lazy<String> = Lazy::new(|| panic!(\"Shouldn't be called\"));",
+                "    assert!(lazy_uninitialized.into_value().is_err());",
+                "    let lazy_poisoned = Lazy::new(|| { panic!(\"Poisoned!\"); });",
+                "    assert!(matches!(lazy_poisoned.into_value(), Err(_)));",
+                "    let lazy_value = Lazy::new(|| \"Initialized\".to_string());",
+                "    assert!(lazy_value.into_value().unwrap() == \"Initialized\".to_string());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let lazy = Lazy::new(|| Box::new(3.14));",
+                "    let value = lazy.into_value().unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(lazy.into_value().is_ok(), true);",
+                "    let lazy_initialized: Lazy<f64, _> = Lazy::new(|| Box::new(3.14));",
+                "    let result: Result<Box<f64>, _> = lazy_initialized.into_value();",
+                "    assert_eq!(result, Ok(Box::new(3.14)));",
+                "    let lazy_uninitialized: Lazy<i32, _> = Lazy::new(|| panic!(\"Should never be called\"));",
+                "    let result_uninitialized: Result<Box<i32>, _> = lazy_uninitialized.into_value();",
+                "    assert!(result_uninitialized.is_err());",
+                "    assert_eq!(result_uninitialized.err().unwrap().to_string(), \"Should never be called\");"
+              ],
+              "code": [
+                "{",
+                "    let lazy = Lazy::new(|| Box::new(3.14));",
+                "    let value = lazy.into_value().unwrap();",
+                "    assert_eq!(lazy.into_value().is_ok(), true);",
+                "    let lazy_initialized: Lazy<f64, _> = Lazy::new(|| Box::new(3.14));",
+                "    let result: Result<Box<f64>, _> = lazy_initialized.into_value();",
+                "    assert_eq!(result, Ok(Box::new(3.14)));",
+                "    let lazy_uninitialized: Lazy<i32, _> = Lazy::new(|| panic!(\"Should never be called\"));",
+                "    let result_uninitialized: Result<Box<i32>, _> = lazy_uninitialized.into_value();",
+                "    assert!(result_uninitialized.is_err());",
+                "    assert_eq!(result_uninitialized.err().unwrap().to_string(), \"Should never be called\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

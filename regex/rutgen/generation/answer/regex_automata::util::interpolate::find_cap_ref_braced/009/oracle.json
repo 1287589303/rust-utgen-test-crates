@@ -1,0 +1,199 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"Hello ${foo} World\";",
+          "    let i = 7; // Index of the '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap().cap, Ref::Named(\"foo\"));",
+          "    assert_eq!(result.unwrap().end, 12);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"Hello ${foo} World\";",
+          "    let i = 7; // Index of the '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap().cap, Ref::Named(\"foo\"));",
+          "    assert_eq!(result.unwrap().end, 12);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"Capture ${3} Here\";",
+          "    let i = 7; // Index of the '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Some(CaptureRef { cap: Ref::Number(3), end: 12 }));",
+          "    assert_eq!(result.is_some(), true);",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture ${invalid} Here\", 7).is_none(), true);",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture ${4 Here\", 7).is_none(), true);",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture ${}\", 7).is_none(), true);",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture {not_a_number} Here\", 8), Some(CaptureRef { cap: Ref::Named(\"not_a_number\"), end: 19 }));",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture ${{2}} Here\", 7).is_none(), true);",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture ${3] Here\", 7).is_none(), true);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"Capture ${3} Here\";",
+          "    let i = 7; // Index of the '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "    assert_eq!(result, Some(CaptureRef { cap: Ref::Number(3), end: 12 }));",
+          "    assert_eq!(result.is_some(), true);",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture ${invalid} Here\", 7).is_none(), true);",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture ${4 Here\", 7).is_none(), true);",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture ${}\", 7).is_none(), true);",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture {not_a_number} Here\", 8), Some(CaptureRef { cap: Ref::Named(\"not_a_number\"), end: 19 }));",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture ${{2}} Here\", 7).is_none(), true);",
+          "    assert_eq!(find_cap_ref_braced(b\"Capture ${3] Here\", 7).is_none(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"No closing brace ${foo\";",
+          "    let i = 15; // Index of the '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"No closing brace ${foo\";",
+          "    let i = 15; // Index of the '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "    assert_eq!(result, None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"Invalid UTF-8 ${\\xFF} Character\";",
+          "    let i = 17; // Index of the '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_none());",
+          "    assert_eq!(result, None);",
+          "    assert!(matches!(result, None));",
+          "    assert_eq!(result.unwrap_err().kind(), Utf8Error);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"Invalid UTF-8 ${\\xFF} Character\";",
+          "    let i = 17; // Index of the '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "    assert!(result.is_none());",
+          "    assert_eq!(result, None);",
+          "    assert!(matches!(result, None));",
+          "    assert_eq!(result.unwrap_err().kind(), Utf8Error);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"Empty ${} Name\";",
+          "    let i = 7; // Index of the '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);",
+          "    assert_eq!(input.len(), 17);",
+          "    assert!(matches!(result, None));",
+          "    assert!(memchr(b'$', input).is_some());",
+          "    assert!(memchr(b'{', input).is_some());",
+          "    assert!(memchr(b'}', input).is_none());"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"Empty ${} Name\";",
+          "    let i = 7; // Index of the '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "    assert_eq!(result, None);",
+          "    assert_eq!(input.len(), 17);",
+          "    assert!(matches!(result, None));",
+          "    assert!(memchr(b'$', input).is_some());",
+          "    assert!(memchr(b'{', input).is_some());",
+          "    assert!(memchr(b'}', input).is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"Values ${a} and ${2} are found\";",
+          "    let i = 7; // Index of the first '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "    ",
+          "    let i = 18; // Index of the second '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "}"
+        ],
+        "oracle": [
+          "    let input: &[u8] = b\"Values ${a} and ${2} are found\";",
+          "    let i = 7;",
+          "    let expected_first = Some(CaptureRef { cap: Ref::Named(\"a\"), end: 9 });",
+          "    assert_eq!(find_cap_ref_braced(input, i), expected_first);",
+          "    let i = 18;",
+          "    let expected_second = Some(CaptureRef { cap: Ref::Number(2), end: 21 });",
+          "    assert_eq!(find_cap_ref_braced(input, i), expected_second);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"Values ${a} and ${2} are found\";",
+          "    let i = 7; // Index of the first '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "    ",
+          "    let i = 18; // Index of the second '{' character",
+          "    let result = find_cap_ref_braced(input, i);",
+          "    let input: &[u8] = b\"Values ${a} and ${2} are found\";",
+          "    let i = 7;",
+          "    let expected_first = Some(CaptureRef { cap: Ref::Named(\"a\"), end: 9 });",
+          "    assert_eq!(find_cap_ref_braced(input, i), expected_first);",
+          "    let i = 18;",
+          "    let expected_second = Some(CaptureRef { cap: Ref::Number(2), end: 21 });",
+          "    assert_eq!(find_cap_ref_braced(input, i), expected_second);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

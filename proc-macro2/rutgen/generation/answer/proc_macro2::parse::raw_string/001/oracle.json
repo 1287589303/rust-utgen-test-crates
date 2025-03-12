@@ -1,0 +1,131 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"\" };",
+          "    let _ = raw_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(raw_string(Cursor { rest: \"\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"#\\\"example\\\"\"}), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"###\\\"text\\\"\"}), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"\\\"unmatched\"}), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"normal string\"}), Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"\" };",
+          "    let _ = raw_string(cursor);",
+          "    assert_eq!(raw_string(Cursor { rest: \"\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"#\\\"example\\\"\"}), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"###\\\"text\\\"\"}), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"\\\"unmatched\"}), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"normal string\"}), Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"a\" };",
+          "    let _ = raw_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(raw_string(Cursor { rest: \"a\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"\\\"abc\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"#\\\"abc\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"##\\\"abc\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"###\\\"abc\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"\\\"\\\"not_raw\\\"\\\"\"}), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"normal string\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"#\" }), Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"a\" };",
+          "    let _ = raw_string(cursor);",
+          "    assert_eq!(raw_string(Cursor { rest: \"a\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"\\\"abc\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"#\\\"abc\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"##\\\"abc\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"###\\\"abc\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"\\\"\\\"not_raw\\\"\\\"\"}), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"normal string\" }), Err(Reject));",
+          "    assert_eq!(raw_string(Cursor { rest: \"#\" }), Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let long_string = std::iter::repeat('x').take(260).collect::<String>() + \"###\";",
+          "    let cursor = Cursor { rest: &long_string };",
+          "    let _ = raw_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(raw_string(Cursor { rest: &std::iter::repeat('x').take(260).collect::<String>() + \"###\" }), Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let long_string = std::iter::repeat('x').take(260).collect::<String>() + \"###\";",
+          "    let cursor = Cursor { rest: &long_string };",
+          "    let _ = raw_string(cursor);",
+          "    assert_eq!(raw_string(Cursor { rest: &std::iter::repeat('x').take(260).collect::<String>() + \"###\" }), Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let long_string = std::iter::repeat('x').take(256).collect::<String>() + \"###\";",
+          "    let cursor = Cursor { rest: &long_string };",
+          "    let _ = raw_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    let long_string = std::iter::repeat('x').take(256).collect::<String>() + \"###\";",
+          "    let cursor = Cursor { rest: &long_string };",
+          "    assert_eq!(raw_string(cursor).is_err(), true);",
+          "    assert!(matches!(raw_string(cursor), Err(Reject)));",
+          "    assert!(raw_string(cursor).unwrap_err() == Reject);",
+          "    assert_eq!(long_string.len(), 259);",
+          "    assert!(long_string.starts_with(\"x\"));"
+        ],
+        "code": [
+          "{",
+          "    let long_string = std::iter::repeat('x').take(256).collect::<String>() + \"###\";",
+          "    let cursor = Cursor { rest: &long_string };",
+          "    let _ = raw_string(cursor);",
+          "    let long_string = std::iter::repeat('x').take(256).collect::<String>() + \"###\";",
+          "    let cursor = Cursor { rest: &long_string };",
+          "    assert_eq!(raw_string(cursor).is_err(), true);",
+          "    assert!(matches!(raw_string(cursor), Err(Reject)));",
+          "    assert!(raw_string(cursor).unwrap_err() == Reject);",
+          "    assert_eq!(long_string.len(), 259);",
+          "    assert!(long_string.starts_with(\"x\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

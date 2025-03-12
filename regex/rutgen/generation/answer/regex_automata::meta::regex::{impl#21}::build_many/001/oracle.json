@@ -1,0 +1,135 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let _result = builder.build_many::<&str>(&[]);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result.is_ok(), true);",
+          "    let err = builder.build_many(&[\"a\", \"b\", r\"\\p{Foo}\", \"c\"]).unwrap_err();",
+          "    assert_eq!(Some(PatternID::must(2)), err.pattern());",
+          "    let re_empty = builder.build_many::<&str>(&[]).unwrap();",
+          "    assert_eq!(None, re_empty.find(\"\"));"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let _result = builder.build_many::<&str>(&[]);",
+          "    assert_eq!(_result.is_ok(), true);",
+          "    let err = builder.build_many(&[\"a\", \"b\", r\"\\p{Foo}\", \"c\"]).unwrap_err();",
+          "    assert_eq!(Some(PatternID::must(2)), err.pattern());",
+          "    let re_empty = builder.build_many::<&str>(&[]).unwrap();",
+          "    assert_eq!(None, re_empty.find(\"\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let _result = builder.build_many(&[\"a\", \"b\", \"c\"]);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(builder.build_many(&[\"a\", \"b\", r\"\\p{InvalidPattern}\", \"c\"]).is_err());",
+          "    assert!(builder.build_many::<&str>(&[]).is_ok());",
+          "    assert!(builder.build_many(&[\"valid1\", \"valid2\"]).is_ok());",
+          "    let err = builder.build_many(&[\"valid\", r\"\\p{Foo}\"]).unwrap_err();",
+          "    assert_eq!(Some(PatternID::must(1)), err.pattern());",
+          "    assert!(builder.build_many(&[\"[a-z]\", \"[0-9]\", r\"(\\w)\"]).is_ok());",
+          "    assert!(builder.build_many(&[\"*invalid\", \"valid\"]).is_err());",
+          "    assert!(builder.build_many(&[\"valid\", r\"[a-z]*\"]).is_ok());",
+          "    assert_eq!(builder.build_many(&[\"valid_pattern\"]).unwrap().find(\"sample text\"), None);",
+          "    assert!(builder.build_many(&[\"a\", \"b\", r\"c{2,}\"]).is_ok());",
+          "    let err = builder.build_many(&[\"[unclosed\", \"pattern\"]).unwrap_err();",
+          "    assert_eq!(Some(PatternID::must(0)), err.pattern());"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let _result = builder.build_many(&[\"a\", \"b\", \"c\"]);",
+          "    assert!(builder.build_many(&[\"a\", \"b\", r\"\\p{InvalidPattern}\", \"c\"]).is_err());",
+          "    assert!(builder.build_many::<&str>(&[]).is_ok());",
+          "    assert!(builder.build_many(&[\"valid1\", \"valid2\"]).is_ok());",
+          "    let err = builder.build_many(&[\"valid\", r\"\\p{Foo}\"]).unwrap_err();",
+          "    assert_eq!(Some(PatternID::must(1)), err.pattern());",
+          "    assert!(builder.build_many(&[\"[a-z]\", \"[0-9]\", r\"(\\w)\"]).is_ok());",
+          "    assert!(builder.build_many(&[\"*invalid\", \"valid\"]).is_err());",
+          "    assert!(builder.build_many(&[\"valid\", r\"[a-z]*\"]).is_ok());",
+          "    assert_eq!(builder.build_many(&[\"valid_pattern\"]).unwrap().find(\"sample text\"), None);",
+          "    assert!(builder.build_many(&[\"a\", \"b\", r\"c{2,}\"]).is_ok());",
+          "    let err = builder.build_many(&[\"[unclosed\", \"pattern\"]).unwrap_err();",
+          "    assert_eq!(Some(PatternID::must(0)), err.pattern());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let _result = builder.build_many(&[r\"\\p{Invalid}\"]);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(Builder::new().build_many(&[r\"\\p{Invalid}\"]).is_err());",
+          "    assert_eq!(Some(PatternID::must(0)), Builder::new().build_many(&[r\"\\p{Invalid}\"]).unwrap_err().pattern());",
+          "    assert!(Builder::new().build_many(&[]).is_ok());",
+          "    assert_eq!(None, Builder::new().build_many(&[]).unwrap().find(\"\"));"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let _result = builder.build_many(&[r\"\\p{Invalid}\"]);",
+          "    assert!(Builder::new().build_many(&[r\"\\p{Invalid}\"]).is_err());",
+          "    assert_eq!(Some(PatternID::must(0)), Builder::new().build_many(&[r\"\\p{Invalid}\"]).unwrap_err().pattern());",
+          "    assert!(Builder::new().build_many(&[]).is_ok());",
+          "    assert_eq!(None, Builder::new().build_many(&[]).unwrap().find(\"\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let _result = builder.build_many(&[\"a\", r\"\\p{Foo}\", \"b\", r\"\\p{Invalid}\"]);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(builder.build_many(&[\"a\", r\"\\p{Foo}\", \"b\", r\"\\p{Invalid}\"]).is_err());",
+          "    assert_eq!(builder.build_many(&[\"a\", r\"\\p{Foo}\", \"b\", r\"\\p{Invalid}\"]).unwrap_err().pattern(), Some(PatternID::must(3)));"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let _result = builder.build_many(&[\"a\", r\"\\p{Foo}\", \"b\", r\"\\p{Invalid}\"]);",
+          "    assert!(builder.build_many(&[\"a\", r\"\\p{Foo}\", \"b\", r\"\\p{Invalid}\"]).is_err());",
+          "    assert_eq!(builder.build_many(&[\"a\", r\"\\p{Foo}\", \"b\", r\"\\p{Invalid}\"]).unwrap_err().pattern(), Some(PatternID::must(3)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

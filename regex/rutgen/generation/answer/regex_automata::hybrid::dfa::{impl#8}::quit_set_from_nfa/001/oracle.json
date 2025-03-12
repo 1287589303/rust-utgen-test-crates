@@ -1,0 +1,199 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut config = Config::new()",
+          "        .unicode_word_boundary(true)",
+          "        .quit(0x80, true)",
+          "        .quit(0x81, true)",
+          "        .quit(0xFF, true);",
+          "    ",
+          "    let nfa = NFA::always_match(); // Assuming this creates an NFA with the word match",
+          "    config.quit_set_from_nfa(&nfa).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    config.quitset.unwrap().contains_range(0x80, 0xFF) == true",
+          "    nfa.look_set_any().contains_word_unicode() == true",
+          "    config.get_unicode_word_boundary() == true",
+          "    config.quit(0x80, true).quit(0x81, true).quit(0xFF, true) == config",
+          "    config.quit_set_from_nfa(&nfa) == Ok(quit)"
+        ],
+        "code": [
+          "{",
+          "    let mut config = Config::new()",
+          "        .unicode_word_boundary(true)",
+          "        .quit(0x80, true)",
+          "        .quit(0x81, true)",
+          "        .quit(0xFF, true);",
+          "    ",
+          "    let nfa = NFA::always_match(); // Assuming this creates an NFA with the word match",
+          "    config.quit_set_from_nfa(&nfa).unwrap();",
+          "    config.quitset.unwrap().contains_range(0x80, 0xFF) == true",
+          "    nfa.look_set_any().contains_word_unicode() == true",
+          "    config.get_unicode_word_boundary() == true",
+          "    config.quit(0x80, true).quit(0x81, true).quit(0xFF, true) == config",
+          "    config.quit_set_from_nfa(&nfa) == Ok(quit)",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut config = Config::new()",
+          "        .unicode_word_boundary(true);",
+          "    ",
+          "    let nfa = NFA::always_match(); // Assuming this creates an NFA with the word match",
+          "    config.quit_set_from_nfa(&nfa).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut config = Config::new().unicode_word_boundary(true);",
+          "    let nfa = NFA::always_match();",
+          "    assert!(config.quit_set_from_nfa(&nfa).is_ok());",
+          "    let result = config.quit_set_from_nfa(&nfa).unwrap();",
+          "    assert!(!result.is_empty());",
+          "    for byte in 0x80..=0xFF {",
+          "    assert!(result.contains(byte));",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let mut config = Config::new()",
+          "        .unicode_word_boundary(true);",
+          "    ",
+          "    let nfa = NFA::always_match(); // Assuming this creates an NFA with the word match",
+          "    config.quit_set_from_nfa(&nfa).unwrap();",
+          "    let mut config = Config::new().unicode_word_boundary(true);",
+          "    let nfa = NFA::always_match();",
+          "    assert!(config.quit_set_from_nfa(&nfa).is_ok());",
+          "    let result = config.quit_set_from_nfa(&nfa).unwrap();",
+          "    assert!(!result.is_empty());",
+          "    for byte in 0x80..=0xFF {",
+          "    assert!(result.contains(byte));",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut config = Config::new()",
+          "        .unicode_word_boundary(false)",
+          "        .quit(0x80, true) // Including bytes in range to meet precondition",
+          "        .quit(0x81, true)",
+          "        .quit(0xFF, true);",
+          "    ",
+          "    let nfa = NFA::always_match(); // Assuming this creates an NFA with the word match",
+          "    config.quit_set_from_nfa(&nfa).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    config.quit_set_from_nfa(&nfa).unwrap(); // Precondition: nfa.look_set_any().contains_word_unicode() is true and self.get_unicode_word_boundary() is true, expects Ok(quit) with bytes from 0x80 to 0xFF added to quit set",
+          "    ",
+          "    let mut config = Config::new() // Test for the expectation of a successful return",
+          "    .unicode_word_boundary(true)",
+          "    .quit(0x80, false) // This configuration should trigger an error due to missing byte in quit set",
+          "    .quit(0x81, false)",
+          "    .quit(0xFF, false);",
+          "    ",
+          "    let nfa = NFA::always_match(); // Assuming this creates an NFA with the word match",
+          "    assert!(config.quit_set_from_nfa(&nfa).is_err()); // Expects Err(BuildError::unsupported_dfa_word_boundary_unicode()) due to missing bytes in quit set",
+          "    ",
+          "    let mut config = Config::new() // Check successful return with appropriate byte configuration",
+          "    .unicode_word_boundary(true)",
+          "    .quit(0x80, true)",
+          "    .quit(0xFF, true);",
+          "    ",
+          "    let nfa = NFA::always_match();",
+          "    let quit_set = config.quit_set_from_nfa(&nfa).unwrap(); // Expects Ok(quit) with added bytes from 0x80 to 0xFF",
+          "    assert!(quit_set.contains(0x80));",
+          "    assert!(quit_set.contains(0xFF));"
+        ],
+        "code": [
+          "{",
+          "    let mut config = Config::new()",
+          "        .unicode_word_boundary(false)",
+          "        .quit(0x80, true) // Including bytes in range to meet precondition",
+          "        .quit(0x81, true)",
+          "        .quit(0xFF, true);",
+          "    ",
+          "    let nfa = NFA::always_match(); // Assuming this creates an NFA with the word match",
+          "    config.quit_set_from_nfa(&nfa).unwrap();",
+          "    config.quit_set_from_nfa(&nfa).unwrap(); // Precondition: nfa.look_set_any().contains_word_unicode() is true and self.get_unicode_word_boundary() is true, expects Ok(quit) with bytes from 0x80 to 0xFF added to quit set",
+          "    ",
+          "    let mut config = Config::new() // Test for the expectation of a successful return",
+          "    .unicode_word_boundary(true)",
+          "    .quit(0x80, false) // This configuration should trigger an error due to missing byte in quit set",
+          "    .quit(0x81, false)",
+          "    .quit(0xFF, false);",
+          "    ",
+          "    let nfa = NFA::always_match(); // Assuming this creates an NFA with the word match",
+          "    assert!(config.quit_set_from_nfa(&nfa).is_err()); // Expects Err(BuildError::unsupported_dfa_word_boundary_unicode()) due to missing bytes in quit set",
+          "    ",
+          "    let mut config = Config::new() // Check successful return with appropriate byte configuration",
+          "    .unicode_word_boundary(true)",
+          "    .quit(0x80, true)",
+          "    .quit(0xFF, true);",
+          "    ",
+          "    let nfa = NFA::always_match();",
+          "    let quit_set = config.quit_set_from_nfa(&nfa).unwrap(); // Expects Ok(quit) with added bytes from 0x80 to 0xFF",
+          "    assert!(quit_set.contains(0x80));",
+          "    assert!(quit_set.contains(0xFF));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut config = Config::new()",
+          "        .unicode_word_boundary(false);",
+          "    ",
+          "    let nfa = NFA::always_match(); // Assuming this creates an NFA with the word match",
+          "    config.quit_set_from_nfa(&nfa).unwrap(); // This should panic due to the lack of range in quit set",
+          "}"
+        ],
+        "oracle": [
+          "    config.quit_set_from_nfa(&nfa).unwrap_err(); // Expect error when unicode_word_boundary is false with word_unicode true",
+          "    config.quit_set_from_nfa(&nfa).unwrap(); // Expect Ok(quit) when unicode_word_boundary is true with word_unicode true",
+          "    config.quit_set_from_nfa(&nfa).unwrap(); // Expect Ok(quit) covering all non-ASCII bytes when both conditions hold",
+          "    let mut config_with_quit = Config::new().unicode_word_boundary(true).quit(0x80, true);",
+          "    config_with_quit.quit_set_from_nfa(&nfa).unwrap(); // Expect Ok(quit) since quit includes non-ASCII bytes."
+        ],
+        "code": [
+          "{",
+          "    let mut config = Config::new()",
+          "        .unicode_word_boundary(false);",
+          "    ",
+          "    let nfa = NFA::always_match(); // Assuming this creates an NFA with the word match",
+          "    config.quit_set_from_nfa(&nfa).unwrap(); // This should panic due to the lack of range in quit set",
+          "    config.quit_set_from_nfa(&nfa).unwrap_err(); // Expect error when unicode_word_boundary is false with word_unicode true",
+          "    config.quit_set_from_nfa(&nfa).unwrap(); // Expect Ok(quit) when unicode_word_boundary is true with word_unicode true",
+          "    config.quit_set_from_nfa(&nfa).unwrap(); // Expect Ok(quit) covering all non-ASCII bytes when both conditions hold",
+          "    let mut config_with_quit = Config::new().unicode_word_boundary(true).quit(0x80, true);",
+          "    config_with_quit.quit_set_from_nfa(&nfa).unwrap(); // Expect Ok(quit) since quit includes non-ASCII bytes.",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

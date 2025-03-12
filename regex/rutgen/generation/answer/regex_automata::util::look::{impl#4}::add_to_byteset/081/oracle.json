@@ -1,0 +1,144 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set = crate::util::alphabet::ByteClassSet::empty();",
+          "    let matcher = LookMatcher::new();",
+          "    matcher.set_line_terminator(0);",
+          "    matcher.add_to_byteset(Look::WordAscii, &mut set);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(set != crate::util::alphabet::ByteClassSet::empty());",
+          "    assert_eq!(set.byte_classes().len(), expected_length); // replace expected_length with expected value",
+          "    assert!(set.contains_range(0, 255)); // The full range of ASCII characters is included",
+          "    assert!(!set.contains_range(0, 127)); // ASCII non-word characters should not be part of the WordAscii class",
+          "    assert!(set.contains_range(128, 255)); // Non-ASCII characters should not be part of WordAscii, based on the unicode handling",
+          "    assert!(set.contains_range(1, 2)); // Validate specific ranges that WordAscii should cover",
+          "    assert!(set.byte_classes().iter().all(|&byte| utf8::is_word_byte(byte))); // Ensure all bytes are word bytes for WordAscii",
+          "    assert!(matcher.get_line_terminator() == 0); // Ensure that line terminator is set as expected"
+        ],
+        "code": [
+          "{",
+          "    let mut set = crate::util::alphabet::ByteClassSet::empty();",
+          "    let matcher = LookMatcher::new();",
+          "    matcher.set_line_terminator(0);",
+          "    matcher.add_to_byteset(Look::WordAscii, &mut set);",
+          "    assert!(set != crate::util::alphabet::ByteClassSet::empty());",
+          "    assert_eq!(set.byte_classes().len(), expected_length); // replace expected_length with expected value",
+          "    assert!(set.contains_range(0, 255)); // The full range of ASCII characters is included",
+          "    assert!(!set.contains_range(0, 127)); // ASCII non-word characters should not be part of the WordAscii class",
+          "    assert!(set.contains_range(128, 255)); // Non-ASCII characters should not be part of WordAscii, based on the unicode handling",
+          "    assert!(set.contains_range(1, 2)); // Validate specific ranges that WordAscii should cover",
+          "    assert!(set.byte_classes().iter().all(|&byte| utf8::is_word_byte(byte))); // Ensure all bytes are word bytes for WordAscii",
+          "    assert!(matcher.get_line_terminator() == 0); // Ensure that line terminator is set as expected",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set = crate::util::alphabet::ByteClassSet::empty();",
+          "    let matcher = LookMatcher::new();",
+          "    matcher.set_line_terminator(0);",
+          "    matcher.add_to_byteset(Look::WordAscii, &mut set);",
+          "    // Manually set b1 and b2 to ensure b1 == 255 and b2 == 256. ",
+          "    // This requires deeper manipulation of the internals which is not feasible here,",
+          "    // but the intention is to trigger the scenario where iswb(asu8(255)) != iswb(asu8(256)).",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(set.byte_classes().len() > 0);",
+          "    assert_eq!(set.byte_classes().last().unwrap(), 0);",
+          "    assert!(matcher.get_line_terminator() == 0);",
+          "    assert!(matcher.matches(Look::WordAscii, &[0xFF], 0));",
+          "    assert!(!matcher.matches(Look::WordAscii, &[0x00], 0));",
+          "    assert!(matcher.matches_set(set, &[0xFF], 0));",
+          "    assert!(!matcher.matches_set(set, &[0x00], 0));",
+          "    assert!(set.byte_classes().contains(&255));",
+          "    assert!(!set.byte_classes().contains(&256));",
+          "    assert!(matcher.add_to_byteset(Look::WordAscii, &mut set));"
+        ],
+        "code": [
+          "{",
+          "    let mut set = crate::util::alphabet::ByteClassSet::empty();",
+          "    let matcher = LookMatcher::new();",
+          "    matcher.set_line_terminator(0);",
+          "    matcher.add_to_byteset(Look::WordAscii, &mut set);",
+          "    // Manually set b1 and b2 to ensure b1 == 255 and b2 == 256. ",
+          "    // This requires deeper manipulation of the internals which is not feasible here,",
+          "    // but the intention is to trigger the scenario where iswb(asu8(255)) != iswb(asu8(256)).",
+          "    assert!(set.byte_classes().len() > 0);",
+          "    assert_eq!(set.byte_classes().last().unwrap(), 0);",
+          "    assert!(matcher.get_line_terminator() == 0);",
+          "    assert!(matcher.matches(Look::WordAscii, &[0xFF], 0));",
+          "    assert!(!matcher.matches(Look::WordAscii, &[0x00], 0));",
+          "    assert!(matcher.matches_set(set, &[0xFF], 0));",
+          "    assert!(!matcher.matches_set(set, &[0x00], 0));",
+          "    assert!(set.byte_classes().contains(&255));",
+          "    assert!(!set.byte_classes().contains(&256));",
+          "    assert!(matcher.add_to_byteset(Look::WordAscii, &mut set));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut set = crate::util::alphabet::ByteClassSet::empty();",
+          "    let matcher = LookMatcher::new();",
+          "    matcher.set_line_terminator(0);",
+          "    matcher.add_to_byteset(Look::WordAscii, &mut set);",
+          "    // This test is expected to panic due to the condition where b2 <= 256 is false.",
+          "    // Similar as above, we aim to reach this scenario by manipulating conditions.",
+          "}"
+        ],
+        "oracle": [
+          "    let mut set = crate::util::alphabet::ByteClassSet::empty();",
+          "    let matcher = LookMatcher::new();",
+          "    matcher.set_line_terminator(0);",
+          "    matcher.add_to_byteset(Look::WordAscii, &mut set);",
+          "    assert!(std::panic::catch_unwind(|| matcher.add_to_byteset(Look::WordAscii, &mut set)).is_err());",
+          "    let b1 = 255;",
+          "    let b2 = 256;",
+          "    assert!(b2 > 255);",
+          "    assert!(matcher.is_word_ascii(&[], 0));"
+        ],
+        "code": [
+          "{",
+          "    let mut set = crate::util::alphabet::ByteClassSet::empty();",
+          "    let matcher = LookMatcher::new();",
+          "    matcher.set_line_terminator(0);",
+          "    matcher.add_to_byteset(Look::WordAscii, &mut set);",
+          "    // This test is expected to panic due to the condition where b2 <= 256 is false.",
+          "    // Similar as above, we aim to reach this scenario by manipulating conditions.",
+          "    let mut set = crate::util::alphabet::ByteClassSet::empty();",
+          "    let matcher = LookMatcher::new();",
+          "    matcher.set_line_terminator(0);",
+          "    matcher.add_to_byteset(Look::WordAscii, &mut set);",
+          "    assert!(std::panic::catch_unwind(|| matcher.add_to_byteset(Look::WordAscii, &mut set)).is_err());",
+          "    let b1 = 255;",
+          "    let b2 = 256;",
+          "    assert!(b2 > 255);",
+          "    assert!(matcher.is_word_ascii(&[], 0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

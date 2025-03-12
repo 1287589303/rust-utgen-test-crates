@@ -1,0 +1,999 @@
+{
+  "name": "regex_lite::pikevm::{impl#0}::epsilon_closure_explore",
+  "mod_info": {
+    "name": "pikevm",
+    "loc": "regex-lite/src/lib.rs:881:1:881:12"
+  },
+  "visible": false,
+  "loc": "regex-lite/src/pikevm.rs:355:5:436:6",
+  "doc": "/// Explore all of the epsilon transitions out of `sid`. This is mostly\n/// split out from `epsilon_closure` in order to clearly delineate\n/// the actual work of computing an epsilon closure from the stack\n/// book-keeping.\n///\n/// This will push any additional explorations needed on to `stack`.\n///\n/// `curr_slots` should refer to the slots for the currently active NFA\n/// state. That is, the current state we are stepping through. These\n/// slots are mutated in place as new `Captures` states are traversed\n/// during epsilon closure, but the slots are restored to their original\n/// values once the full epsilon closure is completed. The ultimate use of\n/// `curr_slots` is to copy them to the corresponding `next_slots`, so that\n/// the capturing group spans are forwarded from the currently active state\n/// to the next.\n///\n/// `next` refers to the next set of active states. Computing an epsilon\n/// closure may increase the next set of active states.\n///\n/// `haystack` refers to the what we're searching and `at` refers to the\n/// current position in the haystack. These are used to check whether\n/// conditional epsilon transitions (like look-around) are satisfied at\n/// the current position. If they aren't, then the epsilon closure won't\n/// include them.\n",
+  "code": [
+    "fn epsilon_closure_explore(",
+    "    &self,",
+    "    stack: &mut Vec<FollowEpsilon>,",
+    "    curr_slots: &mut [Option<NonMaxUsize>],",
+    "    next: &mut ActiveStates,",
+    "    haystack: &[u8],",
+    "    at: usize,",
+    "    mut sid: StateID,",
+    ") {",
+    "    // We can avoid pushing some state IDs on to our stack in precisely",
+    "    // the cases where a 'push(x)' would be immediately followed by a 'x",
+    "    // = pop()'. This is achieved by this outer-loop. We simply set 'sid'",
+    "    // to be the next state ID we want to explore once we're done with",
+    "    // our initial exploration. In practice, this avoids a lot of stack",
+    "    // thrashing.",
+    "    loop {",
+    "        // Record this state as part of our next set of active states. If",
+    "        // we've already explored it, then no need to do it again.",
+    "        if !next.set.insert(sid) {",
+    "            return;",
+    "        }",
+    "        match *self.nfa.state(sid) {",
+    "            State::Fail",
+    "            | State::Match { .. }",
+    "            | State::Char { .. }",
+    "            | State::Ranges { .. } => {",
+    "                next.slot_table.for_state(sid).copy_from_slice(curr_slots);",
+    "                return;",
+    "            }",
+    "            State::Goto { target, look: None } => {",
+    "                sid = target;",
+    "            }",
+    "            State::Goto { target, look: Some(look) } => {",
+    "                if !look.is_match(haystack, at) {",
+    "                    return;",
+    "                }",
+    "                sid = target;",
+    "            }",
+    "            State::Splits { ref targets, reverse: false } => {",
+    "                sid = match targets.get(0) {",
+    "                    None => return,",
+    "                    Some(&sid) => sid,",
+    "                };",
+    "                stack.extend(",
+    "                    targets[1..]",
+    "                        .iter()",
+    "                        .copied()",
+    "                        .rev()",
+    "                        .map(FollowEpsilon::Explore),",
+    "                );",
+    "            }",
+    "            State::Splits { ref targets, reverse: true } => {",
+    "                sid = match targets.last() {",
+    "                    None => return,",
+    "                    Some(&sid) => sid,",
+    "                };",
+    "                stack.extend(",
+    "                    targets[..targets.len() - 1]",
+    "                        .iter()",
+    "                        .copied()",
+    "                        .map(FollowEpsilon::Explore),",
+    "                );",
+    "            }",
+    "            State::Capture { target, slot } => {",
+    "                // There's no need to do anything with slots that",
+    "                // ultimately won't be copied into the caller-provided",
+    "                // 'Captures' value. So we just skip dealing with them at",
+    "                // all.",
+    "                if slot.as_usize() < curr_slots.len() {",
+    "                    stack.push(FollowEpsilon::RestoreCapture {",
+    "                        slot,",
+    "                        offset: curr_slots[slot.as_usize()],",
+    "                    });",
+    "                    // OK because length of a slice must fit into an isize.",
+    "                    curr_slots[slot.as_usize()] =",
+    "                        Some(NonMaxUsize::new(at).unwrap());",
+    "                }",
+    "                sid = target;",
+    "            }",
+    "        }",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 14,
+    "contra": 6,
+    "min_set": 12
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Match { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Ranges { .. } or State::Match { .. } or State::Char { .. } or State::Fail",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        15,
+        16,
+        17,
+        18,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Fail",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Ranges { .. } or State::Match { .. } or State::Char { .. } or State::Fail",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        15,
+        16,
+        17,
+        18,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Capture { target, slot }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "slot.as_usize() < curr_slots.len()",
+          "norm": "curr_slots.len() > slot.as_usize()",
+          "value": "true",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 373,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        14,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        62,
+        63,
+        1,
+        2,
+        3,
+        5,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Capture { target, slot }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "slot.as_usize() < curr_slots.len()",
+          "norm": "curr_slots.len() > slot.as_usize()",
+          "value": "false",
+          "line": 423,
+          "bound": "slot.as_usize() == curr_slots.len()"
+        },
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 373,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        14,
+        51,
+        52,
+        61,
+        62,
+        63,
+        1,
+        2,
+        3,
+        5,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Goto { target, look: Some(look) } or State::Goto { target, look: None }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Ranges { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Goto { target, look: Some(look) }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "look.is_match(haystack, at)",
+          "norm": null,
+          "value": "true",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 373,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        10,
+        20,
+        21,
+        22,
+        63,
+        1,
+        2,
+        3,
+        5,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Goto { target, look: Some(look) } or State::Goto { target, look: None }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Ranges { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Goto { target, look: Some(look) }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "look.is_match(haystack, at)",
+          "norm": null,
+          "value": "false",
+          "line": 388,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        10,
+        20,
+        21,
+        23,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Goto { target, look: Some(look) } or State::Goto { target, look: None }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Char { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Goto { target, look: None }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 373,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        9,
+        19,
+        63,
+        1,
+        2,
+        3,
+        5,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: false } or State::Splits { ref targets, reverse: true }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Ranges { .. }",
+          "norm": null,
+          "value": "false",
+          "line": 380,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Goto { target, look: Some(look) }",
+          "norm": null,
+          "value": "false",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: false }",
+          "norm": null,
+          "value": "false",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: true }",
+          "norm": null,
+          "value": "false",
+          "line": 406,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Match { .. }",
+          "norm": null,
+          "value": "false",
+          "line": 378,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Char { .. }",
+          "norm": null,
+          "value": "false",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Fail",
+          "norm": null,
+          "value": "false",
+          "line": 377,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Goto { target, look: None }",
+          "norm": null,
+          "value": "false",
+          "line": 384,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Capture { target, slot }",
+          "norm": null,
+          "value": "false",
+          "line": 418,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: true }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "targets.last() matches Some(&sid)",
+          "norm": null,
+          "value": "true",
+          "line": 407,
+          "bound": null
+        },
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 373,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        11,
+        13,
+        37,
+        38,
+        39,
+        42,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        63,
+        1,
+        2,
+        3,
+        5,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: false } or State::Splits { ref targets, reverse: true }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Ranges { .. }",
+          "norm": null,
+          "value": "false",
+          "line": 380,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Goto { target, look: Some(look) }",
+          "norm": null,
+          "value": "false",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: false }",
+          "norm": null,
+          "value": "false",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: true }",
+          "norm": null,
+          "value": "false",
+          "line": 406,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Match { .. }",
+          "norm": null,
+          "value": "false",
+          "line": 378,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Char { .. }",
+          "norm": null,
+          "value": "false",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Fail",
+          "norm": null,
+          "value": "false",
+          "line": 377,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Goto { target, look: None }",
+          "norm": null,
+          "value": "false",
+          "line": 384,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Capture { target, slot }",
+          "norm": null,
+          "value": "false",
+          "line": 418,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: true }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "targets.last() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 407,
+          "bound": null
+        },
+        {
+          "cond": "targets.last() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 407,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        11,
+        13,
+        37,
+        38,
+        39,
+        41,
+        43,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: false } or State::Splits { ref targets, reverse: true }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Char { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: false }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "targets.get(0) matches Some(&sid)",
+          "norm": null,
+          "value": "true",
+          "line": 394,
+          "bound": null
+        },
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 373,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        11,
+        12,
+        24,
+        25,
+        26,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        63,
+        1,
+        2,
+        3,
+        5,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: false } or State::Splits { ref targets, reverse: true }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Char { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Splits { ref targets, reverse: false }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "targets.get(0) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 394,
+          "bound": null
+        },
+        {
+          "cond": "targets.get(0) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 394,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        11,
+        12,
+        24,
+        25,
+        26,
+        28,
+        30,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Ranges { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Ranges { .. } or State::Match { .. } or State::Char { .. } or State::Fail",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        15,
+        16,
+        17,
+        18,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 373,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Char { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Ranges { .. } or State::Match { .. } or State::Char { .. } or State::Fail",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        15,
+        16,
+        17,
+        18,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "next.set.insert(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 373,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

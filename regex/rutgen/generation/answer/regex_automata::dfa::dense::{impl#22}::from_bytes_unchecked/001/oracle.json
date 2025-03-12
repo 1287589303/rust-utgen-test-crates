@@ -1,0 +1,140 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0xFF, 0xFF, 0xFF, 0xFF]; // Represents an overflow case when read as u32",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result.unwrap_err(), DeserializeError::ArithmeticOverflow(_)));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0xFF, 0xFF, 0xFF, 0xFF]; // Represents an overflow case when read as u32",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result.unwrap_err(), DeserializeError::ArithmeticOverflow(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0; 8]; // Represents a case with a read value of 0 for state length",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(matches!(result.err(), Some(DeserializeError::invalid_usize(\"match state length\"))));",
+          "    assert_eq!(slice.len(), 8);",
+          "    assert_eq!(result.unwrap_err().kind(), DeserializeErrorKind::BufferTooSmall(\"match state length\"));",
+          "    assert_eq!(result.unwrap_err().slice().len(), 8);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0; 8]; // Represents a case with a read value of 0 for state length",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(matches!(result.err(), Some(DeserializeError::invalid_usize(\"match state length\"))));",
+          "    assert_eq!(slice.len(), 8);",
+          "    assert_eq!(result.unwrap_err().kind(), DeserializeErrorKind::BufferTooSmall(\"match state length\"));",
+          "    assert_eq!(result.unwrap_err().slice().len(), 8);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let length = (usize::MAX as u32).to_le_bytes();",
+          "    let slice: &[u8] = &length.iter().cloned().chain(vec![0; 4]).collect::<Vec<u8>>(); // Overflow case with boundary value as the first 4 bytes",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let length = (usize::MAX as u32).to_le_bytes();",
+          "    let slice: &[u8] = &length.iter().cloned().chain(vec![0; 4]).collect::<Vec<u8>>(); // Overflow case with boundary value as the first 4 bytes",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let length = 5u32.to_le_bytes();",
+          "    let slice: &[u8] = &length.iter().cloned().chain(vec![0; 4]).collect::<Vec<u8>>(); // Valid scenario with a small length",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind(), DeserializeErrorKind::InvalidUsize(\"match state length\"));",
+          "    assert!(slice.len() >= 4);",
+          "    assert_eq!(slice[0..4], length);",
+          "    assert_eq!(slice[4..8], vec![0, 0, 0, 0]);",
+          "    assert!(slice.len() < 8);"
+        ],
+        "code": [
+          "{",
+          "    let length = 5u32.to_le_bytes();",
+          "    let slice: &[u8] = &length.iter().cloned().chain(vec![0; 4]).collect::<Vec<u8>>(); // Valid scenario with a small length",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind(), DeserializeErrorKind::InvalidUsize(\"match state length\"));",
+          "    assert!(slice.len() >= 4);",
+          "    assert_eq!(slice[0..4], length);",
+          "    assert_eq!(slice[4..8], vec![0, 0, 0, 0]);",
+          "    assert!(slice.len() < 8);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let max_length = (usize::MAX as u32).to_le_bytes();",
+          "    let slice: &[u8] = &max_length.iter().cloned().chain(vec![0; 4]).collect::<Vec<u8>>(); // Maximum valid size",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let max_length = (usize::MAX as u32).to_le_bytes();",
+          "    let slice: &[u8] = &max_length.iter().cloned().chain(vec![0; 4]).collect::<Vec<u8>>(); // Maximum valid size",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

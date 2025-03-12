@@ -1,0 +1,379 @@
+{
+  "name": "url::{impl#1}::to_file_path",
+  "mod_info": {
+    "name": "",
+    "loc": "url/src/lib.rs:9:1:3218:2"
+  },
+  "visible": true,
+  "loc": "url/src/lib.rs:2713:5:2745:6",
+  "doc": "/// Assuming the URL is in the `file` scheme or similar,\n/// convert its path to an absolute `std::path::Path`.\n///\n/// **Note:** This does not actually check the URL’s `scheme`,\n/// and may give nonsensical results for other schemes.\n/// It is the user’s responsibility to check the URL’s scheme before calling this.\n///\n/// ```\n/// # use url::Url;\n/// # let url = Url::parse(\"file:///etc/passwd\").unwrap();\n/// let path = url.to_file_path();\n/// ```\n///\n/// Returns `Err` if the host is neither empty nor `\"localhost\"` (except on Windows, where\n/// `file:` URLs may have a non-local host),\n/// or if `Path::new_opt()` returns `None`.\n/// (That is, if the percent-decoded path contains a NUL byte or,\n/// for a Windows path, is not UTF-8.)\n///\n/// This method is only available if the `std` Cargo feature is enabled.\n",
+  "code": [
+    "pub fn to_file_path(&self) -> Result<PathBuf, ()> {",
+    "    if let Some(segments) = self.path_segments() {",
+    "        let host = match self.host() {",
+    "            None | Some(Host::Domain(\"localhost\")) => None,",
+    "            Some(_) if cfg!(windows) && self.scheme() == \"file\" => {",
+    "                Some(&self.serialization[self.host_start as usize..self.host_end as usize])",
+    "            }",
+    "            _ => return Err(()),",
+    "        };",
+    "",
+    "        let str_len = self.as_str().len();",
+    "        let estimated_capacity = if cfg!(target_os = \"redox\") {",
+    "            let scheme_len = self.scheme().len();",
+    "            let file_scheme_len = \"file\".len();",
+    "            // remove only // because it still has file:",
+    "            if scheme_len < file_scheme_len {",
+    "                let scheme_diff = file_scheme_len - scheme_len;",
+    "                (str_len + scheme_diff).saturating_sub(2)",
+    "            } else {",
+    "                let scheme_diff = scheme_len - file_scheme_len;",
+    "                str_len.saturating_sub(scheme_diff + 2)",
+    "            }",
+    "        } else if cfg!(windows) {",
+    "            // remove scheme: - has posssible \\\\ for hostname",
+    "            str_len.saturating_sub(self.scheme().len() + 1)",
+    "        } else {",
+    "            // remove scheme://",
+    "            str_len.saturating_sub(self.scheme().len() + 3)",
+    "        };",
+    "        return file_url_segments_to_pathbuf(estimated_capacity, host, segments);",
+    "    }",
+    "    Err(())",
+    "}"
+  ],
+  "size": {
+    "chain": 6,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "let Some(segments) = self.path_segments()",
+          "norm": null,
+          "value": "true",
+          "line": 2714,
+          "bound": null
+        }
+      ],
+      "ret": "Err(())",
+      "path": [
+        0,
+        1,
+        51,
+        53
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "let Some(segments) = self.path_segments()",
+          "norm": null,
+          "value": "true",
+          "line": 2714,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(Host::Domain(\"localhost\"))",
+          "norm": null,
+          "value": "false",
+          "line": 2716,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(_)",
+          "norm": null,
+          "value": "false",
+          "line": 2717,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 2720,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches None",
+          "norm": null,
+          "value": "false",
+          "line": 2716,
+          "bound": null
+        }
+      ],
+      "ret": "Err(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "let Some(segments) = self.path_segments()",
+          "norm": null,
+          "value": "true",
+          "line": 2714,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(Host::Domain(\"localhost\")) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 2715,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(Host::Domain(\"localhost\"))",
+          "norm": null,
+          "value": "false",
+          "line": 2716,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(_)",
+          "norm": null,
+          "value": "false",
+          "line": 2717,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 2720,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches None",
+          "norm": null,
+          "value": "false",
+          "line": 2716,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 2715,
+          "bound": null
+        }
+      ],
+      "ret": "Err(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        12,
+        18,
+        19,
+        5,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "let Some(segments) = self.path_segments()",
+          "norm": null,
+          "value": "true",
+          "line": 2714,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(Host::Domain(\"localhost\")) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 2715,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 2715,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(Host::Domain(\"localhost\"))",
+          "norm": null,
+          "value": "true",
+          "line": 2716,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(Host::Domain(\"localhost\")) or None",
+          "norm": null,
+          "value": "true",
+          "line": 2715,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        9,
+        10,
+        11,
+        21,
+        22,
+        23,
+        37,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "let Some(segments) = self.path_segments()",
+          "norm": null,
+          "value": "true",
+          "line": 2714,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(Host::Domain(\"localhost\")) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 2715,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 2715,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(Host::Domain(\"localhost\"))",
+          "norm": null,
+          "value": "false",
+          "line": 2716,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 2715,
+          "bound": null
+        }
+      ],
+      "ret": "Err(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        9,
+        7,
+        12,
+        18,
+        19,
+        5,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "let Some(segments) = self.path_segments()",
+          "norm": null,
+          "value": "true",
+          "line": 2714,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 2715,
+          "bound": null
+        },
+        {
+          "cond": "self.host() matches Some(Host::Domain(\"localhost\")) or None",
+          "norm": null,
+          "value": "true",
+          "line": 2715,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        10,
+        11,
+        21,
+        22,
+        23,
+        37,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

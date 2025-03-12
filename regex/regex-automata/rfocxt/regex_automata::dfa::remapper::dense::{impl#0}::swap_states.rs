@@ -1,0 +1,19 @@
+use crate::{dfa::dense::OwnedDFA, util::primitives::StateID};
+use super::Remappable;
+pub(super) trait Remappable: core::fmt::Debug {
+    fn state_len(&self) -> usize;
+    fn stride2(&self) -> usize;
+    fn swap_states(&mut self, id1: StateID, id2: StateID);
+    fn remap(&mut self, map: impl Fn(StateID) -> StateID);
+}
+#[derive(Clone, Copy, Default, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct StateID(SmallIndex);
+impl Remappable for OwnedDFA {
+    fn state_len(&self) -> usize {}
+    fn stride2(&self) -> usize {}
+    fn swap_states(&mut self, id1: StateID, id2: StateID) {
+        OwnedDFA::swap_states(self, id1, id2)
+    }
+    fn remap(&mut self, map: impl Fn(StateID) -> StateID) {}
+}

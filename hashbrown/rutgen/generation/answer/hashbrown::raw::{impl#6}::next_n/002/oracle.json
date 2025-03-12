@@ -1,0 +1,162 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestT {",
+          "        _data: u8,",
+          "    }",
+          "",
+          "    impl TestT {",
+          "        const IS_ZERO_SIZED: bool = false;",
+          "    }",
+          "",
+          "    let base_ptr = NonNull::new_unchecked(Box::into_raw(Box::new(TestT { _data: 0 })));",
+          "    let bucket = unsafe { Bucket::<TestT>::from_base_index(base_ptr, 0) };",
+          "    let offset = 1; // Valid positive integer offset",
+          "",
+          "    let _result = unsafe { bucket.next_n(offset) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(_result.ptr.as_ptr() == unsafe { base_ptr.as_ptr().sub(offset) });",
+          "    assert!(!(_result.ptr.is_null()));",
+          "    assert_eq!(unsafe { _result.ptr.as_ref()._data }, 0);",
+          "    assert!(unsafe { _result.ptr != bucket.as_non_null() });"
+        ],
+        "code": [
+          "{",
+          "    struct TestT {",
+          "        _data: u8,",
+          "    }",
+          "",
+          "    impl TestT {",
+          "        const IS_ZERO_SIZED: bool = false;",
+          "    }",
+          "",
+          "    let base_ptr = NonNull::new_unchecked(Box::into_raw(Box::new(TestT { _data: 0 })));",
+          "    let bucket = unsafe { Bucket::<TestT>::from_base_index(base_ptr, 0) };",
+          "    let offset = 1; // Valid positive integer offset",
+          "",
+          "    let _result = unsafe { bucket.next_n(offset) };",
+          "    assert!(_result.ptr.as_ptr() == unsafe { base_ptr.as_ptr().sub(offset) });",
+          "    assert!(!(_result.ptr.is_null()));",
+          "    assert_eq!(unsafe { _result.ptr.as_ref()._data }, 0);",
+          "    assert!(unsafe { _result.ptr != bucket.as_non_null() });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestT {",
+          "        _data: u8,",
+          "    }",
+          "",
+          "    impl TestT {",
+          "        const IS_ZERO_SIZED: bool = false;",
+          "    }",
+          "",
+          "    let base_ptr = NonNull::new_unchecked(Box::into_raw(Box::new(TestT { _data: 0 })));",
+          "    let bucket = unsafe { Bucket::<TestT>::from_base_index(base_ptr, 0) };",
+          "    let offset = 10; // Valid positive integer offset",
+          "",
+          "    let _result = unsafe { bucket.next_n(offset) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result.ptr.as_ptr(), bucket.ptr.as_ptr().sub(offset));",
+          "    assert!(!_result.ptr.is_null());",
+          "    assert!(unsafe { NonNull::new_unchecked(_result.ptr.as_ptr()).as_ref() }.is_valid());",
+          "    assert!(bucket.to_base_index() + offset <= RawTableInner.bucket_mask);"
+        ],
+        "code": [
+          "{",
+          "    struct TestT {",
+          "        _data: u8,",
+          "    }",
+          "",
+          "    impl TestT {",
+          "        const IS_ZERO_SIZED: bool = false;",
+          "    }",
+          "",
+          "    let base_ptr = NonNull::new_unchecked(Box::into_raw(Box::new(TestT { _data: 0 })));",
+          "    let bucket = unsafe { Bucket::<TestT>::from_base_index(base_ptr, 0) };",
+          "    let offset = 10; // Valid positive integer offset",
+          "",
+          "    let _result = unsafe { bucket.next_n(offset) };",
+          "    assert_eq!(_result.ptr.as_ptr(), bucket.ptr.as_ptr().sub(offset));",
+          "    assert!(!_result.ptr.is_null());",
+          "    assert!(unsafe { NonNull::new_unchecked(_result.ptr.as_ptr()).as_ref() }.is_valid());",
+          "    assert!(bucket.to_base_index() + offset <= RawTableInner.bucket_mask);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestT {",
+          "        _data: u8,",
+          "    }",
+          "",
+          "    impl TestT {",
+          "        const IS_ZERO_SIZED: bool = false;",
+          "    }",
+          "",
+          "    let invalid_ptr = NonNull::new_unchecked(0 as *mut TestT); // Dangling pointer",
+          "    let bucket = Bucket::<TestT> { ptr: invalid_ptr };",
+          "    let offset = 1; // Positive integer offset",
+          "",
+          "    let _result = unsafe { bucket.next_n(offset) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| { unsafe { bucket.next_n(offset) } }).is_err());",
+          "    assert_eq!(offset, 1);",
+          "    assert_eq!(bucket.ptr.as_ptr() as usize, 0);",
+          "    assert!(!bucket.ptr.as_ptr().is_null());",
+          "    assert!(std::ptr::eq(bucket.ptr.as_ptr(), invalid_ptr.as_ptr()));",
+          "    assert!(unsafe { NonNull::new_unchecked(bucket.ptr.as_ptr().sub(offset)).as_ptr() }.is_null());"
+        ],
+        "code": [
+          "{",
+          "    struct TestT {",
+          "        _data: u8,",
+          "    }",
+          "",
+          "    impl TestT {",
+          "        const IS_ZERO_SIZED: bool = false;",
+          "    }",
+          "",
+          "    let invalid_ptr = NonNull::new_unchecked(0 as *mut TestT); // Dangling pointer",
+          "    let bucket = Bucket::<TestT> { ptr: invalid_ptr };",
+          "    let offset = 1; // Positive integer offset",
+          "",
+          "    let _result = unsafe { bucket.next_n(offset) };",
+          "    assert!(std::panic::catch_unwind(|| { unsafe { bucket.next_n(offset) } }).is_err());",
+          "    assert_eq!(offset, 1);",
+          "    assert_eq!(bucket.ptr.as_ptr() as usize, 0);",
+          "    assert!(!bucket.ptr.as_ptr().is_null());",
+          "    assert!(std::ptr::eq(bucket.ptr.as_ptr(), invalid_ptr.as_ptr()));",
+          "    assert!(unsafe { NonNull::new_unchecked(bucket.ptr.as_ptr().sub(offset)).as_ptr() }.is_null());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

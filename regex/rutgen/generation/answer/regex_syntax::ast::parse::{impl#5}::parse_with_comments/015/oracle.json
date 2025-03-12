@@ -1,0 +1,190 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let pattern = \"abc+\";",
+          "    let mut parser = regex_syntax::Parser::new();",
+          "    let result = parser.parse_with_comments(pattern);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), true);",
+          "    let with_comments = result.unwrap();",
+          "    assert!(with_comments.ast.has_subexprs());",
+          "    assert_eq!(with_comments.comments.len(), 0);",
+          "    assert!(matches!(with_comments.ast, ast::Ast::Concat(_)));"
+        ],
+        "code": [
+          "{",
+          "    let pattern = \"abc+\";",
+          "    let mut parser = regex_syntax::Parser::new();",
+          "    let result = parser.parse_with_comments(pattern);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    let with_comments = result.unwrap();",
+          "    assert!(with_comments.ast.has_subexprs());",
+          "    assert_eq!(with_comments.comments.len(), 0);",
+          "    assert!(matches!(with_comments.ast, ast::Ast::Concat(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let pattern = \"(abc)+\";",
+          "    let mut parser = regex_syntax::Parser::new();",
+          "    let result = parser.parse_with_comments(pattern);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(ast::WithComments { ast: <expected_ast>, comments: vec![] }));",
+          "    assert!(parser.comments.borrow().is_empty());",
+          "    assert!(parser.stack_group.borrow().is_empty());",
+          "    assert!(parser.stack_class.borrow().is_empty());",
+          "    assert_eq!(parser.pos.get(), Position { offset: 0, line: 1, column: 1 });",
+          "    assert_eq!(parser.capture_index.get(), 0);",
+          "    assert_eq!(parser.nest_limit, <expected_nest_limit>);"
+        ],
+        "code": [
+          "{",
+          "    let pattern = \"(abc)+\";",
+          "    let mut parser = regex_syntax::Parser::new();",
+          "    let result = parser.parse_with_comments(pattern);",
+          "    assert_eq!(result, Ok(ast::WithComments { ast: <expected_ast>, comments: vec![] }));",
+          "    assert!(parser.comments.borrow().is_empty());",
+          "    assert!(parser.stack_group.borrow().is_empty());",
+          "    assert!(parser.stack_class.borrow().is_empty());",
+          "    assert_eq!(parser.pos.get(), Position { offset: 0, line: 1, column: 1 });",
+          "    assert_eq!(parser.capture_index.get(), 0);",
+          "    assert_eq!(parser.nest_limit, <expected_nest_limit>);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let pattern = \"[abc]+\";",
+          "    let mut parser = regex_syntax::Parser::new();",
+          "    let result = parser.parse_with_comments(pattern);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok(), \"Expected Ok but got an error.\");",
+          "    let ast_with_comments = result.unwrap();",
+          "    assert_eq!(ast_with_comments.comments.len(), 0, \"Expected no comments in the AST.\");",
+          "    assert!(matches!(ast_with_comments.ast, ast::Ast::Concat(_)), \"Expected the AST to be a Concat.\");",
+          "    assert!(!parser.is_eof(), \"Expected parser not to be at end of file.\");",
+          "    assert_eq!(parser.char(), '+', \"Expected current character to be '+'.\");",
+          "    let concat = if let ast::Ast::Concat(ref c) = ast_with_comments.ast { c } else { panic!(\"Expected Concat AST.\"); };",
+          "    assert!(!concat.asts.is_empty(), \"Expected concat to have non-empty ASTs.\");",
+          "    assert!(parser.pop_group_end(concat).is_ok(), \"Expected pop_group_end to succeed.\");",
+          "    assert!(NestLimiter::new(&parser).check(&ast_with_comments.ast).is_ok(), \"Expected nest limit check to succeed.\");"
+        ],
+        "code": [
+          "{",
+          "    let pattern = \"[abc]+\";",
+          "    let mut parser = regex_syntax::Parser::new();",
+          "    let result = parser.parse_with_comments(pattern);",
+          "    assert!(result.is_ok(), \"Expected Ok but got an error.\");",
+          "    let ast_with_comments = result.unwrap();",
+          "    assert_eq!(ast_with_comments.comments.len(), 0, \"Expected no comments in the AST.\");",
+          "    assert!(matches!(ast_with_comments.ast, ast::Ast::Concat(_)), \"Expected the AST to be a Concat.\");",
+          "    assert!(!parser.is_eof(), \"Expected parser not to be at end of file.\");",
+          "    assert_eq!(parser.char(), '+', \"Expected current character to be '+'.\");",
+          "    let concat = if let ast::Ast::Concat(ref c) = ast_with_comments.ast { c } else { panic!(\"Expected Concat AST.\"); };",
+          "    assert!(!concat.asts.is_empty(), \"Expected concat to have non-empty ASTs.\");",
+          "    assert!(parser.pop_group_end(concat).is_ok(), \"Expected pop_group_end to succeed.\");",
+          "    assert!(NestLimiter::new(&parser).check(&ast_with_comments.ast).is_ok(), \"Expected nest limit check to succeed.\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let pattern = \"a{1,2}+\";",
+          "    let mut parser = regex_syntax::Parser::new();",
+          "    let result = parser.parse_with_comments(pattern);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert!(matches!(result, Ok(_)));",
+          "    assert_eq!(result.as_ref().unwrap().comments.len(), 0);",
+          "    assert!(result.as_ref().unwrap().ast.is_some());",
+          "    assert!(result.as_ref().unwrap().ast.is_empty() == false);",
+          "    assert!(parser.is_eof() == true);",
+          "    assert_eq!(parser.comments.borrow().len(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let pattern = \"a{1,2}+\";",
+          "    let mut parser = regex_syntax::Parser::new();",
+          "    let result = parser.parse_with_comments(pattern);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert!(matches!(result, Ok(_)));",
+          "    assert_eq!(result.as_ref().unwrap().comments.len(), 0);",
+          "    assert!(result.as_ref().unwrap().ast.is_some());",
+          "    assert!(result.as_ref().unwrap().ast.is_empty() == false);",
+          "    assert!(parser.is_eof() == true);",
+          "    assert_eq!(parser.comments.borrow().len(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let pattern = \"a+b+c+\";",
+          "    let mut parser = regex_syntax::Parser::new();",
+          "    let result = parser.parse_with_comments(pattern);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), true);",
+          "    let comments = result.unwrap().comments;",
+          "    assert!(comments.is_empty());",
+          "    let ast = result.unwrap().ast;",
+          "    assert!(matches!(ast, ast::Ast::Concat(_)));",
+          "    assert!(matches!(parser.pos.get(), Position { offset: 0, line: 1, column: 1 }));",
+          "    assert!(matches!(parser.comments.borrow().len(), 0));",
+          "    assert_eq!(parser.stack_group.borrow().is_empty(), true);",
+          "    assert_eq!(parser.stack_class.borrow().is_empty(), true);"
+        ],
+        "code": [
+          "{",
+          "    let pattern = \"a+b+c+\";",
+          "    let mut parser = regex_syntax::Parser::new();",
+          "    let result = parser.parse_with_comments(pattern);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    let comments = result.unwrap().comments;",
+          "    assert!(comments.is_empty());",
+          "    let ast = result.unwrap().ast;",
+          "    assert!(matches!(ast, ast::Ast::Concat(_)));",
+          "    assert!(matches!(parser.pos.get(), Position { offset: 0, line: 1, column: 1 }));",
+          "    assert!(matches!(parser.comments.borrow().len(), 0));",
+          "    assert_eq!(parser.stack_group.borrow().is_empty(), true);",
+          "    assert_eq!(parser.stack_class.borrow().is_empty(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

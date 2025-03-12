@@ -1,0 +1,184 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let deny_list = \"\";",
+          "    let result = AsciiDenyList::new(false, deny_list);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, AsciiDenyList::EMPTY);",
+          "    assert_eq!(result.bits, UPPER_CASE_MASK);"
+        ],
+        "code": [
+          "{",
+          "    let deny_list = \"\";",
+          "    let result = AsciiDenyList::new(false, deny_list);",
+          "    assert_eq!(result, AsciiDenyList::EMPTY);",
+          "    assert_eq!(result.bits, UPPER_CASE_MASK);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let deny_list = \"é\"; // Non-ASCII character",
+          "    let result = AsciiDenyList::new(false, deny_list);",
+          "}"
+        ],
+        "oracle": [
+          "    AsciiDenyList::new(false, \"é\"); // Should panic due to non-ASCII character",
+          "    AsciiDenyList::new(false, \"!@#$%^&*()\"); // Should not panic, all symbols allowed",
+          "    AsciiDenyList::new(false, \"\"); // Should not panic, empty deny list is valid",
+          "    AsciiDenyList::new(false, \"\\u{007F}\"); // Should not panic, control character allowed",
+          "    AsciiDenyList::new(false, \"!\"); // Should not panic since '!' is not a prohibited character",
+          "    AsciiDenyList::new(false, \"abc\"); // Should panic due to presence of letters",
+          "    AsciiDenyList::new(false, \"123\"); // Should panic due to presence of digits",
+          "    AsciiDenyList::new(false, \".\"); // Should panic due to presence of dot",
+          "    AsciiDenyList::new(false, \"-\"); // Should panic due to presence of hyphen",
+          "    AsciiDenyList::new(false, \"\\u{0020}\"); // Should panic due to SPACE character when deny_glyphless is false",
+          "    AsciiDenyList::new(false, \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"); // Should panic due to presence of uppercase letters"
+        ],
+        "code": [
+          "{",
+          "    let deny_list = \"é\"; // Non-ASCII character",
+          "    let result = AsciiDenyList::new(false, deny_list);",
+          "    AsciiDenyList::new(false, \"é\"); // Should panic due to non-ASCII character",
+          "    AsciiDenyList::new(false, \"!@#$%^&*()\"); // Should not panic, all symbols allowed",
+          "    AsciiDenyList::new(false, \"\"); // Should not panic, empty deny list is valid",
+          "    AsciiDenyList::new(false, \"\\u{007F}\"); // Should not panic, control character allowed",
+          "    AsciiDenyList::new(false, \"!\"); // Should not panic since '!' is not a prohibited character",
+          "    AsciiDenyList::new(false, \"abc\"); // Should panic due to presence of letters",
+          "    AsciiDenyList::new(false, \"123\"); // Should panic due to presence of digits",
+          "    AsciiDenyList::new(false, \".\"); // Should panic due to presence of dot",
+          "    AsciiDenyList::new(false, \"-\"); // Should panic due to presence of hyphen",
+          "    AsciiDenyList::new(false, \"\\u{0020}\"); // Should panic due to SPACE character when deny_glyphless is false",
+          "    AsciiDenyList::new(false, \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"); // Should panic due to presence of uppercase letters",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let deny_list = \"!@#$%^&*()\"; // Valid ASCII characters excluding letters, digits, hyphens, and dots",
+          "    let result = AsciiDenyList::new(false, deny_list);",
+          "}"
+        ],
+        "oracle": [
+          "    AsciiDenyList::new(false, \"!@#$%^&*()\"); // Valid inputs should not panic",
+          "    assert_eq!(result.bits, expected_bits); // Check if bits are set correctly for the test input",
+          "    AsciiDenyList::new(false, \"\"); // Test with an empty deny list, should return STD3 bits set",
+          "    AsciiDenyList::new(false, \"\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\"); // Check with control characters, should not panic",
+          "    AsciiDenyList::new(false, \"!\\\"#$%&'()*+,-./:;<=>?@[]^_`{|}~\"); // All valid ASCII characters except prohibited",
+          "    let panic_result = std::panic::catch_unwind(|| {",
+          "    AsciiDenyList::new(false, \"abc\"); // Invalid, should panic due to letters",
+          "    });",
+          "    assert!(panic_result.is_err());",
+          "    let panic_result = std::panic::catch_unwind(|| {",
+          "    AsciiDenyList::new(false, \"123\"); // Invalid, should panic due to digits",
+          "    });",
+          "    assert!(panic_result.is_err());",
+          "    let panic_result = std::panic::catch_unwind(|| {",
+          "    AsciiDenyList::new(false, \"-.\"); // Invalid, should panic due to hyphen and dot",
+          "    });",
+          "    assert!(panic_result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let deny_list = \"!@#$%^&*()\"; // Valid ASCII characters excluding letters, digits, hyphens, and dots",
+          "    let result = AsciiDenyList::new(false, deny_list);",
+          "    AsciiDenyList::new(false, \"!@#$%^&*()\"); // Valid inputs should not panic",
+          "    assert_eq!(result.bits, expected_bits); // Check if bits are set correctly for the test input",
+          "    AsciiDenyList::new(false, \"\"); // Test with an empty deny list, should return STD3 bits set",
+          "    AsciiDenyList::new(false, \"\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\"); // Check with control characters, should not panic",
+          "    AsciiDenyList::new(false, \"!\\\"#$%&'()*+,-./:;<=>?@[]^_`{|}~\"); // All valid ASCII characters except prohibited",
+          "    let panic_result = std::panic::catch_unwind(|| {",
+          "    AsciiDenyList::new(false, \"abc\"); // Invalid, should panic due to letters",
+          "    });",
+          "    assert!(panic_result.is_err());",
+          "    let panic_result = std::panic::catch_unwind(|| {",
+          "    AsciiDenyList::new(false, \"123\"); // Invalid, should panic due to digits",
+          "    });",
+          "    assert!(panic_result.is_err());",
+          "    let panic_result = std::panic::catch_unwind(|| {",
+          "    AsciiDenyList::new(false, \"-.\"); // Invalid, should panic due to hyphen and dot",
+          "    });",
+          "    assert!(panic_result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let deny_list = \" !\\\"#$%&'()*+,-./:;<=>?@[\\\\]_`{|}~\"; // Valid ASCII characters (total over 128)",
+          "    let result = AsciiDenyList::new(false, deny_list);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.bits, UPPER_CASE_MASK | (1u128 << b' ') | (1u128 << b'!') | (1u128 << b'\"') | (1u128 << b'#') | (1u128 << b'$') | (1u128 << b'&') | (1u128 << b'\\'') | (1u128 << b'(') | (1u128 << b')') | (1u128 << b'*') | (1u128 << b'+') | (1u128 << b',') | (1u128 << b'-') | (1u128 << b'/') | (1u128 << b':') | (1u128 << b';') | (1u128 << b'<') | (1u128 << b'=') | (1u128 << b'>') | (1u128 << b'?') | (1u128 << b'@') | (1u128 << b'[') | (1u128 << b'\\\\') | (1u128 << b'_') | (1u128 << b'`') | (1u128 << b'{') | (1u128 << b'|') | (1u128 << b'}') | (1u128 << b'~'));"
+        ],
+        "code": [
+          "{",
+          "    let deny_list = \" !\\\"#$%&'()*+,-./:;<=>?@[\\\\]_`{|}~\"; // Valid ASCII characters (total over 128)",
+          "    let result = AsciiDenyList::new(false, deny_list);",
+          "    assert_eq!(result.bits, UPPER_CASE_MASK | (1u128 << b' ') | (1u128 << b'!') | (1u128 << b'\"') | (1u128 << b'#') | (1u128 << b'$') | (1u128 << b'&') | (1u128 << b'\\'') | (1u128 << b'(') | (1u128 << b')') | (1u128 << b'*') | (1u128 << b'+') | (1u128 << b',') | (1u128 << b'-') | (1u128 << b'/') | (1u128 << b':') | (1u128 << b';') | (1u128 << b'<') | (1u128 << b'=') | (1u128 << b'>') | (1u128 << b'?') | (1u128 << b'@') | (1u128 << b'[') | (1u128 << b'\\\\') | (1u128 << b'_') | (1u128 << b'`') | (1u128 << b'{') | (1u128 << b'|') | (1u128 << b'}') | (1u128 << b'~'));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let deny_list = \"!\" .repeat(1000); // Valid ASCII characters repeated to reach 1000 characters",
+          "    let result = AsciiDenyList::new(false, &deny_list);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.bits & UPPER_CASE_MASK, UPPER_CASE_MASK);",
+          "    assert_eq!(result.bits & GLYPHLESS_MASK, 0);",
+          "    assert_eq!(result.bits & (1u128 << b'!'), 1u128 << b'!');",
+          "    assert!(result.bits & (1u128 << b'.') == 0);",
+          "    assert!(result.bits & (1u128 << b'-') == 0);",
+          "    assert!(result.bits & (1u128 << b'0') == 0);",
+          "    assert!(result.bits & (1u128 << b'a') == 0);",
+          "    assert!(result.bits & (1u128 << b'A') == 0);",
+          "    assert!(result.bits & (1u128 << b'~') != 0);"
+        ],
+        "code": [
+          "{",
+          "    let deny_list = \"!\" .repeat(1000); // Valid ASCII characters repeated to reach 1000 characters",
+          "    let result = AsciiDenyList::new(false, &deny_list);",
+          "    assert_eq!(result.bits & UPPER_CASE_MASK, UPPER_CASE_MASK);",
+          "    assert_eq!(result.bits & GLYPHLESS_MASK, 0);",
+          "    assert_eq!(result.bits & (1u128 << b'!'), 1u128 << b'!');",
+          "    assert!(result.bits & (1u128 << b'.') == 0);",
+          "    assert!(result.bits & (1u128 << b'-') == 0);",
+          "    assert!(result.bits & (1u128 << b'0') == 0);",
+          "    assert!(result.bits & (1u128 << b'a') == 0);",
+          "    assert!(result.bits & (1u128 << b'A') == 0);",
+          "    assert!(result.bits & (1u128 << b'~') != 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

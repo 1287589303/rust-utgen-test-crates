@@ -1,0 +1,97 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let err = String::from(\"This is a syntax error.\");",
+          "    let error_instance = Error::Syntax(err);",
+          "    let mut output = Vec::new();",
+          "    let result = core::fmt::write(&mut output, |f| error_instance.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    let err = String::from(\"This is a syntax error.\");",
+          "    let error_instance = Error::Syntax(err);",
+          "    let mut output = Vec::new();",
+          "    let result = core::fmt::write(&mut output, |f| error_instance.fmt(f));",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(std::str::from_utf8(&output).unwrap(), \"Syntax(\\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\\nThis is a syntax error.\\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\\n)\");"
+        ],
+        "code": [
+          "{",
+          "    let err = String::from(\"This is a syntax error.\");",
+          "    let error_instance = Error::Syntax(err);",
+          "    let mut output = Vec::new();",
+          "    let result = core::fmt::write(&mut output, |f| error_instance.fmt(f));",
+          "    let err = String::from(\"This is a syntax error.\");",
+          "    let error_instance = Error::Syntax(err);",
+          "    let mut output = Vec::new();",
+          "    let result = core::fmt::write(&mut output, |f| error_instance.fmt(f));",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(std::str::from_utf8(&output).unwrap(), \"Syntax(\\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\\nThis is a syntax error.\\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\\n)\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let err = String::from(\"This is a syntax error.\");",
+          "    let error_instance = Error::Syntax(err);",
+          "    let hr: String = core::iter::repeat('~').take(79).collect();",
+          "    let mut output = Vec::new();",
+          "    // Force the last writeln! to fail by manipulating the output, here we force a panic after the first two successful writes.",
+          "    core::fmt::write(&mut output, |f| {",
+          "        writeln!(f, \"Syntax(\")?;",
+          "        writeln!(f, \"{}\", hr)?;",
+          "        // Assuming we do something here to cause an error in the next writeln!",
+          "        std::panic::panic_any(\"Forcing panic to simulate writeln error on hr\");",
+          "    });",
+          "}"
+        ],
+        "oracle": [
+          "    writeln!(f, \"Syntax(\")?; // precondition: Ok/Some",
+          "    writeln!(f, \"{}\", hr)?; // precondition: Ok/Some",
+          "    writeln!(f, \"{}\", err)?; // precondition: Ok/Some",
+          "    writeln!(f, \"{}\", hr)?; // precondition: Err/None",
+          "    assert!(matches!(error_instance, Error::Syntax(ref e) if e == \"This is a syntax error.\")); // validating error message",
+          "    assert_eq!(hr.len(), 79); // validating size of hr",
+          "    assert!(output.is_empty()); // validating output remains empty after forced panic"
+        ],
+        "code": [
+          "{",
+          "    let err = String::from(\"This is a syntax error.\");",
+          "    let error_instance = Error::Syntax(err);",
+          "    let hr: String = core::iter::repeat('~').take(79).collect();",
+          "    let mut output = Vec::new();",
+          "    // Force the last writeln! to fail by manipulating the output, here we force a panic after the first two successful writes.",
+          "    core::fmt::write(&mut output, |f| {",
+          "        writeln!(f, \"Syntax(\")?;",
+          "        writeln!(f, \"{}\", hr)?;",
+          "        // Assuming we do something here to cause an error in the next writeln!",
+          "        std::panic::panic_any(\"Forcing panic to simulate writeln error on hr\");",
+          "    });",
+          "    writeln!(f, \"Syntax(\")?; // precondition: Ok/Some",
+          "    writeln!(f, \"{}\", hr)?; // precondition: Ok/Some",
+          "    writeln!(f, \"{}\", err)?; // precondition: Ok/Some",
+          "    writeln!(f, \"{}\", hr)?; // precondition: Err/None",
+          "    assert!(matches!(error_instance, Error::Syntax(ref e) if e == \"This is a syntax error.\")); // validating error message",
+          "    assert_eq!(hr.len(), 79); // validating size of hr",
+          "    assert!(output.is_empty()); // validating output remains empty after forced panic",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

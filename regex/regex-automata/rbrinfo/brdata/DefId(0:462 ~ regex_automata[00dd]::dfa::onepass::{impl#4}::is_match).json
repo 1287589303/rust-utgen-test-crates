@@ -1,0 +1,104 @@
+{
+  "name": "regex_automata::dfa::onepass::{impl#4}::is_match",
+  "mod_info": {
+    "name": "dfa::onepass",
+    "loc": "regex-automata/src/dfa/mod.rs:339:1:339:17"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/onepass.rs:1621:5:1631:6",
+  "doc": "/// Executes an anchored leftmost forward search, and returns true if and\n/// only if this one-pass DFA matches the given haystack.\n///\n/// This routine may short circuit if it knows that scanning future\n/// input will never lead to a different result. In particular, if the\n/// underlying DFA enters a match state, then this routine will return\n/// `true` immediately without inspecting any future input. (Consider how\n/// this might make a difference given the regex `a+` on the haystack\n/// `aaaaaaaaaaaaaaa`. This routine can stop after it sees the first `a`,\n/// but routines like `find` need to continue searching because `+` is\n/// greedy by default.)\n///\n/// The given `Input` is forcefully set to use [`Anchored::Yes`] if the\n/// given configuration was [`Anchored::No`] (which is the default).\n///\n/// # Panics\n///\n/// This routine panics if the search could not complete. This can occur\n/// in the following circumstances:\n///\n/// * When the provided `Input` configuration is not supported. For\n/// example, by providing an unsupported anchor mode. Concretely,\n/// this occurs when using [`Anchored::Pattern`] without enabling\n/// [`Config::starts_for_each_pattern`].\n///\n/// When a search panics, callers cannot know whether a match exists or\n/// not.\n///\n/// Use [`DFA::try_search`] if you want to handle these panics as error\n/// values instead.\n///\n/// # Example\n///\n/// This shows basic usage:\n///\n/// ```\n/// use regex_automata::dfa::onepass::DFA;\n///\n/// let re = DFA::new(\"foo[0-9]+bar\")?;\n/// let mut cache = re.create_cache();\n///\n/// assert!(re.is_match(&mut cache, \"foo12345bar\"));\n/// assert!(!re.is_match(&mut cache, \"foobar\"));\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// # Example: consistency with search APIs\n///\n/// `is_match` is guaranteed to return `true` whenever `captures` returns\n/// a match. This includes searches that are executed entirely within a\n/// codepoint:\n///\n/// ```\n/// use regex_automata::{dfa::onepass::DFA, Input};\n///\n/// let re = DFA::new(\"a*\")?;\n/// let mut cache = re.create_cache();\n///\n/// assert!(!re.is_match(&mut cache, Input::new(\"☃\").span(1..2)));\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// Notice that when UTF-8 mode is disabled, then the above reports a\n/// match because the restriction against zero-width matches that split a\n/// codepoint has been lifted:\n///\n/// ```\n/// use regex_automata::{dfa::onepass::DFA, nfa::thompson::NFA, Input};\n///\n/// let re = DFA::builder()\n///     .thompson(NFA::config().utf8(false))\n///     .build(\"a*\")?;\n/// let mut cache = re.create_cache();\n///\n/// assert!(re.is_match(&mut cache, Input::new(\"☃\").span(1..2)));\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn is_match<'h, I: Into<Input<'h>>>(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: I,",
+    ") -> bool {",
+    "    let mut input = input.into().earliest(true);",
+    "    if matches!(input.get_anchored(), Anchored::No) {",
+    "        input.set_anchored(Anchored::Yes);",
+    "    }",
+    "    self.try_search_slots(cache, &input, &mut []).unwrap().is_some()",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "input.get_anchored() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 459,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "false",
+          "line": 1627,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1627,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1627,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

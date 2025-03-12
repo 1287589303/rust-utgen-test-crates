@@ -1,0 +1,99 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let classes = ByteClasses([0; 256]);",
+          "    let mut table = TransitionTable {",
+          "        table: vec![0; 512],",
+          "        classes,",
+          "        stride2: 9,",
+          "    };",
+          "    let invalid_id = StateID(SmallIndex::from_usize(512)); // out of valid range",
+          "    let map = |_: StateID| StateID(SmallIndex::from_usize(256)); // returns an invalid StateID",
+          "    table.remap(invalid_id, map);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table.table[0..512], vec![0; 512]);",
+          "    assert_eq!(table.stride2, 9);",
+          "    assert_eq!(table.classes, ByteClasses([0; 256]));",
+          "    assert_eq!(table.remap(StateID(SmallIndex::from_usize(512)), map), ());",
+          "    assert!(std::panic::catch_unwind(|| table.remap(StateID(SmallIndex::from_usize(512)), map)).is_err());",
+          "    assert_eq!(table.table[0..512], vec![0; 512]);"
+        ],
+        "code": [
+          "{",
+          "    let classes = ByteClasses([0; 256]);",
+          "    let mut table = TransitionTable {",
+          "        table: vec![0; 512],",
+          "        classes,",
+          "        stride2: 9,",
+          "    };",
+          "    let invalid_id = StateID(SmallIndex::from_usize(512)); // out of valid range",
+          "    let map = |_: StateID| StateID(SmallIndex::from_usize(256)); // returns an invalid StateID",
+          "    table.remap(invalid_id, map);",
+          "    assert_eq!(table.table[0..512], vec![0; 512]);",
+          "    assert_eq!(table.stride2, 9);",
+          "    assert_eq!(table.classes, ByteClasses([0; 256]));",
+          "    assert_eq!(table.remap(StateID(SmallIndex::from_usize(512)), map), ());",
+          "    assert!(std::panic::catch_unwind(|| table.remap(StateID(SmallIndex::from_usize(512)), map)).is_err());",
+          "    assert_eq!(table.table[0..512], vec![0; 512]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let classes = ByteClasses([0; 256]);",
+          "    let mut table = TransitionTable {",
+          "        table: vec![0; 512],",
+          "        classes,",
+          "        stride2: 9,",
+          "    };",
+          "    let boundary_id = StateID(SmallIndex::from_usize(511)); // maximum valid range",
+          "    let map = |_: StateID| StateID(SmallIndex::from_usize(512)); // again returns an invalid StateID",
+          "    table.remap(boundary_id, map);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table.table[511], 512); // Check if the transition was set to 512",
+          "    assert_eq!(table.table[510], 0); // Check that transition for byte 510 remains unchanged",
+          "    assert_eq!(table.table[512], 0); // Ensure state 512 was not accessed or modified",
+          "    assert!(table.table.len() > 511); // Ensure that the table is large enough to access index 511",
+          "    assert_eq!(table.table[511 + 1], 0); // Ensure the next index remains unchanged",
+          "    assert!(table.table.iter().all(|&val| val <= 512)); // Validate that all transitions are valid StateIDs"
+        ],
+        "code": [
+          "{",
+          "    let classes = ByteClasses([0; 256]);",
+          "    let mut table = TransitionTable {",
+          "        table: vec![0; 512],",
+          "        classes,",
+          "        stride2: 9,",
+          "    };",
+          "    let boundary_id = StateID(SmallIndex::from_usize(511)); // maximum valid range",
+          "    let map = |_: StateID| StateID(SmallIndex::from_usize(512)); // again returns an invalid StateID",
+          "    table.remap(boundary_id, map);",
+          "    assert_eq!(table.table[511], 512); // Check if the transition was set to 512",
+          "    assert_eq!(table.table[510], 0); // Check that transition for byte 510 remains unchanged",
+          "    assert_eq!(table.table[512], 0); // Ensure state 512 was not accessed or modified",
+          "    assert!(table.table.len() > 511); // Ensure that the table is large enough to access index 511",
+          "    assert_eq!(table.table[511 + 1], 0); // Ensure the next index remains unchanged",
+          "    assert!(table.table.iter().all(|&val| val <= 512)); // Validate that all transitions are valid StateIDs",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

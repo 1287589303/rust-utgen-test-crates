@@ -1,0 +1,145 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let map: HashMap<i32, i32> = HashMap::new();",
+          "    let iter = map.into_iter();",
+          "}"
+        ],
+        "oracle": [
+          "    let map: HashMap<i32, i32> = HashMap::new();",
+          "    let iter: IntoIter<i32, i32> = map.into_iter();",
+          "    assert!(iter.inner.is_empty());",
+          "    assert_eq!(std::mem::size_of_val(&iter), std::mem::size_of::<IntoIter<i32, i32>>());",
+          "    assert_eq!(std::mem::align_of_val(&iter), std::mem::align_of::<IntoIter<i32, i32>>());"
+        ],
+        "code": [
+          "{",
+          "    let map: HashMap<i32, i32> = HashMap::new();",
+          "    let iter = map.into_iter();",
+          "    let map: HashMap<i32, i32> = HashMap::new();",
+          "    let iter: IntoIter<i32, i32> = map.into_iter();",
+          "    assert!(iter.inner.is_empty());",
+          "    assert_eq!(std::mem::size_of_val(&iter), std::mem::size_of::<IntoIter<i32, i32>>());",
+          "    assert_eq!(std::mem::align_of_val(&iter), std::mem::align_of::<IntoIter<i32, i32>>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let map: HashMap<&str, i32> = vec![(\"a\", 1)].into_iter().collect();",
+          "    let iter = map.into_iter();",
+          "}"
+        ],
+        "oracle": [
+          "    let map: HashMap<&str, i32> = vec![(\"a\", 1)].into_iter().collect();",
+          "    let iter = map.into_iter();",
+          "    assert!(matches!(iter, IntoIter { inner: _ }));",
+          "    assert!(iter.inner.is_some());",
+          "    let values: Vec<_> = iter.collect();",
+          "    assert_eq!(values, vec![(\"a\", 1)]);"
+        ],
+        "code": [
+          "{",
+          "    let map: HashMap<&str, i32> = vec![(\"a\", 1)].into_iter().collect();",
+          "    let iter = map.into_iter();",
+          "    let map: HashMap<&str, i32> = vec![(\"a\", 1)].into_iter().collect();",
+          "    let iter = map.into_iter();",
+          "    assert!(matches!(iter, IntoIter { inner: _ }));",
+          "    assert!(iter.inner.is_some());",
+          "    let values: Vec<_> = iter.collect();",
+          "    assert_eq!(values, vec![(\"a\", 1)]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let map: HashMap<&str, i32> = vec![(\"a\", 1), (\"b\", 2), (\"c\", 3)].into_iter().collect();",
+          "    let iter = map.into_iter();",
+          "}"
+        ],
+        "oracle": [
+          "    let map: HashMap<&str, i32> = vec![(\"a\", 1), (\"b\", 2), (\"c\", 3)].into_iter().collect();",
+          "    let iter = map.into_iter();",
+          "    assert!(iter.inner.is_some());",
+          "    assert_eq!(iter.inner.len(), 3);",
+          "    let vec: Vec<(&str, i32)> = iter.collect();",
+          "    vec.sort_unstable();",
+          "    assert_eq!(vec, [(\"a\", 1), (\"b\", 2), (\"c\", 3)]);",
+          "    assert!(map.is_empty());",
+          "    assert!(map.into_iter() == IntoIter::default());"
+        ],
+        "code": [
+          "{",
+          "    let map: HashMap<&str, i32> = vec![(\"a\", 1), (\"b\", 2), (\"c\", 3)].into_iter().collect();",
+          "    let iter = map.into_iter();",
+          "    let map: HashMap<&str, i32> = vec![(\"a\", 1), (\"b\", 2), (\"c\", 3)].into_iter().collect();",
+          "    let iter = map.into_iter();",
+          "    assert!(iter.inner.is_some());",
+          "    assert_eq!(iter.inner.len(), 3);",
+          "    let vec: Vec<(&str, i32)> = iter.collect();",
+          "    vec.sort_unstable();",
+          "    assert_eq!(vec, [(\"a\", 1), (\"b\", 2), (\"c\", 3)]);",
+          "    assert!(map.is_empty());",
+          "    assert!(map.into_iter() == IntoIter::default());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: HashMap<i32, i32> = HashMap::new();",
+          "    for i in 0..1000 {",
+          "        map.insert(i, i * 2);",
+          "    }",
+          "    let iter = map.into_iter();",
+          "}"
+        ],
+        "oracle": [
+          "    let iter = map.into_iter();",
+          "    assert!(iter.inner.is_some());",
+          "    assert!(iter.inner.len() == 1000);",
+          "    let items: Vec<(i32, i32)> = iter.collect();",
+          "    assert_eq!(items.len(), 1000);",
+          "    assert!(items.iter().all(|&(k, v)| k * 2 == v));",
+          "    assert!(items.iter().map(|&(k, _)| k).collect::<std::collections::HashSet<_>>().len() == 1000);"
+        ],
+        "code": [
+          "{",
+          "    let mut map: HashMap<i32, i32> = HashMap::new();",
+          "    for i in 0..1000 {",
+          "        map.insert(i, i * 2);",
+          "    }",
+          "    let iter = map.into_iter();",
+          "    let iter = map.into_iter();",
+          "    assert!(iter.inner.is_some());",
+          "    assert!(iter.inner.len() == 1000);",
+          "    let items: Vec<(i32, i32)> = iter.collect();",
+          "    assert_eq!(items.len(), 1000);",
+          "    assert!(items.iter().all(|&(k, v)| k * 2 == v));",
+          "    assert!(items.iter().map(|&(k, _)| k).collect::<std::collections::HashSet<_>>().len() == 1000);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

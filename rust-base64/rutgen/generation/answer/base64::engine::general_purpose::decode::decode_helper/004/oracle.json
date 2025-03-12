@@ -1,0 +1,158 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = b\"QUJDRA==\"; // Base64 for \"ABCD\"",
+          "    let estimate = GeneralPurposeEstimate { rem: 0, conservative_decoded_len: 4 };",
+          "    let mut output = [0u8; 4]; // Sufficient length",
+          "    let decode_table = &[",
+          "        // Initialize a decode_table mapping for valid Base64 characters (this is a simplified version)",
+          "        // Note: In a real implementation, you should fill this with actual values conforming to Base64 encoding.",
+          "        62, 62, 62, 62, 62, // For 'A', 'B', 'C', 'D'",
+          "        0, 1, 2, 3, 4, 5, 6, 7, // Representing '0'-'7'",
+          "        // ... (continue this for complete Base64 mapping)",
+          "    ];",
+          "    let decode_allow_trailing_bits = false;",
+          "    let padding_mode = DecodePaddingMode::RequireCanonical;",
+          "",
+          "    let _ = decode_helper(input, &estimate, &mut output, decode_table, decode_allow_trailing_bits, padding_mode);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(complete_quads_len(input, estimate.rem, output.len(), decode_table), Ok(8));",
+          "    assert!(input.len() >= 32);",
+          "    assert!(decode_chunk_8(&chunk[0..8], input_index, decode_table, &mut chunk_output[0..6]).is_ok());",
+          "    assert!(decode_chunk_8(&chunk[8..16], input_index + 8, decode_table, &mut chunk_output[6..12]).is_ok());",
+          "    assert!(decode_chunk_8(&chunk[16..24], input_index + 16, decode_table, &mut chunk_output[12..18]).is_err());",
+          "    assert_eq!(decode_chunk_8(&chunk[24..32], input_index + 24, decode_table, &mut chunk_output[18..24]), Ok(()));"
+        ],
+        "code": [
+          "{",
+          "    let input = b\"QUJDRA==\"; // Base64 for \"ABCD\"",
+          "    let estimate = GeneralPurposeEstimate { rem: 0, conservative_decoded_len: 4 };",
+          "    let mut output = [0u8; 4]; // Sufficient length",
+          "    let decode_table = &[",
+          "        // Initialize a decode_table mapping for valid Base64 characters (this is a simplified version)",
+          "        // Note: In a real implementation, you should fill this with actual values conforming to Base64 encoding.",
+          "        62, 62, 62, 62, 62, // For 'A', 'B', 'C', 'D'",
+          "        0, 1, 2, 3, 4, 5, 6, 7, // Representing '0'-'7'",
+          "        // ... (continue this for complete Base64 mapping)",
+          "    ];",
+          "    let decode_allow_trailing_bits = false;",
+          "    let padding_mode = DecodePaddingMode::RequireCanonical;",
+          "",
+          "    let _ = decode_helper(input, &estimate, &mut output, decode_table, decode_allow_trailing_bits, padding_mode);",
+          "    assert_eq!(complete_quads_len(input, estimate.rem, output.len(), decode_table), Ok(8));",
+          "    assert!(input.len() >= 32);",
+          "    assert!(decode_chunk_8(&chunk[0..8], input_index, decode_table, &mut chunk_output[0..6]).is_ok());",
+          "    assert!(decode_chunk_8(&chunk[8..16], input_index + 8, decode_table, &mut chunk_output[6..12]).is_ok());",
+          "    assert!(decode_chunk_8(&chunk[16..24], input_index + 16, decode_table, &mut chunk_output[12..18]).is_err());",
+          "    assert_eq!(decode_chunk_8(&chunk[24..32], input_index + 24, decode_table, &mut chunk_output[18..24]), Ok(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = b\"QUJDDQ==\"; // Base64 for \"ABCD\" plus padding",
+          "    let estimate = GeneralPurposeEstimate { rem: 0, conservative_decoded_len: 4 };",
+          "    let mut output = [0u8; 4]; // Sufficient length",
+          "    let decode_table = &[",
+          "        62, 62, 62, // Representing invalid characters to trigger the decode_chunk_8 failure",
+          "        // ... (continues mapping)",
+          "    ];",
+          "    let decode_allow_trailing_bits = false;",
+          "    let padding_mode = DecodePaddingMode::RequireCanonical;",
+          "",
+          "    let _ = decode_helper(input, &estimate, &mut output, decode_table, decode_allow_trailing_bits, padding_mode);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(complete_quads_len(input, estimate.rem, output.len(), decode_table).is_ok(), true);",
+          "    assert_eq!(input.len() - estimate.rem >= 32, true);",
+          "    assert_eq!(decode_chunk_8(&input[0..8], 0, decode_table, &mut output[0..6]).is_ok(), true);",
+          "    assert_eq!(decode_chunk_8(&input[8..16], 8, decode_table, &mut output[6..12]).is_ok(), true);",
+          "    assert_eq!(decode_chunk_8(&input[16..24], 16, decode_table, &mut output[12..18]).is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    let input = b\"QUJDDQ==\"; // Base64 for \"ABCD\" plus padding",
+          "    let estimate = GeneralPurposeEstimate { rem: 0, conservative_decoded_len: 4 };",
+          "    let mut output = [0u8; 4]; // Sufficient length",
+          "    let decode_table = &[",
+          "        62, 62, 62, // Representing invalid characters to trigger the decode_chunk_8 failure",
+          "        // ... (continues mapping)",
+          "    ];",
+          "    let decode_allow_trailing_bits = false;",
+          "    let padding_mode = DecodePaddingMode::RequireCanonical;",
+          "",
+          "    let _ = decode_helper(input, &estimate, &mut output, decode_table, decode_allow_trailing_bits, padding_mode);",
+          "    assert_eq!(complete_quads_len(input, estimate.rem, output.len(), decode_table).is_ok(), true);",
+          "    assert_eq!(input.len() - estimate.rem >= 32, true);",
+          "    assert_eq!(decode_chunk_8(&input[0..8], 0, decode_table, &mut output[0..6]).is_ok(), true);",
+          "    assert_eq!(decode_chunk_8(&input[8..16], 8, decode_table, &mut output[6..12]).is_ok(), true);",
+          "    assert_eq!(decode_chunk_8(&input[16..24], 16, decode_table, &mut output[12..18]).is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = b\"QUJD$A==\"; // '$' is invalid Base64 character",
+          "    let estimate = GeneralPurposeEstimate { rem: 0, conservative_decoded_len: 4 };",
+          "    let mut output = [0u8; 4]; // Sufficient length",
+          "    let decode_table = &[",
+          "        62, 62, 62, // Initialize decode table, '$' may cause failure in decode_chunk_8",
+          "        // ... (continues mapping)",
+          "    ];",
+          "    let decode_allow_trailing_bits = false;",
+          "    let padding_mode = DecodePaddingMode::RequireCanonical;",
+          "",
+          "    let _ = decode_helper(input, &estimate, &mut output, decode_table, decode_allow_trailing_bits, padding_mode);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(complete_quads_len(input, estimate.rem, output.len(), decode_table).is_ok(), true);",
+          "    assert!(input[..input.len() - 1].chunks_exact(32).enumerate().count() > 0);",
+          "    assert_eq!(decode_chunk_8(&input[0..8], 0, decode_table, &mut output[0..6]).is_ok(), true);",
+          "    assert_eq!(decode_chunk_8(&input[8..16], 8, decode_table, &mut output[6..12]).is_ok(), true);",
+          "    assert_eq!(decode_chunk_8(&input[16..24], 16, decode_table, &mut output[12..18]).is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    let input = b\"QUJD$A==\"; // '$' is invalid Base64 character",
+          "    let estimate = GeneralPurposeEstimate { rem: 0, conservative_decoded_len: 4 };",
+          "    let mut output = [0u8; 4]; // Sufficient length",
+          "    let decode_table = &[",
+          "        62, 62, 62, // Initialize decode table, '$' may cause failure in decode_chunk_8",
+          "        // ... (continues mapping)",
+          "    ];",
+          "    let decode_allow_trailing_bits = false;",
+          "    let padding_mode = DecodePaddingMode::RequireCanonical;",
+          "",
+          "    let _ = decode_helper(input, &estimate, &mut output, decode_table, decode_allow_trailing_bits, padding_mode);",
+          "    assert_eq!(complete_quads_len(input, estimate.rem, output.len(), decode_table).is_ok(), true);",
+          "    assert!(input[..input.len() - 1].chunks_exact(32).enumerate().count() > 0);",
+          "    assert_eq!(decode_chunk_8(&input[0..8], 0, decode_table, &mut output[0..6]).is_ok(), true);",
+          "    assert_eq!(decode_chunk_8(&input[8..16], 8, decode_table, &mut output[6..12]).is_ok(), true);",
+          "    assert_eq!(decode_chunk_8(&input[16..24], 16, decode_table, &mut output[12..18]).is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,316 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"\";",
+          "    let result = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), Vec::<u8>::new());"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), Vec::<u8>::new());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"    \\n\\t\\r\\n\";",
+          "    let result = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    result.expect_err(\"Expected an error but got Ok\");"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"    \\n\\t\\r\\n\";",
+          "    let result = decode_to_vec(input);",
+          "    result.expect_err(\"Expected an error but got Ok\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"Uw==\"; // \"U\" in base64",
+          "    let result = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    result.expect_err(\"Expected an error for invalid base64 input\");",
+          "    assert_eq!(result.unwrap_err().0, InvalidBase64Details::UnexpectedSymbol(b'='));",
+          "    assert_eq!(result.unwrap_err().to_string(), \"Unexpected symbol in base64: '='\");",
+          "    assert!(result.is_err(), \"The result should be an error\");",
+          "    assert!(matches!(result, Err(InvalidBase64(_))), \"Should return an InvalidBase64 error type\");"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"Uw==\"; // \"U\" in base64",
+          "    let result = decode_to_vec(input);",
+          "    result.expect_err(\"Expected an error for invalid base64 input\");",
+          "    assert_eq!(result.unwrap_err().0, InvalidBase64Details::UnexpectedSymbol(b'='));",
+          "    assert_eq!(result.unwrap_err().to_string(), \"Unexpected symbol in base64: '='\");",
+          "    assert!(result.is_err(), \"The result should be an error\");",
+          "    assert!(matches!(result, Err(InvalidBase64(_))), \"Should return an InvalidBase64 error type\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"U@w==\"; // Invalid character '@'",
+          "    let result = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input: &[u8] = b\"U@w==\";",
+          "    let expected: Result<Vec<u8>, InvalidBase64> = Err(InvalidBase64(InvalidBase64Details::UnexpectedSymbol(b'@')));",
+          "    assert_eq!(result, expected);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"U@w==\"; // Invalid character '@'",
+          "    let result = decode_to_vec(input);",
+          "    let input: &[u8] = b\"U@w==\";",
+          "    let expected: Result<Vec<u8>, InvalidBase64> = Err(InvalidBase64(InvalidBase64Details::UnexpectedSymbol(b'@')));",
+          "    assert_eq!(result, expected);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"Uu===\"; // Invalid padding",
+          "    let result = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, InvalidBase64Details::Padding);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"Uu===\"; // Invalid padding",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, InvalidBase64Details::Padding);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"SGVsbG8=\"; // \"Hello\" in base64",
+          "    let result = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(vec![72, 101, 108, 108, 111]));",
+          "    let input: &[u8] = b\"SGVsbG8\"; // Invalid base64 without padding",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"SGVsbG8==\"; // Invalid base64 with double padding",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"\"; // Empty input",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![]));",
+          "    let input: &[u8] = b\"SGVsbG8g\"; // \"Hello \" with invalid character",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"SGVsbG8!\"; // Invalid character in base64",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"SGVsbG8=\\xFF\"; // Invalid trailing byte",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"SGVsbG8h\"; // \"Hello!\" with invalid character",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"SGVsbG8=\"; // Valid input for expected test case",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![72, 101, 108, 108, 111]));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"SGVsbG8=\"; // \"Hello\" in base64",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![72, 101, 108, 108, 111]));",
+          "    let input: &[u8] = b\"SGVsbG8\"; // Invalid base64 without padding",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"SGVsbG8==\"; // Invalid base64 with double padding",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"\"; // Empty input",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![]));",
+          "    let input: &[u8] = b\"SGVsbG8g\"; // \"Hello \" with invalid character",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"SGVsbG8!\"; // Invalid character in base64",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"SGVsbG8=\\xFF\"; // Invalid trailing byte",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"SGVsbG8h\"; // \"Hello!\" with invalid character",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"SGVsbG8=\"; // Valid input for expected test case",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![72, 101, 108, 108, 111]));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"S\"; // Lone alphabet character",
+          "    let result = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input: &[u8] = b\"S\"; // Lone alphabet character",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, InvalidBase64Details::LoneAlphabetSymbol);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"S\"; // Lone alphabet character",
+          "    let result = decode_to_vec(input);",
+          "    let input: &[u8] = b\"S\"; // Lone alphabet character",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, InvalidBase64Details::LoneAlphabetSymbol);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"U28=\"; // \"So\" in base64",
+          "    let result = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), b\"So\".to_vec());",
+          "    let input: &[u8] = b\"U28\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"U28==\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"U28!\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), b\"\".to_vec());",
+          "    let input: &[u8] = b\"VM8=\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"VGhpcyBpcyBhIHRlc3Q=\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), b\"This is a test\".to_vec());",
+          "    let input: &[u8] = b\"U28gT29y\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"U28=\"; // \"So\" in base64",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), b\"So\".to_vec());",
+          "    let input: &[u8] = b\"U28\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"U28==\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"U28!\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), b\"\".to_vec());",
+          "    let input: &[u8] = b\"VM8=\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    let input: &[u8] = b\"VGhpcyBpcyBhIHRlc3Q=\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), b\"This is a test\".to_vec());",
+          "    let input: &[u8] = b\"U28gT29y\";",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"U2F==!\"; // Invalid character '!'",
+          "    let result = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, InvalidBase64Details::UnexpectedSymbol(b'!'));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"U2F==!\"; // Invalid character '!'",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, InvalidBase64Details::UnexpectedSymbol(b'!'));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

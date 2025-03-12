@@ -1,0 +1,169 @@
+{
+  "name": "quote::ext::{impl#0}::append_all",
+  "mod_info": {
+    "name": "ext",
+    "loc": "src/lib.rs:109:1:109:9"
+  },
+  "visible": true,
+  "loc": "src/ext.rs:67:5:75:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: token in iter at line 72 is true\n",
+        "precondition: token in iter at line 72 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct FakeToken;",
+                "    ",
+                "    impl ToTokens for FakeToken {",
+                "        fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "            // Simulate tokenization",
+                "        }",
+                "",
+                "        fn to_token_stream(&self) -> TokenStream {",
+                "            TokenStream::new()",
+                "        }",
+                "",
+                "        fn into_token_stream(self) -> TokenStream {",
+                "            TokenStream::new()",
+                "        }",
+                "    }",
+                "",
+                "    let mut tokens = TokenStream::new();",
+                "    let tokens_vec = vec![FakeToken, FakeToken]; // All tokens are valid",
+                "",
+                "    tokens.append_all(tokens_vec);",
+                "    // Assertions can be added here to verify the state of `tokens` after append_all",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct InvalidToken;",
+                "",
+                "    impl ToTokens for InvalidToken {",
+                "        fn to_tokens(&self, _tokens: &mut TokenStream) {",
+                "            panic!(\"Invalid token!\");",
+                "        }",
+                "",
+                "        fn to_token_stream(&self) -> TokenStream {",
+                "            TokenStream::new()",
+                "        }",
+                "",
+                "        fn into_token_stream(self) -> TokenStream {",
+                "            TokenStream::new()",
+                "        }",
+                "    }",
+                "",
+                "    let mut tokens = TokenStream::new();",
+                "    let tokens_vec = vec![InvalidToken]; // This will cause a panic",
+                "",
+                "    tokens.append_all(tokens_vec);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: token in iter at line 72 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use proc_macro2::TokenStream;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    use proc_macro2::TokenStream;",
+                "",
+                "    struct DummyToken;",
+                "",
+                "    impl ToTokens for DummyToken {",
+                "        fn to_tokens(&self, _tokens: &mut TokenStream) {}",
+                "        fn to_token_stream(&self) -> TokenStream {",
+                "            TokenStream::new()",
+                "        }",
+                "        fn into_token_stream(self) -> TokenStream {",
+                "            TokenStream::new()",
+                "        }",
+                "    }",
+                "",
+                "    let mut token_stream = TokenStream::new();",
+                "    let empty_iter: Vec<DummyToken> = Vec::new();",
+                "    token_stream.append_all(empty_iter);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    use proc_macro2::TokenStream;",
+                "",
+                "    struct SingleToken;",
+                "",
+                "    impl ToTokens for SingleToken {",
+                "        fn to_tokens(&self, tokens: &mut TokenStream) {",
+                "            tokens.extend(self.to_token_stream());",
+                "        }",
+                "        fn to_token_stream(&self) -> TokenStream {",
+                "            TokenStream::from(proc_macro2::TokenTree::Ident(proc_macro2::Ident::new(\"a\", proc_macro2::Span::call_site())))",
+                "        }",
+                "        fn into_token_stream(self) -> TokenStream {",
+                "            self.to_token_stream()",
+                "        }",
+                "    }",
+                "",
+                "    let mut token_stream = TokenStream::new();",
+                "    let single_token_iter = vec![SingleToken];",
+                "    token_stream.append_all(single_token_iter);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

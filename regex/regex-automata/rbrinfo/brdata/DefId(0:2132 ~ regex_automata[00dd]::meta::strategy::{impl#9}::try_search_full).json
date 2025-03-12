@@ -1,0 +1,647 @@
+{
+  "name": "regex_automata::meta::strategy::{impl#9}::try_search_full",
+  "mod_info": {
+    "name": "meta::strategy",
+    "loc": "regex-automata/src/meta/mod.rs:61:1:61:14"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/meta/strategy.rs:1626:5:1694:6",
+  "doc": "",
+  "code": [
+    "fn try_search_full(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    ") -> Result<Option<Match>, RetryError> {",
+    "    let mut span = input.get_span();",
+    "    let mut min_match_start = 0;",
+    "    let mut min_pre_start = 0;",
+    "    loop {",
+    "        let litmatch = match self.preinner.find(input.haystack(), span) {",
+    "            None => return Ok(None),",
+    "            Some(span) => span,",
+    "        };",
+    "        if litmatch.start < min_pre_start {",
+    "            trace!(",
+    "                \"found inner prefilter match at {:?}, which starts \\",
+    "\t before the end of the last forward scan at {}, \\",
+    "\t quitting to avoid quadratic behavior\",",
+    "                litmatch,",
+    "                min_pre_start,",
+    "            );",
+    "            return Err(RetryError::Quadratic(RetryQuadraticError::new()));",
+    "        }",
+    "        trace!(\"reverse inner scan found inner match at {:?}\", litmatch);",
+    "        let revinput = input",
+    "            .clone()",
+    "            .anchored(Anchored::Yes)",
+    "            .span(input.start()..litmatch.start);",
+    "        // Note that in addition to the literal search above scanning past",
+    "        // our minimum start point, this routine can also return an error",
+    "        // as a result of detecting possible quadratic behavior if the",
+    "        // reverse scan goes past the minimum start point. That is, the",
+    "        // literal search might not, but the reverse regex search for the",
+    "        // prefix might!",
+    "        match self.try_search_half_rev_limited(",
+    "            cache,",
+    "            &revinput,",
+    "            min_match_start,",
+    "        )? {",
+    "            None => {",
+    "                if span.start >= span.end {",
+    "                    break;",
+    "                }",
+    "                span.start = litmatch.start.checked_add(1).unwrap();",
+    "            }",
+    "            Some(hm_start) => {",
+    "                let fwdinput = input",
+    "                    .clone()",
+    "                    .anchored(Anchored::Pattern(hm_start.pattern()))",
+    "                    .span(hm_start.offset()..input.end());",
+    "                match self.try_search_half_fwd_stopat(cache, &fwdinput)? {",
+    "                    Err(stopat) => {",
+    "                        min_pre_start = stopat;",
+    "                        span.start =",
+    "                            litmatch.start.checked_add(1).unwrap();",
+    "                    }",
+    "                    Ok(hm_end) => {",
+    "                        return Ok(Some(Match::new(",
+    "                            hm_start.pattern(),",
+    "                            hm_start.offset()..hm_end.offset(),",
+    "                        )))",
+    "                    }",
+    "                }",
+    "            }",
+    "        }",
+    "        min_match_start = litmatch.end;",
+    "    }",
+    "    Ok(None)",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 1,
+    "min_set": 6
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches Some(span)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        },
+        {
+          "cond": "litmatch.start < min_pre_start",
+          "norm": null,
+          "value": "true",
+          "line": 1639,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        10,
+        12,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches Some(span)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        },
+        {
+          "cond": "litmatch.start < min_pre_start",
+          "norm": null,
+          "value": "false",
+          "line": 1639,
+          "bound": "litmatch.start == min_pre_start"
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches Some(hm_start)",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        22,
+        23,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches Some(span)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        },
+        {
+          "cond": "litmatch.start < min_pre_start",
+          "norm": null,
+          "value": "false",
+          "line": 1639,
+          "bound": "litmatch.start == min_pre_start"
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches Some(hm_start)",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_fwd_stopat(cache, &fwdinput)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1676,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        26,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        43,
+        44,
+        56,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches Some(span)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        },
+        {
+          "cond": "litmatch.start < min_pre_start",
+          "norm": null,
+          "value": "false",
+          "line": 1639,
+          "bound": "litmatch.start == min_pre_start"
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches Some(hm_start)",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_fwd_stopat(cache, &fwdinput)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1676,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_fwd_stopat(cache, &fwdinput)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1676,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_fwd_stopat(cache, &fwdinput)? matches Err(stopat)",
+          "norm": null,
+          "value": "true",
+          "line": 1676,
+          "bound": null
+        },
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        },
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        26,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        46,
+        48,
+        49,
+        50,
+        55,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches Some(span)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        },
+        {
+          "cond": "litmatch.start < min_pre_start",
+          "norm": null,
+          "value": "false",
+          "line": 1639,
+          "bound": "litmatch.start == min_pre_start"
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches Some(hm_start)",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_fwd_stopat(cache, &fwdinput)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1676,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_fwd_stopat(cache, &fwdinput)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1676,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(Match::new(\n                                hm_start.pattern(),\n                                hm_start.offset()..hm_end.offset(),\n                            )))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        26,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        47,
+        51,
+        52,
+        53,
+        54,
+        56,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches Some(span)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        },
+        {
+          "cond": "litmatch.start < min_pre_start",
+          "norm": null,
+          "value": "false",
+          "line": 1639,
+          "bound": "litmatch.start == min_pre_start"
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "span.start >= span.end",
+          "norm": "span.end <= span.start",
+          "value": "true",
+          "line": 1666,
+          "bound": "span.start == span.end"
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        25,
+        27,
+        28,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches Some(span)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        },
+        {
+          "cond": "litmatch.start < min_pre_start",
+          "norm": null,
+          "value": "false",
+          "line": 1639,
+          "bound": "litmatch.start == min_pre_start"
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_half_rev_limited(\n                cache,\n                &revinput,\n                min_match_start,\n            )? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1660,
+          "bound": null
+        },
+        {
+          "cond": "span.start >= span.end",
+          "norm": "span.end <= span.start",
+          "value": "false",
+          "line": 1666,
+          "bound": null
+        },
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        },
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        25,
+        27,
+        29,
+        30,
+        31,
+        55,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        },
+        {
+          "cond": "self.preinner.find(input.haystack(), span) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

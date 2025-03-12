@@ -1,0 +1,157 @@
+{
+  "name": "bytes::buf::buf_impl::Buf::get_u64_le",
+  "mod_info": {
+    "name": "buf::buf_impl",
+    "loc": "src/buf/mod.rs:17:1:17:14"
+  },
+  "visible": true,
+  "loc": "src/buf/buf_impl.rs:643:5:645:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "buffer length of at least 8 bytes, buffer containing valid little-endian encoded data for u64, buffer with varying lengths including exactly 8 bytes and more than 8 bytes, buffer length less than 8 bytes for panic scenarios.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\\x01\"[..];",
+                "    let result = buf.get_u64_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, 0x0102030405060708);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    assert!(std::panic::catch_unwind(|| { buf.get_u64_le(); }).is_err());",
+                "    buf.advance(8);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    let mut buf_empty: &[u8] = &b\"\"[..];",
+                "    assert!(std::panic::catch_unwind(|| { buf_empty.get_u64_le(); }).is_err());",
+                "    let mut buf_short: &[u8] = &b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\"[..];",
+                "    assert!(std::panic::catch_unwind(|| { buf_short.get_u64_le(); }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\\x01\"[..];",
+                "    let result = buf.get_u64_le();",
+                "    assert_eq!(result, 0x0102030405060708);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    assert!(std::panic::catch_unwind(|| { buf.get_u64_le(); }).is_err());",
+                "    buf.advance(8);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    let mut buf_empty: &[u8] = &b\"\"[..];",
+                "    assert!(std::panic::catch_unwind(|| { buf_empty.get_u64_le(); }).is_err());",
+                "    let mut buf_short: &[u8] = &b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\"[..];",
+                "    assert!(std::panic::catch_unwind(|| { buf_short.get_u64_le(); }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\\x01\\x00\"[..];",
+                "    let result = buf.get_u64_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, 0x0102030405060708);",
+                "    assert_eq!(buf.remaining(), 1);",
+                "    assert!(panic::catch_unwind(|| { buf.get_u64_le(); }).is_err());",
+                "    buf.advance(8);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\\x01\\x00\"[..];",
+                "    let result = buf.get_u64_le();",
+                "    assert_eq!(result, 0x0102030405060708);",
+                "    assert_eq!(buf.remaining(), 1);",
+                "    assert!(panic::catch_unwind(|| { buf.get_u64_le(); }).is_err());",
+                "    buf.advance(8);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\\x01\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\"[..];",
+                "    let result = buf.get_u64_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(0x0102030405060708, result);",
+                "    assert!(buf.remaining() == 0);",
+                "    assert!(buf.has_remaining() == false);",
+                "    buf.advance(8);",
+                "    assert_panics!(buf.get_u64_le());",
+                "    buf.advance(8);",
+                "    assert_eq!(result, 0xFFFFFFFFFFFFFFFF);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\\x01\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\"[..];",
+                "    let result = buf.get_u64_le();",
+                "    assert_eq!(0x0102030405060708, result);",
+                "    assert!(buf.remaining() == 0);",
+                "    assert!(buf.has_remaining() == false);",
+                "    buf.advance(8);",
+                "    assert_panics!(buf.get_u64_le());",
+                "    buf.advance(8);",
+                "    assert_eq!(result, 0xFFFFFFFFFFFFFFFF);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x08\\x07\\x06\"[..];",
+                "    let result = buf.get_u64_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, 0);",
+                "    assert!(buf.remaining() < 8);",
+                "    assert!(buf.has_remaining() == false);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(buf.get_u64_le(), 0x0102030405060708);",
+                "    assert!(buf.length() == 0);",
+                "    assert!(buf.get_u64_le().is_none());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x08\\x07\\x06\"[..];",
+                "    let result = buf.get_u64_le();",
+                "    assert_eq!(result, 0);",
+                "    assert!(buf.remaining() < 8);",
+                "    assert!(buf.has_remaining() == false);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(buf.get_u64_le(), 0x0102030405060708);",
+                "    assert!(buf.length() == 0);",
+                "    assert!(buf.get_u64_le().is_none());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

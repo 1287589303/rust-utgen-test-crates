@@ -1,0 +1,145 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/** comment text\".into(),",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = doc_comment_contents(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(!input.starts_with(\"//!\"));",
+          "    assert!(!input.starts_with(\"/*!\"));",
+          "    assert!(!input.starts_with(\"///\"));",
+          "    assert!(input.starts_with(\"/**\"));",
+          "    assert!(!input.rest[3..].starts_with('*'));",
+          "    assert_eq!(block_comment(input), Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/** comment text\".into(),",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = doc_comment_contents(input);",
+          "    assert!(!input.starts_with(\"//!\"));",
+          "    assert!(!input.starts_with(\"/*!\"));",
+          "    assert!(!input.starts_with(\"///\"));",
+          "    assert!(input.starts_with(\"/**\"));",
+          "    assert!(!input.rest[3..].starts_with('*'));",
+          "    assert_eq!(block_comment(input), Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/** comment text not closing \".into(),",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = doc_comment_contents(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(doc_comment_contents(Cursor { rest: \"/** comment text not closing \".into(), off: 0 }), Err(Reject));",
+          "    assert!(doc_comment_contents(Cursor { rest: \"/** unclosed comment\".into(), off: 0 }).is_err());",
+          "    assert!(doc_comment_contents(Cursor { rest: \"/** another comment\".into(), off: 0 }).is_err());",
+          "    assert_eq!(doc_comment_contents(Cursor { rest: \"/** valid comment text */\".into(), off: 0 }), Ok((Cursor { rest: \"\", off: 18 }, (\" valid comment text \", false))));",
+          "    assert_eq!(doc_comment_contents(Cursor { rest: \"/** comment with /* nested */ closing */\".into(), off: 0 }), Ok((Cursor { rest: \"\", off: 31 }, (\" comment with /* nested */ closing \", false)));"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/** comment text not closing \".into(),",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = doc_comment_contents(input);",
+          "    assert_eq!(doc_comment_contents(Cursor { rest: \"/** comment text not closing \".into(), off: 0 }), Err(Reject));",
+          "    assert!(doc_comment_contents(Cursor { rest: \"/** unclosed comment\".into(), off: 0 }).is_err());",
+          "    assert!(doc_comment_contents(Cursor { rest: \"/** another comment\".into(), off: 0 }).is_err());",
+          "    assert_eq!(doc_comment_contents(Cursor { rest: \"/** valid comment text */\".into(), off: 0 }), Ok((Cursor { rest: \"\", off: 18 }, (\" valid comment text \", false))));",
+          "    assert_eq!(doc_comment_contents(Cursor { rest: \"/** comment with /* nested */ closing */\".into(), off: 0 }), Ok((Cursor { rest: \"\", off: 31 }, (\" comment with /* nested */ closing \", false)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/** comment text\\nstill part of comment\".into(),",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = doc_comment_contents(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(doc_comment_contents(Cursor { rest: \"/** comment text\\nstill part of comment\".into(), off: 0 }), Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/** comment text\\nstill part of comment\".into(),",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = doc_comment_contents(input);",
+          "    assert_eq!(doc_comment_contents(Cursor { rest: \"/** comment text\\nstill part of comment\".into(), off: 0 }), Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/** this is a valid start of a comment with no stars after\".into(),",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = doc_comment_contents(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(doc_comment_contents(Cursor { rest: \"/** this is a valid start of a comment with no stars after\".into(), off: 0 }).is_err());",
+          "    assert!(doc_comment_contents(Cursor { rest: \"/** this is a valid start of a comment with no stars after\".into(), off: 0 }).unwrap_err().is_none());"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/** this is a valid start of a comment with no stars after\".into(),",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = doc_comment_contents(input);",
+          "    assert!(doc_comment_contents(Cursor { rest: \"/** this is a valid start of a comment with no stars after\".into(), off: 0 }).is_err());",
+          "    assert!(doc_comment_contents(Cursor { rest: \"/** this is a valid start of a comment with no stars after\".into(), off: 0 }).unwrap_err().is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

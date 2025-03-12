@@ -1,0 +1,174 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    fn create_value() -> String {",
+          "        String::from(\"test\")",
+          "    }",
+          "    let pool: Pool<String, fn() -> String> = Pool::new(create_value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(pool.stack.lock().unwrap().is_empty());",
+          "    assert_eq!(pool.create(), \"test\");",
+          "    let boxed_inner_pool = pool.0;",
+          "    assert!(boxed_inner_pool.stack.lock().unwrap().is_empty());",
+          "    assert_eq!(boxed_inner_pool.create(), \"test\");"
+        ],
+        "code": [
+          "{",
+          "    fn create_value() -> String {",
+          "        String::from(\"test\")",
+          "    }",
+          "    let pool: Pool<String, fn() -> String> = Pool::new(create_value);",
+          "    assert!(pool.stack.lock().unwrap().is_empty());",
+          "    assert_eq!(pool.create(), \"test\");",
+          "    let boxed_inner_pool = pool.0;",
+          "    assert!(boxed_inner_pool.stack.lock().unwrap().is_empty());",
+          "    assert_eq!(boxed_inner_pool.create(), \"test\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    fn create_default_value() -> i32 {",
+          "        42",
+          "    }",
+          "    let pool: Pool<i32, fn() -> i32> = Pool::new(create_default_value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+          "    let default_value = (pool.create)();",
+          "    assert_eq!(default_value, 42);",
+          "    assert!(pool.stack.lock().unwrap().is_empty());"
+        ],
+        "code": [
+          "{",
+          "    fn create_default_value() -> i32 {",
+          "        42",
+          "    }",
+          "    let pool: Pool<i32, fn() -> i32> = Pool::new(create_default_value);",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+          "    let default_value = (pool.create)();",
+          "    assert_eq!(default_value, 42);",
+          "    assert!(pool.stack.lock().unwrap().is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    fn create_empty_string() -> String {",
+          "        String::new()",
+          "    }",
+          "    let pool: Pool<String, fn() -> String> = Pool::new(create_empty_string);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+          "    assert_eq!(std::any::type_name::<Pool<String, fn() -> String>>(), \"regex_automata::Pool<String, fn() -> String>\");",
+          "    let item: String = (pool.create)();",
+          "    assert_eq!(item, \"\");",
+          "    assert!(std::mem::size_of_val(&pool) > 0);"
+        ],
+        "code": [
+          "{",
+          "    fn create_empty_string() -> String {",
+          "        String::new()",
+          "    }",
+          "    let pool: Pool<String, fn() -> String> = Pool::new(create_empty_string);",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+          "    assert_eq!(std::any::type_name::<Pool<String, fn() -> String>>(), \"regex_automata::Pool<String, fn() -> String>\");",
+          "    let item: String = (pool.create)();",
+          "    assert_eq!(item, \"\");",
+          "    assert!(std::mem::size_of_val(&pool) > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct RefValue {",
+          "        value: String,",
+          "    }",
+          "",
+          "    fn create_ref_value() -> RefValue {",
+          "        RefValue { value: String::from(\"reference\") }",
+          "    }",
+          "    let pool: Pool<RefValue, fn() -> RefValue> = Pool::new(create_ref_value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(std::mem::size_of::<Pool<RefValue, fn() -> RefValue>>(), std::mem::size_of::<alloc::boxed::Box<inner::Pool<RefValue, fn() -> RefValue>>>());",
+          "    assert!(pool.stack.lock().unwrap().is_empty());",
+          "    let created_value = (pool.create)();",
+          "    assert_eq!(created_value.value, \"reference\");"
+        ],
+        "code": [
+          "{",
+          "    struct RefValue {",
+          "        value: String,",
+          "    }",
+          "",
+          "    fn create_ref_value() -> RefValue {",
+          "        RefValue { value: String::from(\"reference\") }",
+          "    }",
+          "    let pool: Pool<RefValue, fn() -> RefValue> = Pool::new(create_ref_value);",
+          "    assert_eq!(std::mem::size_of::<Pool<RefValue, fn() -> RefValue>>(), std::mem::size_of::<alloc::boxed::Box<inner::Pool<RefValue, fn() -> RefValue>>>());",
+          "    assert!(pool.stack.lock().unwrap().is_empty());",
+          "    let created_value = (pool.create)();",
+          "    assert_eq!(created_value.value, \"reference\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let _pool: Pool<i32, fn() -> !> = Pool::new(|| panic!());",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(Pool::new(|| panic!()), Pool::<i32, fn() -> !>));",
+          "    assert!(std::panic::catch_unwind(|| { Pool::new(|| panic!()); }).is_err());",
+          "    assert_eq!(std::mem::size_of::<Pool<i32, fn() -> !>>(), std::mem::size_of::<alloc::boxed::Box<inner::Pool<i32, fn() -> !>>>());",
+          "    assert!(std::panic::catch_unwind(|| { Pool::new(|| { let _ = 0; }); }).is_err());",
+          "    assert_eq!(std::panic::catch_unwind(|| Pool::new(|| 42)).is_ok(), true);"
+        ],
+        "code": [
+          "{",
+          "    let _pool: Pool<i32, fn() -> !> = Pool::new(|| panic!());",
+          "    assert!(matches!(Pool::new(|| panic!()), Pool::<i32, fn() -> !>));",
+          "    assert!(std::panic::catch_unwind(|| { Pool::new(|| panic!()); }).is_err());",
+          "    assert_eq!(std::mem::size_of::<Pool<i32, fn() -> !>>(), std::mem::size_of::<alloc::boxed::Box<inner::Pool<i32, fn() -> !>>>());",
+          "    assert!(std::panic::catch_unwind(|| { Pool::new(|| { let _ = 0; }); }).is_err());",
+          "    assert_eq!(std::panic::catch_unwind(|| Pool::new(|| 42)).is_ok(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

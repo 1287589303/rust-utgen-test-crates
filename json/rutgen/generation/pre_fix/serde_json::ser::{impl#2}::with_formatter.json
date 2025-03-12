@@ -1,0 +1,219 @@
+{
+  "name": "serde_json::ser::{impl#2}::with_formatter",
+  "mod_info": {
+    "name": "ser",
+    "loc": "src/lib.rs:423:1:423:13"
+  },
+  "visible": true,
+  "loc": "src/ser.rs:50:5:52:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "expected return value/type: Serializer { writer, formatter }\n"
+      ],
+      "input_infer": "W must implement io::Write, and F must implement Formatter. Writer can be a file, buffer, or other writable streams; formatter can be any valid Formatter.\n",
+      "answers": [
+        {
+          "uses": [
+            "use std::io::Write;",
+            "use std::fs::File;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct BufferWriter {",
+                "        data: Vec<u8>,",
+                "    }",
+                "",
+                "    impl io::Write for BufferWriter {",
+                "        fn write(&mut self, buf: &[u8]) -> Result<usize> {",
+                "            self.data.extend_from_slice(buf);",
+                "            Ok(buf.len())",
+                "        }",
+                "",
+                "        fn flush(&mut self) -> Result<()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    struct SimpleFormatter;",
+                "",
+                "    impl Formatter for SimpleFormatter {}",
+                "",
+                "    let writer = BufferWriter { data: Vec::new() };",
+                "    let formatter = SimpleFormatter;",
+                "    let serializer = Serializer::with_formatter(writer, formatter);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(serializer.writer.data.is_empty());",
+                "    assert_eq!(serializer.formatter as usize, &formatter as *const _ as usize);",
+                "    assert!(serializer.writer.write(b\"test\").is_ok());",
+                "    assert_eq!(serializer.writer.data.len(), 4);",
+                "    assert_eq!(serializer.writer.data, b\"test\");",
+                "    assert!(serializer.writer.flush().is_ok());"
+              ],
+              "code": [
+                "{",
+                "    struct BufferWriter {",
+                "        data: Vec<u8>,",
+                "    }",
+                "",
+                "    impl io::Write for BufferWriter {",
+                "        fn write(&mut self, buf: &[u8]) -> Result<usize> {",
+                "            self.data.extend_from_slice(buf);",
+                "            Ok(buf.len())",
+                "        }",
+                "",
+                "        fn flush(&mut self) -> Result<()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    struct SimpleFormatter;",
+                "",
+                "    impl Formatter for SimpleFormatter {}",
+                "",
+                "    let writer = BufferWriter { data: Vec::new() };",
+                "    let formatter = SimpleFormatter;",
+                "    let serializer = Serializer::with_formatter(writer, formatter);",
+                "    assert!(serializer.writer.data.is_empty());",
+                "    assert_eq!(serializer.formatter as usize, &formatter as *const _ as usize);",
+                "    assert!(serializer.writer.write(b\"test\").is_ok());",
+                "    assert_eq!(serializer.writer.data.len(), 4);",
+                "    assert_eq!(serializer.writer.data, b\"test\");",
+                "    assert!(serializer.writer.flush().is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::fs::File;",
+                "    use std::io::Write;",
+                "",
+                "    struct SimpleFormatter;",
+                "",
+                "    impl Formatter for SimpleFormatter {}",
+                "",
+                "    let file = File::create(\"test_file.json\").unwrap();",
+                "    let formatter = SimpleFormatter;",
+                "    let serializer = Serializer::with_formatter(file, formatter);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(serializer.writer.is_some());",
+                "    assert_eq!(serializer.formatter, formatter);",
+                "    assert_eq!(serializer.writer, file);",
+                "    assert!(matches!(serializer, Serializer { writer, formatter }));",
+                "    assert!(serializer.writer.is_a::<File>());",
+                "    assert!(serializer.formatter.is_a::<SimpleFormatter>());"
+              ],
+              "code": [
+                "{",
+                "    use std::fs::File;",
+                "    use std::io::Write;",
+                "",
+                "    struct SimpleFormatter;",
+                "",
+                "    impl Formatter for SimpleFormatter {}",
+                "",
+                "    let file = File::create(\"test_file.json\").unwrap();",
+                "    let formatter = SimpleFormatter;",
+                "    let serializer = Serializer::with_formatter(file, formatter);",
+                "    assert!(serializer.writer.is_some());",
+                "    assert_eq!(serializer.formatter, formatter);",
+                "    assert_eq!(serializer.writer, file);",
+                "    assert!(matches!(serializer, Serializer { writer, formatter }));",
+                "    assert!(serializer.writer.is_a::<File>());",
+                "    assert!(serializer.formatter.is_a::<SimpleFormatter>());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct CustomWriter {",
+                "        output: String,",
+                "    }",
+                "",
+                "    impl io::Write for CustomWriter {",
+                "        fn write(&mut self, buf: &[u8]) -> Result<usize> {",
+                "            self.output.push_str(std::str::from_utf8(buf).unwrap());",
+                "            Ok(buf.len())",
+                "        }",
+                "",
+                "        fn flush(&mut self) -> Result<()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    struct SimpleFormatter;",
+                "",
+                "    impl Formatter for SimpleFormatter {}",
+                "",
+                "    let writer = CustomWriter { output: String::new() };",
+                "    let formatter = SimpleFormatter;",
+                "    let serializer = Serializer::with_formatter(writer, formatter);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(serializer.writer.output.is_empty());",
+                "    assert_eq!(std::mem::size_of_val(&serializer.writer), std::mem::size_of::<CustomWriter>());",
+                "    assert!(std::mem::size_of_val(&serializer.formatter) > 0);",
+                "    assert!(format!(\"{:?}\", serializer).contains(\"Serializer {\"));",
+                "    assert_eq!(serializer.writer.output.len(), 0);",
+                "    assert!(std::any::TypeId::of::<Serializer<CustomWriter, SimpleFormatter>>() == std::any::TypeId::of_val(&serializer));"
+              ],
+              "code": [
+                "{",
+                "    struct CustomWriter {",
+                "        output: String,",
+                "    }",
+                "",
+                "    impl io::Write for CustomWriter {",
+                "        fn write(&mut self, buf: &[u8]) -> Result<usize> {",
+                "            self.output.push_str(std::str::from_utf8(buf).unwrap());",
+                "            Ok(buf.len())",
+                "        }",
+                "",
+                "        fn flush(&mut self) -> Result<()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    struct SimpleFormatter;",
+                "",
+                "    impl Formatter for SimpleFormatter {}",
+                "",
+                "    let writer = CustomWriter { output: String::new() };",
+                "    let formatter = SimpleFormatter;",
+                "    let serializer = Serializer::with_formatter(writer, formatter);",
+                "    assert!(serializer.writer.output.is_empty());",
+                "    assert_eq!(std::mem::size_of_val(&serializer.writer), std::mem::size_of::<CustomWriter>());",
+                "    assert!(std::mem::size_of_val(&serializer.formatter) > 0);",
+                "    assert!(format!(\"{:?}\", serializer).contains(\"Serializer {\"));",
+                "    assert_eq!(serializer.writer.output.len(), 0);",
+                "    assert!(std::any::TypeId::of::<Serializer<CustomWriter, SimpleFormatter>>() == std::any::TypeId::of_val(&serializer));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

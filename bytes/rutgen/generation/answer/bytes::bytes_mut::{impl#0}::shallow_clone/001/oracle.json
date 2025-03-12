@@ -1,0 +1,121 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut bytes_mut = BytesMut::with_capacity(10);",
+          "    let data_ptr = NonNull::new(&mut bytes_mut as *mut _ as *mut u8).unwrap();",
+          "    let shared = Shared {",
+          "        buf: data_ptr.as_ptr(),",
+          "        cap: 10,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    };",
+          "    ",
+          "    unsafe {",
+          "        bytes_mut.data = &shared as *const _ as *mut Shared;",
+          "        let _clone = bytes_mut.shallow_clone();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_mut.len(), 0);",
+          "    assert_eq!(bytes_mut.capacity(), 10);",
+          "    assert_eq!((*bytes_mut.data).ref_count.load(Ordering::Relaxed), 2);",
+          "    assert_ne!(bytes_mut.data, _clone.data);",
+          "    assert_eq!((*_clone.data).ref_count.load(Ordering::Relaxed), 2);",
+          "    assert_eq!(_clone.len(), 0);",
+          "    assert_eq!(_clone.capacity(), 10);",
+          "    assert_eq!(bytes_mut.kind(), KIND_ARC);",
+          "    assert_eq!(_clone.kind(), KIND_ARC);"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes_mut = BytesMut::with_capacity(10);",
+          "    let data_ptr = NonNull::new(&mut bytes_mut as *mut _ as *mut u8).unwrap();",
+          "    let shared = Shared {",
+          "        buf: data_ptr.as_ptr(),",
+          "        cap: 10,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    };",
+          "    ",
+          "    unsafe {",
+          "        bytes_mut.data = &shared as *const _ as *mut Shared;",
+          "        let _clone = bytes_mut.shallow_clone();",
+          "    }",
+          "    assert_eq!(bytes_mut.len(), 0);",
+          "    assert_eq!(bytes_mut.capacity(), 10);",
+          "    assert_eq!((*bytes_mut.data).ref_count.load(Ordering::Relaxed), 2);",
+          "    assert_ne!(bytes_mut.data, _clone.data);",
+          "    assert_eq!((*_clone.data).ref_count.load(Ordering::Relaxed), 2);",
+          "    assert_eq!(_clone.len(), 0);",
+          "    assert_eq!(_clone.capacity(), 10);",
+          "    assert_eq!(bytes_mut.kind(), KIND_ARC);",
+          "    assert_eq!(_clone.kind(), KIND_ARC);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut bytes_mut = BytesMut::with_capacity(20);",
+          "    let data_ptr = NonNull::new(&mut bytes_mut as *mut _ as *mut u8).unwrap();",
+          "    let shared = Shared {",
+          "        buf: data_ptr.as_ptr(),",
+          "        cap: 20,",
+          "        ref_cnt: AtomicUsize::new(2),",
+          "    };",
+          "",
+          "    unsafe {",
+          "        bytes_mut.data = &shared as *const _ as *mut Shared;",
+          "        let _clone = bytes_mut.shallow_clone();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_mut.len(), 0);",
+          "    assert_eq!(unsafe { &*(bytes_mut.data) }.ref_cnt.load(Ordering::Relaxed), 3);",
+          "    assert_ne!(bytes_mut.data, _clone.data);",
+          "    assert_eq!(bytes_mut.kind(), KIND_ARC);",
+          "    assert_eq!(unsafe { (&*(bytes_mut.data)).vec.len() }, 0);",
+          "    assert!(bytes_mut.cap >= _clone.len());",
+          "    assert!(bytes_mut.data as usize & KIND_MASK == KIND_ARC);",
+          "    assert!(unsafe { &*(bytes_mut.data) }.buf == unsafe { &*(bytes_mut.data) }.buf);"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes_mut = BytesMut::with_capacity(20);",
+          "    let data_ptr = NonNull::new(&mut bytes_mut as *mut _ as *mut u8).unwrap();",
+          "    let shared = Shared {",
+          "        buf: data_ptr.as_ptr(),",
+          "        cap: 20,",
+          "        ref_cnt: AtomicUsize::new(2),",
+          "    };",
+          "",
+          "    unsafe {",
+          "        bytes_mut.data = &shared as *const _ as *mut Shared;",
+          "        let _clone = bytes_mut.shallow_clone();",
+          "    }",
+          "    assert_eq!(bytes_mut.len(), 0);",
+          "    assert_eq!(unsafe { &*(bytes_mut.data) }.ref_cnt.load(Ordering::Relaxed), 3);",
+          "    assert_ne!(bytes_mut.data, _clone.data);",
+          "    assert_eq!(bytes_mut.kind(), KIND_ARC);",
+          "    assert_eq!(unsafe { (&*(bytes_mut.data)).vec.len() }, 0);",
+          "    assert!(bytes_mut.cap >= _clone.len());",
+          "    assert!(bytes_mut.data as usize & KIND_MASK == KIND_ARC);",
+          "    assert!(unsafe { &*(bytes_mut.data) }.buf == unsafe { &*(bytes_mut.data) }.buf);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

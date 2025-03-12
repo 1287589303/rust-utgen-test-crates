@@ -1,0 +1,114 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct Dummy;",
+          "    let cell = OnceCell::new();",
+          "    let _ = cell.get_or_init(|| Dummy);",
+          "    let result = cell.get_or_try_init(|| Err(()));",
+          "    let _ = result; // Consuming the result",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(cell.get(), Some(&Dummy));",
+          "    assert_eq!(result, Err(()));",
+          "    assert!(cell.get().is_some());",
+          "    assert!(!self.0.is_initialized());"
+        ],
+        "code": [
+          "{",
+          "    struct Dummy;",
+          "    let cell = OnceCell::new();",
+          "    let _ = cell.get_or_init(|| Dummy);",
+          "    let result = cell.get_or_try_init(|| Err(()));",
+          "    let _ = result; // Consuming the result",
+          "    assert_eq!(cell.get(), Some(&Dummy));",
+          "    assert_eq!(result, Err(()));",
+          "    assert!(cell.get().is_some());",
+          "    assert!(!self.0.is_initialized());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct Dummy;",
+          "    let cell = OnceCell::new();",
+          "    let _ = cell.get_or_init(|| Dummy);",
+          "    ",
+          "    let result = cell.get_or_try_init(|| Err(\"failure\"));",
+          "    let _ = result; // Consuming the result",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(cell.get_or_try_init(|| Err(\"failure\")), Err(\"failure\"));",
+          "    assert!(cell.get().is_none());",
+          "    let value = cell.get_or_try_init(|| -> Result<i32, &str> { Ok(92) });",
+          "    assert_eq!(value, Ok(&92));",
+          "    assert_eq!(cell.get(), Some(&92));"
+        ],
+        "code": [
+          "{",
+          "    struct Dummy;",
+          "    let cell = OnceCell::new();",
+          "    let _ = cell.get_or_init(|| Dummy);",
+          "    ",
+          "    let result = cell.get_or_try_init(|| Err(\"failure\"));",
+          "    let _ = result; // Consuming the result",
+          "    assert_eq!(cell.get_or_try_init(|| Err(\"failure\")), Err(\"failure\"));",
+          "    assert!(cell.get().is_none());",
+          "    let value = cell.get_or_try_init(|| -> Result<i32, &str> { Ok(92) });",
+          "    assert_eq!(value, Ok(&92));",
+          "    assert_eq!(cell.get(), Some(&92));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct Value(i32);",
+          "    let cell = OnceCell::new();",
+          "    let _ = cell.get_or_try_init(|| Err(\"initial error\"));",
+          "",
+          "    let value = cell.get_or_try_init(|| Ok(Value(42)));",
+          "    let _ = value; // Consuming the result",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(cell.get().is_none());",
+          "    assert_eq!(cell.get_or_try_init(|| Err(\"initial error\")), Err(\"initial error\"));",
+          "    assert_eq!(cell.get_or_try_init(|| Ok(Value(42))), Ok(&Value(42)));",
+          "    assert!(cell.get().is_some());"
+        ],
+        "code": [
+          "{",
+          "    struct Value(i32);",
+          "    let cell = OnceCell::new();",
+          "    let _ = cell.get_or_try_init(|| Err(\"initial error\"));",
+          "",
+          "    let value = cell.get_or_try_init(|| Ok(Value(42)));",
+          "    let _ = value; // Consuming the result",
+          "    assert!(cell.get().is_none());",
+          "    assert_eq!(cell.get_or_try_init(|| Err(\"initial error\")), Err(\"initial error\"));",
+          "    assert_eq!(cell.get_or_try_init(|| Ok(Value(42))), Ok(&Value(42)));",
+          "    assert!(cell.get().is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

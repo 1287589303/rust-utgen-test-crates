@@ -1,0 +1,1249 @@
+{
+  "name": "regex_automata::nfa::thompson::backtrack::{impl#4}::step",
+  "mod_info": {
+    "name": "nfa::thompson::backtrack",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:57:1:57:19"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/nfa/thompson/backtrack.rs:1461:5:1555:6",
+  "doc": "/// Execute a \"step\" in the backtracing algorithm.\n///\n/// A \"step\" is somewhat of a misnomer, because this routine keeps going\n/// until it either runs out of things to try or fins a match. In the\n/// former case, it may have pushed some things on to the backtracking\n/// stack, in which case, those will be tried next as part of the\n/// 'backtrack' routine above.\n",
+  "code": [
+    "fn step(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    "    mut sid: StateID,",
+    "    mut at: usize,",
+    "    slots: &mut [Option<NonMaxUsize>],",
+    ") -> Option<HalfMatch> {",
+    "    loop {",
+    "        if !cache.visited.insert(sid, at - input.start()) {",
+    "            return None;",
+    "        }",
+    "        match *self.nfa.state(sid) {",
+    "            State::ByteRange { ref trans } => {",
+    "                // Why do we need this? Unlike other regex engines in this",
+    "                // crate, the backtracker can steam roll ahead in the",
+    "                // haystack outside of the main loop over the bytes in the",
+    "                // haystack. While 'trans.matches()' below handles the case",
+    "                // of 'at' being out of bounds of 'input.haystack()', we",
+    "                // also need to handle the case of 'at' going out of bounds",
+    "                // of the span the caller asked to search.",
+    "                //",
+    "                // We should perhaps make the 'trans.matches()' API accept",
+    "                // an '&Input' instead of a '&[u8]'. Or at least, add a new",
+    "                // API that does it.",
+    "                if at >= input.end() {",
+    "                    return None;",
+    "                }",
+    "                if !trans.matches(input.haystack(), at) {",
+    "                    return None;",
+    "                }",
+    "                sid = trans.next;",
+    "                at += 1;",
+    "            }",
+    "            State::Sparse(ref sparse) => {",
+    "                if at >= input.end() {",
+    "                    return None;",
+    "                }",
+    "                sid = sparse.matches(input.haystack(), at)?;",
+    "                at += 1;",
+    "            }",
+    "            State::Dense(ref dense) => {",
+    "                if at >= input.end() {",
+    "                    return None;",
+    "                }",
+    "                sid = dense.matches(input.haystack(), at)?;",
+    "                at += 1;",
+    "            }",
+    "            State::Look { look, next } => {",
+    "                // OK because we don't permit building a searcher with a",
+    "                // Unicode word boundary if the requisite Unicode data is",
+    "                // unavailable.",
+    "                if !self.nfa.look_matcher().matches_inline(",
+    "                    look,",
+    "                    input.haystack(),",
+    "                    at,",
+    "                ) {",
+    "                    return None;",
+    "                }",
+    "                sid = next;",
+    "            }",
+    "            State::Union { ref alternates } => {",
+    "                sid = match alternates.get(0) {",
+    "                    None => return None,",
+    "                    Some(&sid) => sid,",
+    "                };",
+    "                cache.stack.extend(",
+    "                    alternates[1..]",
+    "                        .iter()",
+    "                        .copied()",
+    "                        .rev()",
+    "                        .map(|sid| Frame::Step { sid, at }),",
+    "                );",
+    "            }",
+    "            State::BinaryUnion { alt1, alt2 } => {",
+    "                sid = alt1;",
+    "                cache.stack.push(Frame::Step { sid: alt2, at });",
+    "            }",
+    "            State::Capture { next, slot, .. } => {",
+    "                if slot.as_usize() < slots.len() {",
+    "                    cache.stack.push(Frame::RestoreCapture {",
+    "                        slot,",
+    "                        offset: slots[slot],",
+    "                    });",
+    "                    slots[slot] = NonMaxUsize::new(at);",
+    "                }",
+    "                sid = next;",
+    "            }",
+    "            State::Fail => return None,",
+    "            State::Match { pattern_id } => {",
+    "                return Some(HalfMatch::new(pattern_id, at));",
+    "            }",
+    "        }",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 19,
+    "contra": 8,
+    "min_set": 19
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Match { pattern_id }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        }
+      ],
+      "ret": "Some(HalfMatch::new(pattern_id, at))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        18,
+        85,
+        90,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Fail",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Fail",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        17,
+        84,
+        90,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Capture { next, slot, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Capture { next, slot, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "slot.as_usize() < slots.len()",
+          "norm": null,
+          "value": "true",
+          "line": 1540,
+          "bound": null
+        },
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 1470,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        16,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        83,
+        86,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        91
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Capture { next, slot, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Capture { next, slot, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "slot.as_usize() < slots.len()",
+          "norm": null,
+          "value": "false",
+          "line": 1540,
+          "bound": "slot.as_usize() == slots.len()"
+        },
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 1470,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        16,
+        74,
+        75,
+        76,
+        82,
+        83,
+        86,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        91
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::BinaryUnion { alt1, alt2 }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::BinaryUnion { alt1, alt2 }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 1470,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        15,
+        72,
+        73,
+        86,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        91
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Union { ref alternates }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Union { ref alternates }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "alternates.get(0) matches Some(&sid)",
+          "norm": null,
+          "value": "true",
+          "line": 1523,
+          "bound": null
+        },
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 1470,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        14,
+        60,
+        61,
+        64,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        86,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        91
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Union { ref alternates }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Union { ref alternates }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "alternates.get(0) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1523,
+          "bound": null
+        },
+        {
+          "cond": "alternates.get(0) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1523,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        14,
+        60,
+        61,
+        63,
+        65,
+        90,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Look { look, next }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Look { look, next }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.look_matcher().matches_inline(\n                        look,\n                        input.haystack(),\n                        at,\n                    )",
+          "norm": null,
+          "value": "true",
+          "line": 1513,
+          "bound": null
+        },
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 1470,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        13,
+        54,
+        55,
+        56,
+        57,
+        58,
+        86,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        91
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Look { look, next }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Look { look, next }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "self.nfa.look_matcher().matches_inline(\n                        look,\n                        input.haystack(),\n                        at,\n                    )",
+          "norm": null,
+          "value": "false",
+          "line": 1513,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        13,
+        54,
+        55,
+        56,
+        57,
+        59,
+        90,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Dense(ref dense)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Dense(ref dense)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "at >= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1503,
+          "bound": "at == input.end()"
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12,
+        41,
+        42,
+        43,
+        87,
+        90,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Dense(ref dense)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Dense(ref dense)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "at >= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1503,
+          "bound": null
+        },
+        {
+          "cond": "dense.matches(input.haystack(), at)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1506,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12,
+        41,
+        42,
+        44,
+        45,
+        46,
+        47,
+        49,
+        51,
+        52,
+        87,
+        90,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Dense(ref dense)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Dense(ref dense)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "at >= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1503,
+          "bound": null
+        },
+        {
+          "cond": "dense.matches(input.haystack(), at)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1506,
+          "bound": null
+        },
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 1470,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12,
+        41,
+        42,
+        44,
+        45,
+        46,
+        47,
+        50,
+        53,
+        86,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        91
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Sparse(ref sparse)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Sparse(ref sparse)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "at >= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1496,
+          "bound": "at == input.end()"
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        11,
+        28,
+        29,
+        30,
+        88,
+        90,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Sparse(ref sparse)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Sparse(ref sparse)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "at >= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1496,
+          "bound": null
+        },
+        {
+          "cond": "sparse.matches(input.haystack(), at)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1499,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        11,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        39,
+        88,
+        90,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Sparse(ref sparse)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::Sparse(ref sparse)",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "at >= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1496,
+          "bound": null
+        },
+        {
+          "cond": "sparse.matches(input.haystack(), at)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1499,
+          "bound": null
+        },
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 1470,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        11,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        37,
+        40,
+        86,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        91
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::ByteRange { ref trans }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::ByteRange { ref trans }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "at >= input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1486,
+          "bound": "at == input.end()"
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        10,
+        19,
+        20,
+        21,
+        89,
+        90,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::ByteRange { ref trans }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::ByteRange { ref trans }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "at >= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1486,
+          "bound": null
+        },
+        {
+          "cond": "trans.matches(input.haystack(), at)",
+          "norm": null,
+          "value": "true",
+          "line": 1489,
+          "bound": null
+        },
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 1470,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        10,
+        19,
+        20,
+        22,
+        23,
+        24,
+        25,
+        27,
+        86,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        91
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 1470,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::ByteRange { ref trans }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "*self.nfa.state(sid) matches State::ByteRange { ref trans }",
+          "norm": null,
+          "value": "true",
+          "line": 1473,
+          "bound": null
+        },
+        {
+          "cond": "at >= input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1486,
+          "bound": null
+        },
+        {
+          "cond": "trans.matches(input.haystack(), at)",
+          "norm": null,
+          "value": "false",
+          "line": 1489,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        10,
+        19,
+        20,
+        22,
+        23,
+        24,
+        26,
+        89,
+        90,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "cache.visited.insert(sid, at - input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 1470,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        91
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

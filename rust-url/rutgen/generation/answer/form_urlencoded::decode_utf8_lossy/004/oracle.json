@@ -1,0 +1,175 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(&[]);",
+          "    let _ = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Valid UTF-8 text\")), Cow::Borrowed(\"Valid UTF-8 text\"));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Some invalid \\xFF bytes\")), Cow::Owned(\"Some invalid � bytes\".to_string()));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\")), Cow::Borrowed(\"\"));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Another valid string\")), Cow::Borrowed(\"Another valid string\"));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Hello \\xC2\\xA9\")), Cow::Owned(\"Hello ©\".to_string()));"
+        ],
+        "code": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(&[]);",
+          "    let _ = decode_utf8_lossy(input);",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Valid UTF-8 text\")), Cow::Borrowed(\"Valid UTF-8 text\"));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Some invalid \\xFF bytes\")), Cow::Owned(\"Some invalid � bytes\".to_string()));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\")), Cow::Borrowed(\"\"));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Another valid string\")), Cow::Borrowed(\"Another valid string\"));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Hello \\xC2\\xA9\")), Cow::Owned(\"Hello ©\".to_string()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(b\"Hello, world!\");",
+          "    let _ = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Hello, world!\")), Cow::Borrowed(\"Hello, world!\"));",
+          "    assert!(decode_utf8_lossy(Cow::Borrowed(b\"Invalid \\xFF UTF-8\")).is_owned());",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\\xE2\\x9C\\x93\")), Cow::Borrowed(\"✓\"));",
+          "    assert!(decode_utf8_lossy(Cow::Borrowed(b\"Another test\")).is_borrowed());",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\")), Cow::Borrowed(\"\"));"
+        ],
+        "code": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(b\"Hello, world!\");",
+          "    let _ = decode_utf8_lossy(input);",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Hello, world!\")), Cow::Borrowed(\"Hello, world!\"));",
+          "    assert!(decode_utf8_lossy(Cow::Borrowed(b\"Invalid \\xFF UTF-8\")).is_owned());",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\\xE2\\x9C\\x93\")), Cow::Borrowed(\"✓\"));",
+          "    assert!(decode_utf8_lossy(Cow::Borrowed(b\"Another test\")).is_borrowed());",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\")), Cow::Borrowed(\"\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(&[0xED, 0xA0, 0x80]); // Lone surrogate",
+          "    let _ = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input: Cow<[u8]> = Cow::Borrowed(&[0xED, 0xA0, 0x80]);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert_eq!(result, Cow::Owned(String::from(\"\\u{FFFD}\")));"
+        ],
+        "code": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(&[0xED, 0xA0, 0x80]); // Lone surrogate",
+          "    let _ = decode_utf8_lossy(input);",
+          "    let input: Cow<[u8]> = Cow::Borrowed(&[0xED, 0xA0, 0x80]);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert_eq!(result, Cow::Owned(String::from(\"\\u{FFFD}\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(b\"\\xFF\\xFE\\xFD\"); // Invalid bytes",
+          "    let _ = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\\xFF\\xFE\\xFD\")), Cow::Borrowed(\"�\"));",
+          "    assert!(decode_utf8_lossy(Cow::Borrowed(b\"\\xFF\\xFE\\xFD\")).is_borrowed());",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Hello, world!\")), Cow::Borrowed(\"Hello, world!\"));",
+          "    assert!(decode_utf8_lossy(Cow::Borrowed(b\"Hello, world!\")).is_borrowed());",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\")), Cow::Borrowed(\"\"));",
+          "    assert!(decode_utf8_lossy(Cow::Borrowed(b\"\")).is_borrowed());"
+        ],
+        "code": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(b\"\\xFF\\xFE\\xFD\"); // Invalid bytes",
+          "    let _ = decode_utf8_lossy(input);",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\\xFF\\xFE\\xFD\")), Cow::Borrowed(\"�\"));",
+          "    assert!(decode_utf8_lossy(Cow::Borrowed(b\"\\xFF\\xFE\\xFD\")).is_borrowed());",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Hello, world!\")), Cow::Borrowed(\"Hello, world!\"));",
+          "    assert!(decode_utf8_lossy(Cow::Borrowed(b\"Hello, world!\")).is_borrowed());",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\")), Cow::Borrowed(\"\"));",
+          "    assert!(decode_utf8_lossy(Cow::Borrowed(b\"\")).is_borrowed());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(b\"Hello, \\xF0\\x9F\\x98\\x81\"); // Valid sequence ending with a valid code point",
+          "    let _ = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Hello, \\xF0\\x9F\\x98\\x81\")), Cow::Borrowed(\"Hello, 😀\"));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Valid UTF-8 string\")), Cow::Borrowed(\"Valid UTF-8 string\"));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Invalid UTF-8 sequence \\xFF\")), Cow::Owned(\"Invalid UTF-8 sequence �\".to_string()));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\")), Cow::Borrowed(\"\"));"
+        ],
+        "code": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(b\"Hello, \\xF0\\x9F\\x98\\x81\"); // Valid sequence ending with a valid code point",
+          "    let _ = decode_utf8_lossy(input);",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Hello, \\xF0\\x9F\\x98\\x81\")), Cow::Borrowed(\"Hello, 😀\"));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Valid UTF-8 string\")), Cow::Borrowed(\"Valid UTF-8 string\"));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"Invalid UTF-8 sequence \\xFF\")), Cow::Owned(\"Invalid UTF-8 sequence �\".to_string()));",
+          "    assert_eq!(decode_utf8_lossy(Cow::Borrowed(b\"\")), Cow::Borrowed(\"\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(b\"Hello, \\xF0\\x9F\\x98\"); // Invalid UTF-8 ending",
+          "    let _ = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input: Cow<[u8]> = Cow::Borrowed(b\"Hello, \\xF0\\x9F\\x98\"); // Invalid UTF-8 ending",
+          "    let expected_output: Cow<str> = Cow::Borrowed(\"Hello, �\"); // Expected UTF-8 replacement of invalid sequence",
+          "    assert_eq!(decode_utf8_lossy(input), expected_output);"
+        ],
+        "code": [
+          "{",
+          "    let input: Cow<[u8]> = Cow::Borrowed(b\"Hello, \\xF0\\x9F\\x98\"); // Invalid UTF-8 ending",
+          "    let _ = decode_utf8_lossy(input);",
+          "    let input: Cow<[u8]> = Cow::Borrowed(b\"Hello, \\xF0\\x9F\\x98\"); // Invalid UTF-8 ending",
+          "    let expected_output: Cow<str> = Cow::Borrowed(\"Hello, �\"); // Expected UTF-8 replacement of invalid sequence",
+          "    assert_eq!(decode_utf8_lossy(input), expected_output);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

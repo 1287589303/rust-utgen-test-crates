@@ -1,0 +1,537 @@
+{
+  "name": "serde_json::value::de::visit_array_ref",
+  "mod_info": {
+    "name": "value::de",
+    "loc": "src/value/mod.rs:927:1:927:8"
+  },
+  "visible": false,
+  "loc": "src/value/de.rs:724:1:740:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: visitor.visit_seq(&mut deserializer) matches core::result::Result::Err(err) at line 730 is true\n",
+        "expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "array: &[Value; 0] for the empty array case, and array: &[Value; n] where n >= 1 and visitor is a mock that always returns an error in visit_seq function.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "struct MockVisitor {",
+            "    should_err: bool,",
+            "}",
+            "",
+            "impl MockVisitor {",
+            "    fn new_err() -> Self {",
+            "        MockVisitor { should_err: true }",
+            "    }",
+            "}",
+            "",
+            "impl<'de> Visitor<'de> for MockVisitor {",
+            "    type Value = ();",
+            "    ",
+            "    fn visit_seq<V>(self, _: V) -> Result<Self::Value, Error>",
+            "    where",
+            "        V: SeqAccess<'de>,",
+            "    {",
+            "        if self.should_err {",
+            "            Err(Error::custom(\"mock error\"))",
+            "        } else {",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "    ",
+            "    forward_to_deserialize_any! {",
+            "        bool, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64,",
+            "        char, string, bytes, byte_buf, option, unit, seq,",
+            "        map, struct, enum, identifier, newtype_struct, tuple_struct,",
+            "        tuple, unit_struct",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let array: &[Value] = &[];",
+                "    let mock_visitor = MockVisitor::new_err();",
+                "    let result = visit_array_ref(array, mock_visitor);",
+                "}"
+              ],
+              "oracle": [
+                "    let array: &[Value] = &[];",
+                "    let mock_visitor = MockVisitor::new_err();",
+                "    let result = visit_array_ref(array, mock_visitor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().to_string(), \"mock error\");"
+              ],
+              "code": [
+                "{",
+                "    let array: &[Value] = &[];",
+                "    let mock_visitor = MockVisitor::new_err();",
+                "    let result = visit_array_ref(array, mock_visitor);",
+                "    let array: &[Value] = &[];",
+                "    let mock_visitor = MockVisitor::new_err();",
+                "    let result = visit_array_ref(array, mock_visitor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().to_string(), \"mock error\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let array: &[Value] = &[Value::Bool(true)];",
+                "    let mock_visitor = MockVisitor::new_err();",
+                "    let result = visit_array_ref(array, mock_visitor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().to_string(), \"mock error\");"
+              ],
+              "code": [
+                "{",
+                "    let array: &[Value] = &[Value::Bool(true)];",
+                "    let mock_visitor = MockVisitor::new_err();",
+                "    let result = visit_array_ref(array, mock_visitor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().to_string(), \"mock error\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let array: &[Value] = &[Value::Bool(true), Value::Number(Number::from(42))];",
+                "    let mock_visitor = MockVisitor::new_err();",
+                "    let result = visit_array_ref(array, mock_visitor);",
+                "}"
+              ],
+              "oracle": [
+                "    let array: &[Value] = &[Value::Bool(true), Value::Number(Number::from(42))];",
+                "    let mock_visitor = MockVisitor::new_err();",
+                "    let result = visit_array_ref(array, mock_visitor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().map(|e| e.to_string()), Some(\"mock error\".to_string()));"
+              ],
+              "code": [
+                "{",
+                "    let array: &[Value] = &[Value::Bool(true), Value::Number(Number::from(42))];",
+                "    let mock_visitor = MockVisitor::new_err();",
+                "    let result = visit_array_ref(array, mock_visitor);",
+                "    let array: &[Value] = &[Value::Bool(true), Value::Number(Number::from(42))];",
+                "    let mock_visitor = MockVisitor::new_err();",
+                "    let result = visit_array_ref(array, mock_visitor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().map(|e| e.to_string()), Some(\"mock error\".to_string()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: visitor.visit_seq(&mut deserializer) matches core::result::Result::Ok(val) at line 730 is true\n",
+        "precondition: remaining == 0 at line 732 is false\n",
+        "expected return value/type: Ok(seq)\n"
+      ],
+      "input_infer": "array: non-empty slice of Value (e.g. &[{Value::Null}, {Value::Bool(true)}, {Value::Number(Number::from(1))}, {Value::String(String::from(\"test\"))}, {Value::Array(vec![Value::String(String::from(\"inner\"))])}, {Value::Object(Map::new())}]) with appropriate Visitor implementation such that visitor.visit_seq returns a result.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestVisitor;",
+                "    ",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = Vec<Value>;",
+                "",
+                "        fn visit_seq<A>(self, _seq: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(vec![Value::Null, Value::Bool(true)])",
+                "        }",
+                "    }",
+                "",
+                "    let array = &[Value::Null, Value::Bool(true)];",
+                "    let result = visit_array_ref(array, TestVisitor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), vec![Value::Null, Value::Bool(true)]);",
+                "    assert_eq!(remaining, 0);"
+              ],
+              "code": [
+                "{",
+                "    struct TestVisitor;",
+                "    ",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = Vec<Value>;",
+                "",
+                "        fn visit_seq<A>(self, _seq: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(vec![Value::Null, Value::Bool(true)])",
+                "        }",
+                "    }",
+                "",
+                "    let array = &[Value::Null, Value::Bool(true)];",
+                "    let result = visit_array_ref(array, TestVisitor);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), vec![Value::Null, Value::Bool(true)]);",
+                "    assert_eq!(remaining, 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestVisitor;",
+                "",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = Vec<Value>;",
+                "",
+                "        fn visit_seq<A>(self, _seq: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(vec![Value::Number(Number::from(1)), Value::String(String::from(\"test\"))])",
+                "        }",
+                "    }",
+                "",
+                "    let array = &[",
+                "        Value::Number(Number::from(1)),",
+                "        Value::String(String::from(\"test\")),",
+                "    ];",
+                "    let result = visit_array_ref(array, TestVisitor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Ok(vec![Value::Number(Number::from(1)), Value::String(String::from(\"test\"))]));",
+                "    assert_ne!(deserializer.iter.len(), 0);"
+              ],
+              "code": [
+                "{",
+                "    struct TestVisitor;",
+                "",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = Vec<Value>;",
+                "",
+                "        fn visit_seq<A>(self, _seq: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(vec![Value::Number(Number::from(1)), Value::String(String::from(\"test\"))])",
+                "        }",
+                "    }",
+                "",
+                "    let array = &[",
+                "        Value::Number(Number::from(1)),",
+                "        Value::String(String::from(\"test\")),",
+                "    ];",
+                "    let result = visit_array_ref(array, TestVisitor);",
+                "    assert_eq!(result, Ok(vec![Value::Number(Number::from(1)), Value::String(String::from(\"test\"))]));",
+                "    assert_ne!(deserializer.iter.len(), 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestVisitor;",
+                "",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = Vec<Value>;",
+                "",
+                "        fn visit_seq<A>(self, _seq: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(vec![",
+                "                Value::Array(vec![Value::String(String::from(\"inner\"))]),",
+                "                Value::Object(Map::new()),",
+                "            ])",
+                "        }",
+                "    }",
+                "",
+                "    let array = &[",
+                "        Value::Array(vec![Value::String(String::from(\"inner\"))]),",
+                "        Value::Object(Map::new()),",
+                "    ];",
+                "    let result = visit_array_ref(array, TestVisitor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result.is_ok(), true);",
+                "    assert_eq!(result.unwrap(), vec![Value::Array(vec![Value::String(String::from(\"inner\"))]), Value::Object(Map::new())]);",
+                "    assert!(deserializer.iter.len() > 0);"
+              ],
+              "code": [
+                "{",
+                "    struct TestVisitor;",
+                "",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = Vec<Value>;",
+                "",
+                "        fn visit_seq<A>(self, _seq: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(vec![",
+                "                Value::Array(vec![Value::String(String::from(\"inner\"))]),",
+                "                Value::Object(Map::new()),",
+                "            ])",
+                "        }",
+                "    }",
+                "",
+                "    let array = &[",
+                "        Value::Array(vec![Value::String(String::from(\"inner\"))]),",
+                "        Value::Object(Map::new()),",
+                "    ];",
+                "    let result = visit_array_ref(array, TestVisitor);",
+                "    assert_eq!(result.is_ok(), true);",
+                "    assert_eq!(result.unwrap(), vec![Value::Array(vec![Value::String(String::from(\"inner\"))]), Value::Object(Map::new())]);",
+                "    assert!(deserializer.iter.len() > 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: visitor.visit_seq(&mut deserializer) matches core::result::Result::Ok(val) at line 730 is true\n",
+        "precondition: remaining == 0 at line 732 is true\n",
+        "expected return value/type: Err(serde::de::Error::invalid_length(\n            len,\n            &\"fewer elements in array\",\n        ))\n"
+      ],
+      "input_infer": "len > 0, array contains fewer than len elements, visitor.visit_seq returns Result::Ok(val)\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestVisitor;",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = ();",
+                "",
+                "        fn visit_seq<A>(self, _: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let array: Vec<Value> = vec![Value::Bool(true)]; // len is 1",
+                "    let _result = visit_array_ref(&array, TestVisitor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, Err(serde::de::Error::invalid_length(1, &\"fewer elements in array\")));"
+              ],
+              "code": [
+                "{",
+                "    struct TestVisitor;",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = ();",
+                "",
+                "        fn visit_seq<A>(self, _: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let array: Vec<Value> = vec![Value::Bool(true)]; // len is 1",
+                "    let _result = visit_array_ref(&array, TestVisitor);",
+                "    assert_eq!(_result, Err(serde::de::Error::invalid_length(1, &\"fewer elements in array\")));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestVisitor;",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = ();",
+                "",
+                "        fn visit_seq<A>(self, _: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let array: Vec<Value> = vec![]; // len is 1 in the function but array has no elements",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should return an error",
+                "}"
+              ],
+              "oracle": [
+                "    let array: Vec<Value> = vec![Value::Null]; // len is 1, array has 1 element",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::Bool(true), Value::Bool(false)]; // len is 2",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::Number(Number::from(1))]; // len is 1",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::String(String::from(\"test\"))]; // len is 1",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::Array(vec![]), Value::Array(vec![])]; // len is 2",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![]; // len is 0",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should return an error indicating fewer elements",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::Object(Map::new())]; // len is 1, array has 1 object",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::Number(Number::from(2)), Value::Number(Number::from(3))]; // len is 2",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error"
+              ],
+              "code": [
+                "{",
+                "    struct TestVisitor;",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = ();",
+                "",
+                "        fn visit_seq<A>(self, _: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let array: Vec<Value> = vec![]; // len is 1 in the function but array has no elements",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should return an error",
+                "    let array: Vec<Value> = vec![Value::Null]; // len is 1, array has 1 element",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::Bool(true), Value::Bool(false)]; // len is 2",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::Number(Number::from(1))]; // len is 1",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::String(String::from(\"test\"))]; // len is 1",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::Array(vec![]), Value::Array(vec![])]; // len is 2",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![]; // len is 0",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should return an error indicating fewer elements",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::Object(Map::new())]; // len is 1, array has 1 object",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "    ",
+                "    let array: Vec<Value> = vec![Value::Number(Number::from(2)), Value::Number(Number::from(3))]; // len is 2",
+                "    let _result = visit_array_ref(&array, TestVisitor); // Should not return an error",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestVisitor;",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = ();",
+                "",
+                "        fn visit_seq<A>(self, _: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let array: Vec<Value> = vec![Value::Null, Value::Number(Number::from(42))]; // len is 2",
+                "    let _result = visit_array_ref(&array[..1], TestVisitor); // Should return an error since we've passed only one element",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(visit_array_ref(&[], TestVisitor), Ok(()));",
+                "    assert_eq!(visit_array_ref(&[Value::Null], TestVisitor), Ok(()));",
+                "    assert_eq!(visit_array_ref(&[Value::Number(Number::from(42))], TestVisitor), Ok(()));",
+                "    assert_eq!(visit_array_ref(&[Value::Null, Value::Number(Number::from(42))], TestVisitor), Err(serde::de::Error::invalid_length(2, &\"fewer elements in array\")));"
+              ],
+              "code": [
+                "{",
+                "    struct TestVisitor;",
+                "    impl<'de> Visitor<'de> for TestVisitor {",
+                "        type Value = ();",
+                "",
+                "        fn visit_seq<A>(self, _: A) -> Result<Self::Value, Error>",
+                "        where",
+                "            A: SeqAccess<'de>,",
+                "        {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let array: Vec<Value> = vec![Value::Null, Value::Number(Number::from(42))]; // len is 2",
+                "    let _result = visit_array_ref(&array[..1], TestVisitor); // Should return an error since we've passed only one element",
+                "    assert_eq!(visit_array_ref(&[], TestVisitor), Ok(()));",
+                "    assert_eq!(visit_array_ref(&[Value::Null], TestVisitor), Ok(()));",
+                "    assert_eq!(visit_array_ref(&[Value::Number(Number::from(42))], TestVisitor), Ok(()));",
+                "    assert_eq!(visit_array_ref(&[Value::Null, Value::Number(Number::from(42))], TestVisitor), Err(serde::de::Error::invalid_length(2, &\"fewer elements in array\")));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

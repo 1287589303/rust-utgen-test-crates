@@ -1,0 +1,128 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut slice: Vec<u8> = vec![0u8; 8 * StateID::SIZE + 1]; // Valid length",
+          "    // Fill with valid data for special IDs except for max_id",
+          "    for i in 0..(8 * StateID::SIZE) {",
+          "        slice[i] = 1; // Arbitrary valid data",
+          "    }",
+          "    // Introduce invalid data for \"special max id\" (for example, ZERO might be invalid based on context)",
+          "    slice[0] = 0; // Set to an invalid value",
+          "",
+          "    let result = Special::from_bytes(&slice);",
+          "    let _ = result; // Call the function; we don't do assertions",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err(), \"Expected an error when special max id is invalid\");",
+          "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::InvalidStateID, \"Expected DeserializeErrorKind::InvalidStateID\");",
+          "    assert_eq!(nread, 0, \"Expected no bytes to be read when there's an error\");",
+          "    assert_eq!(slice.len(), 8 * StateID::SIZE + 1, \"Slice length should remain unchanged\");",
+          "    assert!(slice.iter().all(|&byte| byte == 1 || byte == 0), \"Slice should contain valid data except for invalid max_id\");"
+        ],
+        "code": [
+          "{",
+          "    let mut slice: Vec<u8> = vec![0u8; 8 * StateID::SIZE + 1]; // Valid length",
+          "    // Fill with valid data for special IDs except for max_id",
+          "    for i in 0..(8 * StateID::SIZE) {",
+          "        slice[i] = 1; // Arbitrary valid data",
+          "    }",
+          "    // Introduce invalid data for \"special max id\" (for example, ZERO might be invalid based on context)",
+          "    slice[0] = 0; // Set to an invalid value",
+          "",
+          "    let result = Special::from_bytes(&slice);",
+          "    let _ = result; // Call the function; we don't do assertions",
+          "    assert!(result.is_err(), \"Expected an error when special max id is invalid\");",
+          "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::InvalidStateID, \"Expected DeserializeErrorKind::InvalidStateID\");",
+          "    assert_eq!(nread, 0, \"Expected no bytes to be read when there's an error\");",
+          "    assert_eq!(slice.len(), 8 * StateID::SIZE + 1, \"Slice length should remain unchanged\");",
+          "    assert!(slice.iter().all(|&byte| byte == 1 || byte == 0), \"Slice should contain valid data except for invalid max_id\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: Vec<u8> = vec![0u8; (8 * StateID::SIZE - 1)]; // Invalid length",
+          "    let result = Special::from_bytes(&slice);",
+          "    let _ = result; // Call the function; we don't do assertions",
+          "}"
+        ],
+        "oracle": [
+          "    wire::check_slice_len(slice, 8 * StateID::SIZE, \"special states\").unwrap();",
+          "    let result = Special::from_bytes(&slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, DeserializeErrorKind::BufferTooSmall);"
+        ],
+        "code": [
+          "{",
+          "    let slice: Vec<u8> = vec![0u8; (8 * StateID::SIZE - 1)]; // Invalid length",
+          "    let result = Special::from_bytes(&slice);",
+          "    let _ = result; // Call the function; we don't do assertions",
+          "    wire::check_slice_len(slice, 8 * StateID::SIZE, \"special states\").unwrap();",
+          "    let result = Special::from_bytes(&slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, DeserializeErrorKind::BufferTooSmall);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut slice: Vec<u8> = vec![1u8; 8 * StateID::SIZE]; // Valid length",
+          "    // Fill with valid data for special IDs except for max_id",
+          "    for i in 0..(8 * StateID::SIZE) {",
+          "        slice[i] = 1; // Arbitrary valid data",
+          "    }",
+          "    // Simulate invalid data for \"special max id\" (non-readable state ID)",
+          "    slice[0] = 255; // Assume 255 is invalid for the context",
+          "",
+          "    let result = Special::from_bytes(&slice);",
+          "    let _ = result; // Call the function; we don't do assertions",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(Special::from_bytes(&slice).is_err());",
+          "    assert_eq!(slice.len(), 8 * StateID::SIZE);",
+          "    assert_eq!(slice[0], 255);",
+          "    assert!(slice[1..].iter().all(|&b| b == 1));",
+          "    assert!(wire::check_slice_len(&slice, 8 * StateID::SIZE, \"special states\").is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let mut slice: Vec<u8> = vec![1u8; 8 * StateID::SIZE]; // Valid length",
+          "    // Fill with valid data for special IDs except for max_id",
+          "    for i in 0..(8 * StateID::SIZE) {",
+          "        slice[i] = 1; // Arbitrary valid data",
+          "    }",
+          "    // Simulate invalid data for \"special max id\" (non-readable state ID)",
+          "    slice[0] = 255; // Assume 255 is invalid for the context",
+          "",
+          "    let result = Special::from_bytes(&slice);",
+          "    let _ = result; // Call the function; we don't do assertions",
+          "    assert!(Special::from_bytes(&slice).is_err());",
+          "    assert_eq!(slice.len(), 8 * StateID::SIZE);",
+          "    assert_eq!(slice[0], 255);",
+          "    assert!(slice[1..].iter().all(|&b| b == 1));",
+          "    assert!(wire::check_slice_len(&slice, 8 * StateID::SIZE, \"special states\").is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

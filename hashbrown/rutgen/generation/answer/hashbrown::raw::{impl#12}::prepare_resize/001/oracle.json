@@ -1,0 +1,129 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct AllocatorMock;",
+          "    ",
+          "    let allocator = AllocatorMock;",
+          "    let table_layout = TableLayout { size: 0, ctrl_align: 0 };",
+          "    let capacity = 1;",
+          "    ",
+          "    let mut raw_table_inner = RawTableInner {",
+          "        bucket_mask: 1,",
+          "        ctrl: NonNull::new(&mut 0u8 as *mut _ as *mut u8).unwrap(),",
+          "        growth_left: capacity,",
+          "        items: capacity,",
+          "    };",
+          "",
+          "    let result = raw_table_inner.prepare_resize(&allocator, table_layout, capacity, Fallibility::Infallible);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), TryReserveError::CapacityOverflow);",
+          "    assert!(raw_table_inner.items <= capacity);",
+          "    assert!(raw_table_inner.bucket_mask > 0);",
+          "    assert!(unsafe { raw_table_inner.allocation_info(table_layout).0.as_ptr() != ptr::null_mut() });",
+          "    assert!(unsafe { raw_table_inner.allocation_size_or_zero(table_layout) == 0 });"
+        ],
+        "code": [
+          "{",
+          "    struct AllocatorMock;",
+          "    ",
+          "    let allocator = AllocatorMock;",
+          "    let table_layout = TableLayout { size: 0, ctrl_align: 0 };",
+          "    let capacity = 1;",
+          "    ",
+          "    let mut raw_table_inner = RawTableInner {",
+          "        bucket_mask: 1,",
+          "        ctrl: NonNull::new(&mut 0u8 as *mut _ as *mut u8).unwrap(),",
+          "        growth_left: capacity,",
+          "        items: capacity,",
+          "    };",
+          "",
+          "    let result = raw_table_inner.prepare_resize(&allocator, table_layout, capacity, Fallibility::Infallible);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), TryReserveError::CapacityOverflow);",
+          "    assert!(raw_table_inner.items <= capacity);",
+          "    assert!(raw_table_inner.bucket_mask > 0);",
+          "    assert!(unsafe { raw_table_inner.allocation_info(table_layout).0.as_ptr() != ptr::null_mut() });",
+          "    assert!(unsafe { raw_table_inner.allocation_size_or_zero(table_layout) == 0 });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct AllocatorMock;",
+          "",
+          "    impl Allocator for AllocatorMock {",
+          "        // mock allocator methods to simulate failure",
+          "    }",
+          "",
+          "    let allocator = AllocatorMock;",
+          "    let table_layout = TableLayout { size: 0, ctrl_align: 0 };",
+          "    let capacity = isize::MAX;  ",
+          "",
+          "    let mut raw_table_inner = RawTableInner {",
+          "        bucket_mask: 1,",
+          "        ctrl: NonNull::new(&mut 0u8 as *mut _ as *mut u8).unwrap(),",
+          "        growth_left: capacity,",
+          "        items: capacity,",
+          "    };",
+          "",
+          "    let _ = raw_table_inner.prepare_resize(&allocator, table_layout, capacity, Fallibility::Fallible);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(raw_table_inner.items, capacity);",
+          "    assert!(matches!(raw_table_inner.prepare_resize(&allocator, table_layout, capacity, Fallibility::Fallible), Err(TryReserveError::CapacityOverflow)));",
+          "    assert!(matches!(raw_table_inner.prepare_resize(&allocator, table_layout, capacity, Fallibility::Fallible), Err(TryReserveError::AllocError { layout })));",
+          "    assert!(raw_table_inner.bucket_mask > 0);",
+          "    assert!(raw_table_inner.growth_left >= 0);",
+          "    assert!(unsafe { raw_table_inner.ctrl.as_ptr().is_null() } == false);"
+        ],
+        "code": [
+          "{",
+          "    struct AllocatorMock;",
+          "",
+          "    impl Allocator for AllocatorMock {",
+          "        // mock allocator methods to simulate failure",
+          "    }",
+          "",
+          "    let allocator = AllocatorMock;",
+          "    let table_layout = TableLayout { size: 0, ctrl_align: 0 };",
+          "    let capacity = isize::MAX;  ",
+          "",
+          "    let mut raw_table_inner = RawTableInner {",
+          "        bucket_mask: 1,",
+          "        ctrl: NonNull::new(&mut 0u8 as *mut _ as *mut u8).unwrap(),",
+          "        growth_left: capacity,",
+          "        items: capacity,",
+          "    };",
+          "",
+          "    let _ = raw_table_inner.prepare_resize(&allocator, table_layout, capacity, Fallibility::Fallible);",
+          "    assert_eq!(raw_table_inner.items, capacity);",
+          "    assert!(matches!(raw_table_inner.prepare_resize(&allocator, table_layout, capacity, Fallibility::Fallible), Err(TryReserveError::CapacityOverflow)));",
+          "    assert!(matches!(raw_table_inner.prepare_resize(&allocator, table_layout, capacity, Fallibility::Fallible), Err(TryReserveError::AllocError { layout })));",
+          "    assert!(raw_table_inner.bucket_mask > 0);",
+          "    assert!(raw_table_inner.growth_left >= 0);",
+          "    assert!(unsafe { raw_table_inner.ctrl.as_ptr().is_null() } == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

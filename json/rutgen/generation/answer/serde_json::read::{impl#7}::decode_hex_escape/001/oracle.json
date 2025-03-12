@@ -1,0 +1,254 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"deadbeef\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(0xdead));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"deadbeef\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert_eq!(result, Ok(0xdead));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"abcd1234\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: &[u8] = b\"abcd1234\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert_eq!(result, Ok(43981));  // Expecting the hexadecimal value for 'abcd' (0xABCD)",
+          "    assert_eq!(reader.index, 4);     // Ensure index is updated after decoding"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"abcd1234\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    let slice: &[u8] = b\"abcd1234\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert_eq!(result, Ok(43981));  // Expecting the hexadecimal value for 'abcd' (0xABCD)",
+          "    assert_eq!(reader.index, 4);     // Ensure index is updated after decoding",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"0123\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.unwrap(), 0x123);",
+          "    assert!(reader.index == 4);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"0123\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert_eq!(result.unwrap(), 0x123);",
+          "    assert!(reader.index == 4);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"AbCdEf01\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(0xABCD));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"AbCdEf01\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert_eq!(result, Ok(0xABCD));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"xyz7890\";",
+          "    let mut reader = SliceRead { slice, index: 3 };",
+          "    let result = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(0x7890));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"xyz7890\";",
+          "    let mut reader = SliceRead { slice, index: 3 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert_eq!(result, Ok(0x7890));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: &[u8] = b\"\\x48\\x65\\x6C\\x6C\"; // Valid hex escape for 'Hell' expects decode_hex_escape to succeed",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert!(result.is_ok());",
+          "    if let Ok(val) = result { assert_eq!(val, expected_value); } // set expected_value based on decode_four_hex_digits logic",
+          "    ",
+          "    let slice: &[u8] = b\"\\xGG\\x65\\x6C\\x6C\"; // Invalid hex escape, expects decode_hex_escape to return an error",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().code(), ErrorCode::InvalidEscape);",
+          "    ",
+          "    let slice: &[u8] = b\"\"; // Edge case: empty slice should return EOF error",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().code(), ErrorCode::EofWhileParsingString);",
+          "    ",
+          "    let slice: &[u8] = b\"\\x7F\"; // Insufficient bytes for hex escape, should reach EOF parsing",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().code(), ErrorCode::EofWhileParsingString);",
+          "    ",
+          "    let slice: &[u8] = b\"\\x41\\x42\\x43\\x44\"; // Valid hex escape for 'ABCD'",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result1 = reader.decode_hex_escape();",
+          "    assert!(result1.is_ok());",
+          "    if let Ok(val1) = result1 { assert_eq!(val1, 0x4142); } // Check first hex pair",
+          "    ",
+          "    let result2 = reader.decode_hex_escape();",
+          "    assert!(result2.is_ok());",
+          "    if let Ok(val2) = result2 { assert_eq!(val2, 0x4344); } // Check second hex pair"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    let slice: &[u8] = b\"\\x48\\x65\\x6C\\x6C\"; // Valid hex escape for 'Hell' expects decode_hex_escape to succeed",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert!(result.is_ok());",
+          "    if let Ok(val) = result { assert_eq!(val, expected_value); } // set expected_value based on decode_four_hex_digits logic",
+          "    ",
+          "    let slice: &[u8] = b\"\\xGG\\x65\\x6C\\x6C\"; // Invalid hex escape, expects decode_hex_escape to return an error",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().code(), ErrorCode::InvalidEscape);",
+          "    ",
+          "    let slice: &[u8] = b\"\"; // Edge case: empty slice should return EOF error",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().code(), ErrorCode::EofWhileParsingString);",
+          "    ",
+          "    let slice: &[u8] = b\"\\x7F\"; // Insufficient bytes for hex escape, should reach EOF parsing",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().code(), ErrorCode::EofWhileParsingString);",
+          "    ",
+          "    let slice: &[u8] = b\"\\x41\\x42\\x43\\x44\"; // Valid hex escape for 'ABCD'",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result1 = reader.decode_hex_escape();",
+          "    assert!(result1.is_ok());",
+          "    if let Ok(val1) = result1 { assert_eq!(val1, 0x4142); } // Check first hex pair",
+          "    ",
+          "    let result2 = reader.decode_hex_escape();",
+          "    assert!(result2.is_ok());",
+          "    if let Ok(val2) = result2 { assert_eq!(val2, 0x4344); } // Check second hex pair",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"ab\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(val));",
+          "    assert!(reader.index == 4);",
+          "    assert_eq!(reader.slice, b\"ab\"[4..]);",
+          "    assert!(reader.byte_offset() >= 0);",
+          "    assert!(reader.peek_position() == expected_position);",
+          "    assert!(reader.position() == expected_position);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"ab\";",
+          "    let mut reader = SliceRead { slice, index: 0 };",
+          "    let result = reader.decode_hex_escape();",
+          "    assert_eq!(result, Ok(val));",
+          "    assert!(reader.index == 4);",
+          "    assert_eq!(reader.slice, b\"ab\"[4..]);",
+          "    assert!(reader.byte_offset() >= 0);",
+          "    assert!(reader.peek_position() == expected_position);",
+          "    assert!(reader.position() == expected_position);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

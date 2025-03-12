@@ -1,0 +1,246 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct TestVisitor;",
+      "",
+      "impl<'de> Visitor<'de> for TestVisitor {",
+      "    type Value = ();",
+      "",
+      "    fn visit_seq<V>(self, _: V) -> Result<Self::Value, Error>",
+      "    where",
+      "        V: SeqAccess<'de>,",
+      "    {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    // Other required trait methods would be implemented here if needed",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array(Vec::new());",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    let value = Value::Array(vec![Value::String(\"test\".to_string())]);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    let value = Value::Array(vec![Value::Null]);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    let value = Value::Array(vec![Value::Bool(true)]);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    let value = Value::Array(vec![Value::Number(Number { n: N::from(42) })]);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    let visitor = TestVisitor;",
+          "    let value = Value::String(\"not an array\".to_string());",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array(Vec::new());",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    let value = Value::Array(vec![Value::String(\"test\".to_string())]);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    let value = Value::Array(vec![Value::Null]);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    let value = Value::Array(vec![Value::Bool(true)]);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    let value = Value::Array(vec![Value::Number(Number { n: N::from(42) })]);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    let visitor = TestVisitor;",
+          "    let value = Value::String(\"not an array\".to_string());",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array(vec![Value::String(String::from(\"single\"))]);",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(value.deserialize_byte_buf(visitor), Ok(())));"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array(vec![Value::String(String::from(\"single\"))]);",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "    assert!(matches!(value.deserialize_byte_buf(visitor), Ok(())));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array(vec![",
+          "        Value::String(String::from(\"first\")),",
+          "        Value::String(String::from(\"second\")),",
+          "    ]);",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value.deserialize_byte_buf(visitor), Ok(()));",
+          "    assert!(matches!(value, Value::Array(_)));",
+          "    assert!(visitor.visit_seq(&mut deserializer).is_ok());",
+          "    assert!(value.deserialize_byte_buf(visitor).is_ok());",
+          "    assert!(visitor.visit_string(String::from(\"first\")).is_ok());",
+          "    assert!(visitor.visit_string(String::from(\"second\")).is_ok());",
+          "    assert!(value.deserialize_byte_buf(TestVisitor).is_ok());",
+          "    assert!(value.deserialize_byte_buf(visitor).is_ok());",
+          "    assert!(value.deserialize_byte_buf(visitor).is_ok());",
+          "    assert!(value.deserialize_byte_buf(visitor).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array(vec![",
+          "        Value::String(String::from(\"first\")),",
+          "        Value::String(String::from(\"second\")),",
+          "    ]);",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor), Ok(()));",
+          "    assert!(matches!(value, Value::Array(_)));",
+          "    assert!(visitor.visit_seq(&mut deserializer).is_ok());",
+          "    assert!(value.deserialize_byte_buf(visitor).is_ok());",
+          "    assert!(visitor.visit_string(String::from(\"first\")).is_ok());",
+          "    assert!(visitor.visit_string(String::from(\"second\")).is_ok());",
+          "    assert!(value.deserialize_byte_buf(TestVisitor).is_ok());",
+          "    assert!(value.deserialize_byte_buf(visitor).is_ok());",
+          "    assert!(value.deserialize_byte_buf(visitor).is_ok());",
+          "    assert!(value.deserialize_byte_buf(visitor).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array(vec![",
+          "        Value::String(String::from(\"string\")),",
+          "        Value::Number(Number { n: 42 }),",
+          "        Value::Bool(true),",
+          "    ]);",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    assert!(matches!(value.deserialize_byte_buf(visitor), Ok(())));",
+          "    assert!(matches!(value, Value::Array(_)));",
+          "    assert!(value.deserialize_byte_buf(visitor).is_err() == false);",
+          "    assert!(value.deserialize_byte_buf(visitor).unwrap().is_unit());"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array(vec![",
+          "        Value::String(String::from(\"string\")),",
+          "        Value::Number(Number { n: 42 }),",
+          "        Value::Bool(true),",
+          "    ]);",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "    assert_eq!(value.deserialize_byte_buf(visitor).is_ok(), true);",
+          "    assert!(matches!(value.deserialize_byte_buf(visitor), Ok(())));",
+          "    assert!(matches!(value, Value::Array(_)));",
+          "    assert!(value.deserialize_byte_buf(visitor).is_err() == false);",
+          "    assert!(value.deserialize_byte_buf(visitor).unwrap().is_unit());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array(vec![Value::Null; 10]);",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result.is_ok(), true);",
+          "    assert!(_result.is_ok());",
+          "    assert_eq!(value, Value::Array(vec![Value::Null; 10]));"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array(vec![Value::Null; 10]);",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "    assert_eq!(_result.is_ok(), true);",
+          "    assert!(_result.is_ok());",
+          "    assert_eq!(value, Value::Array(vec![Value::Null; 10]));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array((0..1000).map(|i| Value::String(format!(\"item{}\", i))).collect());",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result, Ok(()));",
+          "    assert!(matches!(value, Value::Array(_)));",
+          "    assert!(!value.is_empty());",
+          "    assert!(value.to_string().contains(\"item\"));",
+          "    assert!(value.len() == 1000);",
+          "    assert!(value.deserialize_byte_buf(visitor).is_ok());",
+          "    assert!(matches!(value.deserialize_byte_buf(visitor), Ok(_)));",
+          "    let empty_value = Value::Array(vec![]);",
+          "    assert!(empty_value.deserialize_byte_buf(visitor).is_err());",
+          "    assert!(matches!(value.deserialize_byte_buf(visitor), Err(_)));"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array((0..1000).map(|i| Value::String(format!(\"item{}\", i))).collect());",
+          "    let visitor = TestVisitor;",
+          "    let _result = value.deserialize_byte_buf(visitor);",
+          "    assert_eq!(_result, Ok(()));",
+          "    assert!(matches!(value, Value::Array(_)));",
+          "    assert!(!value.is_empty());",
+          "    assert!(value.to_string().contains(\"item\"));",
+          "    assert!(value.len() == 1000);",
+          "    assert!(value.deserialize_byte_buf(visitor).is_ok());",
+          "    assert!(matches!(value.deserialize_byte_buf(visitor), Ok(_)));",
+          "    let empty_value = Value::Array(vec![]);",
+          "    assert!(empty_value.deserialize_byte_buf(visitor).is_err());",
+          "    assert!(matches!(value.deserialize_byte_buf(visitor), Err(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

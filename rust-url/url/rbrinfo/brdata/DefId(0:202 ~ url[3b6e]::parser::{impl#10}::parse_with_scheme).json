@@ -1,0 +1,528 @@
+{
+  "name": "url::parser::{impl#10}::parse_with_scheme",
+  "mod_info": {
+    "name": "parser",
+    "loc": "url/src/lib.rs:218:1:218:12"
+  },
+  "visible": false,
+  "loc": "url/src/parser.rs:426:5:469:6",
+  "doc": "",
+  "code": [
+    "fn parse_with_scheme(mut self, input: Input<'_>) -> ParseResult<Url> {",
+    "    use crate::SyntaxViolation::{ExpectedDoubleSlash, ExpectedFileDoubleSlash};",
+    "    let scheme_end = to_u32(self.serialization.len())?;",
+    "    let scheme_type = SchemeType::from(&self.serialization);",
+    "    self.serialization.push(':');",
+    "    match scheme_type {",
+    "        SchemeType::File => {",
+    "            self.log_violation_if(ExpectedFileDoubleSlash, || !input.starts_with(\"//\"));",
+    "            let base_file_url = self.base_url.and_then(|base| {",
+    "                if base.scheme() == \"file\" {",
+    "                    Some(base)",
+    "                } else {",
+    "                    None",
+    "                }",
+    "            });",
+    "            self.serialization.clear();",
+    "            self.parse_file(input, scheme_type, base_file_url)",
+    "        }",
+    "        SchemeType::SpecialNotFile => {",
+    "            // special relative or authority state",
+    "            let (slashes_count, remaining) = input.count_matching(|c| matches!(c, '/' | '\\\\'));",
+    "            if let Some(base_url) = self.base_url {",
+    "                if slashes_count < 2",
+    "                    && base_url.scheme() == &self.serialization[..scheme_end as usize]",
+    "                {",
+    "                    // \"Cannot-be-a-base\" URLs only happen with \"not special\" schemes.",
+    "                    debug_assert!(!base_url.cannot_be_a_base());",
+    "                    self.serialization.clear();",
+    "                    return self.parse_relative(input, scheme_type, base_url);",
+    "                }",
+    "            }",
+    "            // special authority slashes state",
+    "            self.log_violation_if(ExpectedDoubleSlash, || {",
+    "                input",
+    "                    .clone()",
+    "                    .take_while(|&c| matches!(c, '/' | '\\\\'))",
+    "                    .collect::<String>()",
+    "                    != \"//\"",
+    "            });",
+    "            self.after_double_slash(remaining, scheme_type, scheme_end)",
+    "        }",
+    "        SchemeType::NotSpecial => self.parse_non_special(input, scheme_type, scheme_end),",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 0,
+    "min_set": 7
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "to_u32(self.serialization.len())?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 428,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        46,
+        47
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "to_u32(self.serialization.len())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 428,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::NotSpecial",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        14,
+        44,
+        45,
+        47
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "to_u32(self.serialization.len())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 428,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::SpecialNotFile",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::SpecialNotFile",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "let Some(base_url) = self.base_url",
+          "norm": null,
+          "value": "true",
+          "line": 447,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        13,
+        20,
+        21,
+        40,
+        41,
+        42,
+        43,
+        45,
+        47
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "to_u32(self.serialization.len())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 428,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::SpecialNotFile",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::SpecialNotFile",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "let Some(base_url) = self.base_url",
+          "norm": null,
+          "value": "true",
+          "line": 447,
+          "bound": null
+        },
+        {
+          "cond": "slashes_count < 2",
+          "norm": "2 > slashes_count",
+          "value": "true",
+          "line": 448,
+          "bound": null
+        },
+        {
+          "cond": "base_url.scheme() == &self.serialization[..scheme_end as usize]",
+          "norm": "&self.serialization[..scheme_end as usize] == base_url.scheme()",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "base_url.cannot_be_a_base()",
+          "norm": null,
+          "value": "true",
+          "line": 452,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        13,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "to_u32(self.serialization.len())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 428,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::SpecialNotFile",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::SpecialNotFile",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "let Some(base_url) = self.base_url",
+          "norm": null,
+          "value": "true",
+          "line": 447,
+          "bound": null
+        },
+        {
+          "cond": "slashes_count < 2",
+          "norm": "2 > slashes_count",
+          "value": "true",
+          "line": 448,
+          "bound": null
+        },
+        {
+          "cond": "base_url.scheme() == &self.serialization[..scheme_end as usize]",
+          "norm": "&self.serialization[..scheme_end as usize] == base_url.scheme()",
+          "value": "true",
+          "line": 449,
+          "bound": null
+        },
+        {
+          "cond": "base_url.cannot_be_a_base()",
+          "norm": null,
+          "value": "false",
+          "line": 452,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        13,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        32,
+        34,
+        35,
+        36,
+        46,
+        47
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "to_u32(self.serialization.len())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 428,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::SpecialNotFile",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::SpecialNotFile",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "let Some(base_url) = self.base_url",
+          "norm": null,
+          "value": "true",
+          "line": 447,
+          "bound": null
+        },
+        {
+          "cond": "slashes_count < 2",
+          "norm": "2 > slashes_count",
+          "value": "true",
+          "line": 448,
+          "bound": null
+        },
+        {
+          "cond": "base_url.scheme() == &self.serialization[..scheme_end as usize]",
+          "norm": "&self.serialization[..scheme_end as usize] == base_url.scheme()",
+          "value": "false",
+          "line": 449,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        13,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        37,
+        39,
+        41,
+        42,
+        43,
+        45,
+        47
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "to_u32(self.serialization.len())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 428,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::SpecialNotFile",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::SpecialNotFile",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "let Some(base_url) = self.base_url",
+          "norm": null,
+          "value": "true",
+          "line": 447,
+          "bound": null
+        },
+        {
+          "cond": "slashes_count < 2",
+          "norm": "2 > slashes_count",
+          "value": "false",
+          "line": 448,
+          "bound": "slashes_count == 2"
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        13,
+        20,
+        21,
+        22,
+        23,
+        38,
+        39,
+        41,
+        42,
+        43,
+        45,
+        47
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "to_u32(self.serialization.len())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 428,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::File",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        },
+        {
+          "cond": "scheme_type matches SchemeType::File",
+          "norm": null,
+          "value": "true",
+          "line": 431,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        12,
+        15,
+        16,
+        17,
+        18,
+        19,
+        45,
+        47
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

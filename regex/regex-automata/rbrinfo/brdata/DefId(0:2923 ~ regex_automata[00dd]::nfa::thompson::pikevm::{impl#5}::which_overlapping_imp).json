@@ -1,0 +1,6251 @@
+{
+  "name": "regex_automata::nfa::thompson::pikevm::{impl#5}::which_overlapping_imp",
+  "mod_info": {
+    "name": "nfa::thompson::pikevm",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:68:1:68:16"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/nfa/thompson/pikevm.rs:1392:5:1455:6",
+  "doc": "/// The implementation for the 'which_overlapping_matches' API. Basically,\n/// we do a single scan through the entire haystack (unless our regex\n/// or search is anchored) and record every pattern that matched. In\n/// particular, when MatchKind::All is used, this supports overlapping\n/// matches. So if we have the regexes 'sam' and 'samwise', they will\n/// *both* be reported in the pattern set when searching the haystack\n/// 'samwise'.\n",
+  "code": [
+    "fn which_overlapping_imp(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    "    patset: &mut PatternSet,",
+    ") {",
+    "    // NOTE: This is effectively a copy of 'search_imp' above, but with no",
+    "    // captures support and instead writes patterns that matched directly",
+    "    // to 'patset'. See that routine for better commentary about what's",
+    "    // going on in this routine. We probably could unify the routines using",
+    "    // generics or more helper routines, but I'm not sure it's worth it.",
+    "    //",
+    "    // NOTE: We somewhat go out of our way here to support things like",
+    "    // 'input.get_earliest()' and 'leftmost-first' match semantics. Neither",
+    "    // of those seem particularly relevant to this routine, but they are",
+    "    // both supported by the DFA analogs of this routine by construction",
+    "    // and composition, so it seems like good sense to have the PikeVM",
+    "    // match that behavior.",
+    "",
+    "    cache.setup_search(0);",
+    "    if input.is_done() {",
+    "        return;",
+    "    }",
+    "    assert!(",
+    "        input.haystack().len() < core::usize::MAX,",
+    "        \"byte slice lengths must be less than usize MAX\",",
+    "    );",
+    "    instrument!(|c| c.reset(&self.nfa));",
+    "",
+    "    let allmatches =",
+    "        self.config.get_match_kind().continue_past_first_match();",
+    "    let (anchored, start_id) = match self.start_config(input) {",
+    "        None => return,",
+    "        Some(config) => config,",
+    "    };",
+    "",
+    "    let Cache { ref mut stack, ref mut curr, ref mut next } = cache;",
+    "    for at in input.start()..=input.end() {",
+    "        let any_matches = !patset.is_empty();",
+    "        if curr.set.is_empty() {",
+    "            if any_matches && !allmatches {",
+    "                break;",
+    "            }",
+    "            if anchored && at > input.start() {",
+    "                break;",
+    "            }",
+    "        }",
+    "        if !any_matches || allmatches {",
+    "            let slots = &mut [];",
+    "            self.epsilon_closure(stack, slots, curr, input, at, start_id);",
+    "        }",
+    "        self.nexts_overlapping(stack, curr, next, input, at, patset);",
+    "        // If we found a match and filled our set, then there is no more",
+    "        // additional info that we can provide. Thus, we can quit. We also",
+    "        // quit if the caller asked us to stop at the earliest point that",
+    "        // we know a match exists.",
+    "        if patset.is_full() || input.get_earliest() {",
+    "            break;",
+    "        }",
+    "        core::mem::swap(curr, next);",
+    "        next.set.clear();",
+    "    }",
+    "    instrument!(|c| c.eprint(&self.nfa));",
+    "}"
+  ],
+  "size": {
+    "chain": 52,
+    "contra": 15,
+    "min_set": 10
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "true",
+          "line": 1412,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        56,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        33,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        31,
+        32,
+        56,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        36,
+        56,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 26,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 27,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 28,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 29,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 30,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 31,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "at > input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": "at == input.start()"
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        37,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 32,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 33,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 34,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        38,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 35,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 36,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 37,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        38,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 38,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 39,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 40,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1432,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 1435,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        30,
+        33,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 41,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        39,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 42,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        39,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 43,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        39,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 44,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        39,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 45,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        39,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 46,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "true",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "allmatches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        39,
+        40,
+        41,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 47,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        39,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 48,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1448,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        39,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 49,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "true",
+          "line": 1429,
+          "bound": null
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1431,
+          "bound": null
+        },
+        {
+          "cond": "any_matches",
+          "norm": null,
+          "value": "false",
+          "line": 1439,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1448,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        26,
+        28,
+        29,
+        39,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        55,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 50,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches Some(config)",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "at in input.start()..=input.end()",
+          "norm": null,
+          "value": "false",
+          "line": 1429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        25,
+        27,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 51,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "true",
+          "line": 1416,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        },
+        {
+          "cond": "self.start_config(input) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1423,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        14,
+        16,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 52,
+      "conds": [
+        {
+          "cond": "input.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1412,
+          "bound": null
+        },
+        {
+          "cond": "input.haystack().len() < core::usize::MAX",
+          "norm": "core::usize::MAX > input.haystack().len()",
+          "value": "false",
+          "line": 1416,
+          "bound": "input.haystack().len() == core::usize::MAX"
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        8,
+        9,
+        60
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

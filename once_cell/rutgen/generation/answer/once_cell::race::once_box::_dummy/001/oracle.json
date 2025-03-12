@@ -1,0 +1,210 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let ptr: *mut () = Box::into_raw(Box::new(42)) as *mut ();",
+          "    let once_box = once_cell::race::OnceBox::new(S(ptr));",
+          "    share(&once_box);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::ptr::null_mut() != once_box.0.0);",
+          "    assert!(unsafe { *once_box.0.0 } == 42);",
+          "    assert!(std::mem::size_of::<S>() == std::mem::size_of::<*mut ()>());",
+          "    assert!(std::mem::align_of::<S>() == std::mem::align_of::<*mut ()>());",
+          "    assert!(std::mem::size_of::<once_cell::race::OnceBox<S>>() > 0);",
+          "    assert!(std::ptr::null_mut() != once_box as *const _);",
+          "    assert!(std::mem::align_of::<once_cell::race::OnceBox<S>>() > 0);"
+        ],
+        "code": [
+          "{",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let ptr: *mut () = Box::into_raw(Box::new(42)) as *mut ();",
+          "    let once_box = once_cell::race::OnceBox::new(S(ptr));",
+          "    share(&once_box);",
+          "    assert!(std::ptr::null_mut() != once_box.0.0);",
+          "    assert!(unsafe { *once_box.0.0 } == 42);",
+          "    assert!(std::mem::size_of::<S>() == std::mem::size_of::<*mut ()>());",
+          "    assert!(std::mem::align_of::<S>() == std::mem::align_of::<*mut ()>());",
+          "    assert!(std::mem::size_of::<once_cell::race::OnceBox<S>>() > 0);",
+          "    assert!(std::ptr::null_mut() != once_box as *const _);",
+          "    assert!(std::mem::align_of::<once_cell::race::OnceBox<S>>() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let once_box = once_cell::race::OnceBox::new(S(ptr::null_mut()));",
+          "    share(&once_box);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let once_box = once_cell::race::OnceBox::new(S(std::ptr::null_mut()));",
+          "    share(&once_box);",
+          "    }).is_ok(), \"The share function should not panic with a Sync type.\");"
+        ],
+        "code": [
+          "{",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let once_box = once_cell::race::OnceBox::new(S(ptr::null_mut()));",
+          "    share(&once_box);",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let once_box = once_cell::race::OnceBox::new(S(std::ptr::null_mut()));",
+          "    share(&once_box);",
+          "    }).is_ok(), \"The share function should not panic with a Sync type.\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let ptr: *mut () = Box::into_raw(Box::new(\"Hello\")) as *mut ();",
+          "    let once_box = once_cell::race::OnceBox::new(S(ptr));",
+          "    share(&once_box);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(std::ptr::null_mut(), once_cell::race::OnceBox::new(S(std::ptr::null_mut())).0.0);",
+          "    assert!(!once_cell::race::OnceBox::new(S(ptr)).0.0.is_null());",
+          "    let result = std::panic::catch_unwind(|| share(&once_cell::race::OnceBox::new(S(ptr))));",
+          "    assert!(result.is_ok());",
+          "    assert!(unsafe { std::mem::size_of::<S>() == std::mem::size_of::<*mut ()>() });",
+          "    assert!(unsafe { std::mem::align_of::<S>() == std::mem::align_of::<*mut ()>() });",
+          "    assert!(std::ptr::eq(ptr, once_cell::race::OnceBox::new(S(ptr)).0 .0));"
+        ],
+        "code": [
+          "{",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let ptr: *mut () = Box::into_raw(Box::new(\"Hello\")) as *mut ();",
+          "    let once_box = once_cell::race::OnceBox::new(S(ptr));",
+          "    share(&once_box);",
+          "    assert_eq!(std::ptr::null_mut(), once_cell::race::OnceBox::new(S(std::ptr::null_mut())).0.0);",
+          "    assert!(!once_cell::race::OnceBox::new(S(ptr)).0.0.is_null());",
+          "    let result = std::panic::catch_unwind(|| share(&once_cell::race::OnceBox::new(S(ptr))));",
+          "    assert!(result.is_ok());",
+          "    assert!(unsafe { std::mem::size_of::<S>() == std::mem::size_of::<*mut ()>() });",
+          "    assert!(unsafe { std::mem::align_of::<S>() == std::mem::align_of::<*mut ()>() });",
+          "    assert!(std::ptr::eq(ptr, once_cell::race::OnceBox::new(S(ptr)).0 .0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let invalid_ptr: *mut () = 12345 as *mut (); // arbitrary invalid pointer",
+          "    let once_box = once_cell::race::OnceBox::new(S(invalid_ptr));",
+          "    share(&once_box);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(once_box.0.0, 12345 as *mut ());",
+          "    assert!(unsafe { once_box.0.0.is_null() } == false);",
+          "    assert!(unsafe { once_box.0.0.is_valid_pointer() } == false);",
+          "    assert!(std::mem::size_of::<S>() > 0);",
+          "    assert!(std::mem::align_of::<S>() > 0);",
+          "    assert!(std::mem::size_of::<once_cell::race::OnceBox<S>>() > 0);",
+          "    assert!(std::mem::align_of::<once_cell::race::OnceBox<S>>() > 0);",
+          "    assert!(std::mem::size_of::<*mut ()>() > 0);",
+          "    assert!(std::mem::size_of::<S>() == std::mem::size_of::<*mut ()>());"
+        ],
+        "code": [
+          "{",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let invalid_ptr: *mut () = 12345 as *mut (); // arbitrary invalid pointer",
+          "    let once_box = once_cell::race::OnceBox::new(S(invalid_ptr));",
+          "    share(&once_box);",
+          "    assert_eq!(once_box.0.0, 12345 as *mut ());",
+          "    assert!(unsafe { once_box.0.0.is_null() } == false);",
+          "    assert!(unsafe { once_box.0.0.is_valid_pointer() } == false);",
+          "    assert!(std::mem::size_of::<S>() > 0);",
+          "    assert!(std::mem::align_of::<S>() > 0);",
+          "    assert!(std::mem::size_of::<once_cell::race::OnceBox<S>>() > 0);",
+          "    assert!(std::mem::align_of::<once_cell::race::OnceBox<S>>() > 0);",
+          "    assert!(std::mem::size_of::<*mut ()>() > 0);",
+          "    assert!(std::mem::size_of::<S>() == std::mem::size_of::<*mut ()>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let size = 1_000_000; // large size",
+          "    let ptr: *mut () = unsafe { alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(size, 8).unwrap()) };",
+          "    let once_box = once_cell::race::OnceBox::new(S(ptr));",
+          "    share(&once_box);",
+          "    unsafe { alloc::alloc::dealloc(ptr, alloc::alloc::Layout::from_size_align(size, 8).unwrap()) }; // deallocate",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(std::mem::size_of::<once_cell::race::OnceBox<S>>(), std::mem::size_of::<*mut ()>());",
+          "    let ptr: *mut () = unsafe { alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(1, 1).unwrap()) };",
+          "    assert!(!ptr.is_null());",
+          "    let once_box = once_cell::race::OnceBox::new(S(ptr));",
+          "    assert_eq!(once_box.get().is_some(), true);",
+          "    let once_box_empty: once_cell::race::OnceBox<S> = once_cell::race::OnceBox::new(S(std::ptr::null_mut()));",
+          "    assert_eq!(once_box_empty.get().is_none(), true);",
+          "    unsafe { alloc::alloc::dealloc(ptr, alloc::alloc::Layout::from_size_align(1, 1).unwrap()) };"
+        ],
+        "code": [
+          "{",
+          "    struct S(*mut ());",
+          "    unsafe impl Sync for S {}",
+          "    let size = 1_000_000; // large size",
+          "    let ptr: *mut () = unsafe { alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(size, 8).unwrap()) };",
+          "    let once_box = once_cell::race::OnceBox::new(S(ptr));",
+          "    share(&once_box);",
+          "    unsafe { alloc::alloc::dealloc(ptr, alloc::alloc::Layout::from_size_align(size, 8).unwrap()) }; // deallocate",
+          "    assert_eq!(std::mem::size_of::<once_cell::race::OnceBox<S>>(), std::mem::size_of::<*mut ()>());",
+          "    let ptr: *mut () = unsafe { alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(1, 1).unwrap()) };",
+          "    assert!(!ptr.is_null());",
+          "    let once_box = once_cell::race::OnceBox::new(S(ptr));",
+          "    assert_eq!(once_box.get().is_some(), true);",
+          "    let once_box_empty: once_cell::race::OnceBox<S> = once_cell::race::OnceBox::new(S(std::ptr::null_mut()));",
+          "    assert_eq!(once_box_empty.get().is_none(), true);",
+          "    unsafe { alloc::alloc::dealloc(ptr, alloc::alloc::Layout::from_size_align(1, 1).unwrap()) };",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

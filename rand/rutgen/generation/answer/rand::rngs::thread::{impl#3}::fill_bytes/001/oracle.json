@@ -1,0 +1,157 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut dest = [0u8; 1]; // Minimum length of 1",
+          "    let rng = ThreadRng {",
+          "        rng: Rc::new(UnsafeCell::new(ReseedingRng::new())),",
+          "    };",
+          "    rng.fill_bytes(&mut dest);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(dest.len(), 1);",
+          "    assert!(dest[0] >= 0u8);",
+          "    assert!(dest[0] <= 255u8);",
+          "    assert_ne!(dest[0], 0u8);  // Ensure randomness, not always zero",
+          "    assert!(dest.iter().all(|&b| b.is_ascii()));",
+          "    assert!(dest.iter().any(|&b| b > 0));  // At least one byte should be non-zero",
+          "    assert!(dest.iter().any(|&b| b < 255));  // Ensure not all are max value"
+        ],
+        "code": [
+          "{",
+          "    let mut dest = [0u8; 1]; // Minimum length of 1",
+          "    let rng = ThreadRng {",
+          "        rng: Rc::new(UnsafeCell::new(ReseedingRng::new())),",
+          "    };",
+          "    rng.fill_bytes(&mut dest);",
+          "    assert_eq!(dest.len(), 1);",
+          "    assert!(dest[0] >= 0u8);",
+          "    assert!(dest[0] <= 255u8);",
+          "    assert_ne!(dest[0], 0u8);  // Ensure randomness, not always zero",
+          "    assert!(dest.iter().all(|&b| b.is_ascii()));",
+          "    assert!(dest.iter().any(|&b| b > 0));  // At least one byte should be non-zero",
+          "    assert!(dest.iter().any(|&b| b < 255));  // Ensure not all are max value",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut dest = [0u8; 512]; // Middle length",
+          "    let rng = ThreadRng {",
+          "        rng: Rc::new(UnsafeCell::new(ReseedingRng::new())),",
+          "    };",
+          "    rng.fill_bytes(&mut dest);",
+          "}"
+        ],
+        "oracle": [
+          "    dest.iter().all(|&b| b == 0) == false",
+          "    dest.len() == 512",
+          "    let rng_before = rng.clone();",
+          "    rng.fill_bytes(&mut dest);",
+          "    let rng_after = rng.clone();",
+          "    assert!(rng_before != rng_after)"
+        ],
+        "code": [
+          "{",
+          "    let mut dest = [0u8; 512]; // Middle length",
+          "    let rng = ThreadRng {",
+          "        rng: Rc::new(UnsafeCell::new(ReseedingRng::new())),",
+          "    };",
+          "    rng.fill_bytes(&mut dest);",
+          "    dest.iter().all(|&b| b == 0) == false",
+          "    dest.len() == 512",
+          "    let rng_before = rng.clone();",
+          "    rng.fill_bytes(&mut dest);",
+          "    let rng_after = rng.clone();",
+          "    assert!(rng_before != rng_after)",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut dest = [0u8; 1024]; // Maximum length of 1024",
+          "    let rng = ThreadRng {",
+          "        rng: Rc::new(UnsafeCell::new(ReseedingRng::new())),",
+          "    };",
+          "    rng.fill_bytes(&mut dest);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(dest.len(), 1024);",
+          "    assert!(dest.iter().any(|&byte| byte != 0));",
+          "    assert!(dest.iter().all(|&byte| byte <= 255));",
+          "    assert!(dest.iter().all(|&byte| byte >= 0));"
+        ],
+        "code": [
+          "{",
+          "    let mut dest = [0u8; 1024]; // Maximum length of 1024",
+          "    let rng = ThreadRng {",
+          "        rng: Rc::new(UnsafeCell::new(ReseedingRng::new())),",
+          "    };",
+          "    rng.fill_bytes(&mut dest);",
+          "    assert_eq!(dest.len(), 1024);",
+          "    assert!(dest.iter().any(|&byte| byte != 0));",
+          "    assert!(dest.iter().all(|&byte| byte <= 255));",
+          "    assert!(dest.iter().all(|&byte| byte >= 0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut dest = vec![0u8; 1024]; // Use Vec for maximum length",
+          "    let rng = ThreadRng {",
+          "        rng: Rc::new(UnsafeCell::new(ReseedingRng::new())),",
+          "    };",
+          "    rng.fill_bytes(&mut dest);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(dest.len() == 1024);",
+          "    assert!(dest.iter().any(|&b| b != 0));",
+          "    assert!(dest.iter().all(|&b| b <= 255));",
+          "    assert!(dest.iter().all(|&b| b >= 0));",
+          "    assert!(dest.iter().collect::<std::collections::HashSet<_>>().len() <= 1024);",
+          "    assert!(dest.iter().any(|&b| b != dest[0]);",
+          "    assert_eq!(dest[0], dest[0]);"
+        ],
+        "code": [
+          "{",
+          "    let mut dest = vec![0u8; 1024]; // Use Vec for maximum length",
+          "    let rng = ThreadRng {",
+          "        rng: Rc::new(UnsafeCell::new(ReseedingRng::new())),",
+          "    };",
+          "    rng.fill_bytes(&mut dest);",
+          "    assert!(dest.len() == 1024);",
+          "    assert!(dest.iter().any(|&b| b != 0));",
+          "    assert!(dest.iter().all(|&b| b <= 255));",
+          "    assert!(dest.iter().all(|&b| b >= 0));",
+          "    assert!(dest.iter().collect::<std::collections::HashSet<_>>().len() <= 1024);",
+          "    assert!(dest.iter().any(|&b| b != dest[0]);",
+          "    assert_eq!(dest[0], dest[0]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

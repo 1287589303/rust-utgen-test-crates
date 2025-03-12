@@ -1,0 +1,87 @@
+{
+  "name": "regex_automata::meta::regex::{impl#2}::which_overlapping_matches",
+  "mod_info": {
+    "name": "meta::regex",
+    "loc": "regex-automata/src/meta/mod.rs:57:1:57:11"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/meta/regex.rs:1187:5:1203:6",
+  "doc": "/// Writes the set of patterns that match anywhere in the given search\n/// configuration to `patset`. If multiple patterns match at the same\n/// position and this `Regex` was configured with [`MatchKind::All`]\n/// semantics, then all matching patterns are written to the given set.\n///\n/// Unless all of the patterns in this `Regex` are anchored, then generally\n/// speaking, this will scan the entire haystack.\n///\n/// This search routine *does not* clear the pattern set. This gives some\n/// flexibility to the caller (e.g., running multiple searches with the\n/// same pattern set), but does make the API bug-prone if you're reusing\n/// the same pattern set for multiple searches but intended them to be\n/// independent.\n///\n/// If a pattern ID matched but the given `PatternSet` does not have\n/// sufficient capacity to store it, then it is not inserted and silently\n/// dropped.\n///\n/// # Example\n///\n/// This example shows how to find all matching patterns in a haystack,\n/// even when some patterns match at the same position as other patterns.\n/// It is important that we configure the `Regex` with [`MatchKind::All`]\n/// semantics here, or else overlapping matches will not be reported.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{meta::Regex, Input, MatchKind, PatternSet};\n///\n/// let patterns = &[\n///     r\"\\w+\", r\"\\d+\", r\"\\pL+\", r\"foo\", r\"bar\", r\"barfoo\", r\"foobar\",\n/// ];\n/// let re = Regex::builder()\n///     .configure(Regex::config().match_kind(MatchKind::All))\n///     .build_many(patterns)?;\n///\n/// let input = Input::new(\"foobar\");\n/// let mut patset = PatternSet::new(re.pattern_len());\n/// re.which_overlapping_matches(&input, &mut patset);\n/// let expected = vec![0, 2, 3, 4, 6];\n/// let got: Vec<usize> = patset.iter().map(|p| p.as_usize()).collect();\n/// assert_eq!(expected, got);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn which_overlapping_matches(",
+    "    &self,",
+    "    input: &Input<'_>,",
+    "    patset: &mut PatternSet,",
+    ") {",
+    "    if self.imp.info.is_impossible(input) {",
+    "        return;",
+    "    }",
+    "    let mut guard = self.pool.get();",
+    "    let result = self",
+    "        .imp",
+    "        .strat",
+    "        .which_overlapping_matches(&mut guard, input, patset);",
+    "    // See 'Regex::search' for why we put the guard back explicitly.",
+    "    PoolGuard::put(guard);",
+    "    result",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.imp.info.is_impossible(input)",
+          "norm": null,
+          "value": "true",
+          "line": 1192,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.imp.info.is_impossible(input)",
+          "norm": null,
+          "value": "false",
+          "line": 1192,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

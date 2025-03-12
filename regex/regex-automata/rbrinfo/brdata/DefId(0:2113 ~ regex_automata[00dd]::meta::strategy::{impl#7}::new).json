@@ -1,0 +1,1344 @@
+{
+  "name": "regex_automata::meta::strategy::{impl#7}::new",
+  "mod_info": {
+    "name": "meta::strategy",
+    "loc": "regex-automata/src/meta/mod.rs:61:1:61:14"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/meta/strategy.rs:1122:5:1208:6",
+  "doc": "",
+  "code": [
+    "fn new(core: Core, hirs: &[&Hir]) -> Result<ReverseSuffix, Core> {",
+    "    if !core.info.config().get_auto_prefilter() {",
+    "        debug!(",
+    "            \"skipping reverse suffix optimization because \\",
+    "             automatic prefilters are disabled\"",
+    "        );",
+    "        return Err(core);",
+    "    }",
+    "    // Like the reverse inner optimization, we don't do this for regexes",
+    "    // that are always anchored. It could lead to scanning too much, but",
+    "    // could say \"no match\" much more quickly than running the regex",
+    "    // engine if the initial literal scan doesn't match. With that said,",
+    "    // the reverse suffix optimization has lower overhead, since it only",
+    "    // requires a reverse scan after a literal match to confirm or reject",
+    "    // the match. (Although, in the case of confirmation, it then needs to",
+    "    // do another forward scan to find the end position.)",
+    "    //",
+    "    // Note that the caller can still request an anchored search even",
+    "    // when the regex isn't anchored. We detect that case in the search",
+    "    // routines below and just fallback to the core engine. Currently this",
+    "    // optimization assumes all searches are unanchored, so if we do want",
+    "    // to enable this optimization for anchored searches, it will need a",
+    "    // little work to support it.",
+    "    if core.info.is_always_anchored_start() {",
+    "        debug!(",
+    "            \"skipping reverse suffix optimization because \\",
+    " the regex is always anchored at the start\",",
+    "        );",
+    "        return Err(core);",
+    "    }",
+    "    // Only DFAs can do reverse searches (currently), so we need one of",
+    "    // them in order to do this optimization. It's possible (although",
+    "    // pretty unlikely) that we have neither and need to give up.",
+    "    if !core.hybrid.is_some() && !core.dfa.is_some() {",
+    "        debug!(",
+    "            \"skipping reverse suffix optimization because \\",
+    " we don't have a lazy DFA or a full DFA\"",
+    "        );",
+    "        return Err(core);",
+    "    }",
+    "    if core.pre.as_ref().map_or(false, |p| p.is_fast()) {",
+    "        debug!(",
+    "            \"skipping reverse suffix optimization because \\",
+    " we already have a prefilter that we think is fast\"",
+    "        );",
+    "        return Err(core);",
+    "    }",
+    "    let kind = core.info.config().get_match_kind();",
+    "    let suffixes = crate::util::prefilter::suffixes(kind, hirs);",
+    "    let lcs = match suffixes.longest_common_suffix() {",
+    "        None => {",
+    "            debug!(",
+    "                \"skipping reverse suffix optimization because \\",
+    "                 a longest common suffix could not be found\",",
+    "            );",
+    "            return Err(core);",
+    "        }",
+    "        Some(lcs) if lcs.is_empty() => {",
+    "            debug!(",
+    "                \"skipping reverse suffix optimization because \\",
+    "                 the longest common suffix is the empty string\",",
+    "            );",
+    "            return Err(core);",
+    "        }",
+    "        Some(lcs) => lcs,",
+    "    };",
+    "    let pre = match Prefilter::new(kind, &[lcs]) {",
+    "        Some(pre) => pre,",
+    "        None => {",
+    "            debug!(",
+    "                \"skipping reverse suffix optimization because \\",
+    "                 a prefilter could not be constructed from the \\",
+    "                 longest common suffix\",",
+    "            );",
+    "            return Err(core);",
+    "        }",
+    "    };",
+    "    if !pre.is_fast() {",
+    "        debug!(",
+    "            \"skipping reverse suffix optimization because \\",
+    " while we have a suffix prefilter, it is not \\",
+    " believed to be 'fast'\"",
+    "        );",
+    "        return Err(core);",
+    "    }",
+    "    Ok(ReverseSuffix { core, pre })",
+    "}"
+  ],
+  "size": {
+    "chain": 15,
+    "contra": 0,
+    "min_set": 9
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "true",
+          "line": 1145,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        7,
+        8,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "true",
+          "line": 1162,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        17,
+        18,
+        19,
+        20,
+        21,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs) or Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "lcs.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1179,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        17,
+        18,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        29,
+        33,
+        34,
+        35,
+        37,
+        57,
+        58,
+        59,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs) or Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "lcs.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1179,
+          "bound": null
+        },
+        {
+          "cond": "Prefilter::new(kind, &[lcs]) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "Prefilter::new(kind, &[lcs]) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "pre.is_fast()",
+          "norm": null,
+          "value": "true",
+          "line": 1199,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ReverseSuffix { core, pre })",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        17,
+        18,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        29,
+        33,
+        34,
+        36,
+        30,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        50,
+        51,
+        52,
+        53,
+        54,
+        61
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs) or Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "lcs.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1179,
+          "bound": null
+        },
+        {
+          "cond": "Prefilter::new(kind, &[lcs]) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "Prefilter::new(kind, &[lcs]) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "pre.is_fast()",
+          "norm": null,
+          "value": "false",
+          "line": 1199,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        17,
+        18,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        29,
+        33,
+        34,
+        36,
+        30,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        48,
+        49,
+        56,
+        58,
+        59,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs) or Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "lcs.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1179,
+          "bound": null
+        },
+        {
+          "cond": "Prefilter::new(kind, &[lcs]) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        17,
+        18,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        29,
+        33,
+        34,
+        36,
+        30,
+        38,
+        41,
+        44,
+        55,
+        56,
+        58,
+        59,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        17,
+        18,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        31,
+        32,
+        57,
+        58,
+        59,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.dfa.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "true",
+          "line": 1162,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        20,
+        21,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.dfa.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs) or Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "lcs.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1179,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        29,
+        33,
+        34,
+        35,
+        37,
+        57,
+        58,
+        59,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.dfa.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs) or Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "lcs.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1179,
+          "bound": null
+        },
+        {
+          "cond": "Prefilter::new(kind, &[lcs]) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "Prefilter::new(kind, &[lcs]) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "pre.is_fast()",
+          "norm": null,
+          "value": "true",
+          "line": 1199,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ReverseSuffix { core, pre })",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        29,
+        33,
+        34,
+        36,
+        30,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        47,
+        50,
+        51,
+        52,
+        53,
+        54,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.dfa.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs) or Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "lcs.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1179,
+          "bound": null
+        },
+        {
+          "cond": "Prefilter::new(kind, &[lcs]) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "Prefilter::new(kind, &[lcs]) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "pre.is_fast()",
+          "norm": null,
+          "value": "false",
+          "line": 1199,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        29,
+        33,
+        34,
+        36,
+        30,
+        38,
+        40,
+        42,
+        43,
+        45,
+        46,
+        48,
+        49,
+        56,
+        58,
+        59,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.dfa.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs) or Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches Some(lcs)",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "lcs.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1179,
+          "bound": null
+        },
+        {
+          "cond": "Prefilter::new(kind, &[lcs]) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        29,
+        33,
+        34,
+        36,
+        30,
+        38,
+        41,
+        44,
+        55,
+        56,
+        58,
+        59,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.dfa.is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.pre.as_ref().map_or(false, |p| p.is_fast())",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        },
+        {
+          "cond": "suffixes.longest_common_suffix() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1171,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        31,
+        32,
+        57,
+        58,
+        59,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "true",
+          "line": 1123,
+          "bound": null
+        },
+        {
+          "cond": "core.info.is_always_anchored_start()",
+          "norm": null,
+          "value": "false",
+          "line": 1145,
+          "bound": null
+        },
+        {
+          "cond": "core.hybrid.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 1155,
+          "bound": null
+        },
+        {
+          "cond": "core.dfa.is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 1155,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        12,
+        13,
+        15,
+        16,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "core.info.config().get_auto_prefilter()",
+          "norm": null,
+          "value": "false",
+          "line": 1123,
+          "bound": null
+        }
+      ],
+      "ret": "Err(core)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        60,
+        61
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

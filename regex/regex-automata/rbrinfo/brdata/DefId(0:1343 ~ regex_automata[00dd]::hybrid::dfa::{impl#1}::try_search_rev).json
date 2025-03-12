@@ -1,0 +1,461 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#1}::try_search_rev",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:790:5:805:6",
+  "doc": "/// Executes a reverse search and returns the start of the position of the\n/// leftmost match that is found. If no match exists, then `None` is\n/// returned.\n///\n/// # Errors\n///\n/// This routine errors if the search could not complete. This can occur\n/// in a number of circumstances:\n///\n/// * The configuration of the lazy DFA may permit it to \"quit\" the search.\n/// For example, setting quit bytes or enabling heuristic support for\n/// Unicode word boundaries. The default configuration does not enable any\n/// option that could result in the lazy DFA quitting.\n/// * The configuration of the lazy DFA may also permit it to \"give up\"\n/// on a search if it makes ineffective use of its transition table\n/// cache. The default configuration does not enable this by default,\n/// although it is typically a good idea to.\n/// * When the provided `Input` configuration is not supported. For\n/// example, by providing an unsupported anchor mode.\n///\n/// When a search returns an error, callers cannot know whether a match\n/// exists or not.\n///\n/// # Example\n///\n/// This routine is principally useful when used in\n/// conjunction with the\n/// [`nfa::thompson::Config::reverse`](crate::nfa::thompson::Config::reverse)\n/// configuration. In general, it's unlikely to be correct to use both\n/// `try_search_fwd` and `try_search_rev` with the same DFA since any\n/// particular DFA will only support searching in one direction with\n/// respect to the pattern.\n///\n/// ```\n/// use regex_automata::{\n///     nfa::thompson,\n///     hybrid::dfa::DFA,\n///     HalfMatch, Input,\n/// };\n///\n/// let dfa = DFA::builder()\n///     .thompson(thompson::Config::new().reverse(true))\n///     .build(\"foo[0-9]+\")?;\n/// let mut cache = dfa.create_cache();\n/// let expected = HalfMatch::must(0, 0);\n/// assert_eq!(\n///     Some(expected),\n///     dfa.try_search_rev(&mut cache, &Input::new(\"foo12345\"))?,\n/// );\n///\n/// // Even though a match is found after reading the last byte (`c`),\n/// // the leftmost first match semantics demand that we find the earliest\n/// // match that prefers earlier parts of the pattern over latter parts.\n/// let dfa = DFA::builder()\n///     .thompson(thompson::Config::new().reverse(true))\n///     .build(\"abc|c\")?;\n/// let mut cache = dfa.create_cache();\n/// let expected = HalfMatch::must(0, 0);\n/// assert_eq!(Some(expected), dfa.try_search_rev(\n///     &mut cache, &Input::new(\"abc\"))?,\n/// );\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// # Example: UTF-8 mode\n///\n/// This examples demonstrates that UTF-8 mode applies to reverse\n/// DFAs. When UTF-8 mode is enabled in the underlying NFA, then all\n/// matches reported must correspond to valid UTF-8 spans. This includes\n/// prohibiting zero-width matches that split a codepoint.\n///\n/// UTF-8 mode is enabled by default. Notice below how the only zero-width\n/// matches reported are those at UTF-8 boundaries:\n///\n/// ```\n/// use regex_automata::{\n///     hybrid::dfa::DFA,\n///     nfa::thompson,\n///     HalfMatch, Input, MatchKind,\n/// };\n///\n/// let dfa = DFA::builder()\n///     .thompson(thompson::Config::new().reverse(true))\n///     .build(r\"\")?;\n/// let mut cache = dfa.create_cache();\n///\n/// // Run the reverse DFA to collect all matches.\n/// let mut input = Input::new(\"☃\");\n/// let mut matches = vec![];\n/// loop {\n///     match dfa.try_search_rev(&mut cache, &input)? {\n///         None => break,\n///         Some(hm) => {\n///             matches.push(hm);\n///             if hm.offset() == 0 || input.end() == 0 {\n///                 break;\n///             } else if hm.offset() < input.end() {\n///                 input.set_end(hm.offset());\n///             } else {\n///                 // This is only necessary to handle zero-width\n///                 // matches, which of course occur in this example.\n///                 // Without this, the search would never advance\n///                 // backwards beyond the initial match.\n///                 input.set_end(input.end() - 1);\n///             }\n///         }\n///     }\n/// }\n///\n/// // No matches split a codepoint.\n/// let expected = vec![\n///     HalfMatch::must(0, 3),\n///     HalfMatch::must(0, 0),\n/// ];\n/// assert_eq!(expected, matches);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// Now let's look at the same example, but with UTF-8 mode on the\n/// underlying NFA disabled:\n///\n/// ```\n/// use regex_automata::{\n///     hybrid::dfa::DFA,\n///     nfa::thompson,\n///     HalfMatch, Input, MatchKind,\n/// };\n///\n/// let dfa = DFA::builder()\n///     .thompson(thompson::Config::new().reverse(true).utf8(false))\n///     .build(r\"\")?;\n/// let mut cache = dfa.create_cache();\n///\n/// // Run the reverse DFA to collect all matches.\n/// let mut input = Input::new(\"☃\");\n/// let mut matches = vec![];\n/// loop {\n///     match dfa.try_search_rev(&mut cache, &input)? {\n///         None => break,\n///         Some(hm) => {\n///             matches.push(hm);\n///             if hm.offset() == 0 || input.end() == 0 {\n///                 break;\n///             } else if hm.offset() < input.end() {\n///                 input.set_end(hm.offset());\n///             } else {\n///                 // This is only necessary to handle zero-width\n///                 // matches, which of course occur in this example.\n///                 // Without this, the search would never advance\n///                 // backwards beyond the initial match.\n///                 input.set_end(input.end() - 1);\n///             }\n///         }\n///     }\n/// }\n///\n/// // No matches split a codepoint.\n/// let expected = vec![\n///     HalfMatch::must(0, 3),\n///     HalfMatch::must(0, 2),\n///     HalfMatch::must(0, 1),\n///     HalfMatch::must(0, 0),\n/// ];\n/// assert_eq!(expected, matches);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn try_search_rev(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    ") -> Result<Option<HalfMatch>, MatchError> {",
+    "    let utf8empty = self.get_nfa().has_empty() && self.get_nfa().is_utf8();",
+    "    let hm = match search::find_rev(self, cache, input)? {",
+    "        None => return Ok(None),",
+    "        Some(hm) if !utf8empty => return Ok(Some(hm)),",
+    "        Some(hm) => hm,",
+    "    };",
+    "    empty::skip_splits_rev(input, hm, hm.offset(), |input| {",
+    "        let got = search::find_rev(self, cache, input)?;",
+    "        Ok(got.map(|hm| (hm, hm.offset())))",
+    "    })",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 4,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 795,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 796,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        13,
+        14,
+        26,
+        27,
+        28,
+        29
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 795,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)? matches Some(hm)",
+          "norm": null,
+          "value": "true",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 798,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        12,
+        17,
+        20,
+        21,
+        18,
+        23,
+        24,
+        25,
+        29
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 795,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)? matches Some(hm)",
+          "norm": null,
+          "value": "true",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 798,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        12,
+        17,
+        20,
+        22,
+        27,
+        28,
+        29
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 795,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 796,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        12,
+        16,
+        19,
+        27,
+        28,
+        29
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 795,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 796,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        11,
+        13,
+        14,
+        26,
+        27,
+        28,
+        29
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 795,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)? matches Some(hm)",
+          "norm": null,
+          "value": "true",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 798,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        12,
+        17,
+        20,
+        21,
+        18,
+        23,
+        24,
+        25,
+        29
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 795,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)? matches Some(hm)",
+          "norm": null,
+          "value": "true",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 798,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(hm))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        12,
+        17,
+        20,
+        22,
+        27,
+        28,
+        29
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 795,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 796,
+          "bound": null
+        },
+        {
+          "cond": "search::find_rev(self, cache, input)? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 796,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        12,
+        16,
+        19,
+        27,
+        28,
+        29
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

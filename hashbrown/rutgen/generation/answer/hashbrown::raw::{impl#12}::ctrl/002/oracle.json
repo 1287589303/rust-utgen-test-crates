@@ -1,0 +1,117 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestAllocator;",
+          "",
+          "    impl Allocator for TestAllocator {",
+          "        // Implement required allocator methods here.",
+          "    }",
+          "",
+          "    let allocator = TestAllocator;",
+          "    let bucket_mask = 3; // Example value, must be power of two.",
+          "    let group_width = Group::WIDTH; // Assume this is defined correctly.",
+          "    let capacity = bucket_mask + 1 + group_width; // This will be our num_ctrl_bytes result.",
+          "    let table_layout = TableLayout {}; // Assume this is defined correctly.",
+          "    ",
+          "    let mut raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);",
+          "",
+          "    let index = raw_table.num_ctrl_bytes(); // This is where the precondition error is invoked.",
+          "    ",
+          "    let ctrl_ptr = raw_table.ctrl(index); // This call should trigger the safety check.",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| raw_table.ctrl(raw_table.num_ctrl_bytes())).is_err());",
+          "    assert!(std::panic::catch_unwind(|| raw_table.ctrl(raw_table.num_ctrl_bytes() + 1)).is_err());",
+          "    assert_eq!(raw_table.num_ctrl_bytes(), bucket_mask + 1 + group_width);",
+          "    let ctrl_ptr = raw_table.ctrl(raw_table.num_ctrl_bytes() - 1); // Should be safe, just before the upper bound."
+        ],
+        "code": [
+          "{",
+          "    struct TestAllocator;",
+          "",
+          "    impl Allocator for TestAllocator {",
+          "        // Implement required allocator methods here.",
+          "    }",
+          "",
+          "    let allocator = TestAllocator;",
+          "    let bucket_mask = 3; // Example value, must be power of two.",
+          "    let group_width = Group::WIDTH; // Assume this is defined correctly.",
+          "    let capacity = bucket_mask + 1 + group_width; // This will be our num_ctrl_bytes result.",
+          "    let table_layout = TableLayout {}; // Assume this is defined correctly.",
+          "    ",
+          "    let mut raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);",
+          "",
+          "    let index = raw_table.num_ctrl_bytes(); // This is where the precondition error is invoked.",
+          "    ",
+          "    let ctrl_ptr = raw_table.ctrl(index); // This call should trigger the safety check.",
+          "    assert!(std::panic::catch_unwind(|| raw_table.ctrl(raw_table.num_ctrl_bytes())).is_err());",
+          "    assert!(std::panic::catch_unwind(|| raw_table.ctrl(raw_table.num_ctrl_bytes() + 1)).is_err());",
+          "    assert_eq!(raw_table.num_ctrl_bytes(), bucket_mask + 1 + group_width);",
+          "    let ctrl_ptr = raw_table.ctrl(raw_table.num_ctrl_bytes() - 1); // Should be safe, just before the upper bound.",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestAllocator;",
+          "",
+          "    impl Allocator for TestAllocator {",
+          "        // Implement required allocator methods here.",
+          "    }",
+          "",
+          "    let allocator = TestAllocator;",
+          "    let bucket_mask = 3; // Example value",
+          "    let group_width = Group::WIDTH; // Assume correct definition",
+          "    let capacity = bucket_mask + 1 + group_width; // num_ctrl_bytes",
+          "    let table_layout = TableLayout {}; // Assume correct definition.",
+          "    ",
+          "    let mut raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);",
+          "",
+          "    let index = raw_table.num_ctrl_bytes() + 1; // This exceeds the valid index.",
+          "    ",
+          "    let ctrl_ptr = raw_table.ctrl(index); // Calling this should invoke undefined behavior.",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(std::panic::catch_unwind(|| raw_table.ctrl(index)).is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    struct TestAllocator;",
+          "",
+          "    impl Allocator for TestAllocator {",
+          "        // Implement required allocator methods here.",
+          "    }",
+          "",
+          "    let allocator = TestAllocator;",
+          "    let bucket_mask = 3; // Example value",
+          "    let group_width = Group::WIDTH; // Assume correct definition",
+          "    let capacity = bucket_mask + 1 + group_width; // num_ctrl_bytes",
+          "    let table_layout = TableLayout {}; // Assume correct definition.",
+          "    ",
+          "    let mut raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);",
+          "",
+          "    let index = raw_table.num_ctrl_bytes() + 1; // This exceeds the valid index.",
+          "    ",
+          "    let ctrl_ptr = raw_table.ctrl(index); // Calling this should invoke undefined behavior.",
+          "    assert_eq!(std::panic::catch_unwind(|| raw_table.ctrl(index)).is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

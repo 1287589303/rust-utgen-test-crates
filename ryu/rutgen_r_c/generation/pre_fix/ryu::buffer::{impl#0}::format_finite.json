@@ -1,0 +1,182 @@
+{
+  "name": "ryu::buffer::{impl#0}::format_finite",
+  "mod_info": {
+    "name": "buffer",
+    "loc": "src/lib.rs:106:1:106:12"
+  },
+  "visible": true,
+  "loc": "src/buffer/mod.rs:72:5:79:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: n <= self.bytes.len() at line 75 is true, with bound n == self.bytes.len()\n",
+        "expected return value/type: str::from_utf8_unchecked(slice)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct FloatTest(u32);",
+                "    ",
+                "    unsafe impl Sealed for FloatTest {",
+                "        fn is_nonfinite(self) -> bool {",
+                "            false",
+                "        }",
+                "",
+                "        fn format_nonfinite(self) -> &'static str {",
+                "            \"finite\"",
+                "        }",
+                "",
+                "        unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                "            let value = self.0.to_string();",
+                "            let bytes = value.as_bytes();",
+                "            let len = bytes.len();",
+                "            core::ptr::copy_nonoverlapping(bytes.as_ptr(), result, len);",
+                "            len",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = buffer.format_finite(FloatTest(42));",
+                "    assert_eq!(result, \"42\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct FloatTest(u32);",
+                "    ",
+                "    unsafe impl Sealed for FloatTest {",
+                "        fn is_nonfinite(self) -> bool {",
+                "            false",
+                "        }",
+                "",
+                "        fn format_nonfinite(self) -> &'static str {",
+                "            \"finite\"",
+                "        }",
+                "",
+                "        unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                "            let value = self.0.to_string();",
+                "            let bytes = value.as_bytes();",
+                "            let len = bytes.len();",
+                "            core::ptr::copy_nonoverlapping(bytes.as_ptr(), result, len);",
+                "            len",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = buffer.format_finite(FloatTest(99999999));",
+                "    assert_eq!(result, \"99999999\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct FloatTest(u64);",
+                "    ",
+                "    unsafe impl Sealed for FloatTest {",
+                "        fn is_nonfinite(self) -> bool {",
+                "            false",
+                "        }",
+                "",
+                "        fn format_nonfinite(self) -> &'static str {",
+                "            \"finite\"",
+                "        }",
+                "",
+                "        unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                "            let value = self.0.to_string();",
+                "            let bytes = value.as_bytes();",
+                "            let len = bytes.len();",
+                "            core::ptr::copy_nonoverlapping(bytes.as_ptr(), result, len);",
+                "            len",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let large_value = FloatTest(12345678901234567890);",
+                "    let result = buffer.format_finite(large_value);",
+                "    assert_eq!(result, \"12345678901234567890\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: n <= self.bytes.len() at line 75 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestFloat;",
+                "",
+                "    impl Copy for TestFloat {}",
+                "    ",
+                "    impl Sealed for TestFloat {",
+                "        fn is_nonfinite(self) -> bool {",
+                "            false",
+                "        }",
+                "        ",
+                "        fn format_nonfinite(self) -> &'static str {",
+                "            \"finite\"",
+                "        }",
+                "",
+                "        unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                "            25 // Exceeds the buffer size of 24, triggering the debug assertion",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = unsafe { buffer.format_finite(TestFloat) };",
+                "",
+                "    // The output is non-deterministic due to exceeding buffer size,",
+                "    // but the function should still compile and exhibit behavior.",
+                "    assert_eq!(result, \"finite\"); // Check it returns the expected string",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

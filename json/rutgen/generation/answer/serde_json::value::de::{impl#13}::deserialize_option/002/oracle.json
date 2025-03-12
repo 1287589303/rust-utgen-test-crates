@@ -1,0 +1,112 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "// Mock visitor for testing",
+      "struct TestVisitor {",
+      "    visited_some: bool,",
+      "}",
+      "",
+      "impl TestVisitor {",
+      "    fn new() -> Self {",
+      "        TestVisitor {",
+      "            visited_some: false,",
+      "        }",
+      "    }",
+      "}",
+      "",
+      "impl<'de> Visitor<'de> for TestVisitor {",
+      "    type Value = ();",
+      "",
+      "    fn visit_none(self) -> Result<Self::Value, Error> {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn visit_some<V>(self, _value: V) -> Result<Self::Value, Error>",
+      "    where",
+      "        V: Deserialize<'de>,",
+      "    {",
+      "        self.visited_some = true;",
+      "        Ok(())",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Null;",
+          "    let visitor = TestVisitor::new();",
+          "    value.deserialize_option(visitor).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    let value = Value::Null;",
+          "    let visitor = TestVisitor::new();",
+          "    assert_eq!(visitor.visited_some, false);",
+          "    assert!(value.deserialize_option(visitor).is_ok());",
+          "    assert_eq!(visitor.visited_some, false);"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Null;",
+          "    let visitor = TestVisitor::new();",
+          "    value.deserialize_option(visitor).unwrap();",
+          "    let value = Value::Null;",
+          "    let visitor = TestVisitor::new();",
+          "    assert_eq!(visitor.visited_some, false);",
+          "    assert!(value.deserialize_option(visitor).is_ok());",
+          "    assert_eq!(visitor.visited_some, false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Bool(true);",
+          "    let visitor = TestVisitor::new();",
+          "    // In a valid use case, this would return an error or fall through.",
+          "    value.deserialize_option(visitor).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(visited_some, false);",
+          "    let value_null = Value::Null;",
+          "    let visitor = TestVisitor::new();",
+          "    value_null.deserialize_option(visitor).unwrap();",
+          "    assert_eq!(visited_some, false);",
+          "    let value_some = Value::Bool(true);",
+          "    let visitor = TestVisitor::new();",
+          "    let result = value_some.deserialize_option(visitor);",
+          "    assert!(result.is_ok());",
+          "    assert!(visitor.visited_some);"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Bool(true);",
+          "    let visitor = TestVisitor::new();",
+          "    // In a valid use case, this would return an error or fall through.",
+          "    value.deserialize_option(visitor).unwrap();",
+          "    assert_eq!(visited_some, false);",
+          "    let value_null = Value::Null;",
+          "    let visitor = TestVisitor::new();",
+          "    value_null.deserialize_option(visitor).unwrap();",
+          "    assert_eq!(visited_some, false);",
+          "    let value_some = Value::Bool(true);",
+          "    let visitor = TestVisitor::new();",
+          "    let result = value_some.deserialize_option(visitor);",
+          "    assert!(result.is_ok());",
+          "    assert!(visitor.visited_some);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

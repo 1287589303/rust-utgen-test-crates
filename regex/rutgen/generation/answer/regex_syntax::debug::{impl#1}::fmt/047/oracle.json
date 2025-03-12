@@ -1,0 +1,283 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Bytes(&[b'H', b'e', b'l', b'l', b'o', b' ', b'W', b'o', b'r', b'l', b'd']); ",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(write!(f, \"\\\"\").is_ok());",
+          "    let result = utf8_decode(&[b'H', b'e', b'l', b'l', b'o', b' ', b'W', b'o', b'r', b'l', b'd']);",
+          "    assert!(result.is_some());",
+          "    let Ok(ch) = result.unwrap();",
+          "    assert_eq!(ch, 'H');",
+          "    assert!(utf8_decode(b\"\\0\").is_some());",
+          "    let result_zero = utf8_decode(b\"\\0\");",
+          "    assert!(result_zero.is_some());",
+          "    if let Some(Ok(ch)) = result_zero {",
+          "    assert_eq!(ch, '\\0');",
+          "    }",
+          "    assert!(write!(f, \"\\\\0\").is_ok());",
+          "    assert!(write!(f, \"\\\"\").is_err());"
+        ],
+        "code": [
+          "{",
+          "    let input = Bytes(&[b'H', b'e', b'l', b'l', b'o', b' ', b'W', b'o', b'r', b'l', b'd']); ",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert!(write!(f, \"\\\"\").is_ok());",
+          "    let result = utf8_decode(&[b'H', b'e', b'l', b'l', b'o', b' ', b'W', b'o', b'r', b'l', b'd']);",
+          "    assert!(result.is_some());",
+          "    let Ok(ch) = result.unwrap();",
+          "    assert_eq!(ch, 'H');",
+          "    assert!(utf8_decode(b\"\\0\").is_some());",
+          "    let result_zero = utf8_decode(b\"\\0\");",
+          "    assert!(result_zero.is_some());",
+          "    if let Some(Ok(ch)) = result_zero {",
+          "    assert_eq!(ch, '\\0');",
+          "    }",
+          "    assert!(write!(f, \"\\\\0\").is_ok());",
+          "    assert!(write!(f, \"\\\"\").is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Bytes(&[b'H', b'e', b'l', b'l', b'o', b'\\0', b'W', b'o', b'r', b'l', b'd']);",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(write!(f, \"\\\"\").is_ok());",
+          "    let bytes = &[b'H', b'e', b'l', b'l', b'o', b'\\0', b'W', b'o', b'r', b'l', b'd'];",
+          "    assert!(utf8_decode(bytes).is_some());",
+          "    let result = utf8_decode(bytes).unwrap();",
+          "    assert!(matches!(result, Ok(_)));",
+          "    let ch = result.unwrap();",
+          "    assert_eq!(ch, '\\0');",
+          "    assert!(write!(f, \"\\\\0\").is_ok());",
+          "    assert!(write!(f, \"\\\"\").is_err());"
+        ],
+        "code": [
+          "{",
+          "    let input = Bytes(&[b'H', b'e', b'l', b'l', b'o', b'\\0', b'W', b'o', b'r', b'l', b'd']);",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert!(write!(f, \"\\\"\").is_ok());",
+          "    let bytes = &[b'H', b'e', b'l', b'l', b'o', b'\\0', b'W', b'o', b'r', b'l', b'd'];",
+          "    assert!(utf8_decode(bytes).is_some());",
+          "    let result = utf8_decode(bytes).unwrap();",
+          "    assert!(matches!(result, Ok(_)));",
+          "    let ch = result.unwrap();",
+          "    assert_eq!(ch, '\\0');",
+          "    assert!(write!(f, \"\\\\0\").is_ok());",
+          "    assert!(write!(f, \"\\\"\").is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Bytes(&[b'H', b'\\x01', b'e', b'l', b'l', b'o']);",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").unwrap();",
+          "    let result = utf8_decode(b'H');",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap();",
+          "    assert_eq!(ch, 'H');",
+          "    let result = utf8_decode(b\"\\x01\");",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap_err();",
+          "    assert_eq!(ch, 0x01);",
+          "    write!(f, r\"\\x{:02x}\", ch).unwrap();",
+          "    let result = utf8_decode(b'e');",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap();",
+          "    assert_eq!(ch, 'e');",
+          "    let result = utf8_decode(b'l');",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap();",
+          "    assert_eq!(ch, 'l');",
+          "    let result = utf8_decode(b'l');",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap();",
+          "    assert_eq!(ch, 'l');",
+          "    let result = utf8_decode(b'o');",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap();",
+          "    assert_eq!(ch, 'o');",
+          "    assert!(write!(f, \"\\\"\").is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let input = Bytes(&[b'H', b'\\x01', b'e', b'l', b'l', b'o']);",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    write!(f, \"\\\"\").unwrap();",
+          "    let result = utf8_decode(b'H');",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap();",
+          "    assert_eq!(ch, 'H');",
+          "    let result = utf8_decode(b\"\\x01\");",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap_err();",
+          "    assert_eq!(ch, 0x01);",
+          "    write!(f, r\"\\x{:02x}\", ch).unwrap();",
+          "    let result = utf8_decode(b'e');",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap();",
+          "    assert_eq!(ch, 'e');",
+          "    let result = utf8_decode(b'l');",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap();",
+          "    assert_eq!(ch, 'l');",
+          "    let result = utf8_decode(b'l');",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap();",
+          "    assert_eq!(ch, 'l');",
+          "    let result = utf8_decode(b'o');",
+          "    assert!(result.is_some());",
+          "    let ch = result.unwrap().unwrap();",
+          "    assert_eq!(ch, 'o');",
+          "    assert!(write!(f, \"\\\"\").is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Bytes(&[b'H', b'\\0', b'e', b'\\0', b'l', b'\\0', b'l', b'\\0', b'o']);",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[b'H', b'\\0', b'e', b'\\0', b'l', b'\\0', b'l', b'\\0', b'o']))), \"\\\"H\\\\0e\\\\0l\\\\0l\\\\0o\\\"\");",
+          "    assert!(write!(core::fmt::Formatter::new(), \"\\\"\").is_ok());",
+          "    assert!(utf8_decode(&[b'H', b'\\0']).is_some());",
+          "    assert!(utf8_decode(&[b'\\0']).unwrap().is_ok());",
+          "    assert!(utf8_decode(&[b'\\0']).unwrap().ok().unwrap() == '\\0');",
+          "    assert!(write!(core::fmt::Formatter::new(), \"\\\\0\").is_ok());",
+          "    assert!(write!(core::fmt::Formatter::new(), \"\\\"\").is_err());"
+        ],
+        "code": [
+          "{",
+          "    let input = Bytes(&[b'H', b'\\0', b'e', b'\\0', b'l', b'\\0', b'l', b'\\0', b'o']);",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[b'H', b'\\0', b'e', b'\\0', b'l', b'\\0', b'l', b'\\0', b'o']))), \"\\\"H\\\\0e\\\\0l\\\\0l\\\\0o\\\"\");",
+          "    assert!(write!(core::fmt::Formatter::new(), \"\\\"\").is_ok());",
+          "    assert!(utf8_decode(&[b'H', b'\\0']).is_some());",
+          "    assert!(utf8_decode(&[b'\\0']).unwrap().is_ok());",
+          "    assert!(utf8_decode(&[b'\\0']).unwrap().ok().unwrap() == '\\0');",
+          "    assert!(write!(core::fmt::Formatter::new(), \"\\\\0\").is_ok());",
+          "    assert!(write!(core::fmt::Formatter::new(), \"\\\"\").is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Bytes(&[0xFF, 0xC0, b'H', b'e']);",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0x00]))), \"\\\"\\\\0\\\"\");",
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0x01]))), \"\\\"\\\\x01\\\"\");",
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0x02, b'H', b'e']))), \"\\\"\\\\x02He\\\"\");",
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0x0A]))), \"\\\"\\\\n\\\"\");",
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0xFF]))), \"\\\"\\\\xff\\\"\");",
+          "    assert!(core::fmt::format(format_args!(\"{:?}\", Bytes(&vec![]))).is_empty());",
+          "    assert!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0xC0]))).contains(\"\\\\x\"));",
+          "    assert!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0xC0, 0x80]))).contains(\"�\"));"
+        ],
+        "code": [
+          "{",
+          "    let input = Bytes(&[0xFF, 0xC0, b'H', b'e']);",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0x00]))), \"\\\"\\\\0\\\"\");",
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0x01]))), \"\\\"\\\\x01\\\"\");",
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0x02, b'H', b'e']))), \"\\\"\\\\x02He\\\"\");",
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0x0A]))), \"\\\"\\\\n\\\"\");",
+          "    assert_eq!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0xFF]))), \"\\\"\\\\xff\\\"\");",
+          "    assert!(core::fmt::format(format_args!(\"{:?}\", Bytes(&vec![]))).is_empty());",
+          "    assert!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0xC0]))).contains(\"\\\\x\"));",
+          "    assert!(core::fmt::format(format_args!(\"{:?}\", Bytes(&[0xC0, 0x80]))).contains(\"�\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Bytes(&[]);",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").unwrap();",
+          "    let input = Bytes(&[0b00000000]);",
+          "    let result = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert_eq!(result, \"\\\"\\\\0\\\"\");",
+          "    let input = Bytes(&[0b00000001]);",
+          "    let result = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert_eq!(result, \"\\\"\\\\x01\\\"\");",
+          "    let input = Bytes(&[0b00001010]);",
+          "    let result = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert_eq!(result, \"\\\"\\\\n\\\"\");",
+          "    let input = Bytes(&[0b00001111]);",
+          "    let result = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert_eq!(result, \"\\\"\\\\x0f\\\"\");",
+          "    let input = Bytes(&[0b11111111]);",
+          "    let result = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let input = Bytes(&[]);",
+          "    let _ = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    write!(f, \"\\\"\").unwrap();",
+          "    let input = Bytes(&[0b00000000]);",
+          "    let result = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert_eq!(result, \"\\\"\\\\0\\\"\");",
+          "    let input = Bytes(&[0b00000001]);",
+          "    let result = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert_eq!(result, \"\\\"\\\\x01\\\"\");",
+          "    let input = Bytes(&[0b00001010]);",
+          "    let result = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert_eq!(result, \"\\\"\\\\n\\\"\");",
+          "    let input = Bytes(&[0b00001111]);",
+          "    let result = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert_eq!(result, \"\\\"\\\\x0f\\\"\");",
+          "    let input = Bytes(&[0b11111111]);",
+          "    let result = core::fmt::format(format_args!(\"{:?}\", input));",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

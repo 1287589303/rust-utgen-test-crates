@@ -1,0 +1,185 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack: Vec<u8> = vec![b'T', b'e', b's', b't', b' ', b'w', b'o', b'r', b'd'];",
+          "    let at = 6; // valid UTF-8 character starting at index 6",
+          "    let _ = matcher.is_word_start_half_unicode(&haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(true));",
+          "    let at = 0;",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at).is_err(), true);",
+          "    let at = haystack.len();",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at).is_err(), true);",
+          "    let at = 4;",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(false));",
+          "    let haystack_invalid: Vec<u8> = vec![b'\\xFF'];",
+          "    let at_invalid = 1;",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack_invalid, at_invalid).is_err(), true);",
+          "    let haystack_empty: Vec<u8> = vec![];",
+          "    let at_empty = 0;",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack_empty, at_empty).is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack: Vec<u8> = vec![b'T', b'e', b's', b't', b' ', b'w', b'o', b'r', b'd'];",
+          "    let at = 6; // valid UTF-8 character starting at index 6",
+          "    let _ = matcher.is_word_start_half_unicode(&haystack, at);",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(true));",
+          "    let at = 0;",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at).is_err(), true);",
+          "    let at = haystack.len();",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at).is_err(), true);",
+          "    let at = 4;",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(false));",
+          "    let haystack_invalid: Vec<u8> = vec![b'\\xFF'];",
+          "    let at_invalid = 1;",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack_invalid, at_invalid).is_err(), true);",
+          "    let haystack_empty: Vec<u8> = vec![];",
+          "    let at_empty = 0;",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack_empty, at_empty).is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack: Vec<u8> = vec![0xFF, 0xFE, 0xFD]; // invalid UTF-8 sequence",
+          "    let at = 3; // at beyond last valid byte to cause error",
+          "    let _ = matcher.is_word_start_half_unicode(&haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Err(UnicodeWordBoundaryError(())));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&[0x61, 0x62, 0x63], 3), Ok(true));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&[0xC2, 0xA0, 0x61], 3), Ok(false));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&[0xC2, 0xA0, 0x61, 0x62], 4), Ok(true));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&[0x61, 0xC2, 0xA0], 2), Ok(false));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&[0x61, 0x0A], 1), Ok(true));"
+        ],
+        "code": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack: Vec<u8> = vec![0xFF, 0xFE, 0xFD]; // invalid UTF-8 sequence",
+          "    let at = 3; // at beyond last valid byte to cause error",
+          "    let _ = matcher.is_word_start_half_unicode(&haystack, at);",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Err(UnicodeWordBoundaryError(())));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&[0x61, 0x62, 0x63], 3), Ok(true));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&[0xC2, 0xA0, 0x61], 3), Ok(false));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&[0xC2, 0xA0, 0x61, 0x62], 4), Ok(true));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&[0x61, 0xC2, 0xA0], 2), Ok(false));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&[0x61, 0x0A], 1), Ok(true));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack: Vec<u8> = vec![b'a', b'1', b'!']; // valid ASCII only",
+          "    let at = 3; // valid position at the end",
+          "    let _ = matcher.is_word_start_half_unicode(&haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(true));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at - 1), Ok(false));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, 0), Ok(false));",
+          "    assert!(matcher.is_word_start_half_unicode(&[], at).is_err());",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, 4), Ok(false));"
+        ],
+        "code": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack: Vec<u8> = vec![b'a', b'1', b'!']; // valid ASCII only",
+          "    let at = 3; // valid position at the end",
+          "    let _ = matcher.is_word_start_half_unicode(&haystack, at);",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(true));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at - 1), Ok(false));",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, 0), Ok(false));",
+          "    assert!(matcher.is_word_start_half_unicode(&[], at).is_err());",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, 4), Ok(false));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack: Vec<u8> = vec![]; // empty byte array",
+          "    let at = 0; // at position 0 ",
+          "    let _ = matcher.is_word_start_half_unicode(&haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(false)); // at == 0, should return Ok(false)",
+          "    ",
+          "    let haystack: Vec<u8> = vec![b'a', b'b', b'c', b'd']; // valid UTF-8 bytes",
+          "    let at = 1; // at position 1",
+          "    assert!(matcher.is_word_start_half_unicode(&haystack, at).is_ok()); // utf8::decode_last should match Some(Ok(_))",
+          "    ",
+          "    let at = 3; // at position 3",
+          "    assert!(matcher.is_word_start_half_unicode(&haystack, at).is_ok()); // utf8::decode_last should match Some(Ok(_))",
+          "    ",
+          "    let at = 2; // at position 2",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(false)); // word_before is true, as 'a' is a word character",
+          "    ",
+          "    let haystack: Vec<u8> = vec![b'a', b'\\xFF', b'c', b'd']; // invalid UTF-8 byte",
+          "    let at = 2; // at position 2, should handle the error case",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(false)); // should return Ok(false) due to the presence of an invalid UTF-8 sequence",
+          "    ",
+          "    let at = 4; // at position equal to haystack length",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(true)); // should not panic and return Ok(true)"
+        ],
+        "code": [
+          "{",
+          "    let matcher = LookMatcher::new();",
+          "    let haystack: Vec<u8> = vec![]; // empty byte array",
+          "    let at = 0; // at position 0 ",
+          "    let _ = matcher.is_word_start_half_unicode(&haystack, at);",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(false)); // at == 0, should return Ok(false)",
+          "    ",
+          "    let haystack: Vec<u8> = vec![b'a', b'b', b'c', b'd']; // valid UTF-8 bytes",
+          "    let at = 1; // at position 1",
+          "    assert!(matcher.is_word_start_half_unicode(&haystack, at).is_ok()); // utf8::decode_last should match Some(Ok(_))",
+          "    ",
+          "    let at = 3; // at position 3",
+          "    assert!(matcher.is_word_start_half_unicode(&haystack, at).is_ok()); // utf8::decode_last should match Some(Ok(_))",
+          "    ",
+          "    let at = 2; // at position 2",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(false)); // word_before is true, as 'a' is a word character",
+          "    ",
+          "    let haystack: Vec<u8> = vec![b'a', b'\\xFF', b'c', b'd']; // invalid UTF-8 byte",
+          "    let at = 2; // at position 2, should handle the error case",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(false)); // should return Ok(false) due to the presence of an invalid UTF-8 sequence",
+          "    ",
+          "    let at = 4; // at position equal to haystack length",
+          "    assert_eq!(matcher.is_word_start_half_unicode(&haystack, at), Ok(true)); // should not panic and return Ok(true)",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

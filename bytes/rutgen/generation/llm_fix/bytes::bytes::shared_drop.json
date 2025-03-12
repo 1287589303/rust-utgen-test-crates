@@ -1,0 +1,142 @@
+{
+  "name": "bytes::bytes::shared_drop",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1471:1:1475:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "data must be a mutable reference to an AtomicPtr<()>, _ptr must be a valid pointer to a u8, and _len must be a non-negative usize value. Test input conditions are: AtomicPtr<()>, valid *const u8 address, usize >= 0\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let valid_ptr: *const u8 = 0x1234 as *const u8; // Example valid pointer",
+                "    let data = AtomicPtr::new(valid_ptr as *mut ());",
+                "    let len: usize = 10; // Non-negative usize",
+                "",
+                "    unsafe {",
+                "        shared_drop(&mut data, valid_ptr, len);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(data.load(Ordering::SeqCst), valid_ptr as *mut ()); // Validate that the pointer remains unchanged.",
+                "    assert_ne!(data.load(Ordering::SeqCst), std::ptr::null_mut()); // Ensure the atomic pointer is not null.",
+                "    assert!(len > 0); // Check that the length is positive.",
+                "    assert!(data.is_unique()); // Verify if the pointer is unique before calling shared_drop.",
+                "    assert!(std::mem::size_of::<AtomicPtr<()>>() > 0); // Ensure size is greater than zero for a valid atomic pointer.",
+                "    assert!(std::mem::align_of::<AtomicPtr<()>>() > 0); // Validate proper alignment for AtomicPtr.",
+                "    assert!(std::ptr::eq(valid_ptr, data.load(Ordering::SeqCst))); // Confirm the validity of the pointer with atomic loading."
+              ],
+              "code": [
+                "{",
+                "    let valid_ptr: *const u8 = 0x1234 as *const u8; // Example valid pointer",
+                "    let data = AtomicPtr::new(valid_ptr as *mut ());",
+                "    let len: usize = 10; // Non-negative usize",
+                "",
+                "    unsafe {",
+                "        shared_drop(&mut data, valid_ptr, len);",
+                "    }",
+                "    assert_eq!(data.load(Ordering::SeqCst), valid_ptr as *mut ()); // Validate that the pointer remains unchanged.",
+                "    assert_ne!(data.load(Ordering::SeqCst), std::ptr::null_mut()); // Ensure the atomic pointer is not null.",
+                "   assert!(len > 0); // Check that the length is positive.  ",
+                "   assert!(std::ptr::eq(data.load(Ordering::SeqCst), valid_ptr as *mut ()) || data.load(Ordering::SeqCst) == std::ptr::null_mut()); // Check if the loaded pointer is known to be unique or null.  ",
+                "   assert!(std::mem::size_of::<AtomicPtr<()>>() > 0); // Ensure size is greater than zero for a valid atomic pointer.  ",
+                "   assert!(std::mem::align_of::<AtomicPtr<()>>() > 0); // Validate proper alignment for AtomicPtr.  ",
+                "   assert!(std::ptr::eq(valid_ptr, data.load(Ordering::SeqCst))); // Confirm the validity of the pointer with atomic loading.  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let valid_ptr: *const u8 = 0x1234 as *const u8; // Example valid pointer",
+                "    let data = AtomicPtr::new(valid_ptr as *mut ());",
+                "    let len: usize = 0; // Boundary condition for non-negative usize",
+                "",
+                "    unsafe {",
+                "        shared_drop(&mut data, valid_ptr, len);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(data.load(Ordering::Relaxed), valid_ptr as *mut ());",
+                "    assert_eq!(data.load(Ordering::Relaxed) as usize, 0x1234);",
+                "    assert!(data.load(Ordering::Relaxed) != ptr::null_mut());",
+                "    assert!(len >= 0);",
+                "    assert!(mem::size_of::<AtomicPtr<()>>() > 0);"
+              ],
+              "code": [
+                "{",
+                "   let valid_ptr: *const u8 = 0x1234 as *const u8; // Example valid pointer  ",
+                "   let mut data = AtomicPtr::new(valid_ptr as *mut ());  ",
+                "    let len: usize = 0; // Boundary condition for non-negative usize",
+                "",
+                "    unsafe {",
+                "        shared_drop(&mut data, valid_ptr, len);",
+                "    }",
+                "    assert_eq!(data.load(Ordering::Relaxed), valid_ptr as *mut ());",
+                "    assert_eq!(data.load(Ordering::Relaxed) as usize, 0x1234);",
+                "    assert!(data.load(Ordering::Relaxed) != ptr::null_mut());",
+                "    assert!(len >= 0);",
+                "    assert!(mem::size_of::<AtomicPtr<()>>() > 0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let invalid_ptr: *const u8 = 0x0 as *const u8; // Example invalid pointer",
+                "    let data = AtomicPtr::new(invalid_ptr as *mut ());",
+                "    let len: usize = 5; // Non-negative usize",
+                "",
+                "    unsafe {",
+                "        shared_drop(&mut data, invalid_ptr, len);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(data.load(Ordering::SeqCst), invalid_ptr as *mut ());",
+                "    assert!(len > 0);"
+              ],
+              "code": [
+                "{",
+                "   let invalid_ptr: *const u8 = 0x0 as *const u8; // Example invalid pointer",
+                "   let mut data = AtomicPtr::new(invalid_ptr as *mut ());",
+                "   let len: usize = 5; // Non-negative usize",
+                "",
+                "   unsafe {",
+                "       shared_drop(&mut data, invalid_ptr, len);",
+                "   }",
+                "   assert_eq!(data.load(Ordering::SeqCst), invalid_ptr as *mut ());",
+                "   assert!(len > 0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

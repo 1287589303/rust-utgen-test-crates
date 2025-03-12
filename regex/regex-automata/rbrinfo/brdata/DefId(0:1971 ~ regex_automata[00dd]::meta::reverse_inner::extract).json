@@ -1,0 +1,690 @@
+{
+  "name": "regex_automata::meta::reverse_inner::extract",
+  "mod_info": {
+    "name": "meta::reverse_inner",
+    "loc": "regex-automata/src/meta/mod.rs:58:1:58:19"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/meta/reverse_inner.rs:53:1:116:2",
+  "doc": "/// Attempts to extract an \"inner\" prefilter from the given HIR expressions. If\n/// one was found, then a concatenation of the HIR expressions that precede it\n/// is returned.\n///\n/// The idea here is that the prefilter returned can be used to find candidate\n/// matches. And then the HIR returned can be used to build a reverse regex\n/// matcher, which will find the start of the candidate match. Finally, the\n/// match still has to be confirmed with a normal anchored forward scan to find\n/// the end position of the match.\n///\n/// Note that this assumes leftmost-first match semantics, so callers must\n/// not call this otherwise.\n",
+  "code": [
+    "pub(crate) fn extract(hirs: &[&Hir]) -> Option<(Hir, Prefilter)> {",
+    "    if hirs.len() != 1 {",
+    "        debug!(",
+    "            \"skipping reverse inner optimization since it only \\",
+    "\t\t \t supports 1 pattern, {} were given\",",
+    "            hirs.len(),",
+    "        );",
+    "        return None;",
+    "    }",
+    "    let mut concat = match top_concat(hirs[0]) {",
+    "        Some(concat) => concat,",
+    "        None => {",
+    "            debug!(",
+    "                \"skipping reverse inner optimization because a top-level \\",
+    "\t\t \t     concatenation could not found\",",
+    "            );",
+    "            return None;",
+    "        }",
+    "    };",
+    "    // We skip the first HIR because if it did have a prefix prefilter in it,",
+    "    // we probably wouldn't be here looking for an inner prefilter.",
+    "    for i in 1..concat.len() {",
+    "        let hir = &concat[i];",
+    "        let pre = match prefilter(hir) {",
+    "            None => continue,",
+    "            Some(pre) => pre,",
+    "        };",
+    "        // Even if we got a prefilter, if it isn't consider \"fast,\" then we",
+    "        // probably don't want to bother with it. Namely, since the reverse",
+    "        // inner optimization requires some overhead, it likely only makes",
+    "        // sense if the prefilter scan itself is (believed) to be much faster",
+    "        // than the regex engine.",
+    "        if !pre.is_fast() {",
+    "            debug!(",
+    "                \"skipping extracted inner prefilter because \\",
+    "\t\t\t\t it probably isn't fast\"",
+    "            );",
+    "            continue;",
+    "        }",
+    "        let concat_suffix = Hir::concat(concat.split_off(i));",
+    "        let concat_prefix = Hir::concat(concat);",
+    "        // Look for a prefilter again. Why? Because above we only looked for",
+    "        // a prefilter on the individual 'hir', but we might be able to find",
+    "        // something better and more discriminatory by looking at the entire",
+    "        // suffix. We don't do this above to avoid making this loop worst case",
+    "        // quadratic in the length of 'concat'.",
+    "        let pre2 = match prefilter(&concat_suffix) {",
+    "            None => pre,",
+    "            Some(pre2) => {",
+    "                if pre2.is_fast() {",
+    "                    pre2",
+    "                } else {",
+    "                    pre",
+    "                }",
+    "            }",
+    "        };",
+    "        return Some((concat_prefix, pre2));",
+    "    }",
+    "    debug!(",
+    "        \"skipping reverse inner optimization because a top-level \\",
+    "\t     sub-expression with a fast prefilter could not be found\"",
+    "    );",
+    "    None",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 2,
+    "min_set": 8
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "true",
+          "line": 54,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "i in 1..concat.len()",
+          "norm": null,
+          "value": "true",
+          "line": 74,
+          "bound": null
+        },
+        {
+          "cond": "prefilter(hir) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 76,
+          "bound": null
+        },
+        {
+          "cond": "pre.is_fast()",
+          "norm": null,
+          "value": "true",
+          "line": 85,
+          "bound": null
+        },
+        {
+          "cond": "prefilter(&concat_suffix) matches Some(pre2)",
+          "norm": null,
+          "value": "true",
+          "line": 99,
+          "bound": null
+        },
+        {
+          "cond": "pre2.is_fast()",
+          "norm": null,
+          "value": "true",
+          "line": 102,
+          "bound": null
+        }
+      ],
+      "ret": "Some((concat_prefix, pre2))",
+      "path": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        19,
+        21,
+        22,
+        25,
+        26,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        37,
+        39,
+        40,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        53,
+        54,
+        55,
+        56,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "i in 1..concat.len()",
+          "norm": null,
+          "value": "true",
+          "line": 74,
+          "bound": null
+        },
+        {
+          "cond": "prefilter(hir) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 76,
+          "bound": null
+        },
+        {
+          "cond": "pre.is_fast()",
+          "norm": null,
+          "value": "true",
+          "line": 85,
+          "bound": null
+        },
+        {
+          "cond": "prefilter(&concat_suffix) matches Some(pre2)",
+          "norm": null,
+          "value": "true",
+          "line": 99,
+          "bound": null
+        },
+        {
+          "cond": "pre2.is_fast()",
+          "norm": null,
+          "value": "false",
+          "line": 102,
+          "bound": null
+        }
+      ],
+      "ret": "Some((concat_prefix, pre2))",
+      "path": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        19,
+        21,
+        22,
+        25,
+        26,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        37,
+        39,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        53,
+        54,
+        55,
+        56,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "i in 1..concat.len()",
+          "norm": null,
+          "value": "true",
+          "line": 74,
+          "bound": null
+        },
+        {
+          "cond": "prefilter(hir) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 76,
+          "bound": null
+        },
+        {
+          "cond": "pre.is_fast()",
+          "norm": null,
+          "value": "true",
+          "line": 85,
+          "bound": null
+        },
+        {
+          "cond": "prefilter(&concat_suffix) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 99,
+          "bound": null
+        },
+        {
+          "cond": "prefilter(&concat_suffix) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 99,
+          "bound": null
+        }
+      ],
+      "ret": "Some((concat_prefix, pre2))",
+      "path": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        19,
+        21,
+        22,
+        25,
+        26,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        44,
+        45,
+        46,
+        47,
+        48,
+        53,
+        54,
+        55,
+        56,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "i in 1..concat.len()",
+          "norm": null,
+          "value": "true",
+          "line": 74,
+          "bound": null
+        },
+        {
+          "cond": "prefilter(hir) matches Some(pre)",
+          "norm": null,
+          "value": "true",
+          "line": 76,
+          "bound": null
+        },
+        {
+          "cond": "pre.is_fast()",
+          "norm": null,
+          "value": "false",
+          "line": 85,
+          "bound": null
+        },
+        {
+          "cond": "i in 1..concat.len()",
+          "norm": null,
+          "value": "false",
+          "line": 74,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        19,
+        21,
+        22,
+        25,
+        26,
+        27,
+        28,
+        30,
+        51,
+        14,
+        15,
+        16,
+        18,
+        20,
+        52,
+        59
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "i in 1..concat.len()",
+          "norm": null,
+          "value": "true",
+          "line": 74,
+          "bound": null
+        },
+        {
+          "cond": "prefilter(hir) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 76,
+          "bound": null
+        },
+        {
+          "cond": "prefilter(hir) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 76,
+          "bound": null
+        },
+        {
+          "cond": "i in 1..concat.len()",
+          "norm": null,
+          "value": "false",
+          "line": 74,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        19,
+        21,
+        22,
+        24,
+        49,
+        50,
+        51,
+        14,
+        15,
+        16,
+        18,
+        20,
+        52,
+        59
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches Some(concat)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "i in 1..concat.len()",
+          "norm": null,
+          "value": "false",
+          "line": 74,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        18,
+        20,
+        52,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "hirs.len() != 1",
+          "norm": "1 != hirs.len()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "top_concat(hirs[0]) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        8,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

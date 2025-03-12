@@ -1,0 +1,117 @@
+[
+  {
+    "uses": [
+      "use std::thread;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestCache;",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache {});",
+          "    let pool = CachePool {",
+          "        stack: Mutex::new(vec![]),",
+          "        create: create_fn,",
+          "    };",
+          "    ",
+          "    let guard = pool.get();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(guard.value.is_some());",
+          "    assert!(std::ptr::eq(guard.pool, &pool));",
+          "    assert!(guard.value.as_ref().unwrap().is::<TestCache>());",
+          "    assert!(guard.value.is_some());"
+        ],
+        "code": [
+          "{",
+          "    struct TestCache;",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache {});",
+          "    let pool = CachePool {",
+          "        stack: Mutex::new(vec![]),",
+          "        create: create_fn,",
+          "    };",
+          "    ",
+          "    let guard = pool.get();",
+          "    assert!(guard.value.is_some());",
+          "    assert!(std::ptr::eq(guard.pool, &pool));",
+          "    assert!(guard.value.as_ref().unwrap().is::<TestCache>());",
+          "    assert!(guard.value.is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::thread;",
+          "",
+          "    struct TestCache;",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache {});",
+          "    let pool = CachePool {",
+          "        stack: Mutex::new(vec![]),",
+          "        create: create_fn,",
+          "    };",
+          "    ",
+          "    let handles: Vec<_> = (0..10).map(|_| {",
+          "        let pool_clone = &pool;",
+          "        thread::spawn(move || {",
+          "            let guard = pool_clone.get();",
+          "        })",
+          "    }).collect();",
+          "",
+          "    for handle in handles {",
+          "        handle.join().unwrap();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+          "    let guard = pool.get();",
+          "    assert!(guard.value.is_some());",
+          "    assert!(pool.stack.lock().unwrap().len() == 0);",
+          "    let cache: &TestCache = guard.value.as_ref().unwrap().downcast_ref().unwrap();",
+          "    assert!(cache.is_instance_of::<TestCache>());",
+          "    assert!(guard.pool == &pool);"
+        ],
+        "code": [
+          "{",
+          "    use std::thread;",
+          "",
+          "    struct TestCache;",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache {});",
+          "    let pool = CachePool {",
+          "        stack: Mutex::new(vec![]),",
+          "        create: create_fn,",
+          "    };",
+          "    ",
+          "    let handles: Vec<_> = (0..10).map(|_| {",
+          "        let pool_clone = &pool;",
+          "        thread::spawn(move || {",
+          "            let guard = pool_clone.get();",
+          "        })",
+          "    }).collect();",
+          "",
+          "    for handle in handles {",
+          "        handle.join().unwrap();",
+          "    }",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+          "    let guard = pool.get();",
+          "    assert!(guard.value.is_some());",
+          "    assert!(pool.stack.lock().unwrap().len() == 0);",
+          "    let cache: &TestCache = guard.value.as_ref().unwrap().downcast_ref().unwrap();",
+          "    assert!(cache.is_instance_of::<TestCache>());",
+          "    assert!(guard.pool == &pool);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

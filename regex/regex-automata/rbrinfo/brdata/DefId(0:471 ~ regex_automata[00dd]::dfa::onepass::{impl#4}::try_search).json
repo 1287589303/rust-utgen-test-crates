@@ -1,0 +1,81 @@
+{
+  "name": "regex_automata::dfa::onepass::{impl#4}::try_search",
+  "mod_info": {
+    "name": "dfa::onepass",
+    "loc": "regex-automata/src/dfa/mod.rs:339:1:339:17"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/onepass.rs:1887:5:1896:6",
+  "doc": "/// Executes an anchored leftmost forward search and writes the spans\n/// of capturing groups that participated in a match into the provided\n/// [`Captures`] value. If no match was found, then [`Captures::is_match`]\n/// is guaranteed to return `false`.\n///\n/// The differences with [`DFA::captures`] are:\n///\n/// 1. This returns an error instead of panicking if the search fails.\n/// 2. Accepts an `&Input` instead of a `Into<Input>`. This permits reusing\n/// the same input for multiple searches, which _may_ be important for\n/// latency.\n/// 3. This does not automatically change the [`Anchored`] mode from `No`\n/// to `Yes`. Instead, if [`Input::anchored`] is `Anchored::No`, then an\n/// error is returned.\n///\n/// # Errors\n///\n/// This routine errors if the search could not complete. This can occur\n/// in the following circumstances:\n///\n/// * When the provided `Input` configuration is not supported. For\n/// example, by providing an unsupported anchor mode. Concretely,\n/// this occurs when using [`Anchored::Pattern`] without enabling\n/// [`Config::starts_for_each_pattern`].\n///\n/// When a search returns an error, callers cannot know whether a match\n/// exists or not.\n///\n/// # Example: specific pattern search\n///\n/// This example shows how to build a multi-regex that permits searching\n/// for specific patterns. Note that this is somewhat less useful than\n/// in other regex engines, since a one-pass DFA by definition has no\n/// ambiguity about which pattern can match at a position. That is, if it\n/// were possible for two different patterns to match at the same starting\n/// position, then the multi-regex would not be one-pass and construction\n/// would have failed.\n///\n/// Nevertheless, this can still be useful if you only care about matches\n/// for a specific pattern, and want the DFA to report \"no match\" even if\n/// some other pattern would have matched.\n///\n/// Note that in order to make use of this functionality,\n/// [`Config::starts_for_each_pattern`] must be enabled. It is disabled\n/// by default since it may result in higher memory usage.\n///\n/// ```\n/// use regex_automata::{\n///     dfa::onepass::DFA, Anchored, Input, Match, PatternID,\n/// };\n///\n/// let re = DFA::builder()\n///     .configure(DFA::config().starts_for_each_pattern(true))\n///     .build_many(&[\"[a-z]+\", \"[0-9]+\"])?;\n/// let (mut cache, mut caps) = (re.create_cache(), re.create_captures());\n/// let haystack = \"123abc\";\n/// let input = Input::new(haystack).anchored(Anchored::Yes);\n///\n/// // A normal multi-pattern search will show pattern 1 matches.\n/// re.try_search(&mut cache, &input, &mut caps)?;\n/// assert_eq!(Some(Match::must(1, 0..3)), caps.get_match());\n///\n/// // If we only want to report pattern 0 matches, then we'll get no\n/// // match here.\n/// let input = input.anchored(Anchored::Pattern(PatternID::must(0)));\n/// re.try_search(&mut cache, &input, &mut caps)?;\n/// assert_eq!(None, caps.get_match());\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// # Example: specifying the bounds of a search\n///\n/// This example shows how providing the bounds of a search can produce\n/// different results than simply sub-slicing the haystack.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{dfa::onepass::DFA, Anchored, Input, Match};\n///\n/// // one-pass DFAs fully support Unicode word boundaries!\n/// // A sad joke is that a Unicode aware regex like \\w+\\s is not one-pass.\n/// // :-(\n/// let re = DFA::new(r\"\\b[0-9]{3}\\b\")?;\n/// let (mut cache, mut caps) = (re.create_cache(), re.create_captures());\n/// let haystack = \"foo123bar\";\n///\n/// // Since we sub-slice the haystack, the search doesn't know about\n/// // the larger context and assumes that `123` is surrounded by word\n/// // boundaries. And of course, the match position is reported relative\n/// // to the sub-slice as well, which means we get `0..3` instead of\n/// // `3..6`.\n/// let expected = Some(Match::must(0, 0..3));\n/// let input = Input::new(&haystack[3..6]).anchored(Anchored::Yes);\n/// re.try_search(&mut cache, &input, &mut caps)?;\n/// assert_eq!(expected, caps.get_match());\n///\n/// // But if we provide the bounds of the search within the context of the\n/// // entire haystack, then the search can take the surrounding context\n/// // into account. (And if we did find a match, it would be reported\n/// // as a valid offset into `haystack` instead of its sub-slice.)\n/// let expected = None;\n/// let input = Input::new(haystack).range(3..6).anchored(Anchored::Yes);\n/// re.try_search(&mut cache, &input, &mut caps)?;\n/// assert_eq!(expected, caps.get_match());\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn try_search(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    "    caps: &mut Captures,",
+    ") -> Result<(), MatchError> {",
+    "    let pid = self.try_search_slots(cache, input, caps.slots_mut())?;",
+    "    caps.set_pattern(pid);",
+    "    Ok(())",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.try_search_slots(cache, input, caps.slots_mut())?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1893,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.try_search_slots(cache, input, caps.slots_mut())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1893,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        13
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

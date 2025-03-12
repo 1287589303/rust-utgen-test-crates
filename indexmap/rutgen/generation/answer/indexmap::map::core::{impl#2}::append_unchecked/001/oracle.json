@@ -1,0 +1,213 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut self_map: IndexMapCore<usize, usize> = IndexMapCore::new();",
+          "    let mut other_map: IndexMapCore<usize, usize> = IndexMapCore::new();",
+          "    self_map.append_unchecked(&mut other_map);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(self_map.len(), 0);",
+          "    assert_eq!(other_map.len(), 0);",
+          "    other_map.insert_full(1.hash(), 1, 10);",
+          "    other_map.insert_full(2.hash(), 2, 20);",
+          "    assert_eq!(other_map.len(), 2);",
+          "    self_map.append_unchecked(&mut other_map);",
+          "    assert_eq!(self_map.len(), 2);",
+          "    assert_eq!(self_map.get_index_of(1.hash(), &1), Some(0));",
+          "    assert_eq!(self_map.get_index_of(2.hash(), &2), Some(1));",
+          "    assert_eq!(other_map.len(), 0);",
+          "    assert!(other_map.indices.is_empty());",
+          "    assert!(other_map.entries.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let mut self_map: IndexMapCore<usize, usize> = IndexMapCore::new();",
+          "    let mut other_map: IndexMapCore<usize, usize> = IndexMapCore::new();",
+          "    self_map.append_unchecked(&mut other_map);",
+          "    assert_eq!(self_map.len(), 0);",
+          "    assert_eq!(other_map.len(), 0);",
+          "    other_map.insert_full(1.hash(), 1, 10);",
+          "    other_map.insert_full(2.hash(), 2, 20);",
+          "    assert_eq!(other_map.len(), 2);",
+          "    self_map.append_unchecked(&mut other_map);",
+          "    assert_eq!(self_map.len(), 2);",
+          "    assert_eq!(self_map.get_index_of(1.hash(), &1), Some(0));",
+          "    assert_eq!(self_map.get_index_of(2.hash(), &2), Some(1));",
+          "    assert_eq!(other_map.len(), 0);",
+          "    assert!(other_map.indices.is_empty());",
+          "    assert!(other_map.entries.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut self_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(10);",
+          "    let mut other_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(5);",
+          "    ",
+          "    // Assuming entries added to other_map here somehow",
+          "    other_map.entries.push(Bucket { hash: HashValue::new(1), key: 1, value: 10 });",
+          "    ",
+          "    self_map.append_unchecked(&mut other_map);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(self_map.len(), 1);",
+          "    assert_eq!(self_map.entries[0].key, 1);",
+          "    assert_eq!(self_map.entries[0].value, 10);",
+          "    assert_eq!(other_map.len(), 0);",
+          "    assert!(other_map.indices.is_empty());",
+          "    assert!(other_map.entries.is_empty());",
+          "    assert_eq!(self_map.capacity(), 10);",
+          "    assert_eq!(self_map.indices.len(), 1);"
+        ],
+        "code": [
+          "{",
+          "    let mut self_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(10);",
+          "    let mut other_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(5);",
+          "    ",
+          "    // Assuming entries added to other_map here somehow",
+          "    other_map.entries.push(Bucket { hash: HashValue::new(1), key: 1, value: 10 });",
+          "    ",
+          "    self_map.append_unchecked(&mut other_map);",
+          "    assert_eq!(self_map.len(), 1);",
+          "    assert_eq!(self_map.entries[0].key, 1);",
+          "    assert_eq!(self_map.entries[0].value, 10);",
+          "    assert_eq!(other_map.len(), 0);",
+          "    assert!(other_map.indices.is_empty());",
+          "    assert!(other_map.entries.is_empty());",
+          "    assert_eq!(self_map.capacity(), 10);",
+          "    assert_eq!(self_map.indices.len(), 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut self_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(20);",
+          "    let mut other_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(15);",
+          "    ",
+          "    // Fill other_map with MAX_ENTRIES_CAPACITY - 1 entries",
+          "    for i in 0..14 {",
+          "        other_map.entries.push(Bucket { hash: HashValue::new(i as u64), key: i, value: i * 10 });",
+          "    }",
+          "    ",
+          "    self_map.append_unchecked(&mut other_map);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(self_map.len(), 14);",
+          "    assert_eq!(other_map.len(), 0);",
+          "    assert_eq!(self_map.entries.len(), 14);",
+          "    for i in 0..14 {",
+          "    let entry = &self_map.entries[i];",
+          "    assert_eq!(entry.key, i);",
+          "    assert_eq!(entry.value, i * 10);",
+          "    }",
+          "    assert_eq!(self_map.indices.len(), 14);",
+          "    assert!(other_map.indices.is_empty());",
+          "    assert!(self_map.capacity() >= 14);"
+        ],
+        "code": [
+          "{",
+          "    let mut self_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(20);",
+          "    let mut other_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(15);",
+          "    ",
+          "    // Fill other_map with MAX_ENTRIES_CAPACITY - 1 entries",
+          "    for i in 0..14 {",
+          "        other_map.entries.push(Bucket { hash: HashValue::new(i as u64), key: i, value: i * 10 });",
+          "    }",
+          "    ",
+          "    self_map.append_unchecked(&mut other_map);",
+          "    assert_eq!(self_map.len(), 14);",
+          "    assert_eq!(other_map.len(), 0);",
+          "    assert_eq!(self_map.entries.len(), 14);",
+          "    for i in 0..14 {",
+          "    let entry = &self_map.entries[i];",
+          "    assert_eq!(entry.key, i);",
+          "    assert_eq!(entry.value, i * 10);",
+          "    }",
+          "    assert_eq!(self_map.indices.len(), 14);",
+          "    assert!(other_map.indices.is_empty());",
+          "    assert!(self_map.capacity() >= 14);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut self_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(5);",
+          "    let mut other_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(10);",
+          "    ",
+          "    // Fill other_map with 10 entries, which exceeds self_map capacity",
+          "    for i in 0..10 {",
+          "        other_map.entries.push(Bucket { hash: HashValue::new(i as u64), key: i, value: i * 5 });",
+          "    }",
+          "    ",
+          "    self_map.append_unchecked(&mut other_map);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(self_map.len(), 0);",
+          "    assert!(other_map.len() == 0);",
+          "    assert!(other_map.indices.len() == 0);",
+          "    self_map.reserve(5);",
+          "    assert!(self_map.capacity() >= 5);",
+          "    assert!(self_map.entries.len() == 0);",
+          "    assert!(self_map.indices.len() == 0);",
+          "    assert!(other_map.entries.len() == 10);",
+          "    for i in 0..10 {",
+          "    assert_eq!(other_map.entries[i].key, i);",
+          "    assert_eq!(other_map.entries[i].value, i * 5);",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let mut self_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(5);",
+          "    let mut other_map: IndexMapCore<usize, usize> = IndexMapCore::with_capacity(10);",
+          "    ",
+          "    // Fill other_map with 10 entries, which exceeds self_map capacity",
+          "    for i in 0..10 {",
+          "        other_map.entries.push(Bucket { hash: HashValue::new(i as u64), key: i, value: i * 5 });",
+          "    }",
+          "    ",
+          "    self_map.append_unchecked(&mut other_map);",
+          "    assert_eq!(self_map.len(), 0);",
+          "    assert!(other_map.len() == 0);",
+          "    assert!(other_map.indices.len() == 0);",
+          "    self_map.reserve(5);",
+          "    assert!(self_map.capacity() >= 5);",
+          "    assert!(self_map.entries.len() == 0);",
+          "    assert!(self_map.indices.len() == 0);",
+          "    assert!(other_map.entries.len() == 10);",
+          "    for i in 0..10 {",
+          "    assert_eq!(other_map.entries[i].key, i);",
+          "    assert_eq!(other_map.entries[i].value, i * 5);",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

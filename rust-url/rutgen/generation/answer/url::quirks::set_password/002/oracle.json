@@ -1,0 +1,166 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    set_password(&mut url, \"newpass\").unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    result = set_password(&mut url, \"newpass\");",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(url.password(), Some(\"newpass\"));"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    set_password(&mut url, \"newpass\").unwrap();",
+          "    url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    result = set_password(&mut url, \"newpass\");",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(url.password(), Some(\"newpass\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    let long_password = \"a\".repeat(256);",
+          "    set_password(&mut url, &long_password).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(url.password(), Some(\"oldpassword\"));",
+          "    assert_eq!(url.username(), \"user\");",
+          "    assert_eq!(url.host_str(), Some(\"localhost\"));",
+          "    assert!(url.set_password(\"newpassword\").is_ok());",
+          "    assert_eq!(url.password(), Some(\"newpassword\"));",
+          "    assert_eq!(url.serialization.contains(\":newpassword@\"), true);",
+          "    assert!(url.set_password(\"\").is_ok());",
+          "    assert_eq!(url.password(), None);",
+          "    assert!(!url.serialization.contains(\":@\"));"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    let long_password = \"a\".repeat(256);",
+          "    set_password(&mut url, &long_password).unwrap();",
+          "    assert_eq!(url.password(), Some(\"oldpassword\"));",
+          "    assert_eq!(url.username(), \"user\");",
+          "    assert_eq!(url.host_str(), Some(\"localhost\"));",
+          "    assert!(url.set_password(\"newpassword\").is_ok());",
+          "    assert_eq!(url.password(), Some(\"newpassword\"));",
+          "    assert_eq!(url.serialization.contains(\":newpassword@\"), true);",
+          "    assert!(url.set_password(\"\").is_ok());",
+          "    assert_eq!(url.password(), None);",
+          "    assert!(!url.serialization.contains(\":@\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    set_password(&mut url, \"!@#%^&*()\").unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(url.password(), Some(\"!@#%^&*()\"));",
+          "    assert_eq!(url.username(), \"user\");",
+          "    assert_eq!(url.host_str(), Some(\"localhost\"));",
+          "    assert!(url.has_host());"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    set_password(&mut url, \"!@#%^&*()\").unwrap();",
+          "    assert_eq!(url.password(), Some(\"!@#%^&*()\"));",
+          "    assert_eq!(url.username(), \"user\");",
+          "    assert_eq!(url.host_str(), Some(\"localhost\"));",
+          "    assert!(url.has_host());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    set_password(&mut url, \"    \").unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(url.password(), Some(\"    \"));",
+          "    assert_eq!(url.username(), \"user\");",
+          "    assert_eq!(url.host_str(), Some(\"localhost\"));",
+          "    assert!(url.has_host());",
+          "    assert!(url.has_authority());"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    set_password(&mut url, \"    \").unwrap();",
+          "    assert_eq!(url.password(), Some(\"    \"));",
+          "    assert_eq!(url.username(), \"user\");",
+          "    assert_eq!(url.host_str(), Some(\"localhost\"));",
+          "    assert!(url.has_host());",
+          "    assert!(url.has_authority());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    set_password(&mut url, \"Password123!\").unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(url.password(), Some(\"Password123!\"));",
+          "    assert_eq!(url.serialization.contains(\":Password123!\"), true);",
+          "    assert_eq!(url.serialization.contains(\"user:Password123!@localhost\"), true);",
+          "    assert_eq!(url.host_str(), Some(\"localhost\"));",
+          "    assert_eq!(url.scheme(), \"http\");",
+          "    assert!(url.has_host());",
+          "    assert!(url.has_authority());",
+          "    assert!(url.check_invariants().is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:oldpassword@localhost\").unwrap();",
+          "    set_password(&mut url, \"Password123!\").unwrap();",
+          "    assert_eq!(url.password(), Some(\"Password123!\"));",
+          "    assert_eq!(url.serialization.contains(\":Password123!\"), true);",
+          "    assert_eq!(url.serialization.contains(\"user:Password123!@localhost\"), true);",
+          "    assert_eq!(url.host_str(), Some(\"localhost\"));",
+          "    assert_eq!(url.scheme(), \"http\");",
+          "    assert!(url.has_host());",
+          "    assert!(url.has_authority());",
+          "    assert!(url.check_invariants().is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

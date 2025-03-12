@@ -1,0 +1,208 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[];",
+          "    let result = ByteSet::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(matches!(result, Err(_)));",
+          "    assert_eq!(result.unwrap_err().kind(), DeserializeErrorKind::BufferTooSmall);",
+          "    assert_eq!(result.unwrap_err().what(), \"byte set\");"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[];",
+          "    let result = ByteSet::from_bytes(slice);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(matches!(result, Err(_)));",
+          "    assert_eq!(result.unwrap_err().kind(), DeserializeErrorKind::BufferTooSmall);",
+          "    assert_eq!(result.unwrap_err().what(), \"byte set\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0; 15];",
+          "    let result = ByteSet::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, \"buffer_too_small\");",
+          "    assert!(result.is_err());",
+          "    assert!(slice.len() < 2 * std::mem::size_of::<u128>());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0; 15];",
+          "    let result = ByteSet::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, \"buffer_too_small\");",
+          "    assert!(result.is_err());",
+          "    assert!(slice.len() < 2 * std::mem::size_of::<u128>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[",
+          "        0, 0, 0, 0, 0, 0, 0, 0, // low u128",
+          "        0, 0, 0, 0, 0, 0, 0, 0, // high u128",
+          "    ];",
+          "    let result = ByteSet::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok((ByteSet { bits: BitSet([0, 0]) }, 16)));",
+          "    assert_eq!(result.map(|(_, n)| n), Ok(16));",
+          "    assert!(result.is_ok());",
+          "    assert!(result.unwrap().0.is_empty());",
+          "    assert!(slice.len() >= 16);",
+          "    assert!(slice.len() < 32);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[",
+          "        0, 0, 0, 0, 0, 0, 0, 0, // low u128",
+          "        0, 0, 0, 0, 0, 0, 0, 0, // high u128",
+          "    ];",
+          "    let result = ByteSet::from_bytes(slice);",
+          "    assert_eq!(result, Ok((ByteSet { bits: BitSet([0, 0]) }, 16)));",
+          "    assert_eq!(result.map(|(_, n)| n), Ok(16));",
+          "    assert!(result.is_ok());",
+          "    assert!(result.unwrap().0.is_empty());",
+          "    assert!(slice.len() >= 16);",
+          "    assert!(slice.len() < 32);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[",
+          "        0, 0, 0, 0, 0, 0, 0, 0, // low u128",
+          "        0, 0, 0, 0, 0, 0, 0, 0, // high u128",
+          "        1, 2, 3, 4 // additional bytes",
+          "    ];",
+          "    let result = ByteSet::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    plaintext",
+          "    // Test case for valid slice length: expecting Ok((ByteSet, 16))",
+          "    let slice_valid: &[u8] = &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];",
+          "    assert_eq!(ByteSet::from_bytes(slice_valid), Ok((ByteSet { bits: BitSet([0, 0])}, 16)));",
+          "    ",
+          "    // Test case for slice length too short: expecting Err",
+          "    let slice_too_short: &[u8] = &[0, 0, 0, 0, 0, 0, 0, 0];",
+          "    assert!(ByteSet::from_bytes(slice_too_short).is_err());",
+          "    ",
+          "    // Test case for slice length too long: expecting Ok with bytes read",
+          "    let slice_too_long: &[u8] = &[",
+          "    0, 0, 0, 0, 0, 0, 0, 0, // low u128",
+          "    0, 0, 0, 0, 0, 0, 0, 0, // high u128",
+          "    1, 2, 3, 4, 5, 6, 7, 8 // extra bytes",
+          "    ];",
+          "    let result = ByteSet::from_bytes(slice_too_long);",
+          "    assert_eq!(result, Ok((ByteSet { bits: BitSet([0, 0])}, 16)));",
+          "    ",
+          "    // Test case for invalid data: slice shorter than u128*2 with no bytes",
+          "    let slice_invalid: &[u8] = &[];",
+          "    assert!(ByteSet::from_bytes(slice_invalid).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[",
+          "        0, 0, 0, 0, 0, 0, 0, 0, // low u128",
+          "        0, 0, 0, 0, 0, 0, 0, 0, // high u128",
+          "        1, 2, 3, 4 // additional bytes",
+          "    ];",
+          "    let result = ByteSet::from_bytes(slice);",
+          "    plaintext",
+          "    // Test case for valid slice length: expecting Ok((ByteSet, 16))",
+          "    let slice_valid: &[u8] = &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];",
+          "    assert_eq!(ByteSet::from_bytes(slice_valid), Ok((ByteSet { bits: BitSet([0, 0])}, 16)));",
+          "    ",
+          "    // Test case for slice length too short: expecting Err",
+          "    let slice_too_short: &[u8] = &[0, 0, 0, 0, 0, 0, 0, 0];",
+          "    assert!(ByteSet::from_bytes(slice_too_short).is_err());",
+          "    ",
+          "    // Test case for slice length too long: expecting Ok with bytes read",
+          "    let slice_too_long: &[u8] = &[",
+          "    0, 0, 0, 0, 0, 0, 0, 0, // low u128",
+          "    0, 0, 0, 0, 0, 0, 0, 0, // high u128",
+          "    1, 2, 3, 4, 5, 6, 7, 8 // extra bytes",
+          "    ];",
+          "    let result = ByteSet::from_bytes(slice_too_long);",
+          "    assert_eq!(result, Ok((ByteSet { bits: BitSet([0, 0])}, 16)));",
+          "    ",
+          "    // Test case for invalid data: slice shorter than u128*2 with no bytes",
+          "    let slice_invalid: &[u8] = &[];",
+          "    assert!(ByteSet::from_bytes(slice_invalid).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[",
+          "        255, 255, 255, 255, 255, 255, 255, 255, // low u128",
+          "        255, 255, 255, 255, 255, 255, 255, 255, // high u128",
+          "    ];",
+          "    let result = ByteSet::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok((ByteSet { bits: BitSet([u128::MAX, u128::MAX]) }, 16)));",
+          "    let short_slice: &[u8] = &[0; 15];",
+          "    let result_short = ByteSet::from_bytes(short_slice);",
+          "    assert!(result_short.is_err());",
+          "    let empty_slice: &[u8] = &[];",
+          "    let result_empty = ByteSet::from_bytes(empty_slice);",
+          "    assert!(result_empty.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[",
+          "        255, 255, 255, 255, 255, 255, 255, 255, // low u128",
+          "        255, 255, 255, 255, 255, 255, 255, 255, // high u128",
+          "    ];",
+          "    let result = ByteSet::from_bytes(slice);",
+          "    assert_eq!(result, Ok((ByteSet { bits: BitSet([u128::MAX, u128::MAX]) }, 16)));",
+          "    let short_slice: &[u8] = &[0; 15];",
+          "    let result_short = ByteSet::from_bytes(short_slice);",
+          "    assert!(result_short.is_err());",
+          "    let empty_slice: &[u8] = &[];",
+          "    let result_empty = ByteSet::from_bytes(empty_slice);",
+          "    assert!(result_empty.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

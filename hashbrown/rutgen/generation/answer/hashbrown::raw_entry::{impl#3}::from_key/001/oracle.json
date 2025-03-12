@@ -1,0 +1,206 @@
+[
+  {
+    "uses": [
+      "use hashbrown::hash_map::RawEntryMut;",
+      "use std::collections::hash_map::RandomState;",
+      "use hashbrown::hash_map::HashMap;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::RandomState; // Example BuildHasher",
+          "",
+          "    let mut map: HashMap<&str, u32, RandomState> = HashMap::new();",
+          "    map.insert(\"a\", 50);",
+          "",
+          "    let key = \"a\";",
+          "    let entry: RawEntryMut<&str, u32, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    // The entry should be occupied since we inserted \"a\" previously",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(entry, RawEntryMut::Occupied(_)));",
+          "    assert_eq!(entry.get(), Some(&50));",
+          "    assert_eq!(map.len(), 1);"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::RandomState; // Example BuildHasher",
+          "",
+          "    let mut map: HashMap<&str, u32, RandomState> = HashMap::new();",
+          "    map.insert(\"a\", 50);",
+          "",
+          "    let key = \"a\";",
+          "    let entry: RawEntryMut<&str, u32, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    // The entry should be occupied since we inserted \"a\" previously",
+          "    assert!(matches!(entry, RawEntryMut::Occupied(_)));",
+          "    assert_eq!(entry.get(), Some(&50));",
+          "    assert_eq!(map.len(), 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut map: HashMap<&str, u32, RandomState> = HashMap::new();",
+          "",
+          "    let key = \"b\";",
+          "    let entry: RawEntryMut<&str, u32, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    // The entry should be vacant since \"b\" has not been inserted",
+          "}"
+        ],
+        "oracle": [
+          "    let entry: RawEntryMut<&str, u32, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    assert!(matches!(entry, RawEntryMut::Vacant(_)));",
+          "    let entry: RawEntryMut<&str, u32, RandomState> = map.raw_entry_mut().from_key(&\"a\");",
+          "    assert!(matches!(entry, RawEntryMut::Vacant(_)));",
+          "    let entry: RawEntryMut<&str, u32, RandomState> = map.raw_entry_mut().from_key(&\"b\");",
+          "    assert!(matches!(entry, RawEntryMut::Vacant(_)));"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut map: HashMap<&str, u32, RandomState> = HashMap::new();",
+          "",
+          "    let key = \"b\";",
+          "    let entry: RawEntryMut<&str, u32, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    // The entry should be vacant since \"b\" has not been inserted",
+          "    let entry: RawEntryMut<&str, u32, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    assert!(matches!(entry, RawEntryMut::Vacant(_)));",
+          "    let entry: RawEntryMut<&str, u32, RandomState> = map.raw_entry_mut().from_key(&\"a\");",
+          "    assert!(matches!(entry, RawEntryMut::Vacant(_)));",
+          "    let entry: RawEntryMut<&str, u32, RandomState> = map.raw_entry_mut().from_key(&\"b\");",
+          "    assert!(matches!(entry, RawEntryMut::Vacant(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut map: HashMap<String, u32, RandomState> = HashMap::new();",
+          "    map.insert(\"\".to_string(), 75);",
+          "",
+          "    let key = \"\";",
+          "    let entry: RawEntryMut<String, u32, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    // The entry should be occupied for the empty string key",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(entry, RawEntryMut::Occupied(_)));"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut map: HashMap<String, u32, RandomState> = HashMap::new();",
+          "    map.insert(\"\".to_string(), 75);",
+          "",
+          "    let key = \"\";",
+          "    let entry: RawEntryMut<String, u32, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    // The entry should be occupied for the empty string key",
+          "    assert!(matches!(entry, RawEntryMut::Occupied(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut map: HashMap<i32, i32, RandomState> = HashMap::new();",
+          "    for i in 0..1000 {",
+          "        map.insert(i, i * 2);",
+          "    }",
+          "",
+          "    let key = 999;",
+          "    let entry: RawEntryMut<i32, i32, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    // The entry should be occupied since we inserted the key 999 previously",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(entry, RawEntryMut::Occupied(_)));",
+          "    assert_eq!(map[&key], 1998);"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut map: HashMap<i32, i32, RandomState> = HashMap::new();",
+          "    for i in 0..1000 {",
+          "        map.insert(i, i * 2);",
+          "    }",
+          "",
+          "    let key = 999;",
+          "    let entry: RawEntryMut<i32, i32, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    // The entry should be occupied since we inserted the key 999 previously",
+          "    assert!(matches!(entry, RawEntryMut::Occupied(_)));",
+          "    assert_eq!(map[&key], 1998);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut map: HashMap<i32, String, RandomState> = HashMap::new();",
+          "    map.insert(1, \"one\".to_string());",
+          "",
+          "    let key = 1;",
+          "    let entry: RawEntryMut<i32, String, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    // The entry should be occupied for the key 1",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(entry, RawEntryMut::Occupied(_)));"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_map::{HashMap, RawEntryMut};",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut map: HashMap<i32, String, RandomState> = HashMap::new();",
+          "    map.insert(1, \"one\".to_string());",
+          "",
+          "    let key = 1;",
+          "    let entry: RawEntryMut<i32, String, RandomState> = map.raw_entry_mut().from_key(&key);",
+          "    // The entry should be occupied for the key 1",
+          "    assert!(matches!(entry, RawEntryMut::Occupied(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

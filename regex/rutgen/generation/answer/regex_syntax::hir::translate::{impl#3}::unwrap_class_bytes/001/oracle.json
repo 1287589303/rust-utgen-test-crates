@@ -1,0 +1,243 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let frame = HirFrame::Expr(Hir { kind: HirKind::default(), props: Properties::default() });",
+          "    frame.unwrap_class_bytes();",
+          "}"
+        ],
+        "oracle": [
+          "    panic!(\"tried to unwrap byte class from HirFrame, got: {:?}\", frame);"
+        ],
+        "code": [
+          "{",
+          "    let frame = HirFrame::Expr(Hir { kind: HirKind::default(), props: Properties::default() });",
+          "    frame.unwrap_class_bytes();",
+          "    panic!(\"tried to unwrap byte class from HirFrame, got: {:?}\", frame);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let frame = HirFrame::Literal(vec![1, 2, 3]);",
+          "    frame.unwrap_class_bytes();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(panic::catch_unwind(|| {",
+          "    let frame = HirFrame::Literal(vec![1, 2, 3]);",
+          "    frame.unwrap_class_bytes();",
+          "    }).is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    let frame = HirFrame::Literal(vec![1, 2, 3]);",
+          "    frame.unwrap_class_bytes();",
+          "    assert_eq!(panic::catch_unwind(|| {",
+          "    let frame = HirFrame::Literal(vec![1, 2, 3]);",
+          "    frame.unwrap_class_bytes();",
+          "    }).is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let unicode_class = ClassUnicode { span: Span::default(), negated: false, kind: ClassUnicodeKind::default() };",
+          "    let frame = HirFrame::ClassUnicode(unicode_class);",
+          "    frame.unwrap_class_bytes();",
+          "}"
+        ],
+        "oracle": [
+          "    frame.unwrap_class_bytes(); // Expect panic with message \"tried to unwrap byte class from HirFrame, got: ClassUnicode(...)\"",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Expr(Hir::default())",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Literal(vec![b'a'])",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Repetition",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Group { old_flags: Flags::default() }",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Concat",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Alternation",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::AlternationBranch"
+        ],
+        "code": [
+          "{",
+          "    let unicode_class = ClassUnicode { span: Span::default(), negated: false, kind: ClassUnicodeKind::default() };",
+          "    let frame = HirFrame::ClassUnicode(unicode_class);",
+          "    frame.unwrap_class_bytes();",
+          "    frame.unwrap_class_bytes(); // Expect panic with message \"tried to unwrap byte class from HirFrame, got: ClassUnicode(...)\"",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Expr(Hir::default())",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Literal(vec![b'a'])",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Repetition",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Group { old_flags: Flags::default() }",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Concat",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::Alternation",
+          "    ",
+          "    frame.unwrap_class_bytes(); // Test with HirFrame::AlternationBranch",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let frame = HirFrame::Repetition;",
+          "    frame.unwrap_class_bytes();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let frame = HirFrame::Repetition;",
+          "    frame.unwrap_class_bytes();",
+          "    }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let frame = HirFrame::Repetition;",
+          "    frame.unwrap_class_bytes();",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let frame = HirFrame::Repetition;",
+          "    frame.unwrap_class_bytes();",
+          "    }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let flags = Flags::default();",
+          "    let frame = HirFrame::Group { old_flags: flags };",
+          "    frame.unwrap_class_bytes();",
+          "}"
+        ],
+        "oracle": [
+          "    let frame = HirFrame::Group { old_flags: Flags::default() };",
+          "    assert!(std::panic::catch_unwind(|| frame.unwrap_class_bytes()).is_err());",
+          "    let frame_non_class_bytes = HirFrame::Expr(Hir { kind: HirKind::Literal, props: Properties::default() });",
+          "    assert!(std::panic::catch_unwind(|| frame_non_class_bytes.unwrap_class_bytes()).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let flags = Flags::default();",
+          "    let frame = HirFrame::Group { old_flags: flags };",
+          "    frame.unwrap_class_bytes();",
+          "    let frame = HirFrame::Group { old_flags: Flags::default() };",
+          "    assert!(std::panic::catch_unwind(|| frame.unwrap_class_bytes()).is_err());",
+          "    let frame_non_class_bytes = HirFrame::Expr(Hir { kind: HirKind::Literal, props: Properties::default() });",
+          "    assert!(std::panic::catch_unwind(|| frame_non_class_bytes.unwrap_class_bytes()).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let frame = HirFrame::Concat;",
+          "    frame.unwrap_class_bytes();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let frame = HirFrame::Concat;",
+          "    frame.unwrap_class_bytes();",
+          "    }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let frame = HirFrame::Concat;",
+          "    frame.unwrap_class_bytes();",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let frame = HirFrame::Concat;",
+          "    frame.unwrap_class_bytes();",
+          "    }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let frame = HirFrame::Alternation;",
+          "    frame.unwrap_class_bytes();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(std::panic::catch_unwind(|| {",
+          "    let frame = HirFrame::Alternation;",
+          "    frame.unwrap_class_bytes();",
+          "    }).is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    let frame = HirFrame::Alternation;",
+          "    frame.unwrap_class_bytes();",
+          "    assert_eq!(std::panic::catch_unwind(|| {",
+          "    let frame = HirFrame::Alternation;",
+          "    frame.unwrap_class_bytes();",
+          "    }).is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let frame = HirFrame::AlternationBranch;",
+          "    frame.unwrap_class_bytes();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(panic!(\"tried to unwrap byte class from HirFrame, got: {:?}\", frame), \"tried to unwrap byte class from HirFrame, got: AlternationBranch\");",
+          "    assert!(matches!(frame, HirFrame::AlternationBranch));",
+          "    assert!(!matches!(frame, HirFrame::ClassBytes(_)));"
+        ],
+        "code": [
+          "{",
+          "    let frame = HirFrame::AlternationBranch;",
+          "    frame.unwrap_class_bytes();",
+          "    assert_eq!(panic!(\"tried to unwrap byte class from HirFrame, got: {:?}\", frame), \"tried to unwrap byte class from HirFrame, got: AlternationBranch\");",
+          "    assert!(matches!(frame, HirFrame::AlternationBranch));",
+          "    assert!(!matches!(frame, HirFrame::ClassBytes(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

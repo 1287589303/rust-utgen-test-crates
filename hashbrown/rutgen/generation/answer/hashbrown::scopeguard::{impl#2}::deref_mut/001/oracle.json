@@ -1,0 +1,165 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut value = 42;",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |v: &mut i32| *v += 1,",
+          "        value,",
+          "    };",
+          "    let _ref: &mut i32 = guard.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut value = 42;",
+          "    let mut guard = ScopeGuard { dropfn: |v: &mut i32| *v += 1, value };",
+          "    let _ref: &mut i32 = guard.deref_mut();",
+          "    assert_eq!(*_ref, 42);"
+        ],
+        "code": [
+          "{",
+          "    let mut value = 42;",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |v: &mut i32| *v += 1,",
+          "        value,",
+          "    };",
+          "    let _ref: &mut i32 = guard.deref_mut();",
+          "    let mut value = 42;",
+          "    let mut guard = ScopeGuard { dropfn: |v: &mut i32| *v += 1, value };",
+          "    let _ref: &mut i32 = guard.deref_mut();",
+          "    assert_eq!(*_ref, 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut value = String::from(\"Hello\");",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |v: &mut String| v.push_str(\", World!\"),",
+          "        value,",
+          "    };",
+          "    let _ref: &mut String = guard.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut value = String::from(\"Hello\");",
+          "    let mut guard = ScopeGuard { dropfn: |v: &mut String| v.push_str(\", World!\"), value };",
+          "    let _ref: &mut String = guard.deref_mut();",
+          "    assert_eq!(_ref, &mut String::from(\"Hello\"));",
+          "    _ref.push_str(\", World!\");",
+          "    assert_eq!(&*guard.deref_mut(), &mut String::from(\"Hello, World!\"));"
+        ],
+        "code": [
+          "{",
+          "    let mut value = String::from(\"Hello\");",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |v: &mut String| v.push_str(\", World!\"),",
+          "        value,",
+          "    };",
+          "    let _ref: &mut String = guard.deref_mut();",
+          "    let mut value = String::from(\"Hello\");",
+          "    let mut guard = ScopeGuard { dropfn: |v: &mut String| v.push_str(\", World!\"), value };",
+          "    let _ref: &mut String = guard.deref_mut();",
+          "    assert_eq!(_ref, &mut String::from(\"Hello\"));",
+          "    _ref.push_str(\", World!\");",
+          "    assert_eq!(&*guard.deref_mut(), &mut String::from(\"Hello, World!\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct Custom {",
+          "        number: i32,",
+          "    }",
+          "    ",
+          "    let mut value = Custom { number: 10 };",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |v: &mut Custom| v.number += 5,",
+          "        value,",
+          "    };",
+          "    let _ref: &mut Custom = guard.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(guard.deref_mut().number, 10);",
+          "    assert!(std::ptr::eq(guard.deref_mut(), &mut guard.value));",
+          "    let ref_value: &mut Custom = guard.deref_mut();",
+          "    ref_value.number += 5;",
+          "    assert_eq!(guard.deref_mut().number, 15);"
+        ],
+        "code": [
+          "{",
+          "    struct Custom {",
+          "        number: i32,",
+          "    }",
+          "    ",
+          "    let mut value = Custom { number: 10 };",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |v: &mut Custom| v.number += 5,",
+          "        value,",
+          "    };",
+          "    let _ref: &mut Custom = guard.deref_mut();",
+          "    assert_eq!(guard.deref_mut().number, 10);",
+          "    assert!(std::ptr::eq(guard.deref_mut(), &mut guard.value));",
+          "    let ref_value: &mut Custom = guard.deref_mut();",
+          "    ref_value.number += 5;",
+          "    assert_eq!(guard.deref_mut().number, 15);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut value: Vec<i32> = Vec::new();",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |v: &mut Vec<i32>| v.push(1),",
+          "        value,",
+          "    };",
+          "    let _ref: &mut Vec<i32> = guard.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_ref.len(), 0);",
+          "    _ref.push(2);",
+          "    assert_eq!(_ref.len(), 1);",
+          "    assert_eq!(guard.value.len(), 1);",
+          "    assert_eq!(guard.value[0], 2);"
+        ],
+        "code": [
+          "{",
+          "    let mut value: Vec<i32> = Vec::new();",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |v: &mut Vec<i32>| v.push(1),",
+          "        value,",
+          "    };",
+          "    let _ref: &mut Vec<i32> = guard.deref_mut();",
+          "    assert_eq!(_ref.len(), 0);",
+          "    _ref.push(2);",
+          "    assert_eq!(_ref.len(), 1);",
+          "    assert_eq!(guard.value.len(), 1);",
+          "    assert_eq!(guard.value[0], 2);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

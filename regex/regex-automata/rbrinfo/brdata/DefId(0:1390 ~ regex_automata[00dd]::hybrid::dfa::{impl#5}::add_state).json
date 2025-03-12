@@ -1,0 +1,1630 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#5}::add_state",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/hybrid/dfa.rs:2273:5:2311:6",
+  "doc": "/// Allocate a new state ID and add the given state to this cache.\n///\n/// The idmap function given may be used to transform the identifier\n/// allocated. This is useful if the caller needs to tag the ID with\n/// additional information.\n///\n/// This will never return an unknown lazy state ID.\n///\n/// If caching this state would otherwise result in a cache that has been\n/// cleared too many times, then an error is returned.\n",
+  "code": [
+    "fn add_state(",
+    "    &mut self,",
+    "    state: State,",
+    "    idmap: impl Fn(LazyStateID) -> LazyStateID,",
+    ") -> Result<LazyStateID, CacheError> {",
+    "    if !self.as_ref().state_fits_in_cache(&state) {",
+    "        self.try_clear_cache()?;",
+    "    }",
+    "    // It's important for this to come second, since the above may clear",
+    "    // the cache. If we clear the cache after ID generation, then the ID",
+    "    // is likely bunk since it would have been generated based on a larger",
+    "    // transition table.",
+    "    let mut id = idmap(self.next_state_id()?);",
+    "    if state.is_match() {",
+    "        id = id.to_match();",
+    "    }",
+    "    // Add room in the transition table. Since this is a fresh state, all",
+    "    // of its transitions are unknown.",
+    "    self.cache.trans.extend(",
+    "        iter::repeat(self.as_ref().unknown_id()).take(self.dfa.stride()),",
+    "    );",
+    "    // When we add a sentinel state, we never want to set any quit",
+    "    // transitions. Technically, this is harmless, since sentinel states",
+    "    // have all of their transitions set to loop back to themselves. But",
+    "    // when creating sentinel states before the quit sentinel state,",
+    "    // this will try to call 'set_transition' on a state ID that doesn't",
+    "    // actually exist yet, which isn't allowed. So we just skip doing so",
+    "    // entirely.",
+    "    if !self.dfa.quitset.is_empty() && !self.as_ref().is_sentinel(id) {",
+    "        let quit_id = self.as_ref().quit_id();",
+    "        for b in self.dfa.quitset.iter() {",
+    "            self.set_transition(id, alphabet::Unit::u8(b), quit_id);",
+    "        }",
+    "    }",
+    "    self.cache.memory_usage_state += state.memory_usage();",
+    "    self.cache.states.push(state.clone());",
+    "    self.cache.states_to_id.insert(state, id);",
+    "    Ok(id)",
+    "}"
+  ],
+  "size": {
+    "chain": 19,
+    "contra": 4,
+    "min_set": 6
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "true",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 2285,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        13,
+        14,
+        16,
+        18,
+        19,
+        60,
+        61,
+        62
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "true",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 2301,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "true",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "true",
+          "line": 2301,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        37,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "true",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "true",
+          "line": 2303,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 2303,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        48,
+        50,
+        51,
+        43,
+        44,
+        45,
+        47,
+        49,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "true",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 2303,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        47,
+        49,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "true",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 2301,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "true",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "true",
+          "line": 2301,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        37,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "true",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "true",
+          "line": 2303,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 2303,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        48,
+        50,
+        51,
+        43,
+        44,
+        45,
+        47,
+        49,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "true",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 2303,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        47,
+        49,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "false",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.try_clear_cache()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 2279,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        8,
+        10,
+        11,
+        60,
+        61,
+        62
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "false",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.try_clear_cache()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2279,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 2285,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        16,
+        18,
+        19,
+        60,
+        61,
+        62
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "false",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.try_clear_cache()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2279,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 2301,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "false",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.try_clear_cache()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2279,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "true",
+          "line": 2301,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        37,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "false",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.try_clear_cache()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2279,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "true",
+          "line": 2303,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 2303,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        48,
+        50,
+        51,
+        43,
+        44,
+        45,
+        47,
+        49,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "false",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.try_clear_cache()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2279,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 2303,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        47,
+        49,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "false",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.try_clear_cache()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2279,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 2301,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "false",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.try_clear_cache()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2279,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "true",
+          "line": 2301,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        37,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "false",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.try_clear_cache()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2279,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "true",
+          "line": 2303,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 2303,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        48,
+        50,
+        51,
+        43,
+        44,
+        45,
+        47,
+        49,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "self.as_ref().state_fits_in_cache(&state)",
+          "norm": null,
+          "value": "false",
+          "line": 2278,
+          "bound": null
+        },
+        {
+          "cond": "self.try_clear_cache()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2279,
+          "bound": null
+        },
+        {
+          "cond": "self.next_state_id()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2285,
+          "bound": null
+        },
+        {
+          "cond": "state.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 2286,
+          "bound": null
+        },
+        {
+          "cond": "self.dfa.quitset.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "self.as_ref().is_sentinel(id)",
+          "norm": null,
+          "value": "false",
+          "line": 2301,
+          "bound": null
+        },
+        {
+          "cond": "b in self.dfa.quitset.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 2303,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        14,
+        17,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        47,
+        49,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        62
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

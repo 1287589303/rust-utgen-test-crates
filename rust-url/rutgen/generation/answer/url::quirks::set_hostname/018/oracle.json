@@ -1,0 +1,189 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap();",
+          "    assert!(url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is true",
+          "    let result = set_hostname(&mut url, \"new-hostname.com\");",
+          "    // Expected outcome: Ok(())",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(!url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is false",
+          "    url.set_scheme(\"http\").unwrap(); // Change scheme to ensure scheme_type is not File",
+          "    let result = set_hostname(&mut url, \"valid-hostname.com\");",
+          "    assert_eq!(result, Ok(())); // Expected return value/type: Ok(())",
+          "    ",
+          "    let result = set_hostname(&mut url, \"\"); // Test with empty hostname",
+          "    assert!(result.is_err()); // Expected outcome: Err",
+          "    ",
+          "    let result = set_hostname(&mut url, \"new-hostname.com\"); // Valid hostname",
+          "    assert_eq!(result, Ok(())); // Expected return value/type: Ok(())",
+          "    ",
+          "    let result = set_hostname(&mut url, \"host:with:port\"); // Test with invalid format",
+          "    assert!(result.is_err()); // Expected outcome: Err",
+          "    ",
+          "    let result = set_hostname(&mut url, \"host.domain\"); // Test with a valid domain",
+          "    assert_eq!(result, Ok(())); // Expected return value/type: Ok(())",
+          "    ",
+          "    url.set_username(\"user\").unwrap(); // Add a username to check for username condition",
+          "    let result = set_hostname(&mut url, \"\"); // Test with empty hostname again",
+          "    assert!(result.is_err()); // Expected outcome: Err",
+          "    ",
+          "    url.set_password(\"pass\").unwrap(); // Add a password to check for password condition",
+          "    let result = set_hostname(&mut url, \"\"); // Test with empty hostname again",
+          "    assert!(result.is_err()); // Expected outcome: Err",
+          "    ",
+          "    url.set_host_internal(Host::Domain(String::new()), None).unwrap(); // Set empty host directly",
+          "    let result = set_hostname(&mut url, \"new-hostname.com\"); // Test setting valid hostname after having empty host",
+          "    assert_eq!(result, Ok(())); // Expected return value/type: Ok(())"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap();",
+          "    assert!(url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is true",
+          "    let result = set_hostname(&mut url, \"new-hostname.com\");",
+          "    // Expected outcome: Ok(())",
+          "    assert!(!url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is false",
+          "    url.set_scheme(\"http\").unwrap(); // Change scheme to ensure scheme_type is not File",
+          "    let result = set_hostname(&mut url, \"valid-hostname.com\");",
+          "    assert_eq!(result, Ok(())); // Expected return value/type: Ok(())",
+          "    ",
+          "    let result = set_hostname(&mut url, \"\"); // Test with empty hostname",
+          "    assert!(result.is_err()); // Expected outcome: Err",
+          "    ",
+          "    let result = set_hostname(&mut url, \"new-hostname.com\"); // Valid hostname",
+          "    assert_eq!(result, Ok(())); // Expected return value/type: Ok(())",
+          "    ",
+          "    let result = set_hostname(&mut url, \"host:with:port\"); // Test with invalid format",
+          "    assert!(result.is_err()); // Expected outcome: Err",
+          "    ",
+          "    let result = set_hostname(&mut url, \"host.domain\"); // Test with a valid domain",
+          "    assert_eq!(result, Ok(())); // Expected return value/type: Ok(())",
+          "    ",
+          "    url.set_username(\"user\").unwrap(); // Add a username to check for username condition",
+          "    let result = set_hostname(&mut url, \"\"); // Test with empty hostname again",
+          "    assert!(result.is_err()); // Expected outcome: Err",
+          "    ",
+          "    url.set_password(\"pass\").unwrap(); // Add a password to check for password condition",
+          "    let result = set_hostname(&mut url, \"\"); // Test with empty hostname again",
+          "    assert!(result.is_err()); // Expected outcome: Err",
+          "    ",
+          "    url.set_host_internal(Host::Domain(String::new()), None).unwrap(); // Set empty host directly",
+          "    let result = set_hostname(&mut url, \"new-hostname.com\"); // Test setting valid hostname after having empty host",
+          "    assert_eq!(result, Ok(())); // Expected return value/type: Ok(())",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"file:///path\").unwrap();",
+          "    assert_eq!(SchemeType::from(url.scheme()), SchemeType::File); // Precondition: scheme_type is SchemeType::File",
+          "    let result = set_hostname(&mut url, \"another-host.com\");",
+          "    // Expected outcome: Ok(())",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(url.cannot_be_a_base(), false); // Precondition: url.cannot_be_a_base() at line 204 is false",
+          "    assert_eq!(SchemeType::from(url.scheme()), SchemeType::File); // Precondition: scheme_type == SchemeType::File at line 210 is false",
+          "    assert!(Parser::parse_host(Input::new_no_trim(\"another-host.com\"), SchemeType::from(url.scheme())).is_ok()); // Precondition: let Ok((host, _remaining)) = Parser::parse_host(input, scheme_type) at line 215 is false",
+          "    let host_result = Parser::parse_host(Input::new_no_trim(\"another-host.com\"), SchemeType::from(url.scheme()));",
+          "    if let Ok((host, _)) = host_result {",
+          "    assert!(matches!(host, Host::Domain(h) if !h.is_empty())); // Precondition: let Host::Domain(h) = &host at line 216 is false",
+          "    assert_eq!(h.is_empty(), false); // Precondition: h.is_empty() at line 217 is false",
+          "    }",
+          "    assert_eq!(result, Ok(())); // Expected outcome: Ok(())"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"file:///path\").unwrap();",
+          "    assert_eq!(SchemeType::from(url.scheme()), SchemeType::File); // Precondition: scheme_type is SchemeType::File",
+          "    let result = set_hostname(&mut url, \"another-host.com\");",
+          "    // Expected outcome: Ok(())",
+          "    assert_eq!(url.cannot_be_a_base(), false); // Precondition: url.cannot_be_a_base() at line 204 is false",
+          "    assert_eq!(SchemeType::from(url.scheme()), SchemeType::File); // Precondition: scheme_type == SchemeType::File at line 210 is false",
+          "    assert!(Parser::parse_host(Input::new_no_trim(\"another-host.com\"), SchemeType::from(url.scheme())).is_ok()); // Precondition: let Ok((host, _remaining)) = Parser::parse_host(input, scheme_type) at line 215 is false",
+          "    let host_result = Parser::parse_host(Input::new_no_trim(\"another-host.com\"), SchemeType::from(url.scheme()));",
+          "    if let Ok((host, _)) = host_result {",
+          "    assert!(matches!(host, Host::Domain(h) if !h.is_empty())); // Precondition: let Host::Domain(h) = &host at line 216 is false",
+          "    assert_eq!(h.is_empty(), false); // Precondition: h.is_empty() at line 217 is false",
+          "    }",
+          "    assert_eq!(result, Ok(())); // Expected outcome: Ok(())",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://valid.com\").unwrap();",
+          "    assert!(!url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is false",
+          "    let result = set_hostname(&mut url, \"invalid_host:port\"); // Invalid host",
+          "    // Expected outcome: Err(())",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(!url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is false",
+          "    assert_eq!(set_hostname(&mut url, \"invalid_host:port\"), Err(())); // Expected outcome: Err(())"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://valid.com\").unwrap();",
+          "    assert!(!url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is false",
+          "    let result = set_hostname(&mut url, \"invalid_host:port\"); // Invalid host",
+          "    // Expected outcome: Err(())",
+          "    assert!(!url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is false",
+          "    assert_eq!(set_hostname(&mut url, \"invalid_host:port\"), Err(())); // Expected outcome: Err(())",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://valid.com\").unwrap();",
+          "    assert!(!url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is false",
+          "    assert_eq!(SchemeType::from(url.scheme()), SchemeType::SpecialNotFile); // Precondition: a special URL",
+          "    let result = set_hostname(&mut url, \"\"); // Empty host",
+          "    // Expected outcome: Err(())",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(!url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is false",
+          "    assert_eq!(SchemeType::from(url.scheme()), SchemeType::File); // Precondition: scheme_type == SchemeType::File is false",
+          "    let result = set_hostname(&mut url, \"valid.com\"); // Valid host input",
+          "    assert_eq!(result, Ok(())); // Expected outcome: Ok(())"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://valid.com\").unwrap();",
+          "    assert!(!url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is false",
+          "    assert_eq!(SchemeType::from(url.scheme()), SchemeType::SpecialNotFile); // Precondition: a special URL",
+          "    let result = set_hostname(&mut url, \"\"); // Empty host",
+          "    // Expected outcome: Err(())",
+          "    assert!(!url.cannot_be_a_base()); // Precondition: cannot_be_a_base() is false",
+          "    assert_eq!(SchemeType::from(url.scheme()), SchemeType::File); // Precondition: scheme_type == SchemeType::File is false",
+          "    let result = set_hostname(&mut url, \"valid.com\"); // Valid host input",
+          "    assert_eq!(result, Ok(())); // Expected outcome: Ok(())",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

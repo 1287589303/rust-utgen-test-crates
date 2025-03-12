@@ -1,0 +1,157 @@
+{
+  "name": "ryu::pretty::mantissa::write_mantissa_long",
+  "mod_info": {
+    "name": "pretty::mantissa",
+    "loc": "src/pretty/mod.rs:2:1:2:14"
+  },
+  "visible": true,
+  "loc": "src/pretty/mantissa.rs:5:1:41:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: (output >> 32) != 0 at line 6 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    use core::ptr;",
+                "",
+                "    struct TestContext {",
+                "        output: u64,",
+                "        result: [u8; 16],",
+                "    }",
+                "",
+                "    let mut context = TestContext {",
+                "        output: 1_000_000_000_000_000_000, // large number to ensure (output >> 32) != 0",
+                "        result: [0; 16],",
+                "    };",
+                "",
+                "    unsafe {",
+                "        let result_ptr = context.result.as_mut_ptr().add(16); // Pointer to the end of the array",
+                "        write_mantissa_long(context.output, result_ptr);",
+                "    }",
+                "",
+                "    // Check the content of the result buffer; this calculation will depend on DIGIT_TABLE",
+                "    // Assuming DIGIT_TABLE is initialized properly and includes relevant numeric values",
+                "    assert_eq!(&context.result[8..16], b\"00000000\"); // Placeholder; adjust based on DIGIT_TABLE expected output",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    use core::ptr;",
+                "",
+                "    struct TestContext {",
+                "        output: u64,",
+                "        result: [u8; 16],",
+                "    }",
+                "",
+                "    let mut context = TestContext {",
+                "        output: 2_000_000_000_000_000_000, // another large number",
+                "        result: [0; 16],",
+                "    };",
+                "",
+                "    unsafe {",
+                "        let result_ptr = context.result.as_mut_ptr().add(16); // Pointer to the end of the array",
+                "        write_mantissa_long(context.output, result_ptr);",
+                "    }",
+                "",
+                "    // Check the content of the result buffer; again depends on DIGIT_TABLE",
+                "    assert_eq!(&context.result[8..16], b\"00000000\"); // Placeholder; adjust based on DIGIT_TABLE expected output",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: (output >> 32) != 0 at line 6 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let mut buffer = [0u8; 20];",
+                "    let result_ptr = buffer.as_mut_ptr().add(20); // Pointing to the end of the buffer",
+                "    unsafe {",
+                "        write_mantissa_long(0, result_ptr);",
+                "    }",
+                "    assert_eq!(&buffer[18..20], b\"00\"); // Check for the '00' result in the buffer",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let mut buffer = [0u8; 20];",
+                "    let result_ptr = buffer.as_mut_ptr().add(20); // Pointing to the end of the buffer",
+                "    unsafe {",
+                "        write_mantissa_long(100, result_ptr);",
+                "    }",
+                "    assert_eq!(&buffer[19..20], b'0'); // Check for '0' in the buffer",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let mut buffer = [0u8; 20];",
+                "    let result_ptr = buffer.as_mut_ptr().add(20); // Pointing to the end of the buffer",
+                "    unsafe {",
+                "        write_mantissa_long(9, result_ptr);",
+                "    }",
+                "    assert_eq!(&buffer[19..20], b'9'); // Check for '9' in the buffer",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,256 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0; 7]; // Not aligned with u32",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"Invalid input alignment\");",
+          "    assert!(result.unwrap_err().is::<DeserializeError>());",
+          "    assert!(result.unwrap_err().is_alignment_mismatch());",
+          "    assert!(result.unwrap_err().is_state_id_error());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0; 7]; // Not aligned with u32",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"Invalid input alignment\");",
+          "    assert!(result.unwrap_err().is::<DeserializeError>());",
+          "    assert!(result.unwrap_err().is_alignment_mismatch());",
+          "    assert!(result.unwrap_err().is_state_id_error());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[];",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[];",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0; 4]; // Length less than 8",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), DeserializeError::buffer_too_small(\"DFA\"));",
+          "    assert_eq!(result.err().unwrap().kind(), &DeserializeErrorKind::BufferTooSmall);",
+          "    assert_eq!(result.err().unwrap().description(), \"buffer too small\");",
+          "    assert!(matches!(result, Err(_)));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0; 4]; // Length less than 8",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), DeserializeError::buffer_too_small(\"DFA\"));",
+          "    assert_eq!(result.err().unwrap().kind(), &DeserializeErrorKind::BufferTooSmall);",
+          "    assert_eq!(result.err().unwrap().description(), \"buffer too small\");",
+          "    assert!(matches!(result, Err(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Invalid serialization",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Invalid serialization",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Invalid serialization",
+          "    let result = DFA::from_bytes(slice);",
+          "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Invalid serialization",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0; 512]; // Valid length, but invalid contents",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().is_generic(\"found DFA state with invalid accelerator index\"));",
+          "    assert!(result.unwrap_err().is_generic(\"accelerator needles has invalid length\"));",
+          "    assert!(result.unwrap_err().is_generic(\"state ID is invalid\"));",
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0; 512]; // Valid length, but invalid contents",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().is_generic(\"found DFA state with invalid accelerator index\"));",
+          "    assert!(result.unwrap_err().is_generic(\"accelerator needles has invalid length\"));",
+          "    assert!(result.unwrap_err().is_generic(\"state ID is invalid\"));",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4]; // Sample byte content but wrong endianness",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().0, \"found invalid universal unanchored starting state ID\");",
+          "    assert_eq!(result.err().unwrap().0, \"found invalid universal anchored starting state ID\");",
+          "    assert_eq!(result.err().unwrap().0, \"found invalid starting state ID\");",
+          "    assert_eq!(result.err().unwrap().0, \"found DFA state with invalid accelerator index\");",
+          "    assert_eq!(result.err().unwrap().0, \"accelerator needles has invalid length\");"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4]; // Sample byte content but wrong endianness",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().0, \"found invalid universal unanchored starting state ID\");",
+          "    assert_eq!(result.err().unwrap().0, \"found invalid universal anchored starting state ID\");",
+          "    assert_eq!(result.err().unwrap().0, \"found invalid starting state ID\");",
+          "    assert_eq!(result.err().unwrap().0, \"found DFA state with invalid accelerator index\");",
+          "    assert_eq!(result.err().unwrap().0, \"accelerator needles has invalid length\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Valid length but invalid transition table",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().to_string(), \"found invalid starting state ID\");",
+          "    assert!(!result.is_ok());",
+          "    assert!(result.err().is_some());",
+          "    assert!(result.err().unwrap().is_generic());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Valid length but invalid transition table",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().to_string(), \"found invalid starting state ID\");",
+          "    assert!(!result.is_ok());",
+          "    assert!(result.err().is_some());",
+          "    assert!(result.err().unwrap().is_generic());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Valid content, but leads to an out-of-range accelerator access",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"found DFA state with invalid accelerator index\");"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Valid content, but leads to an out-of-range accelerator access",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"found DFA state with invalid accelerator index\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Valid content, but invalid accelerator length",
+          "    let result = DFA::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().to_string(), \"found DFA state with invalid accelerator index\");",
+          "    assert!(result.err().unwrap().is::<DeserializeError>());",
+          "    assert!(result.err().is_some());",
+          "    assert!(result.is_ok() == false);",
+          "    assert!(result.unwrap_err().is::<DeserializeError>());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Valid content, but invalid accelerator length",
+          "    let result = DFA::from_bytes(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().to_string(), \"found DFA state with invalid accelerator index\");",
+          "    assert!(result.err().unwrap().is::<DeserializeError>());",
+          "    assert!(result.err().is_some());",
+          "    assert!(result.is_ok() == false);",
+          "    assert!(result.unwrap_err().is::<DeserializeError>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,198 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct EmptyMap;",
+          "",
+          "    let empty_map = EmptyMap;",
+          "    let result = map_as_enum(empty_map);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, MapAsEnum { map: empty_map });"
+        ],
+        "code": [
+          "{",
+          "    struct EmptyMap;",
+          "",
+          "    let empty_map = EmptyMap;",
+          "    let result = map_as_enum(empty_map);",
+          "    assert_eq!(result, MapAsEnum { map: empty_map });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct SimpleMap {",
+          "        field1: i32,",
+          "        field2: String,",
+          "    }",
+          "",
+          "    let simple_map = SimpleMap {",
+          "        field1: 42,",
+          "        field2: \"test\".to_string(),",
+          "    };",
+          "    let result = map_as_enum(simple_map);",
+          "}"
+        ],
+        "oracle": [
+          "    let simple_map = SimpleMap { field1: 42, field2: \"test\".to_string() };",
+          "    let result = map_as_enum(simple_map);",
+          "    assert_eq!(result.map.field1, 42);",
+          "    assert_eq!(result.map.field2, \"test\".to_string());",
+          "    assert!(matches!(result, MapAsEnum { map: SimpleMap { .. } }));"
+        ],
+        "code": [
+          "{",
+          "    struct SimpleMap {",
+          "        field1: i32,",
+          "        field2: String,",
+          "    }",
+          "",
+          "    let simple_map = SimpleMap {",
+          "        field1: 42,",
+          "        field2: \"test\".to_string(),",
+          "    };",
+          "    let result = map_as_enum(simple_map);",
+          "    let simple_map = SimpleMap { field1: 42, field2: \"test\".to_string() };",
+          "    let result = map_as_enum(simple_map);",
+          "    assert_eq!(result.map.field1, 42);",
+          "    assert_eq!(result.map.field2, \"test\".to_string());",
+          "    assert!(matches!(result, MapAsEnum { map: SimpleMap { .. } }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct NestedMap {",
+          "        nested: (i32, String),",
+          "    }",
+          "",
+          "    let nested_map = NestedMap {",
+          "        nested: (1, \"nested\".to_string()),",
+          "    };",
+          "    let result = map_as_enum(nested_map);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.map.nested.0, 1);",
+          "    assert_eq!(result.map.nested.1, \"nested\".to_string());",
+          "    assert!(matches!(result, MapAsEnum { map: _ }));"
+        ],
+        "code": [
+          "{",
+          "    struct NestedMap {",
+          "        nested: (i32, String),",
+          "    }",
+          "",
+          "    let nested_map = NestedMap {",
+          "        nested: (1, \"nested\".to_string()),",
+          "    };",
+          "    let result = map_as_enum(nested_map);",
+          "    assert_eq!(result.map.nested.0, 1);",
+          "    assert_eq!(result.map.nested.1, \"nested\".to_string());",
+          "    assert!(matches!(result, MapAsEnum { map: _ }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct LargeMap {",
+          "        numbers: [i32; 100],",
+          "    }",
+          "",
+          "    let large_map = LargeMap {",
+          "        numbers: [0; 100],",
+          "    };",
+          "    let result = map_as_enum(large_map);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.map.numbers, [0; 100]);",
+          "    assert!(std::mem::size_of_val(&result) == std::mem::size_of::<MapAsEnum<LargeMap>>());",
+          "    assert!(std::any::type_name::<MapAsEnum<LargeMap>>() == \"serde::de::value::MapAsEnum<LargeMap>\");",
+          "    assert!(std::any::type_name::<MapAsEnum<LargeMap>>() == std::any::type_name::<MapAsEnum<LargeMap>>());",
+          "    assert!(result.map.numbers.len() == 100);"
+        ],
+        "code": [
+          "{",
+          "    struct LargeMap {",
+          "        numbers: [i32; 100],",
+          "    }",
+          "",
+          "    let large_map = LargeMap {",
+          "        numbers: [0; 100],",
+          "    };",
+          "    let result = map_as_enum(large_map);",
+          "    assert_eq!(result.map.numbers, [0; 100]);",
+          "    assert!(std::mem::size_of_val(&result) == std::mem::size_of::<MapAsEnum<LargeMap>>());",
+          "    assert!(std::any::type_name::<MapAsEnum<LargeMap>>() == \"serde::de::value::MapAsEnum<LargeMap>\");",
+          "    assert!(std::any::type_name::<MapAsEnum<LargeMap>>() == std::any::type_name::<MapAsEnum<LargeMap>>());",
+          "    assert!(result.map.numbers.len() == 100);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct MinimalPair;",
+          "",
+          "    impl Pair for MinimalPair {",
+          "        type First = i32;",
+          "        type Second = String;",
+          "    }",
+          "",
+          "    let minimal_pair = MinimalPair;",
+          "    let result = map_as_enum(minimal_pair);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.map, minimal_pair);",
+          "    assert!(std::mem::size_of_val(&result) > 0);",
+          "    assert!(std::any::type_name::<MapAsEnum<MinimalPair>>() == \"serde::de::value::MapAsEnum<MinimalPair>\");",
+          "    assert!(std::any::type_name_of::<MapAsEnum<MinimalPair>>().contains(\"MapAsEnum\"));"
+        ],
+        "code": [
+          "{",
+          "    struct MinimalPair;",
+          "",
+          "    impl Pair for MinimalPair {",
+          "        type First = i32;",
+          "        type Second = String;",
+          "    }",
+          "",
+          "    let minimal_pair = MinimalPair;",
+          "    let result = map_as_enum(minimal_pair);",
+          "    assert_eq!(result.map, minimal_pair);",
+          "    assert!(std::mem::size_of_val(&result) > 0);",
+          "    assert!(std::any::type_name::<MapAsEnum<MinimalPair>>() == \"serde::de::value::MapAsEnum<MinimalPair>\");",
+          "    assert!(std::any::type_name_of::<MapAsEnum<MinimalPair>>().contains(\"MapAsEnum\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

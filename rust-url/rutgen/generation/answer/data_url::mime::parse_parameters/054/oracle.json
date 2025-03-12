@@ -1,0 +1,261 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"na!me=\\\"valid;value\\\";another=\\\"test\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parameters.len(), 0);",
+          "    assert!(!parameters.contains(&(String::from(\"name\"), String::from(\"valid;value\"))));",
+          "    assert!(!parameters.contains(&(String::from(\"another\"), String::from(\"test\"))));"
+        ],
+        "code": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"na!me=\\\"valid;value\\\";another=\\\"test\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "    assert_eq!(parameters.len(), 0);",
+          "    assert!(!parameters.contains(&(String::from(\"name\"), String::from(\"valid;value\"))));",
+          "    assert!(!parameters.contains(&(String::from(\"another\"), String::from(\"test\"))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"name=\\\"invalid\\\\value\\\\\\\";another=\\\"test\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parameters.len(), 0);",
+          "    assert_eq!(parameters.contains(&(String::from(\"name\"), String::from(\"invalid\\\\value\\\\\"))), false);",
+          "    assert_eq!(parameters.contains(&(String::from(\"another\"), String::from(\"test\"))), false);",
+          "    assert!(parameters.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"name=\\\"invalid\\\\value\\\\\\\";another=\\\"test\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "    assert_eq!(parameters.len(), 0);",
+          "    assert_eq!(parameters.contains(&(String::from(\"name\"), String::from(\"invalid\\\\value\\\\\"))), false);",
+          "    assert_eq!(parameters.contains(&(String::from(\"another\"), String::from(\"test\"))), false);",
+          "    assert!(parameters.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"name=\\\"valid_value\\\";another=\\\"test\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parameters.len(), 1);",
+          "    assert_eq!(parameters[0].0, \"name\");",
+          "    assert_eq!(parameters[0].1, \"valid_value\");",
+          "    assert!(parameters.iter().any(|(n, _)| n == \"another\") == false);"
+        ],
+        "code": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"name=\\\"valid_value\\\";another=\\\"test\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "    assert_eq!(parameters.len(), 1);",
+          "    assert_eq!(parameters[0].0, \"name\");",
+          "    assert_eq!(parameters[0].1, \"valid_value\");",
+          "    assert!(parameters.iter().any(|(n, _)| n == \"another\") == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"param1=\\\"value1\\\";param2=\\\"value2\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parameters.len(), 2);",
+          "    assert_eq!(parameters[0].0, \"param1\".to_string());",
+          "    assert_eq!(parameters[0].1, \"value1\".to_string());",
+          "    assert_eq!(parameters[1].0, \"param2\".to_string());",
+          "    assert_eq!(parameters[1].1, \"value2\".to_string());"
+        ],
+        "code": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"param1=\\\"value1\\\";param2=\\\"value2\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "    assert_eq!(parameters.len(), 2);",
+          "    assert_eq!(parameters[0].0, \"param1\".to_string());",
+          "    assert_eq!(parameters[0].1, \"value1\".to_string());",
+          "    assert_eq!(parameters[1].0, \"param2\".to_string());",
+          "    assert_eq!(parameters[1].1, \"value2\".to_string());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"param=\\\"val\\\\ue\\\";param2=\\\"another\\\\value\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "}"
+        ],
+        "oracle": [
+          "    parameters.push((name.to_ascii_lowercase(), value)); // Check that parameters are populated",
+          "    assert_eq!(parameters.len(), 2); // Expect 2 parameters to be parsed",
+          "    assert_eq!(parameters[0].0, \"param\"); // Expect first parameter name to be \"param\"",
+          "    assert_eq!(parameters[0].1, \"val\\\\ue\"); // Expect first parameter value to be \"val\\\\ue\"",
+          "    assert_eq!(parameters[1].0, \"param2\"); // Expect second parameter name to be \"param2\"",
+          "    assert_eq!(parameters[1].1, \"another\\\\value\"); // Expect second parameter value to be \"another\\\\value\"",
+          "    assert!(parameters.iter().all(|(n, _)| !n.is_empty())); // Ensure all parameter names are non-empty",
+          "    assert!(parameters.iter().all(|(_, v)| valid_value(v))); // Ensure all parameter values are valid",
+          "    assert!(only_http_token_code_points(parameters[0].0)); // Ensure first parameter name contains valid HTTP tokens",
+          "    assert!(only_http_token_code_points(parameters[1].0)); // Ensure second parameter name contains valid HTTP tokens",
+          "    assert_eq!(parameters[0].0, parameters[0].0.to_ascii_lowercase()); // Ensure first parameter name is lowercase",
+          "    assert_eq!(parameters[1].0, parameters[1].0.to_ascii_lowercase()); // Ensure second parameter name is lowercase"
+        ],
+        "code": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"param=\\\"val\\\\ue\\\";param2=\\\"another\\\\value\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "    parameters.push((name.to_ascii_lowercase(), value)); // Check that parameters are populated",
+          "    assert_eq!(parameters.len(), 2); // Expect 2 parameters to be parsed",
+          "    assert_eq!(parameters[0].0, \"param\"); // Expect first parameter name to be \"param\"",
+          "    assert_eq!(parameters[0].1, \"val\\\\ue\"); // Expect first parameter value to be \"val\\\\ue\"",
+          "    assert_eq!(parameters[1].0, \"param2\"); // Expect second parameter name to be \"param2\"",
+          "    assert_eq!(parameters[1].1, \"another\\\\value\"); // Expect second parameter value to be \"another\\\\value\"",
+          "    assert!(parameters.iter().all(|(n, _)| !n.is_empty())); // Ensure all parameter names are non-empty",
+          "    assert!(parameters.iter().all(|(_, v)| valid_value(v))); // Ensure all parameter values are valid",
+          "    assert!(only_http_token_code_points(parameters[0].0)); // Ensure first parameter name contains valid HTTP tokens",
+          "    assert!(only_http_token_code_points(parameters[1].0)); // Ensure second parameter name contains valid HTTP tokens",
+          "    assert_eq!(parameters[0].0, parameters[0].0.to_ascii_lowercase()); // Ensure first parameter name is lowercase",
+          "    assert_eq!(parameters[1].0, parameters[1].0.to_ascii_lowercase()); // Ensure second parameter name is lowercase",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"name=\\\"value\\\" ; another=\\\"test\\\" \";",
+          "    parse_parameters(input, &mut parameters);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parameters.len(), 1);",
+          "    assert_eq!(parameters[0].0, \"name\");",
+          "    assert_eq!(parameters[0].1, \"value\");",
+          "    assert!(parameters.iter().any(|(n, _)| n == \"another\"));",
+          "    assert!(parameters.iter().any(|(_, v)| v == \"value\"));",
+          "    assert!(parameters.iter().all(|(n, _)| only_http_token_code_points(n));",
+          "    assert!(!valid_value(parameters[0].1.as_str()));"
+        ],
+        "code": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"name=\\\"value\\\" ; another=\\\"test\\\" \";",
+          "    parse_parameters(input, &mut parameters);",
+          "    assert_eq!(parameters.len(), 1);",
+          "    assert_eq!(parameters[0].0, \"name\");",
+          "    assert_eq!(parameters[0].1, \"value\");",
+          "    assert!(parameters.iter().any(|(n, _)| n == \"another\"));",
+          "    assert!(parameters.iter().any(|(_, v)| v == \"value\"));",
+          "    assert!(parameters.iter().all(|(n, _)| only_http_token_code_points(n));",
+          "    assert!(!valid_value(parameters[0].1.as_str()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"name=\\\"val;ue\\\";other=\\\"data\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "}"
+        ],
+        "oracle": [
+          "    parameters.push((\"name\", \"val;ue\"));",
+          "    assert_eq!(parameters, vec![(\"name\".to_string(), \"val;ue\".to_string())]);",
+          "    assert_eq!(parameters.len(), 1);"
+        ],
+        "code": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"name=\\\"val;ue\\\";other=\\\"data\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "    parameters.push((\"name\", \"val;ue\"));",
+          "    assert_eq!(parameters, vec![(\"name\".to_string(), \"val;ue\".to_string())]);",
+          "    assert_eq!(parameters.len(), 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"param=\\\"val\\\\\\\\ue\\\";param2=\\\"another\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parameters.len(), 0);",
+          "    assert!(!contains(&parameters, \"param\"));",
+          "    assert!(!contains(&parameters, \"param2\"));",
+          "    assert_eq!(parameters.capacity(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut parameters = Vec::new();",
+          "    let input = \"param=\\\"val\\\\\\\\ue\\\";param2=\\\"another\\\"\";",
+          "    parse_parameters(input, &mut parameters);",
+          "    assert_eq!(parameters.len(), 0);",
+          "    assert!(!contains(&parameters, \"param\"));",
+          "    assert!(!contains(&parameters, \"param2\"));",
+          "    assert_eq!(parameters.capacity(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

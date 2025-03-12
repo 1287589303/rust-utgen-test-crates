@@ -1,0 +1,216 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table = RawTable::new_in(Global);",
+          "    let min_size = 1;",
+          "    unsafe {",
+          "        table.shrink_to(min_size, |value| value.hash());",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table.len(), 1);",
+          "    assert!(table.capacity() > 0);",
+          "    assert!(table.buckets() > 0);",
+          "    assert!(unsafe { table.iter().next().is_some() });",
+          "    assert!(unsafe { table.data_end().as_ptr() != ptr::null_mut() });"
+        ],
+        "code": [
+          "{",
+          "    let mut table = RawTable::new_in(Global);",
+          "    let min_size = 1;",
+          "    unsafe {",
+          "        table.shrink_to(min_size, |value| value.hash());",
+          "    }",
+          "    assert_eq!(table.len(), 1);",
+          "    assert!(table.capacity() > 0);",
+          "    assert!(table.buckets() > 0);",
+          "    assert!(unsafe { table.iter().next().is_some() });",
+          "    assert!(unsafe { table.data_end().as_ptr() != ptr::null_mut() });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table = RawTable::with_capacity_in(10, Global);",
+          "    let min_size = 5;",
+          "    unsafe {",
+          "        for i in 0..5 {",
+          "            table.insert(i.hash(), i, |v| v.hash());",
+          "        }",
+          "        table.shrink_to(min_size, |value| value.hash());",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table.len(), 5);",
+          "    assert!(table.buckets() >= capacity_to_buckets(5).unwrap());",
+          "    assert!(table.is_empty() == false);",
+          "    assert!(unsafe { table.data_end().as_ptr() } != std::ptr::null_mut());",
+          "    assert!(table.capacity() >= 10);"
+        ],
+        "code": [
+          "{",
+          "    let mut table = RawTable::with_capacity_in(10, Global);",
+          "    let min_size = 5;",
+          "    unsafe {",
+          "        for i in 0..5 {",
+          "            table.insert(i.hash(), i, |v| v.hash());",
+          "        }",
+          "        table.shrink_to(min_size, |value| value.hash());",
+          "    }",
+          "    assert_eq!(table.len(), 5);",
+          "    assert!(table.buckets() >= capacity_to_buckets(5).unwrap());",
+          "    assert!(table.is_empty() == false);",
+          "    assert!(unsafe { table.data_end().as_ptr() } != std::ptr::null_mut());",
+          "    assert!(table.capacity() >= 10);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table = RawTable::new_in(Global);",
+          "    let min_size = usize::MAX;",
+          "    unsafe {",
+          "        table.shrink_to(min_size, |value| value.hash());",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(table.len() >= usize::MAX);",
+          "    assert!(table.buckets() >= capacity_to_buckets(usize::MAX).unwrap());",
+          "    assert_eq!(table.allocation_size(), table.capacity());",
+          "    assert!(table.is_empty() == false);",
+          "    assert!(table.items >= table.len());"
+        ],
+        "code": [
+          "{",
+          "    let mut table = RawTable::new_in(Global);",
+          "    let min_size = usize::MAX;",
+          "    unsafe {",
+          "        table.shrink_to(min_size, |value| value.hash());",
+          "    }",
+          "    assert!(table.len() >= usize::MAX);",
+          "    assert!(table.buckets() >= capacity_to_buckets(usize::MAX).unwrap());",
+          "    assert_eq!(table.allocation_size(), table.capacity());",
+          "    assert!(table.is_empty() == false);",
+          "    assert!(table.items >= table.len());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table = RawTable::with_capacity_in(4, Global);",
+          "    let items_to_insert = 2;",
+          "    let min_size = 3;",
+          "    unsafe {",
+          "        for i in 0..items_to_insert {",
+          "            table.insert(i.hash(), i, |v| v.hash());",
+          "        }",
+          "        table.shrink_to(min_size, |value| value.hash());",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(table.len() == items_to_insert, \"Length should be same as items inserted\");",
+          "    assert!(table.buckets() >= 4, \"Buckets should be at least 4 after shrink\");",
+          "    assert!(table.capacity() >= min_size, \"Capacity should be at least min_size\");",
+          "    assert!(table.is_empty() == false, \"Table should not be empty\");",
+          "    assert_eq!(table.table.items, items_to_insert, \"Item count should match inserted count\");",
+          "    assert!(unsafe { table.is_bucket_full(0) } == false, \"First bucket should not be full after shrink\");",
+          "    assert!(unsafe { table.is_bucket_full(1) } == false, \"Second bucket should not be full after shrink\");"
+        ],
+        "code": [
+          "{",
+          "    let mut table = RawTable::with_capacity_in(4, Global);",
+          "    let items_to_insert = 2;",
+          "    let min_size = 3;",
+          "    unsafe {",
+          "        for i in 0..items_to_insert {",
+          "            table.insert(i.hash(), i, |v| v.hash());",
+          "        }",
+          "        table.shrink_to(min_size, |value| value.hash());",
+          "    }",
+          "    assert!(table.len() == items_to_insert, \"Length should be same as items inserted\");",
+          "    assert!(table.buckets() >= 4, \"Buckets should be at least 4 after shrink\");",
+          "    assert!(table.capacity() >= min_size, \"Capacity should be at least min_size\");",
+          "    assert!(table.is_empty() == false, \"Table should not be empty\");",
+          "    assert_eq!(table.table.items, items_to_insert, \"Item count should match inserted count\");",
+          "    assert!(unsafe { table.is_bucket_full(0) } == false, \"First bucket should not be full after shrink\");",
+          "    assert!(unsafe { table.is_bucket_full(1) } == false, \"Second bucket should not be full after shrink\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table = RawTable::with_capacity_in(6, Global);",
+          "    let items_to_insert = 3;",
+          "    let min_size = 3;",
+          "    unsafe {",
+          "        for i in 0..items_to_insert {",
+          "            table.insert(i.hash(), i, |v| v.hash());",
+          "        }",
+          "        table.shrink_to(min_size, |value| value.hash());",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table.len(), 3);",
+          "    assert!(table.capacity() >= 3);",
+          "    assert!(table.is_empty() == false);",
+          "    assert!(table.buckets() >= 4);",
+          "    assert!(unsafe { table.is_bucket_full(0) } == false);",
+          "    assert!(unsafe { table.is_bucket_full(1) } == false);",
+          "    assert!(unsafe { table.is_bucket_full(2) } == false);",
+          "    assert!(unsafe { table.is_bucket_full(3) } == false);"
+        ],
+        "code": [
+          "{",
+          "    let mut table = RawTable::with_capacity_in(6, Global);",
+          "    let items_to_insert = 3;",
+          "    let min_size = 3;",
+          "    unsafe {",
+          "        for i in 0..items_to_insert {",
+          "            table.insert(i.hash(), i, |v| v.hash());",
+          "        }",
+          "        table.shrink_to(min_size, |value| value.hash());",
+          "    }",
+          "    assert_eq!(table.len(), 3);",
+          "    assert!(table.capacity() >= 3);",
+          "    assert!(table.is_empty() == false);",
+          "    assert!(table.buckets() >= 4);",
+          "    assert!(unsafe { table.is_bucket_full(0) } == false);",
+          "    assert!(unsafe { table.is_bucket_full(1) } == false);",
+          "    assert!(unsafe { table.is_bucket_full(2) } == false);",
+          "    assert!(unsafe { table.is_bucket_full(3) } == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

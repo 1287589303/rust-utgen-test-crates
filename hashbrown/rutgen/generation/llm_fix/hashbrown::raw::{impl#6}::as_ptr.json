@@ -1,0 +1,297 @@
+{
+  "name": "hashbrown::raw::{impl#6}::as_ptr",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:74:1:74:9"
+  },
+  "visible": true,
+  "loc": "src/raw/mod.rs:386:5:394:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: T::IS_ZERO_SIZED at line 387 is true\n"
+      ],
+      "input_infer": "T::IS_ZERO_SIZED is true, use any valid alignment type, must test with an aligned pointer and ensure it returns a valid arbitrary zero-sized type pointer, specifically check cases with minimum and maximum aligned struct sizes (e.g., align_of::<u8>(), align_of::<u64>()), and check behavior across different zero-sized types.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct ZeroSizedType {",
+                "        _marker: PhantomData<u8>,",
+                "    }",
+                "    ",
+                "    impl ZeroSizedType {",
+                "        const IS_ZERO_SIZED: bool = true;",
+                "    }",
+                "",
+                "    let non_null_ptr = NonNull::new(0usize as *mut ZeroSizedType).unwrap();",
+                "    let bucket = Bucket { ptr: non_null_ptr };",
+                "    ",
+                "    let result = bucket.as_ptr();",
+                "}"
+              ],
+              "oracle": [
+                "    invalid_mut(mem::align_of::<ZeroSizedType>()) == result",
+                "    result.is_null()",
+                "    result.align_offset(mem::align_of::<ZeroSizedType>()) == 0",
+                "    result as usize % mem::align_of::<ZeroSizedType>() == 0",
+                "    assert!(result == invalid_mut(mem::align_of::<ZeroSizedType>()));"
+              ],
+              "code": [
+                "{",
+                "    struct ZeroSizedType {",
+                "        _marker: PhantomData<u8>,",
+                "    }",
+                "    ",
+                "    impl ZeroSizedType {",
+                "        const IS_ZERO_SIZED: bool = true;",
+                "    }",
+                "",
+                "    let non_null_ptr = NonNull::new(0usize as *mut ZeroSizedType).unwrap();",
+                "    let bucket = Bucket { ptr: non_null_ptr };",
+                "    ",
+                "    let result = bucket.as_ptr();",
+                "    invalid_mut(mem::align_of::<ZeroSizedType>()) == result",
+                "    result.is_null()",
+                "    result.align_offset(mem::align_of::<ZeroSizedType>()) == 0",
+                "    result as usize % mem::align_of::<ZeroSizedType>() == 0",
+                "    assert!(result == invalid_mut(mem::align_of::<ZeroSizedType>()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct AnotherZeroSizedType {",
+                "        _marker: PhantomData<u64>,",
+                "    }",
+                "    ",
+                "    impl AnotherZeroSizedType {",
+                "        const IS_ZERO_SIZED: bool = true;",
+                "    }",
+                "",
+                "    let non_null_ptr = NonNull::new(0usize as *mut AnotherZeroSizedType).unwrap();",
+                "    let bucket = Bucket { ptr: non_null_ptr };",
+                "    ",
+                "    let result = bucket.as_ptr();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, invalid_mut(mem::align_of::<AnotherZeroSizedType>()));"
+              ],
+              "code": [
+                "{",
+                "    struct AnotherZeroSizedType {",
+                "        _marker: PhantomData<u64>,",
+                "    }",
+                "    ",
+                "    impl AnotherZeroSizedType {",
+                "        const IS_ZERO_SIZED: bool = true;",
+                "    }",
+                "",
+                "    let non_null_ptr = NonNull::new(0usize as *mut AnotherZeroSizedType).unwrap();",
+                "    let bucket = Bucket { ptr: non_null_ptr };",
+                "    ",
+                "    let result = bucket.as_ptr();",
+                "    assert_eq!(result, invalid_mut(mem::align_of::<AnotherZeroSizedType>()));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct CustomZeroSizedType {",
+                "        _marker: PhantomData<()>,",
+                "    }",
+                "    ",
+                "    impl CustomZeroSizedType {",
+                "        const IS_ZERO_SIZED: bool = true;",
+                "    }",
+                "",
+                "    let non_null_ptr = NonNull::new(0usize as *mut CustomZeroSizedType).unwrap();",
+                "    let bucket = Bucket { ptr: non_null_ptr };",
+                "    ",
+                "    let result = bucket.as_ptr();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, invalid_mut(mem::align_of::<CustomZeroSizedType>()));"
+              ],
+              "code": [
+                "{",
+                "    struct CustomZeroSizedType {",
+                "        _marker: PhantomData<()>,",
+                "    }",
+                "    ",
+                "    impl CustomZeroSizedType {",
+                "        const IS_ZERO_SIZED: bool = true;",
+                "    }",
+                "",
+                "    let non_null_ptr = NonNull::new(0usize as *mut CustomZeroSizedType).unwrap();",
+                "    let bucket = Bucket { ptr: non_null_ptr };",
+                "    ",
+                "    let result = bucket.as_ptr();",
+                "    assert_eq!(result, invalid_mut(mem::align_of::<CustomZeroSizedType>()));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: T::IS_ZERO_SIZED at line 387 is false\n"
+      ],
+      "input_infer": "Non-zero sized type T, valid non-null pointer for ptr, valid index >= 0, check for invalid_mut behavior with address >= 1.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct NonZeroSized {",
+                "        data: u32,",
+                "    }",
+                "",
+                "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 42 }))).unwrap();",
+                "    let bucket = Bucket { ptr: non_zero_sized };",
+                "",
+                "    let _ptr = bucket.as_ptr();",
+                "}"
+              ],
+              "oracle": [
+                "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 42 }))).unwrap();",
+                "    let bucket = Bucket { ptr: non_zero_sized };",
+                "    let expected_ptr = bucket.ptr.as_ptr().sub(1);",
+                "    assert_eq!(_ptr, expected_ptr);",
+                "    assert!(!_ptr.is_null());",
+                "    assert_eq!(unsafe { *(bucket.as_ref()) }.data, 42);"
+              ],
+              "code": [
+                "{",
+                "    struct NonZeroSized {",
+                "        data: u32,",
+                "    }",
+                "",
+                "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 42 }))).unwrap();",
+                "    let bucket = Bucket { ptr: non_zero_sized };",
+                "",
+                "    let _ptr = bucket.as_ptr();",
+                "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 42 }))).unwrap();",
+                "    let bucket = Bucket { ptr: non_zero_sized };",
+                "    let expected_ptr = bucket.ptr.as_ptr().sub(1);",
+                "    assert_eq!(_ptr, expected_ptr);",
+                "    assert!(!_ptr.is_null());",
+                "    assert_eq!(unsafe { *(bucket.as_ref()) }.data, 42);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct NonZeroSized {",
+                "        data: u32,",
+                "    }",
+                "",
+                "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 99 }))).unwrap();",
+                "    let bucket = Bucket { ptr: non_zero_sized };",
+                "",
+                "    let _ptr = unsafe { bucket.next_n(0).as_ptr() };",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(_ptr == non_zero_sized.as_ptr().sub(1));"
+              ],
+              "code": [
+                "{",
+                "    struct NonZeroSized {",
+                "        data: u32,",
+                "    }",
+                "",
+                "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 99 }))).unwrap();",
+                "    let bucket = Bucket { ptr: non_zero_sized };",
+                "",
+                "    let _ptr = unsafe { bucket.next_n(0).as_ptr() };",
+                "    assert!(_ptr == non_zero_sized.as_ptr().sub(1));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct NonZeroSized {",
+                "        data: u32,",
+                "    }",
+                "",
+                "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 100 }))).unwrap();",
+                "    let bucket = Bucket { ptr: non_zero_sized };",
+                "",
+                "    let _ptr = bucket.as_ptr();",
+                "    let invalid_address = unsafe { invalid_mut(1) };",
+                "    let _ = unsafe { &mut *invalid_address }; // This simulates a behavior check for invalid_mut",
+                "}"
+              ],
+              "oracle": [
+                "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 100 }))).unwrap();",
+                "    let bucket = Bucket { ptr: non_zero_sized };",
+                "    assert!(bucket.as_ptr() != std::ptr::null_mut());",
+                "    assert_eq!(unsafe { &*bucket.as_ptr() }.data, 100);",
+                "    let invalid_address = unsafe { invalid_mut(1) };",
+                "    assert!(std::panic::catch_unwind(|| { let _ = unsafe { &mut *invalid_address }; }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    struct NonZeroSized {",
+                "        data: u32,",
+                "    }",
+                "",
+                "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 100 }))).unwrap();",
+                "    let bucket = Bucket { ptr: non_zero_sized };",
+                "",
+                "    let _ptr = bucket.as_ptr();",
+                "    let invalid_address = unsafe { invalid_mut(1) };",
+                "    let _ = unsafe { &mut *invalid_address }; // This simulates a behavior check for invalid_mut",
+                "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 100 }))).unwrap();",
+                "    let bucket = Bucket { ptr: non_zero_sized };",
+                "    assert!(bucket.as_ptr() != std::ptr::null_mut());",
+                "    assert_eq!(unsafe { &*bucket.as_ptr() }.data, 100);",
+                "    let invalid_address = unsafe { invalid_mut(1) };",
+                "    assert!(std::panic::catch_unwind(|| { let _ = unsafe { &mut *invalid_address }; }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

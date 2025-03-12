@@ -1,0 +1,54 @@
+use core::{fmt, mem};
+use alloc::{boxed::Box, format, string::String, sync::Arc, vec, vec::Vec};
+#[cfg(feature = "syntax")]
+use crate::nfa::thompson::{
+    compiler::{Compiler, Config},
+    error::BuildError,
+};
+use crate::{
+    nfa::thompson::builder::Builder,
+    util::{
+        alphabet::{self, ByteClassSet, ByteClasses},
+        captures::{GroupInfo, GroupInfoError},
+        look::{Look, LookMatcher, LookSet},
+        primitives::{IteratorIndexExt, PatternID, PatternIDIter, SmallIndex, StateID},
+        sparse_set::SparseSet,
+    },
+};
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DenseTransitions {
+    /// A dense representation of this state's transitions on the heap. This
+    /// always has length 256.
+    pub transitions: Box<[StateID]>,
+}
+#[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord)]
+pub struct Unit(UnitKind);
+#[derive(Clone, Copy, Default, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct StateID(SmallIndex);
+impl DenseTransitions {
+    #[inline]
+    pub fn matches(&self, haystack: &[u8], at: usize) -> Option<StateID> {}
+    #[inline]
+    pub(crate) fn matches_unit(&self, unit: alphabet::Unit) -> Option<StateID> {
+        unit.as_u8().map_or(None, |byte| self.matches_byte(byte))
+    }
+    #[inline]
+    pub fn matches_byte(&self, byte: u8) -> Option<StateID> {}
+    pub(crate) fn iter(&self) -> impl Iterator<Item = Transition> + '_ {}
+}
+impl Unit {
+    pub fn u8(byte: u8) -> Unit {}
+    pub fn eoi(num_byte_equiv_classes: usize) -> Unit {}
+    pub fn as_u8(self) -> Option<u8> {
+        match self.0 {
+            UnitKind::U8(b) => Some(b),
+            UnitKind::EOI(_) => None,
+        }
+    }
+    pub fn as_eoi(self) -> Option<u16> {}
+    pub fn as_usize(self) -> usize {}
+    pub fn is_byte(self, byte: u8) -> bool {}
+    pub fn is_eoi(self) -> bool {}
+    pub fn is_word_byte(self) -> bool {}
+}

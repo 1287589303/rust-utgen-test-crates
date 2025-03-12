@@ -1,0 +1,152 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_fn: CachePoolFn = Box::new(|| pikevm::Cache::new());",
+          "    let pool = CachePool { stack: Mutex::new(vec![]), create: create_fn };",
+          "    let cache = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(cache);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 1);",
+          "    assert!(pool.stack.lock().unwrap().contains(&cache));",
+          "    let retrieved_cache = pool.stack.lock().unwrap().pop().unwrap();",
+          "    assert!(retrieved_cache.is_some());",
+          "    assert_eq!(retrieved_cache, cache);",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let create_fn: CachePoolFn = Box::new(|| pikevm::Cache::new());",
+          "    let pool = CachePool { stack: Mutex::new(vec![]), create: create_fn };",
+          "    let cache = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(cache);",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 1);",
+          "    assert!(pool.stack.lock().unwrap().contains(&cache));",
+          "    let retrieved_cache = pool.stack.lock().unwrap().pop().unwrap();",
+          "    assert!(retrieved_cache.is_some());",
+          "    assert_eq!(retrieved_cache, cache);",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_fn: CachePoolFn = Box::new(|| pikevm::Cache::new());",
+          "    let pool = CachePool { stack: Mutex::new(vec![]), create: create_fn };",
+          "    ",
+          "    for _ in 0..10 {",
+          "        let cache = Box::new(pikevm::Cache::new());",
+          "        pool.put_value(cache);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 10);",
+          "    let cache_after_put = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(cache_after_put);",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 11);",
+          "    let first_cache = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(first_cache);",
+          "    let stack_content = pool.stack.lock().unwrap();",
+          "    assert!(stack_content.contains(&first_cache));",
+          "    for _ in 0..10 {",
+          "    let new_cache = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(new_cache);",
+          "    }",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 21);",
+          "    let additional_cache = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(additional_cache);",
+          "    assert!(pool.stack.lock().unwrap().contains(&additional_cache));",
+          "    let empty_cache = Box::new(pikevm::Cache::new());",
+          "    let empty_cache_ptr = Box::into_raw(empty_cache);",
+          "    pool.put_value(unsafe { Box::from_raw(empty_cache_ptr) });",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 22);"
+        ],
+        "code": [
+          "{",
+          "    let create_fn: CachePoolFn = Box::new(|| pikevm::Cache::new());",
+          "    let pool = CachePool { stack: Mutex::new(vec![]), create: create_fn };",
+          "    ",
+          "    for _ in 0..10 {",
+          "        let cache = Box::new(pikevm::Cache::new());",
+          "        pool.put_value(cache);",
+          "    }",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 10);",
+          "    let cache_after_put = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(cache_after_put);",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 11);",
+          "    let first_cache = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(first_cache);",
+          "    let stack_content = pool.stack.lock().unwrap();",
+          "    assert!(stack_content.contains(&first_cache));",
+          "    for _ in 0..10 {",
+          "    let new_cache = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(new_cache);",
+          "    }",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 21);",
+          "    let additional_cache = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(additional_cache);",
+          "    assert!(pool.stack.lock().unwrap().contains(&additional_cache));",
+          "    let empty_cache = Box::new(pikevm::Cache::new());",
+          "    let empty_cache_ptr = Box::into_raw(empty_cache);",
+          "    pool.put_value(unsafe { Box::from_raw(empty_cache_ptr) });",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 22);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_fn: CachePoolFn = Box::new(|| pikevm::Cache::new());",
+          "    let pool = CachePool { stack: Mutex::new(vec![]), create: create_fn };",
+          "    ",
+          "    let cache = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(cache);",
+          "    ",
+          "    let empty_cache = Box::new(pikevm::Cache::new()); // Another cache to test boundary condition",
+          "    pool.put_value(empty_cache);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 2);",
+          "    assert!(pool.stack.lock().unwrap().iter().all(|c| c.is_some()));",
+          "    let retrieved_cache = pool.stack.lock().unwrap().pop().unwrap();",
+          "    assert!(retrieved_cache.is_some());"
+        ],
+        "code": [
+          "{",
+          "    let create_fn: CachePoolFn = Box::new(|| pikevm::Cache::new());",
+          "    let pool = CachePool { stack: Mutex::new(vec![]), create: create_fn };",
+          "    ",
+          "    let cache = Box::new(pikevm::Cache::new());",
+          "    pool.put_value(cache);",
+          "    ",
+          "    let empty_cache = Box::new(pikevm::Cache::new()); // Another cache to test boundary condition",
+          "    pool.put_value(empty_cache);",
+          "    assert_eq!(pool.stack.lock().unwrap().len(), 2);",
+          "    assert!(pool.stack.lock().unwrap().iter().all(|c| c.is_some()));",
+          "    let retrieved_cache = pool.stack.lock().unwrap().pop().unwrap();",
+          "    assert!(retrieved_cache.is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,194 @@
+[
+  {
+    "uses": [
+      "use serde_json::json;"
+    ],
+    "has_test_mod": false,
+    "common": [
+      "struct MyVisitor;",
+      "",
+      "impl<'de> serde::de::Visitor<'de> for MyVisitor {",
+      "    type Value = ();",
+      "",
+      "    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {",
+      "        formatter.write_str(\"a map with a single key\")",
+      "    }",
+      "",
+      "    fn visit_enum<V>(self, _variant: V) -> Result<Self::Value, serde::de::Error>",
+      "    where",
+      "        V: serde::de::EnumAccess<'de>,",
+      "    {",
+      "        Err(serde::de::Error::invalid_value(serde::de::Unexpected::Map, &\"map with a single key\"))",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use serde_json::json;",
+          "    let v = json!({",
+          "        \"variant_key\": \"variant_value\",",
+          "        \"extra_key\": \"extra_value\",",
+          "    });",
+          "",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let v = json!({",
+          "    \"variant_key\": \"variant_value\",",
+          "    \"extra_key\": \"extra_value\",",
+          "    });",
+          "    let result: Result<_, _> = v.deserialize_enum(\"test_enum\", &[\"variant_key\"], MyVisitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), serde::de::Error::invalid_value(Unexpected::Map, &\"map with a single key\"));"
+        ],
+        "code": [
+          "{",
+          "    use serde_json::json;",
+          "    let v = json!({",
+          "        \"variant_key\": \"variant_value\",",
+          "        \"extra_key\": \"extra_value\",",
+          "    });",
+          "",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "    let v = json!({",
+          "    \"variant_key\": \"variant_value\",",
+          "    \"extra_key\": \"extra_value\",",
+          "    });",
+          "    let result: Result<_, _> = v.deserialize_enum(\"test_enum\", &[\"variant_key\"], MyVisitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), serde::de::Error::invalid_value(Unexpected::Map, &\"map with a single key\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use serde_json::json;",
+          "    let v = json!({});",
+          "",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(serde::de::Error::invalid_value(serde::de::Unexpected::Map, &\"map with a single key\")));",
+          "    let v = json!({\"key1\": \"value1\", \"key2\": \"value2\"});",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "    assert_eq!(result, Err(serde::de::Error::invalid_value(serde::de::Unexpected::Map, &\"map with a single key\")));",
+          "    let v = json!({\"variant\": \"value\", \"extra\": \"value\"});",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "    assert_eq!(result, Err(serde::de::Error::invalid_value(serde::de::Unexpected::Map, &\"map with a single key\")));",
+          "    let v = json!({\"variant\": \"value\"});",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "    assert_eq!(result, Ok(()));"
+        ],
+        "code": [
+          "{",
+          "    use serde_json::json;",
+          "    let v = json!({});",
+          "",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "    assert_eq!(result, Err(serde::de::Error::invalid_value(serde::de::Unexpected::Map, &\"map with a single key\")));",
+          "    let v = json!({\"key1\": \"value1\", \"key2\": \"value2\"});",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "    assert_eq!(result, Err(serde::de::Error::invalid_value(serde::de::Unexpected::Map, &\"map with a single key\")));",
+          "    let v = json!({\"variant\": \"value\", \"extra\": \"value\"});",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "    assert_eq!(result, Err(serde::de::Error::invalid_value(serde::de::Unexpected::Map, &\"map with a single key\")));",
+          "    let v = json!({\"variant\": \"value\"});",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "    assert_eq!(result, Ok(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use serde_json::json;",
+          "    let v = json!({",
+          "        \"variant_key\": \"variant_value\",",
+          "    });",
+          "",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let v = json!({",
+          "    \"variant_key\": \"variant_value\",",
+          "    });",
+          "    ",
+          "    let result: Result<_, _> = v.deserialize_enum(\"test_enum\", &[\"variant1\", \"variant2\"], MyVisitor);",
+          "    ",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), serde::de::Error::invalid_value(",
+          "    serde::de::Unexpected::Map,",
+          "    &\"map with a single key\",",
+          "    ));"
+        ],
+        "code": [
+          "{",
+          "    use serde_json::json;",
+          "    let v = json!({",
+          "        \"variant_key\": \"variant_value\",",
+          "    });",
+          "",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "    let v = json!({",
+          "    \"variant_key\": \"variant_value\",",
+          "    });",
+          "    ",
+          "    let result: Result<_, _> = v.deserialize_enum(\"test_enum\", &[\"variant1\", \"variant2\"], MyVisitor);",
+          "    ",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), serde::de::Error::invalid_value(",
+          "    serde::de::Unexpected::Map,",
+          "    &\"map with a single key\",",
+          "    ));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use serde_json::json;",
+          "    let v = json!({",
+          "        \"first_variant\": \"value1\",",
+          "        \"second_variant\": \"value2\",",
+          "    });",
+          "",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(serde::de::Error::invalid_value(Unexpected::Map, &\"map with a single key\")));"
+        ],
+        "code": [
+          "{",
+          "    use serde_json::json;",
+          "    let v = json!({",
+          "        \"first_variant\": \"value1\",",
+          "        \"second_variant\": \"value2\",",
+          "    });",
+          "",
+          "    let result: Result<_, _> = v.deserialize_any(MyVisitor);",
+          "    assert_eq!(result, Err(serde::de::Error::invalid_value(Unexpected::Map, &\"map with a single key\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

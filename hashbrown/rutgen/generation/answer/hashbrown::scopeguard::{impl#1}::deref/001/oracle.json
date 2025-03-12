@@ -1,0 +1,157 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value: i32 = 42;",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |x: &mut i32| *x += 1,",
+          "        value,",
+          "    };",
+          "    let _ = &*guard; // Call deref",
+          "}"
+        ],
+        "oracle": [
+          "    let value: i32 = 42;",
+          "    let mut guard = ScopeGuard { dropfn: |x: &mut i32| *x += 1, value };",
+          "    let deref_value: &i32 = &*guard;",
+          "    assert_eq!(*deref_value, 42);",
+          "    assert!(ptr::eq(deref_value, &guard.value));"
+        ],
+        "code": [
+          "{",
+          "    let value: i32 = 42;",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |x: &mut i32| *x += 1,",
+          "        value,",
+          "    };",
+          "    let _ = &*guard; // Call deref",
+          "    let value: i32 = 42;",
+          "    let mut guard = ScopeGuard { dropfn: |x: &mut i32| *x += 1, value };",
+          "    let deref_value: &i32 = &*guard;",
+          "    assert_eq!(*deref_value, 42);",
+          "    assert!(ptr::eq(deref_value, &guard.value));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value: String = String::from(\"Hello\");",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |x: &mut String| x.push_str(\", World!\"),",
+          "        value,",
+          "    };",
+          "    let _ = &*guard; // Call deref",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(*guard, String::from(\"Hello\"));"
+        ],
+        "code": [
+          "{",
+          "    let value: String = String::from(\"Hello\");",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |x: &mut String| x.push_str(\", World!\"),",
+          "        value,",
+          "    };",
+          "    let _ = &*guard; // Call deref",
+          "    assert_eq!(*guard, String::from(\"Hello\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct MyStruct {",
+          "        field: i32,",
+          "    }",
+          "    let value = MyStruct { field: 10 };",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |x: &mut MyStruct| x.field += 5,",
+          "        value,",
+          "    };",
+          "    let _ = &*guard; // Call deref",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(guard.deref().field, 10);",
+          "    let deref_result: &MyStruct = &*guard;",
+          "    assert!(std::ptr::addr_of!(deref_result.field) == std::ptr::addr_of!(guard.value.field));",
+          "    assert!(std::mem::size_of_val(guard.deref()) == std::mem::size_of::<MyStruct>());",
+          "    assert!(std::ptr::null::<MyStruct>().is_null());"
+        ],
+        "code": [
+          "{",
+          "    struct MyStruct {",
+          "        field: i32,",
+          "    }",
+          "    let value = MyStruct { field: 10 };",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |x: &mut MyStruct| x.field += 5,",
+          "        value,",
+          "    };",
+          "    let _ = &*guard; // Call deref",
+          "    assert_eq!(guard.deref().field, 10);",
+          "    let deref_result: &MyStruct = &*guard;",
+          "    assert!(std::ptr::addr_of!(deref_result.field) == std::ptr::addr_of!(guard.value.field));",
+          "    assert!(std::mem::size_of_val(guard.deref()) == std::mem::size_of::<MyStruct>());",
+          "    assert!(std::ptr::null::<MyStruct>().is_null());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value: Option<i32> = Some(7);",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |x: &mut Option<i32>| *x = None,",
+          "        value,",
+          "    };",
+          "    let _ = &*guard; // Call deref",
+          "}"
+        ],
+        "oracle": [
+          "    let value: Option<i32> = Some(7);",
+          "    assert_eq!(*guard.deref(), Some(7));",
+          "    let _ = &*guard;",
+          "    assert!(!guard.value.is_none());",
+          "    let value_ref: &Option<i32> = &guard;",
+          "    assert_eq!(value_ref, &Some(7));"
+        ],
+        "code": [
+          "{",
+          "    let value: Option<i32> = Some(7);",
+          "    let mut guard = ScopeGuard {",
+          "        dropfn: |x: &mut Option<i32>| *x = None,",
+          "        value,",
+          "    };",
+          "    let _ = &*guard; // Call deref",
+          "    let value: Option<i32> = Some(7);",
+          "    assert_eq!(*guard.deref(), Some(7));",
+          "    let _ = &*guard;",
+          "    assert!(!guard.value.is_none());",
+          "    let value_ref: &Option<i32> = &guard;",
+          "    assert_eq!(value_ref, &Some(7));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

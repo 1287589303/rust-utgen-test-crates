@@ -1,0 +1,102 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct MyNewtypeSeed;",
+      "",
+      "impl<'de> de::DeserializeSeed<'de> for MyNewtypeSeed {",
+      "    type Value = u8; // expected type to deserialize into",
+      "",
+      "    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>",
+      "    where",
+      "        D: de::Deserializer<'de>,",
+      "    {",
+      "        // assuming deserialization logic that produces a u8 ",
+      "        let dummy_value = 42; // just for the sake of this example",
+      "        Ok(dummy_value)",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Content::NewtypeStruct(\"Newtype\", Box::new(Content::U8(42)));",
+          "    let deserializer: VariantDeserializer<(), ()> = VariantDeserializer {",
+          "        value: Some(value),",
+          "        err: PhantomData,",
+          "    };",
+          "    let seed = MyNewtypeSeed;",
+          "    let _ = deserializer.newtype_variant_seed(seed);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result, Ok(42));",
+          "    assert!(deserializer.value.is_some());",
+          "    assert!(matches!(deserializer.value, Some(Content::NewtypeStruct(_, _))));",
+          "    assert!(matches!(seed.deserialize(ContentDeserializer::new(value)), Ok(42));"
+        ],
+        "code": [
+          "{",
+          "    let value = Content::NewtypeStruct(\"Newtype\", Box::new(Content::U8(42)));",
+          "    let deserializer: VariantDeserializer<(), ()> = VariantDeserializer {",
+          "        value: Some(value),",
+          "        err: PhantomData,",
+          "    };",
+          "    let seed = MyNewtypeSeed;",
+          "    let _ = deserializer.newtype_variant_seed(seed);",
+          "    assert_eq!(_result, Ok(42));",
+          "    assert!(deserializer.value.is_some());",
+          "    assert!(matches!(deserializer.value, Some(Content::NewtypeStruct(_, _))));",
+          "    assert!(matches!(seed.deserialize(ContentDeserializer::new(value)), Ok(42));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Content::NewtypeVariant(\"Variant\", 0, \"TestVariant\", Box::new(Content::String(\"Hello\".to_string())));",
+          "    let deserializer: VariantDeserializer<(), ()> = VariantDeserializer {",
+          "        value: Some(value),",
+          "        err: PhantomData,",
+          "    };",
+          "    let seed = MyNewtypeSeed;",
+          "    let _ = deserializer.newtype_variant_seed(seed);",
+          "}"
+        ],
+        "oracle": [
+          "    let value = Content::NewtypeVariant(\"Variant\", 0, \"TestVariant\", Box::new(Content::String(\"Hello\".to_string())));",
+          "    let deserializer: VariantDeserializer<(), ()> = VariantDeserializer { value: Some(value), err: PhantomData };",
+          "    let seed = MyNewtypeSeed;",
+          "    let result = deserializer.newtype_variant_seed(seed);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), 42);"
+        ],
+        "code": [
+          "{",
+          "    let value = Content::NewtypeVariant(\"Variant\", 0, \"TestVariant\", Box::new(Content::String(\"Hello\".to_string())));",
+          "    let deserializer: VariantDeserializer<(), ()> = VariantDeserializer {",
+          "        value: Some(value),",
+          "        err: PhantomData,",
+          "    };",
+          "    let seed = MyNewtypeSeed;",
+          "    let _ = deserializer.newtype_variant_seed(seed);",
+          "    let value = Content::NewtypeVariant(\"Variant\", 0, \"TestVariant\", Box::new(Content::String(\"Hello\".to_string())));",
+          "    let deserializer: VariantDeserializer<(), ()> = VariantDeserializer { value: Some(value), err: PhantomData };",
+          "    let seed = MyNewtypeSeed;",
+          "    let result = deserializer.newtype_variant_seed(seed);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

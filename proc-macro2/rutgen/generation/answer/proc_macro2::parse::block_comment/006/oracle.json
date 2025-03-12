@@ -1,0 +1,218 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/* comment /* deeper comment */\",",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = block_comment(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(!input.starts_with(\"/*\") == false);",
+          "    assert!(i < upper == true);",
+          "    assert!(bytes[i] == b'/' == true);",
+          "    assert!(bytes[i] == b'*' == false);",
+          "    assert!(bytes[i + 1] == b'/' == false);",
+          "    assert!(depth == 0 == false);",
+          "    let result = block_comment(input);",
+          "    assert!(result.is_ok());",
+          "    if let Ok((cursor, _)) = result {",
+          "    assert!(cursor.rest == \"/* comment /* deeper comment */\");",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/* comment /* deeper comment */\",",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = block_comment(input);",
+          "    assert!(!input.starts_with(\"/*\") == false);",
+          "    assert!(i < upper == true);",
+          "    assert!(bytes[i] == b'/' == true);",
+          "    assert!(bytes[i] == b'*' == false);",
+          "    assert!(bytes[i + 1] == b'/' == false);",
+          "    assert!(depth == 0 == false);",
+          "    let result = block_comment(input);",
+          "    assert!(result.is_ok());",
+          "    if let Ok((cursor, _)) = result {",
+          "    assert!(cursor.rest == \"/* comment /* deeper comment */\");",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/* outer /* inner /* deepest */ comment */\",",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = block_comment(input);",
+          "}"
+        ],
+        "oracle": [
+          "    Ok((input.advance(42), \"/* outer /* inner /* deepest */\"))",
+          "    Ok((input.advance(38), \"/* inner /* deepest */ comment */\"))",
+          "    Ok((input.advance(28), \"/* deepest */ comment */\"))",
+          "    Ok((input.advance(2), \"*/ comment */\"))",
+          "    Err(Reject)"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/* outer /* inner /* deepest */ comment */\",",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = block_comment(input);",
+          "    Ok((input.advance(42), \"/* outer /* inner /* deepest */\"))",
+          "    Ok((input.advance(38), \"/* inner /* deepest */ comment */\"))",
+          "    Ok((input.advance(28), \"/* deepest */ comment */\"))",
+          "    Ok((input.advance(2), \"*/ comment */\"))",
+          "    Err(Reject)",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/* /* /* not closed */ more content\",",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = block_comment(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_.is_ok(), true);",
+          "    assert!(matches!(_.unwrap(), (Cursor { rest: \" more content\", .. }, _)));",
+          "    assert_eq!(_.unwrap().1, \"/* /* /* not closed */\");",
+          "    assert!(_.unwrap().0.starts_with(\" more content\"));",
+          "    assert_eq!(_.unwrap().0.rest, \" more content\");",
+          "    assert!(_.unwrap().0.is_empty() == false);",
+          "    assert_eq!(_.unwrap().0.as_bytes(), b\" more content\");"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/* /* /* not closed */ more content\",",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = block_comment(input);",
+          "    assert_eq!(_.is_ok(), true);",
+          "    assert!(matches!(_.unwrap(), (Cursor { rest: \" more content\", .. }, _)));",
+          "    assert_eq!(_.unwrap().1, \"/* /* /* not closed */\");",
+          "    assert!(_.unwrap().0.starts_with(\" more content\"));",
+          "    assert_eq!(_.unwrap().0.rest, \" more content\");",
+          "    assert!(_.unwrap().0.is_empty() == false);",
+          "    assert_eq!(_.unwrap().0.as_bytes(), b\" more content\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/* unclosed /* nested comment\",",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = block_comment(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_ , Ok((input.advance(i + 2), &input.rest[..i + 2])));",
+          "    assert!(input.starts_with(\"/*\"));",
+          "    assert!(i < upper);",
+          "    assert_eq!(bytes[i], b'/');",
+          "    assert_ne!(bytes[i], b'*');",
+          "    assert_ne!(bytes[i + 1], b'/');",
+          "    assert_ne!(depth, 0);"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/* unclosed /* nested comment\",",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = block_comment(input);",
+          "    assert_eq!(_ , Ok((input.advance(i + 2), &input.rest[..i + 2])));",
+          "    assert!(input.starts_with(\"/*\"));",
+          "    assert!(i < upper);",
+          "    assert_eq!(bytes[i], b'/');",
+          "    assert_ne!(bytes[i], b'*');",
+          "    assert_ne!(bytes[i + 1], b'/');",
+          "    assert_ne!(depth, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/* single depth /* still open /* more depth */\",",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = block_comment(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(input.starts_with(\"/*\"));",
+          "    assert!(i < upper);",
+          "    assert!(bytes[i] == b'/');",
+          "    assert!(bytes[i] == b'*' == false);",
+          "    assert!(bytes[i + 1] == b'/' == false);",
+          "    assert!(depth == 0);",
+          "    assert_eq!(_, Ok((input.advance(i + 2), &input.rest[..i + 2])));"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor {",
+          "        rest: \"/* single depth /* still open /* more depth */\",",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    let _ = block_comment(input);",
+          "    assert!(input.starts_with(\"/*\"));",
+          "    assert!(i < upper);",
+          "    assert!(bytes[i] == b'/');",
+          "    assert!(bytes[i] == b'*' == false);",
+          "    assert!(bytes[i + 1] == b'/' == false);",
+          "    assert!(depth == 0);",
+          "    assert_eq!(_, Ok((input.advance(i + 2), &input.rest[..i + 2])));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

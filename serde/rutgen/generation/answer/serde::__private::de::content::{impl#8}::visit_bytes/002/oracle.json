@@ -1,0 +1,195 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestVisitor;",
+          "    impl<'de> Visitor<'de> for TestVisitor {",
+          "        type Value = TagOrContent<'de>;",
+          "        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+          "            write!(formatter, \"Expecting test visitor\")",
+          "        }",
+          "    }",
+          "",
+          "    let visitor = TestVisitor;",
+          "    let result = visitor.visit_bytes(b\"\"); // Testing with an empty byte slice",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(TagOrContent::Content(Content::Bytes(&[]))));"
+        ],
+        "code": [
+          "{",
+          "    struct TestVisitor;",
+          "    impl<'de> Visitor<'de> for TestVisitor {",
+          "        type Value = TagOrContent<'de>;",
+          "        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+          "            write!(formatter, \"Expecting test visitor\")",
+          "        }",
+          "    }",
+          "",
+          "    let visitor = TestVisitor;",
+          "    let result = visitor.visit_bytes(b\"\"); // Testing with an empty byte slice",
+          "    assert_eq!(result, Ok(TagOrContent::Content(Content::Bytes(&[]))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestVisitor;",
+          "    impl<'de> Visitor<'de> for TestVisitor {",
+          "        type Value = TagOrContent<'de>;",
+          "        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+          "            write!(formatter, \"Expecting test visitor\")",
+          "        }",
+          "    }",
+          "",
+          "    let visitor = TestVisitor;",
+          "    let result = visitor.visit_bytes(b\"non_matching_bytes\"); // Testing with a non-matching byte slice",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().is_invalid_type());",
+          "    assert_eq!(result.unwrap_err().unexpected(), Unexpected::Bytes(b\"non_matching_bytes\"));",
+          "    assert_eq!(result.unwrap_err().expected(), \"Expecting test visitor\");"
+        ],
+        "code": [
+          "{",
+          "    struct TestVisitor;",
+          "    impl<'de> Visitor<'de> for TestVisitor {",
+          "        type Value = TagOrContent<'de>;",
+          "        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+          "            write!(formatter, \"Expecting test visitor\")",
+          "        }",
+          "    }",
+          "",
+          "    let visitor = TestVisitor;",
+          "    let result = visitor.visit_bytes(b\"non_matching_bytes\"); // Testing with a non-matching byte slice",
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().is_invalid_type());",
+          "    assert_eq!(result.unwrap_err().unexpected(), Unexpected::Bytes(b\"non_matching_bytes\"));",
+          "    assert_eq!(result.unwrap_err().expected(), \"Expecting test visitor\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestVisitor;",
+          "    impl<'de> Visitor<'de> for TestVisitor {",
+          "        type Value = TagOrContent<'de>;",
+          "        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+          "            write!(formatter, \"Expecting test visitor\")",
+          "        }",
+          "    }",
+          "",
+          "    let visitor = TestVisitor;",
+          "    let result = visitor.visit_bytes(&[0u8; 58]); // Testing with maximum length byte array (57 bytes used here since 58 is used for buffer)",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(TagOrContent::Content(Content::Bytes(&[0u8; 58]))));"
+        ],
+        "code": [
+          "{",
+          "    struct TestVisitor;",
+          "    impl<'de> Visitor<'de> for TestVisitor {",
+          "        type Value = TagOrContent<'de>;",
+          "        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+          "            write!(formatter, \"Expecting test visitor\")",
+          "        }",
+          "    }",
+          "",
+          "    let visitor = TestVisitor;",
+          "    let result = visitor.visit_bytes(&[0u8; 58]); // Testing with maximum length byte array (57 bytes used here since 58 is used for buffer)",
+          "    assert_eq!(result, Ok(TagOrContent::Content(Content::Bytes(&[0u8; 58]))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestVisitor {",
+          "        name: &'static str,",
+          "    }",
+          "    ",
+          "    impl<'de> Visitor<'de> for TestVisitor {",
+          "        type Value = TagOrContent<'de>;",
+          "        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+          "            write!(formatter, \"Expecting test visitor\")",
+          "        }",
+          "        ",
+          "        fn visit_bytes<F>(self, value: &[u8]) -> Result<Self::Value, F>",
+          "        where",
+          "            F: de::Error,",
+          "        {",
+          "            if value == self.name.as_bytes() {",
+          "                Ok(TagOrContent::Tag)",
+          "            } else {",
+          "                ContentVisitor::new()",
+          "                    .visit_bytes(value)",
+          "                    .map(TagOrContent::Content)",
+          "            }",
+          "        }",
+          "    }",
+          "",
+          "    let visitor = TestVisitor { name: \"match\" };",
+          "    let result = visitor.visit_bytes(b\"match_extra\"); // Testing with a byte slice that partially matches",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(Error::invalid_type(Unexpected::Bytes(b\"match_extra\"), &visitor)));"
+        ],
+        "code": [
+          "{",
+          "    struct TestVisitor {",
+          "        name: &'static str,",
+          "    }",
+          "    ",
+          "    impl<'de> Visitor<'de> for TestVisitor {",
+          "        type Value = TagOrContent<'de>;",
+          "        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+          "            write!(formatter, \"Expecting test visitor\")",
+          "        }",
+          "        ",
+          "        fn visit_bytes<F>(self, value: &[u8]) -> Result<Self::Value, F>",
+          "        where",
+          "            F: de::Error,",
+          "        {",
+          "            if value == self.name.as_bytes() {",
+          "                Ok(TagOrContent::Tag)",
+          "            } else {",
+          "                ContentVisitor::new()",
+          "                    .visit_bytes(value)",
+          "                    .map(TagOrContent::Content)",
+          "            }",
+          "        }",
+          "    }",
+          "",
+          "    let visitor = TestVisitor { name: \"match\" };",
+          "    let result = visitor.visit_bytes(b\"match_extra\"); // Testing with a byte slice that partially matches",
+          "    assert_eq!(result, Err(Error::invalid_type(Unexpected::Bytes(b\"match_extra\"), &visitor)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

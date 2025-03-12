@@ -1,0 +1,145 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut vec = Vec::with_capacity(64);",
+          "    vec.push(1);",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(vec.capacity(), 64);",
+          "    assert_eq!(vec.len(), 1);",
+          "    assert!(result.len() > 0);",
+          "    assert!(unsafe { result.as_mut_ptr() } != vec.as_mut_ptr());",
+          "    assert!(unsafe { result.as_uninit_slice_mut() }.len() == 63);",
+          "    assert!(result as *mut _ as usize % mem::align_of::<u8>() == 0);",
+          "    assert!(ptr::eq(unsafe { result.as_mut_ptr().add(vec.len()) }, unsafe { vec.as_mut_ptr() }));"
+        ],
+        "code": [
+          "{",
+          "    let mut vec = Vec::with_capacity(64);",
+          "    vec.push(1);",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "    assert_eq!(vec.capacity(), 64);",
+          "    assert_eq!(vec.len(), 1);",
+          "    assert!(result.len() > 0);",
+          "    assert!(unsafe { result.as_mut_ptr() } != vec.as_mut_ptr());",
+          "    assert!(unsafe { result.as_uninit_slice_mut() }.len() == 63);",
+          "    assert!(result as *mut _ as usize % mem::align_of::<u8>() == 0);",
+          "    assert!(ptr::eq(unsafe { result.as_mut_ptr().add(vec.len()) }, unsafe { vec.as_mut_ptr() }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut vec = Vec::with_capacity(128);",
+          "    vec.push(1);",
+          "    vec.push(2);",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut vec = Vec::with_capacity(128);",
+          "    vec.push(1);",
+          "    vec.push(2);",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "    assert!(result.len() > 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut vec = Vec::with_capacity(128);",
+          "    vec.push(1);",
+          "    vec.push(2);",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "    let mut vec = Vec::with_capacity(128);",
+          "    vec.push(1);",
+          "    vec.push(2);",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "    assert!(result.len() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut vec = Vec::with_capacity(256);",
+          "    for _ in 0..255 {",
+          "        vec.push(1);",
+          "    }",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(vec.capacity(), 256);",
+          "    assert_eq!(vec.len(), 255);",
+          "    assert!(result.len() > 0);",
+          "    assert_eq!(result.as_mut_ptr(), vec.as_mut_ptr().add(255));",
+          "    assert_eq!(unsafe { result.as_uninit_slice_mut().len() }, 1);",
+          "    assert!(result.is::<UninitSlice>());",
+          "    assert!(unsafe { ptr::is_null(result.as_mut_ptr().add(1)) });"
+        ],
+        "code": [
+          "{",
+          "    let mut vec = Vec::with_capacity(256);",
+          "    for _ in 0..255 {",
+          "        vec.push(1);",
+          "    }",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "    assert_eq!(vec.capacity(), 256);",
+          "    assert_eq!(vec.len(), 255);",
+          "    assert!(result.len() > 0);",
+          "    assert_eq!(result.as_mut_ptr(), vec.as_mut_ptr().add(255));",
+          "    assert_eq!(unsafe { result.as_uninit_slice_mut().len() }, 1);",
+          "    assert!(result.is::<UninitSlice>());",
+          "    assert!(unsafe { ptr::is_null(result.as_mut_ptr().add(1)) });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut vec: Vec<u8> = Vec::with_capacity(32);",
+          "    // capacity is greater than length (which is 0)",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut vec: Vec<u8> = Vec::with_capacity(32);",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "    assert!(vec.capacity() > vec.len());",
+          "    assert_eq!(result.len(), 32);"
+        ],
+        "code": [
+          "{",
+          "    let mut vec: Vec<u8> = Vec::with_capacity(32);",
+          "    // capacity is greater than length (which is 0)",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "    let mut vec: Vec<u8> = Vec::with_capacity(32);",
+          "    let result: &mut UninitSlice = vec.chunk_mut();",
+          "    assert!(vec.capacity() > vec.len());",
+          "    assert_eq!(result.len(), 32);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

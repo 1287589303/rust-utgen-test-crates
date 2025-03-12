@@ -1,0 +1,1 @@
+fn visit_macro_mut(&mut self, _mac: &mut Macro) {}

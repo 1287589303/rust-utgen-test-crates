@@ -1,0 +1,75 @@
+#[cfg(feature = "std")]
+type CaptureNameMap = std::collections::HashMap<Arc<str>, SmallIndex>;
+#[cfg(not(feature = "std"))]
+type CaptureNameMap = alloc::collections::BTreeMap<Arc<str>, SmallIndex>;
+use alloc::{string::String, sync::Arc, vec, vec::Vec};
+use crate::util::{
+    interpolate,
+    primitives::{NonMaxUsize, PatternID, PatternIDError, PatternIDIter, SmallIndex},
+    search::{Match, Span},
+};
+#[derive(Debug, Default)]
+struct GroupInfoInner {
+    slot_ranges: Vec<(SmallIndex, SmallIndex)>,
+    name_to_index: Vec<CaptureNameMap>,
+    index_to_name: Vec<Vec<Option<Arc<str>>>>,
+    memory_extra: usize,
+}
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct SmallIndex(u32);
+#[derive(Clone, Copy, Default, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct PatternID(SmallIndex);
+impl GroupInfoInner {
+    fn add_first_group(&mut self, pid: PatternID) {}
+    fn add_explicit_group<N: AsRef<str>>(
+        &mut self,
+        pid: PatternID,
+        group: SmallIndex,
+        maybe_name: Option<N>,
+    ) -> Result<(), GroupInfoError> {}
+    fn fixup_slot_ranges(&mut self) -> Result<(), GroupInfoError> {}
+    fn pattern_len(&self) -> usize {}
+    fn group_len(&self, pid: PatternID) -> usize {
+        let (start, end) = match self.slot_ranges.get(pid.as_usize()) {
+            None => return 0,
+            Some(range) => range,
+        };
+        1 + ((end.as_usize() - start.as_usize()) / 2)
+    }
+    fn small_slot_len(&self) -> SmallIndex {}
+}
+impl SmallIndex {
+    #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
+    pub const MAX: SmallIndex = SmallIndex::new_unchecked(core::i32::MAX as usize - 1);
+    #[cfg(target_pointer_width = "16")]
+    pub const MAX: SmallIndex = SmallIndex::new_unchecked(core::isize::MAX - 1);
+    pub const LIMIT: usize = SmallIndex::MAX.as_usize() + 1;
+    pub const ZERO: SmallIndex = SmallIndex::new_unchecked(0);
+    pub const SIZE: usize = core::mem::size_of::<SmallIndex>();
+    #[inline]
+    pub fn new(index: usize) -> Result<SmallIndex, SmallIndexError> {}
+    #[inline]
+    pub const fn new_unchecked(index: usize) -> SmallIndex {}
+    #[inline]
+    pub fn must(index: usize) -> SmallIndex {}
+    #[inline]
+    pub const fn as_usize(&self) -> usize {
+        self.0 as usize
+    }
+    #[inline]
+    pub const fn as_u64(&self) -> u64 {}
+    #[inline]
+    pub const fn as_u32(&self) -> u32 {}
+    #[inline]
+    pub const fn as_i32(&self) -> i32 {}
+    #[inline]
+    pub fn one_more(&self) -> usize {}
+    #[inline]
+    pub fn from_ne_bytes(bytes: [u8; 4]) -> Result<SmallIndex, SmallIndexError> {}
+    #[inline]
+    pub fn from_ne_bytes_unchecked(bytes: [u8; 4]) -> SmallIndex {}
+    #[inline]
+    pub fn to_ne_bytes(&self) -> [u8; 4] {}
+}

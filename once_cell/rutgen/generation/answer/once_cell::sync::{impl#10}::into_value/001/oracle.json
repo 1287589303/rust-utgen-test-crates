@@ -1,0 +1,290 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy::new(|| 42);",
+          "    let _ = lazy.cell.set(42);",
+          "    let result = lazy.into_value();",
+          "}"
+        ],
+        "oracle": [
+          "    result.expect(\"Expected Ok variant but got Err variant\");",
+          "    assert_eq!(result.unwrap(), 42);",
+          "    let lazy_uninitialized = Lazy::new(|| 42);",
+          "    let result_uninitialized = lazy_uninitialized.into_value();",
+          "    result_uninitialized.expect_err(\"Expected Err variant but got Ok variant\");",
+          "    assert!(result_uninitialized.is_err());",
+          "    let lazy_poisoned = Lazy::new(|| { panic!(\"poisoned\") });",
+          "    let _ = lazy_poisoned.cell.set(42);",
+          "    let result_poisoned = lazy_poisoned.into_value();",
+          "    result_poisoned.expect_err(\"Expected Err variant when using poisoned Lazy\");"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy::new(|| 42);",
+          "    let _ = lazy.cell.set(42);",
+          "    let result = lazy.into_value();",
+          "    result.expect(\"Expected Ok variant but got Err variant\");",
+          "    assert_eq!(result.unwrap(), 42);",
+          "    let lazy_uninitialized = Lazy::new(|| 42);",
+          "    let result_uninitialized = lazy_uninitialized.into_value();",
+          "    result_uninitialized.expect_err(\"Expected Err variant but got Ok variant\");",
+          "    assert!(result_uninitialized.is_err());",
+          "    let lazy_poisoned = Lazy::new(|| { panic!(\"poisoned\") });",
+          "    let _ = lazy_poisoned.cell.set(42);",
+          "    let result_poisoned = lazy_poisoned.into_value();",
+          "    result_poisoned.expect_err(\"Expected Err variant when using poisoned Lazy\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy::new(|| 42);",
+          "    let result = lazy.into_value();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), false);",
+          "    assert_eq!(result.unwrap_err(), lazy.init.get());",
+          "    ",
+          "    let lazy = Lazy::new(|| 42);",
+          "    lazy.cell.set(10).unwrap();",
+          "    let result = lazy.into_value();",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(result.unwrap(), 10);"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy::new(|| 42);",
+          "    let result = lazy.into_value();",
+          "    assert_eq!(result.is_ok(), false);",
+          "    assert_eq!(result.unwrap_err(), lazy.init.get());",
+          "    ",
+          "    let lazy = Lazy::new(|| 42);",
+          "    lazy.cell.set(10).unwrap();",
+          "    let result = lazy.into_value();",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(result.unwrap(), 10);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy::new(|| panic!(\"this should panic\"));",
+          "    let _ = lazy.cell.set(42);",
+          "    let _ = lazy.into_value();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::new(|| panic!(\"this should panic\")).into_value(), Err(|| panic!(\"this should panic\")));",
+          "    assert!(lazy.cell.set(42).is_ok());",
+          "    assert!(lazy.into_value().is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy::new(|| panic!(\"this should panic\"));",
+          "    let _ = lazy.cell.set(42);",
+          "    let _ = lazy.into_value();",
+          "    assert_eq!(Lazy::new(|| panic!(\"this should panic\")).into_value(), Err(|| panic!(\"this should panic\")));",
+          "    assert!(lazy.cell.set(42).is_ok());",
+          "    assert!(lazy.into_value().is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy::new(|| Some(42));",
+          "    let _ = lazy.cell.set(Some(42));",
+          "    let result = lazy.into_value();",
+          "}"
+        ],
+        "oracle": [
+          "    let lazy = Lazy::new(|| Some(42));",
+          "    let _ = lazy.cell.set(Some(42));",
+          "    let result = lazy.into_value();",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), Some(42));",
+          "    ",
+          "    let lazy_uninitialized = Lazy::new(|| panic!(\"Should not be called\"));",
+          "    let result_uninitialized = lazy_uninitialized.into_value();",
+          "    assert!(result_uninitialized.is_err());",
+          "    assert_eq!(result_uninitialized.err().unwrap(), lazy_uninitialized.init.take().unwrap());",
+          "    ",
+          "    let lazy_poisoned = Lazy::new(|| panic!(\"Should not be called\"));",
+          "    let _ = lazy_poisoned.cell.set(Some(42));",
+          "    let _ = lazy_poisoned.cell.take();",
+          "    let result_poisoned = lazy_poisoned.into_value();",
+          "    assert!(result_poisoned.is_err());",
+          "    assert_eq!(result_poisoned.err().unwrap(), lazy_poisoned.init.take().unwrap());"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy::new(|| Some(42));",
+          "    let _ = lazy.cell.set(Some(42));",
+          "    let result = lazy.into_value();",
+          "    let lazy = Lazy::new(|| Some(42));",
+          "    let _ = lazy.cell.set(Some(42));",
+          "    let result = lazy.into_value();",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), Some(42));",
+          "    ",
+          "    let lazy_uninitialized = Lazy::new(|| panic!(\"Should not be called\"));",
+          "    let result_uninitialized = lazy_uninitialized.into_value();",
+          "    assert!(result_uninitialized.is_err());",
+          "    assert_eq!(result_uninitialized.err().unwrap(), lazy_uninitialized.init.take().unwrap());",
+          "    ",
+          "    let lazy_poisoned = Lazy::new(|| panic!(\"Should not be called\"));",
+          "    let _ = lazy_poisoned.cell.set(Some(42));",
+          "    let _ = lazy_poisoned.cell.take();",
+          "    let result_poisoned = lazy_poisoned.into_value();",
+          "    assert!(result_poisoned.is_err());",
+          "    assert_eq!(result_poisoned.err().unwrap(), lazy_poisoned.init.take().unwrap());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy::new(|| Ok(42));",
+          "    let _ = lazy.cell.set(Ok(42));",
+          "    let result = lazy.into_value();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(42));",
+          "    let lazy_uninitialized = Lazy::<i32>::new(|| Ok(0));",
+          "    assert!(matches!(lazy_uninitialized.into_value(), Err(_)));",
+          "    let lazy_poisoned = Lazy::new(|| panic!(\"Shouldn't be called\"));",
+          "    let _ = lazy_poisoned.cell.set(Ok(13));",
+          "    let result_poisoned = lazy_poisoned.into_value();",
+          "    assert_eq!(result_poisoned, Ok(13));",
+          "    let lazy_failed = Lazy::new(|| Err(\"error\"));",
+          "    assert!(matches!(lazy_failed.into_value(), Err(_)));"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy::new(|| Ok(42));",
+          "    let _ = lazy.cell.set(Ok(42));",
+          "    let result = lazy.into_value();",
+          "    assert_eq!(result, Ok(42));",
+          "    let lazy_uninitialized = Lazy::<i32>::new(|| Ok(0));",
+          "    assert!(matches!(lazy_uninitialized.into_value(), Err(_)));",
+          "    let lazy_poisoned = Lazy::new(|| panic!(\"Shouldn't be called\"));",
+          "    let _ = lazy_poisoned.cell.set(Ok(13));",
+          "    let result_poisoned = lazy_poisoned.into_value();",
+          "    assert_eq!(result_poisoned, Ok(13));",
+          "    let lazy_failed = Lazy::new(|| Err(\"error\"));",
+          "    assert!(matches!(lazy_failed.into_value(), Err(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy::new(|| None);",
+          "    let _ = lazy.cell.set(None);",
+          "    let result = lazy.into_value();",
+          "}"
+        ],
+        "oracle": [
+          "    let lazy = Lazy::new(|| None);",
+          "    assert_eq!(lazy.into_value(), Err(|| None));",
+          "    let _ = lazy.cell.set(None);",
+          "    assert!(lazy.into_value().is_err());",
+          "    assert!(matches!(lazy.into_value(), Err(f) if f.is_some()));",
+          "    assert!(panic::catch_unwind(|| lazy.into_value()).is_err());",
+          "    assert!(lazy.cell.try_insert(Some(value)).is_ok());",
+          "    let lazy_initialized = Lazy::new(|| value);",
+          "    assert_eq!(lazy_initialized.into_value(), Ok(value));",
+          "    assert_eq!(lazy_initialized.cell.get(), Some(&value));",
+          "    assert!(lazy_initialized.init.get().is_some());"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy::new(|| None);",
+          "    let _ = lazy.cell.set(None);",
+          "    let result = lazy.into_value();",
+          "    let lazy = Lazy::new(|| None);",
+          "    assert_eq!(lazy.into_value(), Err(|| None));",
+          "    let _ = lazy.cell.set(None);",
+          "    assert!(lazy.into_value().is_err());",
+          "    assert!(matches!(lazy.into_value(), Err(f) if f.is_some()));",
+          "    assert!(panic::catch_unwind(|| lazy.into_value()).is_err());",
+          "    assert!(lazy.cell.try_insert(Some(value)).is_ok());",
+          "    let lazy_initialized = Lazy::new(|| value);",
+          "    assert_eq!(lazy_initialized.into_value(), Ok(value));",
+          "    assert_eq!(lazy_initialized.cell.get(), Some(&value));",
+          "    assert!(lazy_initialized.init.get().is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy::new(|| None);",
+          "    let result = lazy.into_value();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap(), || None);",
+          "    ",
+          "    let lazy_with_value = Lazy::new(|| 42);",
+          "    let value = lazy_with_value.into_value().unwrap();",
+          "    assert_eq!(value, 42);",
+          "    ",
+          "    let lazy_initialized = Lazy::new(|| 10);",
+          "    let _ = lazy_initialized.into_value();  // consumes the lazy",
+          "    assert!(lazy_initialized.into_value().is_err());"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy::new(|| None);",
+          "    let result = lazy.into_value();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap(), || None);",
+          "    ",
+          "    let lazy_with_value = Lazy::new(|| 42);",
+          "    let value = lazy_with_value.into_value().unwrap();",
+          "    assert_eq!(value, 42);",
+          "    ",
+          "    let lazy_initialized = Lazy::new(|| 10);",
+          "    let _ = lazy_initialized.into_value();  // consumes the lazy",
+          "    assert!(lazy_initialized.into_value().is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

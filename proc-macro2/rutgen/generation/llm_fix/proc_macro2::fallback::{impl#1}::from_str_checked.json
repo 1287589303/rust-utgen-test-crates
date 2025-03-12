@@ -1,0 +1,385 @@
+{
+  "name": "proc_macro2::fallback::{impl#1}::from_str_checked",
+  "mod_info": {
+    "name": "fallback",
+    "loc": "src/lib.rs:151:1:151:18"
+  },
+  "visible": true,
+  "loc": "src/fallback.rs:72:5:83:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: cursor.starts_with(BYTE_ORDER_MARK) at line 78 is true\n"
+      ],
+      "input_infer": "src input ranges: any string starting with \"\\u{feff}\" followed by any valid token stream characters (e.g. alphanumeric, punctuation, whitespace) up to a length limit suitable for processing in a token stream parsing context.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"\\u{feff}let x = 5;\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert!(matches!(result, Ok(_)));",
+                "    assert_eq!(result.unwrap().is_empty(), false);",
+                "    assert!(result.unwrap().inner.len() > 0);",
+                "    assert!(result.unwrap().inner.contains(&TokenTree::Ident(Ident::new(\"x\", Span::default()))));",
+                "    assert!(result.unwrap().inner.contains(&TokenTree::Literal(Literal::new(\"5\", Span::default()))));"
+              ],
+              "code": [
+                "{",
+                "    let input = \"\\u{feff}let x = 5;\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "    assert!(result.is_ok());",
+                "    assert!(matches!(result, Ok(_)));",
+                "    assert_eq!(result.unwrap().is_empty(), false);",
+                "    assert!(result.unwrap().inner.len() > 0);",
+                "    assert!(result.unwrap().inner.contains(&TokenTree::Ident(Ident::new(\"x\", Span::default()))));",
+                "    assert!(result.unwrap().inner.contains(&TokenTree::Literal(Literal::new(\"5\", Span::default()))));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"\\u{feff}   fn test() {}  \";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let token_stream = result.unwrap();",
+                "    assert!(!token_stream.is_empty());",
+                "    // Verify that the first token is a Group or Ident as expected",
+                "    match token_stream.inner.get(0) {",
+                "    Some(TokenTree::Group(_)) => {},",
+                "    Some(TokenTree::Ident(_)) => {},",
+                "    _ => panic!(\"Expected first token to be Group or Ident\"),",
+                "    }",
+                "    assert!(token_stream.inner.len() > 0);",
+                "    assert!(input.starts_with(\"\\u{feff}\"));"
+              ],
+              "code": [
+                "{",
+                "   let input = \"\\u{feff}   fn test() {}  \";",
+                "   let result = TokenStream::from_str_checked(input);",
+                "   assert!(result.is_ok());",
+                "   let token_stream = result.unwrap();",
+                "   assert!(!token_stream.is_empty());",
+                "   // Verify that the first token is a Group or Ident as expected",
+                "   match token_stream.inner.iter().nth(0) {",
+                "   Some(TokenTree::Group(_)) => {},",
+                "   Some(TokenTree::Ident(_)) => {},",
+                "   _ => panic!(\"Expected first token to be Group or Ident\"),",
+                "   }",
+                "   assert!(token_stream.inner.len() > 0);",
+                "   assert!(input.starts_with(\"\\u{feff}\"));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"\\u{feff}if (x == 10) { x += 1; }\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    let expected_result = Ok(TokenStream { inner: /* expected inner structure based on input */ });",
+                "    assert_eq!(result, expected_result);"
+              ],
+              "code": [
+                "{",
+                "    let input = \"\\u{feff}if (x == 10) { x += 1; }\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "    let expected_result = Ok(TokenStream { inner: /* expected inner structure based on input */ });",
+                "    assert_eq!(result, expected_result);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"\\u{feff}\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().inner.len(), 0);  // Assuming the stream is empty after stripping BOM",
+                "    assert!(result.unwrap().is_empty());  // Ensure the TokenStream is empty after BOM is removed"
+              ],
+              "code": [
+                "{",
+                "   let input = \"\\u{feff}\";",
+                "   let result = TokenStream::from_str_checked(input);",
+                "   assert!(result.is_ok());",
+                "   assert_eq!(result.as_ref().unwrap().inner.len(), 0);  // Assuming the stream is empty after stripping BOM",
+                "   assert!(result.as_ref().unwrap().is_empty());  // Ensure the TokenStream is empty after BOM is removed",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"\\u{feff}\" + &\"a\".repeat(1000); // Example of a long valid input.",
+                "    let result = TokenStream::from_str_checked(&input);",
+                "}"
+              ],
+              "oracle": [
+                "    let input = \"\\u{feff}\" + &\"a\".repeat(1000);",
+                "    assert!(result.is_ok());",
+                "    let token_stream = result.unwrap();",
+                "    assert!(!token_stream.is_empty());"
+              ],
+              "code": [
+                "{",
+                "   let input = \"\\u{feff}\".to_owned() + &\"a\".repeat(1000); // Example of a long valid input.",
+                "   let result = TokenStream::from_str_checked(&input);",
+                "   let input = \"\\u{feff}\".to_owned() + &\"a\".repeat(1000);",
+                "    assert!(result.is_ok());",
+                "    let token_stream = result.unwrap();",
+                "    assert!(!token_stream.is_empty());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: cursor.starts_with(BYTE_ORDER_MARK) at line 78 is false\n"
+      ],
+      "input_infer": "src input string length >= 0 (up to non-empty string), without leading byte order mark; valid input tokens formatted correctly as TokenTree, including various valid combinations of delimiters and identifiers.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Ok(TokenStream::new()));"
+              ],
+              "code": [
+                "{",
+                "    let input = \"\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "    assert_eq!(result, Ok(TokenStream::new()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"my_identifier\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().inner.len(), 1);",
+                "    assert!(result.unwrap().inner[0].is_ident(\"my_identifier\"));"
+              ],
+              "code": [
+                "{",
+                "    let input = \"my_identifier\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().inner.len(), 1);",
+                "    assert!(result.unwrap().inner[0].is_ident(\"my_identifier\"));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"(my_identifier)\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().is_empty(), false);",
+                "    assert!(result.unwrap().inner.len() > 0);",
+                "    assert!(result.unwrap().inner[0].is_ident());",
+                "    assert_eq!(result.unwrap().inner[0].to_string(), \"my_identifier\");"
+              ],
+              "code": [
+                "{",
+                "   let input = \"(my_identifier)\";  ",
+                "   let result = TokenStream::from_str_checked(input);  ",
+                "   assert!(result.is_ok());  ",
+                "   let token_stream = result.unwrap();  ",
+                "   assert_eq!(token_stream.is_empty(), false);  ",
+                "   assert!(token_stream.inner.len() > 0);  ",
+                "   assert!(token_stream.inner[0].is_ident());  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"((nested_group))\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    let input = \"((nested_group))\";",
+                "    let expected_result = Ok(TokenStream::new());",
+                "    assert_eq!(result, expected_result);",
+                "    assert!(result.is_ok());",
+                "    assert!(!result.unwrap().is_empty());"
+              ],
+              "code": [
+                "{",
+                "    let input = \"((nested_group))\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "    let input = \"((nested_group))\";",
+                "    let expected_result = Ok(TokenStream::new());",
+                "    assert_eq!(result, expected_result);",
+                "    assert!(result.is_ok());",
+                "    assert!(!result.unwrap().is_empty());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"my_var + (another_var - [list])\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().inner.len(), 5); // Check the expected number of tokens",
+                "    assert_eq!(result.unwrap().inner[0], TokenTree::Ident(Ident::new(\"my_var\", Span::default())));",
+                "    assert_eq!(result.unwrap().inner[1], TokenTree::Punct(Punct::new('+', Spacing::Alone)));",
+                "    assert_eq!(result.unwrap().inner[2], TokenTree::Group(Group::new(Delimiter::Parenthesis, ...))); // replace '...' with expected content",
+                "    assert_eq!(result.unwrap().inner[3], TokenTree::Ident(Ident::new(\"another_var\", Span::default())));",
+                "    assert_eq!(result.unwrap().inner[4], TokenTree::Group(Group::new(Delimiter::Bracket, ...))); // replace '...' with expected content"
+              ],
+              "code": [
+                "{",
+                "    let input = \"my_var + (another_var - [list])\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().inner.len(), 5); // Check the expected number of tokens",
+                "    assert_eq!(result.unwrap().inner[0], TokenTree::Ident(Ident::new(\"my_var\", Span::default())));",
+                "    assert_eq!(result.unwrap().inner[1], TokenTree::Punct(Punct::new('+', Spacing::Alone)));",
+                "  assert_eq!(result.unwrap().inner[2], TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::new()))); // replace '...' with expected content",
+                "  assert_eq!(result.unwrap().inner[3], TokenTree::Ident(Ident::new(\"another_var\", Span::default())));",
+                "  assert_eq!(result.unwrap().inner[4], TokenTree::Group(Group::new(Delimiter::Bracket, TokenStream::new()))); // replace '...' with expected content",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"{ key: (value), value2 : [list] }\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let token_stream = result.unwrap();",
+                "    assert!(!token_stream.is_empty());",
+                "    assert_eq!(token_stream.inner.len(), expected_length);",
+                "    assert!(token_stream.inner.contains(&TokenTree::Group(expected_group)));",
+                "    assert!(token_stream.inner.contains(&TokenTree::Ident(expected_ident)));",
+                "    assert!(token_stream.inner.contains(&TokenTree::Punct(expected_punct)));",
+                "    assert!(token_stream.inner.contains(&TokenTree::Literal(expected_literal)));"
+              ],
+              "code": [
+                "{",
+                "   let input = \"{ key: (value), value2 : [list] }\";",
+                "   let result = TokenStream::from_str_checked(input);",
+                "   assert!(result.is_ok());",
+                "   let token_stream = result.unwrap();",
+                "   assert!(!token_stream.is_empty());",
+                "   assert_eq!(token_stream.inner.len(), expected_length);",
+                "   let expected_group = /* initialize expected_group appropriately */;",
+                "   let expected_ident = /* initialize expected_ident appropriately */;",
+                "   let expected_punct = /* initialize expected_punct appropriately */;",
+                "   let expected_literal = /* initialize expected_literal appropriately */;",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input = \"let x = (5 + (3 * (2 - 1)));\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().is_empty(), false);"
+              ],
+              "code": [
+                "{",
+                "    let input = \"let x = (5 + (3 * (2 - 1)));\";",
+                "    let result = TokenStream::from_str_checked(input);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().is_empty(), false);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

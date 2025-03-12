@@ -1,0 +1,283 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#1}::try_which_overlapping_matches",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:1128:5:1147:6",
+  "doc": "/// Writes the set of patterns that match anywhere in the given search\n/// configuration to `patset`. If multiple patterns match at the same\n/// position and the underlying DFA supports overlapping matches, then all\n/// matching patterns are written to the given set.\n///\n/// Unless all of the patterns in this DFA are anchored, then generally\n/// speaking, this will visit every byte in the haystack.\n///\n/// This search routine *does not* clear the pattern set. This gives some\n/// flexibility to the caller (e.g., running multiple searches with the\n/// same pattern set), but does make the API bug-prone if you're reusing\n/// the same pattern set for multiple searches but intended them to be\n/// independent.\n///\n/// If a pattern ID matched but the given `PatternSet` does not have\n/// sufficient capacity to store it, then it is not inserted and silently\n/// dropped.\n///\n/// # Errors\n///\n/// This routine errors if the search could not complete. This can occur\n/// in a number of circumstances:\n///\n/// * The configuration of the lazy DFA may permit it to \"quit\" the search.\n/// For example, setting quit bytes or enabling heuristic support for\n/// Unicode word boundaries. The default configuration does not enable any\n/// option that could result in the lazy DFA quitting.\n/// * The configuration of the lazy DFA may also permit it to \"give up\"\n/// on a search if it makes ineffective use of its transition table\n/// cache. The default configuration does not enable this by default,\n/// although it is typically a good idea to.\n/// * When the provided `Input` configuration is not supported. For\n/// example, by providing an unsupported anchor mode.\n///\n/// When a search returns an error, callers cannot know whether a match\n/// exists or not.\n///\n/// # Example\n///\n/// This example shows how to find all matching patterns in a haystack,\n/// even when some patterns match at the same position as other patterns.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{\n///     hybrid::dfa::DFA,\n///     Input, MatchKind, PatternSet,\n/// };\n///\n/// let patterns = &[\n///     r\"\\w+\", r\"\\d+\", r\"\\pL+\", r\"foo\", r\"bar\", r\"barfoo\", r\"foobar\",\n/// ];\n/// let dfa = DFA::builder()\n///     .configure(DFA::config().match_kind(MatchKind::All))\n///     .build_many(patterns)?;\n/// let mut cache = dfa.create_cache();\n///\n/// let input = Input::new(\"foobar\");\n/// let mut patset = PatternSet::new(dfa.pattern_len());\n/// dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset)?;\n/// let expected = vec![0, 2, 3, 4, 6];\n/// let got: Vec<usize> = patset.iter().map(|p| p.as_usize()).collect();\n/// assert_eq!(expected, got);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn try_which_overlapping_matches(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    "    patset: &mut PatternSet,",
+    ") -> Result<(), MatchError> {",
+    "    let mut state = OverlappingState::start();",
+    "    while let Some(m) = {",
+    "        self.try_search_overlapping_fwd(cache, input, &mut state)?;",
+    "        state.get_match()",
+    "    } {",
+    "        let _ = patset.try_insert(m.pattern());",
+    "        // There's nothing left to find, so we can stop. Or the caller",
+    "        // asked us to.",
+    "        if patset.is_full() || input.get_earliest() {",
+    "            break;",
+    "        }",
+    "    }",
+    "    Ok(())",
+    "}"
+  ],
+  "size": {
+    "chain": 5,
+    "contra": 1,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.try_search_overlapping_fwd(cache, input, &mut state)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1136,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        26,
+        27,
+        28
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.try_search_overlapping_fwd(cache, input, &mut state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1136,
+          "bound": null
+        },
+        {
+          "cond": "let Some(m) = {\n            self.try_search_overlapping_fwd(cache, input, &mut state)?;\n            state.get_match()\n        }",
+          "norm": null,
+          "value": "true",
+          "line": 1135,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        11,
+        12,
+        24,
+        25,
+        28
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.try_search_overlapping_fwd(cache, input, &mut state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1136,
+          "bound": null
+        },
+        {
+          "cond": "let Some(m) = {\n            self.try_search_overlapping_fwd(cache, input, &mut state)?;\n            state.get_match()\n        }",
+          "norm": null,
+          "value": "true",
+          "line": 1135,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "true",
+          "line": 1142,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        22,
+        25,
+        28
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.try_search_overlapping_fwd(cache, input, &mut state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1136,
+          "bound": null
+        },
+        {
+          "cond": "let Some(m) = {\n            self.try_search_overlapping_fwd(cache, input, &mut state)?;\n            state.get_match()\n        }",
+          "norm": null,
+          "value": "true",
+          "line": 1135,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1142,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "true",
+          "line": 1142,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        21,
+        22,
+        25,
+        28
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.try_search_overlapping_fwd(cache, input, &mut state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1136,
+          "bound": null
+        },
+        {
+          "cond": "let Some(m) = {\n            self.try_search_overlapping_fwd(cache, input, &mut state)?;\n            state.get_match()\n        }",
+          "norm": null,
+          "value": "true",
+          "line": 1135,
+          "bound": null
+        },
+        {
+          "cond": "patset.is_full()",
+          "norm": null,
+          "value": "false",
+          "line": 1142,
+          "bound": null
+        },
+        {
+          "cond": "input.get_earliest()",
+          "norm": null,
+          "value": "false",
+          "line": 1142,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_overlapping_fwd(cache, input, &mut state)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1136,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        23,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        26,
+        27,
+        28
+      ],
+      "may_contra": true,
+      "min_set": true
+    }
+  ]
+}

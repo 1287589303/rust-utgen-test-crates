@@ -1,0 +1,182 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[];",
+          "    let result = crate::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(result, Err(_)));",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(result.is_ok() == false);",
+          "    assert!(result.unwrap_or_default().1 == 0);",
+          "    assert!(result.unwrap_or_default().0.has_empty == false);",
+          "    assert!(result.unwrap_or_default().0.is_utf8 == false);",
+          "    assert!(result.unwrap_or_default().0.is_always_start_anchored == false);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[];",
+          "    let result = crate::from_bytes(slice);",
+          "    assert!(matches!(result, Err(_)));",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(result.is_ok() == false);",
+          "    assert!(result.unwrap_or_default().1 == 0);",
+          "    assert!(result.unwrap_or_default().0.has_empty == false);",
+          "    assert!(result.unwrap_or_default().0.is_utf8 == false);",
+          "    assert!(result.unwrap_or_default().0.is_always_start_anchored == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0, 1, 2];",
+          "    let result = crate::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::SomeExpectedErrorType);",
+          "    assert_eq!(result.unwrap_err().1, \"flag bitset\");"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0, 1, 2];",
+          "    let result = crate::from_bytes(slice);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::SomeExpectedErrorType);",
+          "    assert_eq!(result.unwrap_err().1, \"flag bitset\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[1, 0, 0, 0]; // 1 in first byte means has_empty is true",
+          "    let result = crate::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), true);",
+          "    let (flags, nread) = result.unwrap();",
+          "    assert_eq!(flags.has_empty, true);",
+          "    assert_eq!(flags.is_utf8, false);",
+          "    assert_eq!(flags.is_always_start_anchored, false);",
+          "    assert_eq!(nread, 4);",
+          "    ",
+          "    let slice_invalid: &[u8] = &[0; 2]; // Insufficient length",
+          "    let result_invalid = crate::from_bytes(slice_invalid);",
+          "    assert!(result_invalid.is_err());",
+          "    ",
+          "    let slice_invalid_length: &[u8] = &[255, 255, 255, 255]; // A case to test maximum bits",
+          "    let result_invalid_length = crate::from_bytes(slice_invalid_length);",
+          "    assert_eq!(result_invalid_length.is_ok(), true);",
+          "    let (flags_max, nread_max) = result_invalid_length.unwrap();",
+          "    assert_eq!(flags_max.has_empty, true);",
+          "    assert_eq!(flags_max.is_utf8, true);",
+          "    assert_eq!(flags_max.is_always_start_anchored, true);",
+          "    assert_eq!(nread_max, 4);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[1, 0, 0, 0]; // 1 in first byte means has_empty is true",
+          "    let result = crate::from_bytes(slice);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    let (flags, nread) = result.unwrap();",
+          "    assert_eq!(flags.has_empty, true);",
+          "    assert_eq!(flags.is_utf8, false);",
+          "    assert_eq!(flags.is_always_start_anchored, false);",
+          "    assert_eq!(nread, 4);",
+          "    ",
+          "    let slice_invalid: &[u8] = &[0; 2]; // Insufficient length",
+          "    let result_invalid = crate::from_bytes(slice_invalid);",
+          "    assert!(result_invalid.is_err());",
+          "    ",
+          "    let slice_invalid_length: &[u8] = &[255, 255, 255, 255]; // A case to test maximum bits",
+          "    let result_invalid_length = crate::from_bytes(slice_invalid_length);",
+          "    assert_eq!(result_invalid_length.is_ok(), true);",
+          "    let (flags_max, nread_max) = result_invalid_length.unwrap();",
+          "    assert_eq!(flags_max.has_empty, true);",
+          "    assert_eq!(flags_max.is_utf8, true);",
+          "    assert_eq!(flags_max.is_always_start_anchored, true);",
+          "    assert_eq!(nread_max, 4);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0, 0, 0, 0]; // No flags set",
+          "    let result = crate::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().0.has_empty, false);",
+          "    assert_eq!(result.unwrap().0.is_utf8, false);",
+          "    assert_eq!(result.unwrap().0.is_always_start_anchored, false);",
+          "    assert_eq!(result.unwrap().1, 4);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0, 0, 0, 0]; // No flags set",
+          "    let result = crate::from_bytes(slice);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().0.has_empty, false);",
+          "    assert_eq!(result.unwrap().0.is_utf8, false);",
+          "    assert_eq!(result.unwrap().0.is_always_start_anchored, false);",
+          "    assert_eq!(result.unwrap().1, 4);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[8, 0, 0, 0]; // invalid flag (greater than 7)",
+          "    let result = crate::from_bytes(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(matches!(result, Err(_)));",
+          "    assert!(result.unwrap_err().0 == DeserializeErrorKind::InvalidFlag);",
+          "    assert_eq!(result.unwrap_err().1, \"flag bitset\");",
+          "    assert_eq!(result.is_ok(), false);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[8, 0, 0, 0]; // invalid flag (greater than 7)",
+          "    let result = crate::from_bytes(slice);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(matches!(result, Err(_)));",
+          "    assert!(result.unwrap_err().0 == DeserializeErrorKind::InvalidFlag);",
+          "    assert_eq!(result.unwrap_err().1, \"flag bitset\");",
+          "    assert_eq!(result.is_ok(), false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

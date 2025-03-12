@@ -1,0 +1,157 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { flags: Flags { ignore_whitespace: true, ..Default::default() }, nest_limit: 10, };",
+          "    let pattern = \"# This is a comment\\n  \";",
+          "    let parser = Parser::new(config, pattern);",
+          "    parser.bump_space(); // Should process ignoring whitespace and comments",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parser.pos(), 15); // After processing, position should be at the end of the comment",
+          "    assert_eq!(parser.char(), None); // Function should have consumed all input",
+          "    assert!(parser.is_done()); // Parser should be done after processing the comment",
+          "    assert_eq!(parser.flags().ignore_whitespace, true); // Ignore whitespace flag should remain true",
+          "    assert_eq!(parser.depth.get(), 0); // Ensure that depth hasn't changed during processing"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { flags: Flags { ignore_whitespace: true, ..Default::default() }, nest_limit: 10, };",
+          "    let pattern = \"# This is a comment\\n  \";",
+          "    let parser = Parser::new(config, pattern);",
+          "    parser.bump_space(); // Should process ignoring whitespace and comments",
+          "    assert_eq!(parser.pos(), 15); // After processing, position should be at the end of the comment",
+          "    assert_eq!(parser.char(), None); // Function should have consumed all input",
+          "    assert!(parser.is_done()); // Parser should be done after processing the comment",
+          "    assert_eq!(parser.flags().ignore_whitespace, true); // Ignore whitespace flag should remain true",
+          "    assert_eq!(parser.depth.get(), 0); // Ensure that depth hasn't changed during processing",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { flags: Flags { ignore_whitespace: true, ..Default::default() }, nest_limit: 10, };",
+          "    let pattern = \"# Comment line\\nabc\";",
+          "    let parser = Parser::new(config, pattern);",
+          "    parser.bump_space(); // Should skip the comment and whitespace before 'abc'",
+          "}"
+        ],
+        "oracle": [
+          "    parser.flags().ignore_whitespace == true",
+          "    parser.is_done() == false",
+          "    parser.char() == '#'",
+          "    parser.bump_space();",
+          "    parser.pos() == 15  // Position after skipping comment and whitespace",
+          "    parser.char() == 'a'  // Next character after whitespace and comment is 'a'"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { flags: Flags { ignore_whitespace: true, ..Default::default() }, nest_limit: 10, };",
+          "    let pattern = \"# Comment line\\nabc\";",
+          "    let parser = Parser::new(config, pattern);",
+          "    parser.bump_space(); // Should skip the comment and whitespace before 'abc'",
+          "    parser.flags().ignore_whitespace == true",
+          "    parser.is_done() == false",
+          "    parser.char() == '#'",
+          "    parser.bump_space();",
+          "    parser.pos() == 15  // Position after skipping comment and whitespace",
+          "    parser.char() == 'a'  // Next character after whitespace and comment is 'a'",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { flags: Flags { ignore_whitespace: true, ..Default::default() }, nest_limit: 10, };",
+          "    let pattern = \"# First comment\\n# Second comment\\n   \";",
+          "    let parser = Parser::new(config, pattern);",
+          "    parser.bump_space(); // Should skip multiple comments and spaces",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parser.pos(), 0); // Initial position should be 0",
+          "    parser.bump_space();",
+          "    assert_eq!(parser.pos(), 27); // Position should move past comments and spaces",
+          "    assert!(parser.is_done() == false); // Parser should not be done",
+          "    assert_eq!(parser.char(), ' '); // Next character should be a space after comments",
+          "    parser.bump(); // Call bump to advance past space",
+          "    assert_eq!(parser.pos(), 28); // Position should be 28 after bumping past space",
+          "    assert_eq!(parser.char(), None); // After bump, position should indicate end of input",
+          "    parser.bump_space(); // Calling bump_space again should not change position",
+          "    assert_eq!(parser.pos(), 28); // Position should remain the same after calling bump_space again"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { flags: Flags { ignore_whitespace: true, ..Default::default() }, nest_limit: 10, };",
+          "    let pattern = \"# First comment\\n# Second comment\\n   \";",
+          "    let parser = Parser::new(config, pattern);",
+          "    parser.bump_space(); // Should skip multiple comments and spaces",
+          "    assert_eq!(parser.pos(), 0); // Initial position should be 0",
+          "    parser.bump_space();",
+          "    assert_eq!(parser.pos(), 27); // Position should move past comments and spaces",
+          "    assert!(parser.is_done() == false); // Parser should not be done",
+          "    assert_eq!(parser.char(), ' '); // Next character should be a space after comments",
+          "    parser.bump(); // Call bump to advance past space",
+          "    assert_eq!(parser.pos(), 28); // Position should be 28 after bumping past space",
+          "    assert_eq!(parser.char(), None); // After bump, position should indicate end of input",
+          "    parser.bump_space(); // Calling bump_space again should not change position",
+          "    assert_eq!(parser.pos(), 28); // Position should remain the same after calling bump_space again",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { flags: Flags { ignore_whitespace: true, ..Default::default() }, nest_limit: 10, };",
+          "    let pattern = \"#\\n   \";",
+          "    let parser = Parser::new(config, pattern);",
+          "    parser.bump_space(); // Should handle an empty comment correctly",
+          "}"
+        ],
+        "oracle": [
+          "    self.flags().ignore_whitespace == true",
+          "    self.is_done() == false",
+          "    self.char() == '#'",
+          "    self.bump_space() does not modify parser state",
+          "    self.is_done() == true",
+          "    self.pos() == pattern.len()",
+          "    self.char() is None"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { flags: Flags { ignore_whitespace: true, ..Default::default() }, nest_limit: 10, };",
+          "    let pattern = \"#\\n   \";",
+          "    let parser = Parser::new(config, pattern);",
+          "    parser.bump_space(); // Should handle an empty comment correctly",
+          "    self.flags().ignore_whitespace == true",
+          "    self.is_done() == false",
+          "    self.char() == '#'",
+          "    self.bump_space() does not modify parser state",
+          "    self.is_done() == true",
+          "    self.pos() == pattern.len()",
+          "    self.char() is None",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

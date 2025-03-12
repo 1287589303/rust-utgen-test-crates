@@ -1,0 +1,206 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[derive(Clone)]",
+      "struct MockStrategy {",
+      "    group_info: GroupInfo,",
+      "}",
+      "",
+      "impl Strategy for MockStrategy {",
+      "    fn group_info(&self) -> &GroupInfo {",
+      "        &self.group_info",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex {",
+          "        imp: Arc::new(RegexI {",
+          "            strat: Arc::new(MockStrategy { group_info: GroupInfo::default() }),",
+          "            info: RegexInfo::default(),",
+          "        }),",
+          "        pool: CachePool::default(),",
+          "    };",
+          "    let captures = regex.create_captures();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(captures.group_info(), &GroupInfo::default());",
+          "    assert_eq!(captures.pid, None);",
+          "    assert_eq!(captures.slots.len(), 0);",
+          "    assert!(captures.slots.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let regex = Regex {",
+          "        imp: Arc::new(RegexI {",
+          "            strat: Arc::new(MockStrategy { group_info: GroupInfo::default() }),",
+          "            info: RegexInfo::default(),",
+          "        }),",
+          "        pool: CachePool::default(),",
+          "    };",
+          "    let captures = regex.create_captures();",
+          "    assert_eq!(captures.group_info(), &GroupInfo::default());",
+          "    assert_eq!(captures.pid, None);",
+          "    assert_eq!(captures.slots.len(), 0);",
+          "    assert!(captures.slots.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let group_info = GroupInfo(Arc::new(GroupInfoInner::new(1)));",
+          "    let regex = Regex {",
+          "        imp: Arc::new(RegexI {",
+          "            strat: Arc::new(MockStrategy { group_info }),",
+          "            info: RegexInfo::default(),",
+          "        }),",
+          "        pool: CachePool::default(),",
+          "    };",
+          "    let captures = regex.create_captures();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(captures.group_info(), regex.group_info());",
+          "    assert_eq!(captures.pid, None);",
+          "    assert_eq!(captures.slots.len(), 2);  // Assuming 1 group, so 2 slots (start, end)",
+          "    assert!(captures.slots.iter().all(|slot| slot.is_none()));"
+        ],
+        "code": [
+          "{",
+          "    let group_info = GroupInfo(Arc::new(GroupInfoInner::new(1)));",
+          "    let regex = Regex {",
+          "        imp: Arc::new(RegexI {",
+          "            strat: Arc::new(MockStrategy { group_info }),",
+          "            info: RegexInfo::default(),",
+          "        }),",
+          "        pool: CachePool::default(),",
+          "    };",
+          "    let captures = regex.create_captures();",
+          "    assert_eq!(captures.group_info(), regex.group_info());",
+          "    assert_eq!(captures.pid, None);",
+          "    assert_eq!(captures.slots.len(), 2);  // Assuming 1 group, so 2 slots (start, end)",
+          "    assert!(captures.slots.iter().all(|slot| slot.is_none()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let group_info = GroupInfo(Arc::new(GroupInfoInner::from_names(vec![\"first\".into(), \"last\".into()])));",
+          "    let regex = Regex {",
+          "        imp: Arc::new(RegexI {",
+          "            strat: Arc::new(MockStrategy { group_info: group_info.clone() }),",
+          "            info: RegexInfo::default(),",
+          "        }),",
+          "        pool: CachePool::default(),",
+          "    };",
+          "    let captures = regex.create_captures();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(captures.group_info().0.names, vec![\"first\", \"last\"]);",
+          "    assert_eq!(captures.slots.len(), 4);",
+          "    assert!(captures.pid.is_none());",
+          "    for slot in &captures.slots { assert!(slot.is_none()); }",
+          "    assert_eq!(captures.group_len(), 2);",
+          "    assert_eq!(captures.is_match(), false);",
+          "    assert_eq!(captures.pattern(), None);"
+        ],
+        "code": [
+          "{",
+          "    let group_info = GroupInfo(Arc::new(GroupInfoInner::from_names(vec![\"first\".into(), \"last\".into()])));",
+          "    let regex = Regex {",
+          "        imp: Arc::new(RegexI {",
+          "            strat: Arc::new(MockStrategy { group_info: group_info.clone() }),",
+          "            info: RegexInfo::default(),",
+          "        }),",
+          "        pool: CachePool::default(),",
+          "    };",
+          "    let captures = regex.create_captures();",
+          "    assert_eq!(captures.group_info().0.names, vec![\"first\", \"last\"]);",
+          "    assert_eq!(captures.slots.len(), 4);",
+          "    assert!(captures.pid.is_none());",
+          "    for slot in &captures.slots { assert!(slot.is_none()); }",
+          "    assert_eq!(captures.group_len(), 2);",
+          "    assert_eq!(captures.is_match(), false);",
+          "    assert_eq!(captures.pattern(), None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared_pool = CachePool::default();",
+          "    let group_info = GroupInfo(Arc::new(GroupInfoInner::new(2)));",
+          "    let regex1 = Regex {",
+          "        imp: Arc::new(RegexI {",
+          "            strat: Arc::new(MockStrategy { group_info: group_info.clone() }),",
+          "            info: RegexInfo::default(),",
+          "        }),",
+          "        pool: shared_pool.clone(),",
+          "    };",
+          "    let regex2 = Regex {",
+          "        imp: Arc::new(RegexI {",
+          "            strat: Arc::new(MockStrategy { group_info }),",
+          "            info: RegexInfo::default(),",
+          "        }),",
+          "        pool: shared_pool,",
+          "    };",
+          "    let captures1 = regex1.create_captures();",
+          "    let captures2 = regex2.create_captures();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(captures1.group_info(), captures2.group_info());",
+          "    assert_eq!(captures1.slots.len(), captures2.slots.len());",
+          "    assert!(captures1.slots.iter().all(|slot| slot.is_none()));",
+          "    assert!(captures2.slots.iter().all(|slot| slot.is_none()));"
+        ],
+        "code": [
+          "{",
+          "    let shared_pool = CachePool::default();",
+          "    let group_info = GroupInfo(Arc::new(GroupInfoInner::new(2)));",
+          "    let regex1 = Regex {",
+          "        imp: Arc::new(RegexI {",
+          "            strat: Arc::new(MockStrategy { group_info: group_info.clone() }),",
+          "            info: RegexInfo::default(),",
+          "        }),",
+          "        pool: shared_pool.clone(),",
+          "    };",
+          "    let regex2 = Regex {",
+          "        imp: Arc::new(RegexI {",
+          "            strat: Arc::new(MockStrategy { group_info }),",
+          "            info: RegexInfo::default(),",
+          "        }),",
+          "        pool: shared_pool,",
+          "    };",
+          "    let captures1 = regex1.create_captures();",
+          "    let captures2 = regex2.create_captures();",
+          "    assert_eq!(captures1.group_info(), captures2.group_info());",
+          "    assert_eq!(captures1.slots.len(), captures2.slots.len());",
+          "    assert!(captures1.slots.iter().all(|slot| slot.is_none()));",
+          "    assert!(captures2.slots.iter().all(|slot| slot.is_none()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

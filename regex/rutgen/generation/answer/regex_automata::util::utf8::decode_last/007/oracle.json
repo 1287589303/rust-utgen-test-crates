@@ -1,0 +1,131 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = b\"\"; // Invalid as per precondition",
+          "    let result = decode_last(bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    None",
+          "    Some(Err(bytes[bytes.len() - 1]))",
+          "    Some(Ok(ch))",
+          "    None"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = b\"\"; // Invalid as per precondition",
+          "    let result = decode_last(bytes);",
+          "    None",
+          "    Some(Err(bytes[bytes.len() - 1]))",
+          "    Some(Ok(ch))",
+          "    None",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = b\"\\xE2\\x9C\"; // Two valid bytes, where last is not a valid continuation",
+          "    let result = decode_last(bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = b\"\\xE2\\x9C\"; // Two valid bytes, where last is not a valid continuation",
+          "    let result = decode_last(bytes);",
+          "    assert_eq!(result, None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = b\"\\xC2\\xE2\\x9C\"; // Last byte is E2, which is invalid continuation",
+          "    let result = decode_last(bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = b\"\\xC2\\xE2\\x9C\"; // Last byte is E2, which is invalid continuation",
+          "    let result = decode_last(bytes);",
+          "    assert_eq!(result, None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = b\"\\xC2\\xA1\"; // One valid UTF-8 sequence, but last is continuation (invalid)",
+          "    let result = decode_last(bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes: &[u8] = b\"\"; // Test with empty byte slice, expect None",
+          "    assert_eq!(decode_last(bytes), None);",
+          "    ",
+          "    let bytes: &[u8] = b\"\\xC2\\xA1\\x80\"; // Test with valid leading byte and invalid continuation",
+          "    assert_eq!(decode_last(bytes), Some(Err(0x80)));",
+          "    ",
+          "    let bytes: &[u8] = b\"\\xC2\\x80\"; // Test with valid leading but only continuation byte",
+          "    assert_eq!(decode_last(bytes), Some(Err(0x80)));",
+          "    ",
+          "    let bytes: &[u8] = b\"\\xE2\\x82\\xAC\"; // Test with valid UTF-8 sequence (Euro sign)",
+          "    assert_eq!(decode_last(bytes), Some(Ok('€')));",
+          "    ",
+          "    let bytes: &[u8] = b\"\\xF0\\x9F\\x92\\xA9\"; // Test with a valid 4-byte UTF-8 sequence (Pile of poo)",
+          "    assert_eq!(decode_last(bytes), Some(Ok('💩')));",
+          "    ",
+          "    let bytes: &[u8] = b\"\\xE2\\x82\"; // Test with invalid ending (incomplete sequence)",
+          "    assert_eq!(decode_last(bytes), Some(Err(0xE2)));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = b\"\\xC2\\xA1\"; // One valid UTF-8 sequence, but last is continuation (invalid)",
+          "    let result = decode_last(bytes);",
+          "    let bytes: &[u8] = b\"\"; // Test with empty byte slice, expect None",
+          "    assert_eq!(decode_last(bytes), None);",
+          "    ",
+          "    let bytes: &[u8] = b\"\\xC2\\xA1\\x80\"; // Test with valid leading byte and invalid continuation",
+          "    assert_eq!(decode_last(bytes), Some(Err(0x80)));",
+          "    ",
+          "    let bytes: &[u8] = b\"\\xC2\\x80\"; // Test with valid leading but only continuation byte",
+          "    assert_eq!(decode_last(bytes), Some(Err(0x80)));",
+          "    ",
+          "    let bytes: &[u8] = b\"\\xE2\\x82\\xAC\"; // Test with valid UTF-8 sequence (Euro sign)",
+          "    assert_eq!(decode_last(bytes), Some(Ok('€')));",
+          "    ",
+          "    let bytes: &[u8] = b\"\\xF0\\x9F\\x92\\xA9\"; // Test with a valid 4-byte UTF-8 sequence (Pile of poo)",
+          "    assert_eq!(decode_last(bytes), Some(Ok('💩')));",
+          "    ",
+          "    let bytes: &[u8] = b\"\\xE2\\x82\"; // Test with invalid ending (incomplete sequence)",
+          "    assert_eq!(decode_last(bytes), Some(Err(0xE2)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

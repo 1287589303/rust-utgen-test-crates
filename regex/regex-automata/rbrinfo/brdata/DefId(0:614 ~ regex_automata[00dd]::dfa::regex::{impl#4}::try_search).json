@@ -1,0 +1,599 @@
+{
+  "name": "regex_automata::dfa::regex::{impl#4}::try_search",
+  "mod_info": {
+    "name": "dfa::regex",
+    "loc": "regex-automata/src/dfa/mod.rs:341:1:341:15"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/regex.rs:475:5:535:6",
+  "doc": "/// Returns the start and end offset of the leftmost match. If no match\n/// exists, then `None` is returned.\n///\n/// This is like [`Regex::find`] but with two differences:\n///\n/// 1. It is not generic over `Into<Input>` and instead accepts a\n/// `&Input`. This permits reusing the same `Input` for multiple searches\n/// without needing to create a new one. This _may_ help with latency.\n/// 2. It returns an error if the search could not complete where as\n/// [`Regex::find`] will panic.\n///\n/// # Errors\n///\n/// This routine errors if the search could not complete. This can occur\n/// in the following circumstances:\n///\n/// * The configuration of the DFA may permit it to \"quit\" the search.\n/// For example, setting quit bytes or enabling heuristic support for\n/// Unicode word boundaries. The default configuration does not enable any\n/// option that could result in the DFA quitting.\n/// * When the provided `Input` configuration is not supported. For\n/// example, by providing an unsupported anchor mode.\n///\n/// When a search returns an error, callers cannot know whether a match\n/// exists or not.\n",
+  "code": [
+    "pub fn try_search(",
+    "    &self,",
+    "    input: &Input<'_>,",
+    ") -> Result<Option<Match>, MatchError> {",
+    "    let (fwd, rev) = (self.forward(), self.reverse());",
+    "    let end = match fwd.try_search_fwd(input)? {",
+    "        None => return Ok(None),",
+    "        Some(end) => end,",
+    "    };",
+    "    // This special cases an empty match at the beginning of the search. If",
+    "    // our end matches our start, then since a reverse DFA can't match past",
+    "    // the start, it must follow that our starting position is also our end",
+    "    // position. So short circuit and skip the reverse search.",
+    "    if input.start() == end.offset() {",
+    "        return Ok(Some(Match::new(",
+    "            end.pattern(),",
+    "            end.offset()..end.offset(),",
+    "        )));",
+    "    }",
+    "    // We can also skip the reverse search if we know our search was",
+    "    // anchored. This occurs either when the input config is anchored or",
+    "    // when we know the regex itself is anchored. In this case, we know the",
+    "    // start of the match, if one is found, must be the start of the",
+    "    // search.",
+    "    if self.is_anchored(input) {",
+    "        return Ok(Some(Match::new(",
+    "            end.pattern(),",
+    "            input.start()..end.offset(),",
+    "        )));",
+    "    }",
+    "    // N.B. I have tentatively convinced myself that it isn't necessary",
+    "    // to specify the specific pattern for the reverse search since the",
+    "    // reverse search will always find the same pattern to match as the",
+    "    // forward search. But I lack a rigorous proof. Why not just provide",
+    "    // the pattern anyway? Well, if it is needed, then leaving it out",
+    "    // gives us a chance to find a witness. (Also, if we don't need to",
+    "    // specify the pattern, then we don't need to build the reverse DFA",
+    "    // with 'starts_for_each_pattern' enabled.)",
+    "    //",
+    "    // We also need to be careful to disable 'earliest' for the reverse",
+    "    // search, since it could be enabled for the forward search. In the",
+    "    // reverse case, to satisfy \"leftmost\" criteria, we need to match",
+    "    // as much as we can. We also need to be careful to make the search",
+    "    // anchored. We don't want the reverse search to report any matches",
+    "    // other than the one beginning at the end of our forward search.",
+    "    let revsearch = input",
+    "        .clone()",
+    "        .span(input.start()..end.offset())",
+    "        .anchored(Anchored::Yes)",
+    "        .earliest(false);",
+    "    let start = rev",
+    "        .try_search_rev(&revsearch)?",
+    "        .expect(\"reverse search must match if forward search does\");",
+    "    assert_eq!(",
+    "        start.pattern(),",
+    "        end.pattern(),",
+    "        \"forward and reverse search must match same pattern\",",
+    "    );",
+    "    assert!(start.offset() <= end.offset());",
+    "    Ok(Some(Match::new(end.pattern(), start.offset()..end.offset())))",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 6,
+    "min_set": 8
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 480,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        9,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == end.offset()",
+          "norm": "end.offset() == input.start()",
+          "value": "true",
+          "line": 488,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(Match::new(\n                end.pattern(),\n                end.offset()..end.offset(),\n            )))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == end.offset()",
+          "norm": "end.offset() == input.start()",
+          "value": "false",
+          "line": 488,
+          "bound": null
+        },
+        {
+          "cond": "self.is_anchored(input)",
+          "norm": null,
+          "value": "true",
+          "line": 499,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Some(Match::new(\n                end.pattern(),\n                input.start()..end.offset(),\n            )))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        12,
+        14,
+        15,
+        16,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == end.offset()",
+          "norm": "end.offset() == input.start()",
+          "value": "false",
+          "line": 488,
+          "bound": null
+        },
+        {
+          "cond": "self.is_anchored(input)",
+          "norm": null,
+          "value": "false",
+          "line": 499,
+          "bound": null
+        },
+        {
+          "cond": "rev\n            .try_search_rev(&revsearch)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 525,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        12,
+        14,
+        15,
+        16,
+        22,
+        23,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        39,
+        41,
+        42,
+        59,
+        60,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == end.offset()",
+          "norm": "end.offset() == input.start()",
+          "value": "false",
+          "line": 488,
+          "bound": null
+        },
+        {
+          "cond": "self.is_anchored(input)",
+          "norm": null,
+          "value": "false",
+          "line": 499,
+          "bound": null
+        },
+        {
+          "cond": "rev\n            .try_search_rev(&revsearch)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 525,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "start.offset() <= end.offset()",
+          "norm": "end.offset() >= start.offset()",
+          "value": "true",
+          "line": 533,
+          "bound": "start.offset() == end.offset()"
+        }
+      ],
+      "ret": "Ok(Some(Match::new(end.pattern(), start.offset()..end.offset())))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        12,
+        14,
+        15,
+        16,
+        22,
+        23,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        51,
+        52,
+        53,
+        55,
+        56,
+        57,
+        58,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == end.offset()",
+          "norm": "end.offset() == input.start()",
+          "value": "false",
+          "line": 488,
+          "bound": null
+        },
+        {
+          "cond": "self.is_anchored(input)",
+          "norm": null,
+          "value": "false",
+          "line": 499,
+          "bound": null
+        },
+        {
+          "cond": "rev\n            .try_search_rev(&revsearch)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 525,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "start.offset() <= end.offset()",
+          "norm": "end.offset() >= start.offset()",
+          "value": "false",
+          "line": 533,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        12,
+        14,
+        15,
+        16,
+        22,
+        23,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        51,
+        52,
+        54,
+        74
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == end.offset()",
+          "norm": "end.offset() == input.start()",
+          "value": "false",
+          "line": 488,
+          "bound": null
+        },
+        {
+          "cond": "self.is_anchored(input)",
+          "norm": null,
+          "value": "false",
+          "line": 499,
+          "bound": null
+        },
+        {
+          "cond": "rev\n            .try_search_rev(&revsearch)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 525,
+          "bound": null
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 53,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        12,
+        14,
+        15,
+        16,
+        22,
+        23,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        43,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        74
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "fwd.try_search_fwd(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 480,
+          "bound": null
+        },
+        {
+          "cond": "fwd.try_search_fwd(input)? matches None",
+          "norm": null,
+          "value": "true",
+          "line": 480,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(None)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        11,
+        13,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

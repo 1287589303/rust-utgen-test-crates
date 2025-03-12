@@ -1,0 +1,44 @@
+// Answer 0
+
+#[test]
+fn test_serialize_struct_error() {
+    struct MockSerializer {
+        should_fail: bool,
+    }
+
+    impl Serializer for MockSerializer {
+        type Ok = ();
+        type Error = &'static str;
+
+        // Implementing the necessary methods
+        fn serialize_struct(&self, _: &str, _: usize) -> Result<impl SerializeStruct, Self::Error> {
+            if self.should_fail {
+                Err("serialization error")
+            } else {
+                Ok(MockStructSerializer)
+            }
+        }
+
+        // Other methods can return successful cases or result in simple mock implementations
+        fn serialize_bool(&self, _: bool) -> Result<Self::Ok, Self::Error> { Ok(()) }
+        fn serialize_u8(&self, _: u8) -> Result<Self::Ok, Self::Error> { Ok(()) }
+        // [Implement other necessary methods of Serializer here as no-op or appropriate returns]
+    }
+
+    struct MockStructSerializer;
+
+    impl SerializeStruct for MockStructSerializer {
+        fn serialize_field<T: ?Sized>(&mut self, _: &str, _: &T) -> Result<(), &'static str> { Ok(()) }
+        fn end(self) -> Result<(), &'static str> { Ok(()) }
+    }
+    
+    let serializer = MockSerializer { should_fail: true };
+    let content = Content::Struct("test_struct", vec![
+        ("key1", Content::String(String::new())),
+        ("key2", Content::None),
+        ("key3", Content::Bool(false)),
+    ]);
+    
+    let _ = content.serialize(serializer);
+}
+

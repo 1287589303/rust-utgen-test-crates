@@ -1,0 +1,249 @@
+You are given the below error from running 'cargo test' and related Rust code snippets.
+error[E0277]: `parse::Reject` doesn't implement `Debug`
+    --> src/parse.rs:1014:4
+     |
+1014 |    assert_eq!(float_digits(input), Ok(Cursor { rest: "-3" }));
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `parse::Reject` cannot be formatted using `{:?}`
+     |
+     = help: the trait `Debug` is not implemented for `parse::Reject`, which is required by `Result<parse::Cursor<'_>, parse::Reject>: Debug`
+     = note: add `#[derive(Debug)]` to `parse::Reject` or manually `impl Debug for parse::Reject`
+     = help: the trait `Debug` is implemented for `Result<T, E>`
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `parse::Reject` with `#[derive(Debug)]`
+     |
+75   + #[derive(Debug)]
+76   | pub(crate) struct Reject;
+     |
+
+
+
+---
+
+file: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs
+[1]#[doc = include_str!("panic.md")]
+[2]#[macro_export]
+[3]#[rustc_builtin_macro(core_panic)]
+[4]#[allow_internal_unstable(edition_panic)]
+[5]#[stable(feature = "core", since = "1.6.0")]
+[6]#[rustc_diagnostic_item = "core_panic_macro"]
+[7]macro_rules! panic {
+[8]    // Expands to either `$crate::panic::panic_2015` or `$crate::panic::panic_2021`
+[9]    // depending on the edition of the caller.
+[10]    ($($arg:tt)*) => {
+[11]        /* compiler built-in */
+[12]    };
+[13]}
+[14]
+[15]/// Asserts that two expressions are equal to each other (using [`PartialEq`]).
+[16]///
+[17]/// On panic, this macro will print the values of the expressions with their
+[18]/// debug representations.
+[19]///
+[20]/// Like [`assert!`], this macro has a second form, where a custom
+[21]/// panic message can be provided.
+[22]///
+[23]/// # Examples
+[24]///
+[25]/// ```
+[26]/// let a = 3;
+[27]/// let b = 1 + 2;
+[28]/// assert_eq!(a, b);
+[29]///
+[30]/// assert_eq!(a, b, "we are testing addition with {} and {}", a, b);
+[31]/// ```
+[32]#[macro_export]
+[33]#[stable(feature = "rust1", since = "1.0.0")]
+[34]#[cfg_attr(not(test), rustc_diagnostic_item = "assert_eq_macro")]
+[35]#[allow_internal_unstable(panic_internals)]
+[36]macro_rules! assert_eq {
+[37]    ($left:expr, $right:expr $(,)?) => {
+[38]        match (&$left, &$right) {
+[39]            (left_val, right_val) => {
+[40]                if !(*left_val == *right_val) {
+[41]                    let kind = $crate::panicking::AssertKind::Eq;
+[42]                    // The reborrows below are intentional. Without them, the stack slot for the
+[43]                    // borrow is initialized even before the values are compared, leading to a
+[44]                    // noticeable slow down.
+[45]                    $crate::panicking::assert_failed(kind, &*left_val, &*right_val, $crate::option::Option::None);
+[46]                }
+[47]            }
+[48]        }
+[49]    };
+[50]    ($left:expr, $right:expr, $($arg:tt)+) => {
+[51]        match (&$left, &$right) {
+[52]            (left_val, right_val) => {
+[53]                if !(*left_val == *right_val) {
+[54]                    let kind = $crate::panicking::AssertKind::Eq;
+[55]                    // The reborrows below are intentional. Without them, the stack slot for the
+[56]                    // borrow is initialized even before the values are compared, leading to a
+[57]                    // noticeable slow down.
+[58]                    $crate::panicking::assert_failed(kind, &*left_val, &*right_val, $crate::option::Option::Some($crate::format_args!($($arg)+)));
+[59]                }
+[60]            }
+[61]        }
+[62]    };
+[63]}
+[64]
+[65]/// Asserts that two expressions are not equal to each other (using [`PartialEq`]).
+[66]///
+[67]/// On panic, this macro will print the values of the expressions with their
+[68]/// debug representations.
+[69]///
+[70]/// Like [`assert!`], this macro has a second form, where a custom
+[71]/// panic message can be provided.
+[72]///
+[73]/// # Examples
+[74]///
+[75]/// ```
+[76]/// let a = 3;
+[77]/// let b = 2;
+[78]/// assert_ne!(a, b);
+[79]///
+[80]/// assert_ne!(a, b, "we are testing that the values are not equal");
+[81]/// ```
+[82]#[macro_export]
+[83]#[stable(feature = "assert_ne", since = "1.13.0")]
+[84]#[cfg_attr(not(test), rustc_diagnostic_item = "assert_ne_macro")]
+[85]#[allow_internal_unstable(panic_internals)]
+[86]macro_rules! assert_ne {
+[87]    ($left:expr, $right:expr $(,)?) => {
+[88]        match (&$left, &$right) {
+[89]            (left_val, right_val) => {
+[90]                if *left_val == *right_val {
+[91]                    let kind = $crate::panicking::AssertKind::Ne;
+[92]                    // The reborrows below are intentional. Without them, the stack slot for the
+[93]                    // borrow is initialized even before the values are compared, leading to a
+[94]                    // noticeable slow down.
+[95]                    $crate::panicking::assert_failed(kind, &*left_val, &*right_val, $crate::option::Option::None);
+
+file: src/parse.rs
+[25]    }
+[26]
+[27]    pub(crate) fn starts_with(&self, s: &str) -> bool {
+[28]        self.rest.starts_with(s)
+[29]    }
+[30]
+[31]    pub(crate) fn starts_with_char(&self, ch: char) -> bool {
+[32]        self.rest.starts_with(ch)
+[33]    }
+[34]
+[35]    pub(crate) fn starts_with_fn<Pattern>(&self, f: Pattern) -> bool
+[36]    where
+[37]        Pattern: FnMut(char) -> bool,
+[38]    {
+[39]        self.rest.starts_with(f)
+[40]    }
+[41]
+[42]    pub(crate) fn is_empty(&self) -> bool {
+[43]        self.rest.is_empty()
+[44]    }
+[45]
+[46]    fn len(&self) -> usize {
+[47]        self.rest.len()
+[48]    }
+[49]
+[50]    fn as_bytes(&self) -> &'a [u8] {
+[51]        self.rest.as_bytes()
+[52]    }
+[53]
+[54]    fn bytes(&self) -> Bytes<'a> {
+[55]        self.rest.bytes()
+[56]    }
+[57]
+[58]    fn chars(&self) -> Chars<'a> {
+[59]        self.rest.chars()
+[60]    }
+[61]
+[62]    fn char_indices(&self) -> CharIndices<'a> {
+[63]        self.rest.char_indices()
+[64]    }
+[65]
+[66]    fn parse(&self, tag: &str) -> Result<Cursor<'a>, Reject> {
+[67]        if self.starts_with(tag) {
+[68]            Ok(self.advance(tag.len()))
+[69]        } else {
+[70]            Err(Reject)
+[71]        }
+[72]    }
+[73]}
+[74]
+[75]pub(crate) struct Reject;
+[76]type PResult<'a, O> = Result<(Cursor<'a>, O), Reject>;
+[77]
+[78]fn skip_whitespace(input: Cursor) -> Cursor {
+[79]    let mut s = input;
+[80]
+[81]    while !s.is_empty() {
+[82]        let byte = s.as_bytes()[0];
+[83]        if byte == b'/' {
+[84]            if s.starts_with("//")
+[85]                && (!s.starts_with("///") || s.starts_with("////"))
+[86]                && !s.starts_with("//!")
+[87]            {
+[88]                let (cursor, _) = take_until_newline_or_eof(s);
+[89]                s = cursor;
+[90]                continue;
+[91]            } else if s.starts_with("/**/") {
+[92]                s = s.advance(4);
+[93]                continue;
+[94]            } else if s.starts_with("/*")
+[95]                && (!s.starts_with("/**") || s.starts_with("/***"))
+[96]                && !s.starts_with("/*!")
+[97]            {
+[98]                match block_comment(s) {
+[99]                    Ok((rest, _)) => {
+[100]                        s = rest;
+[101]                        continue;
+[102]                    }
+[103]                    Err(Reject) => return s,
+[104]                }
+[105]            }
+[106]        }
+[107]        match byte {
+[108]            b' ' | 0x09..=0x0d => {
+[109]                s = s.advance(1);
+[110]                continue;
+[111]            }
+[112]            b if b.is_ascii() => {}
+[113]            _ => {
+[114]                let ch = s.chars().next().unwrap();
+[115]                if is_whitespace(ch) {
+[116]                    s = s.advance(ch.len_utf8());
+[117]                    continue;
+[118]                }
+[119]            }
+[120]        }
+[121]        return s;
+[122]    }
+[123]    s
+[124]}
+[125]
+Instructions: Fix the error on the above code snippets. Not every snippet might require a fix or be relevant to the error, but take into account the code in all above snippets as it could help you derive the best possible fix. Assume that the snippets might not be complete and could be missing lines above or below. Do not add comments or code that is not necessary to fix the error. Do not use unsafe or unstable features (through ’#![feature(...)]’). You can only modify lines 1002 to 1026 in file /home/abezbm/rust-utgen-test-crates/proc-macro2/src/parse.rs. For your answer, return one or more ChangeLog groups, each containing one or more fixes to the above code snippets. Each group must be formatted with the below instructions.Format instructions: Each ChangeLog group must start with a description of its included fixes. The group must then list one or more pairs of (OriginalCode, FixedCode) code snippets. Each OriginalCode snippet must list all consecutive original lines of code that must be replaced (including a few lines before and after the fixes), followed by the FixedCode snippet with all consecutive fixed lines of code that must replace the original lines of code (including the same few lines before and after the changes). In each pair, the OriginalCode and FixedCode snippets must start at the same source code line number N. Each listed code line, in both the OriginalCode and FixedCode snippets, must be prefixed with [N] that matches the line index N in the above snippets, and then be prefixed with exactly the same whitespace indentation as the original snippets above.
+---
+ChangeLog:1@<file>
+FixDescription: <summary>.
+OriginalCode@4-6:
+[4] <white space> <original code line>
+[5] <white space> <original code line>
+[6] <white space> <original code line>
+FixedCode@4-6:
+[4] <white space> <fixed code line>
+[5] <white space> <fixed code line>
+[6] <white space> <fixed code line>
+OriginalCode@9-10:
+[9] <white space> <original code line>
+[10] <white space> <original code line>
+FixedCode@9-9:
+[9] <white space> <fixed code line>
+...
+ChangeLog:K@<file>
+FixDescription: <summary>.
+OriginalCode@15-16:
+[15] <white space> <original code line>
+[16] <white space> <original code line>
+FixedCode@15-17:
+[15] <white space> <fixed code line>
+[16] <white space> <fixed code line>
+[17] <white space> <fixed code line>
+---
+Answer:

@@ -1,0 +1,179 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let weights: Vec<f32> = Vec::new(); // empty iterator",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    // No assertions, only calling the function",
+          "}"
+        ],
+        "oracle": [
+          "    let weights: Vec<f32> = Vec::new();",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    assert_eq!(result, Err(Error::InvalidInput));",
+          "    ",
+          "    let weights: Vec<f32> = vec![0.0, -1.0];",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    assert_eq!(result, Err(Error::InvalidWeight));",
+          "    ",
+          "    let weights: Vec<f32> = vec![0.0, 0.0, 0.0];",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    assert_eq!(result, Err(Error::InsufficientNonZero));",
+          "    ",
+          "    let weights: Vec<f32> = vec![f32::MAX, f32::MAX];",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    assert_eq!(result, Err(Error::Overflow));",
+          "    ",
+          "    let weights: Vec<f32> = vec![1.0, 2.0, 3.0];",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().total_weight, 6.0);"
+        ],
+        "code": [
+          "{",
+          "    let weights: Vec<f32> = Vec::new(); // empty iterator",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    // No assertions, only calling the function",
+          "    let weights: Vec<f32> = Vec::new();",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    assert_eq!(result, Err(Error::InvalidInput));",
+          "    ",
+          "    let weights: Vec<f32> = vec![0.0, -1.0];",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    assert_eq!(result, Err(Error::InvalidWeight));",
+          "    ",
+          "    let weights: Vec<f32> = vec![0.0, 0.0, 0.0];",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    assert_eq!(result, Err(Error::InsufficientNonZero));",
+          "    ",
+          "    let weights: Vec<f32> = vec![f32::MAX, f32::MAX];",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    assert_eq!(result, Err(Error::Overflow));",
+          "    ",
+          "    let weights: Vec<f32> = vec![1.0, 2.0, 3.0];",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().total_weight, 6.0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let weights = vec![1.0, -1.0]; // second weight is negative",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    // No assertions, only calling the function",
+          "}"
+        ],
+        "oracle": [
+          "    err(Error::InvalidWeight)"
+        ],
+        "code": [
+          "{",
+          "    let weights = vec![1.0, -1.0]; // second weight is negative",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    // No assertions, only calling the function",
+          "    err(Error::InvalidWeight)",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let weights = vec![0.0, 0.0]; // total weight is zero",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    // No assertions, only calling the function",
+          "}"
+        ],
+        "oracle": [
+          "    result.expect_err(\"Expected overflow error since total weight is zero\");"
+        ],
+        "code": [
+          "{",
+          "    let weights = vec![0.0, 0.0]; // total weight is zero",
+          "    let result: Result<WeightedIndex<f32>, Error> = WeightedIndex::new(weights);",
+          "    // No assertions, only calling the function",
+          "    result.expect_err(\"Expected overflow error since total weight is zero\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    #[derive(Debug, Clone, PartialOrd)]",
+          "    struct CustomWeight(u32);",
+          "    ",
+          "    impl Weight for CustomWeight {",
+          "        const ZERO: Self = CustomWeight(0);",
+          "        ",
+          "        fn checked_add_assign(&mut self, v: &Self) -> Result<(), ()> {",
+          "            let new_value = self.0.checked_add(v.0);",
+          "            match new_value {",
+          "                Some(_) => {",
+          "                    self.0 = new_value.unwrap();",
+          "                    Ok(())",
+          "                },",
+          "                None => Err(()),",
+          "            }",
+          "        }",
+          "    }",
+          "    ",
+          "    let weights = vec![CustomWeight(u32::MAX), CustomWeight(1)]; // will overflow",
+          "    let result: Result<WeightedIndex<CustomWeight>, Error> = WeightedIndex::new(weights);",
+          "    // No assertions, only calling the function",
+          "}"
+        ],
+        "oracle": [
+          "    let weights = vec![CustomWeight(u32::MAX), CustomWeight(1)];",
+          "    let result: Result<WeightedIndex<CustomWeight>, Error> = WeightedIndex::new(weights);",
+          "    assert_eq!(result, Err(Error::Overflow));"
+        ],
+        "code": [
+          "{",
+          "    #[derive(Debug, Clone, PartialOrd)]",
+          "    struct CustomWeight(u32);",
+          "    ",
+          "    impl Weight for CustomWeight {",
+          "        const ZERO: Self = CustomWeight(0);",
+          "        ",
+          "        fn checked_add_assign(&mut self, v: &Self) -> Result<(), ()> {",
+          "            let new_value = self.0.checked_add(v.0);",
+          "            match new_value {",
+          "                Some(_) => {",
+          "                    self.0 = new_value.unwrap();",
+          "                    Ok(())",
+          "                },",
+          "                None => Err(()),",
+          "            }",
+          "        }",
+          "    }",
+          "    ",
+          "    let weights = vec![CustomWeight(u32::MAX), CustomWeight(1)]; // will overflow",
+          "    let result: Result<WeightedIndex<CustomWeight>, Error> = WeightedIndex::new(weights);",
+          "    // No assertions, only calling the function",
+          "    let weights = vec![CustomWeight(u32::MAX), CustomWeight(1)];",
+          "    let result: Result<WeightedIndex<CustomWeight>, Error> = WeightedIndex::new(weights);",
+          "    assert_eq!(result, Err(Error::Overflow));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

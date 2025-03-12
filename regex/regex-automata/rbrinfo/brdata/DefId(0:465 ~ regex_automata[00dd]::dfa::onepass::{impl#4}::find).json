@@ -1,0 +1,556 @@
+{
+  "name": "regex_automata::dfa::onepass::{impl#4}::find",
+  "mod_info": {
+    "name": "dfa::onepass",
+    "loc": "regex-automata/src/dfa/mod.rs:339:1:339:17"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/onepass.rs:1692:5:1716:6",
+  "doc": "/// Executes an anchored leftmost forward search, and returns a `Match` if\n/// and only if this one-pass DFA matches the given haystack.\n///\n/// This routine only includes the overall match span. To get access to the\n/// individual spans of each capturing group, use [`DFA::captures`].\n///\n/// The given `Input` is forcefully set to use [`Anchored::Yes`] if the\n/// given configuration was [`Anchored::No`] (which is the default).\n///\n/// # Panics\n///\n/// This routine panics if the search could not complete. This can occur\n/// in the following circumstances:\n///\n/// * When the provided `Input` configuration is not supported. For\n/// example, by providing an unsupported anchor mode. Concretely,\n/// this occurs when using [`Anchored::Pattern`] without enabling\n/// [`Config::starts_for_each_pattern`].\n///\n/// When a search panics, callers cannot know whether a match exists or\n/// not.\n///\n/// Use [`DFA::try_search`] if you want to handle these panics as error\n/// values instead.\n///\n/// # Example\n///\n/// Leftmost first match semantics corresponds to the match with the\n/// smallest starting offset, but where the end offset is determined by\n/// preferring earlier branches in the original regular expression. For\n/// example, `Sam|Samwise` will match `Sam` in `Samwise`, but `Samwise|Sam`\n/// will match `Samwise` in `Samwise`.\n///\n/// Generally speaking, the \"leftmost first\" match is how most backtracking\n/// regular expressions tend to work. This is in contrast to POSIX-style\n/// regular expressions that yield \"leftmost longest\" matches. Namely,\n/// both `Sam|Samwise` and `Samwise|Sam` match `Samwise` when using\n/// leftmost longest semantics. (This crate does not currently support\n/// leftmost longest semantics.)\n///\n/// ```\n/// use regex_automata::{dfa::onepass::DFA, Match};\n///\n/// let re = DFA::new(\"foo[0-9]+\")?;\n/// let mut cache = re.create_cache();\n/// let expected = Match::must(0, 0..8);\n/// assert_eq!(Some(expected), re.find(&mut cache, \"foo12345\"));\n///\n/// // Even though a match is found after reading the first byte (`a`),\n/// // the leftmost first match semantics demand that we find the earliest\n/// // match that prefers earlier parts of the pattern over later parts.\n/// let re = DFA::new(\"abc|a\")?;\n/// let mut cache = re.create_cache();\n/// let expected = Match::must(0, 0..3);\n/// assert_eq!(Some(expected), re.find(&mut cache, \"abc\"));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn find<'h, I: Into<Input<'h>>>(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: I,",
+    ") -> Option<Match> {",
+    "    let mut input = input.into();",
+    "    if matches!(input.get_anchored(), Anchored::No) {",
+    "        input.set_anchored(Anchored::Yes);",
+    "    }",
+    "    if self.get_nfa().pattern_len() == 1 {",
+    "        let mut slots = [None, None];",
+    "        let pid =",
+    "            self.try_search_slots(cache, &input, &mut slots).unwrap()?;",
+    "        let start = slots[0].unwrap().get();",
+    "        let end = slots[1].unwrap().get();",
+    "        return Some(Match::new(pid, Span { start, end }));",
+    "    }",
+    "    let ginfo = self.get_nfa().group_info();",
+    "    let slots_len = ginfo.implicit_slot_len();",
+    "    let mut slots = vec![None; slots_len];",
+    "    let pid = self.try_search_slots(cache, &input, &mut slots).unwrap()?;",
+    "    let start = slots[pid.as_usize() * 2].unwrap().get();",
+    "    let end = slots[pid.as_usize() * 2 + 1].unwrap().get();",
+    "    Some(Match::new(pid, Span { start, end }))",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 0,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "false",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 459,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1701,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots(cache, &input, &mut slots).unwrap()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1704,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        18,
+        20,
+        21,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "false",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 459,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1701,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots(cache, &input, &mut slots).unwrap()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1704,
+          "bound": null
+        }
+      ],
+      "ret": "Some(Match::new(pid, Span { start, end }))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "false",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 459,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1701,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots(cache, &input, &mut slots).unwrap()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1712,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        12,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        39,
+        41,
+        42,
+        56,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "false",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches _",
+          "norm": null,
+          "value": "true",
+          "line": 459,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1701,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots(cache, &input, &mut slots).unwrap()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1712,
+          "bound": null
+        }
+      ],
+      "ret": "Some(Match::new(pid, Span { start, end }))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        9,
+        10,
+        11,
+        12,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1701,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots(cache, &input, &mut slots).unwrap()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1704,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        18,
+        20,
+        21,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1701,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots(cache, &input, &mut slots).unwrap()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1704,
+          "bound": null
+        }
+      ],
+      "ret": "Some(Match::new(pid, Span { start, end }))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        19,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1701,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots(cache, &input, &mut slots).unwrap()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1712,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        39,
+        41,
+        42,
+        56,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "input.get_anchored() matches Anchored::No",
+          "norm": null,
+          "value": "true",
+          "line": 1698,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1701,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots(cache, &input, &mut slots).unwrap()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1712,
+          "bound": null
+        }
+      ],
+      "ret": "Some(Match::new(pid, Span { start, end }))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

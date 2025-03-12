@@ -1,0 +1,116 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct MockVisitor;",
+      "",
+      "impl<'de> Visitor<'de> for MockVisitor {",
+      "    type Value = ();",
+      "",
+      "    fn visit_borrowed_str(self, _v: &'de str) -> Result<Self::Value, Error> {",
+      "        panic!(\"should not reach here\");",
+      "    }",
+      "",
+      "    fn visit_seq<V>(self, _visitor: V) -> Result<Self::Value, Error>",
+      "    where",
+      "        V: SeqAccess<'de>,",
+      "    {",
+      "        panic!(\"should not reach here\");",
+      "    }",
+      "",
+      "    // Implement other Visitor methods as required",
+      "    // For simplicity, you can leave them unimplemented as they won't be called",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Number(Number::from(42)); // Value::Number",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_bytes(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let value = Value::Number(Number::from(42)); // Value::Number",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_bytes(visitor);",
+          "    assert!(result.is_err()); // Verify that it returns an error",
+          "    assert_eq!(result, Err(value.invalid_type(&visitor))); // Ensure the error is as expected"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Number(Number::from(42)); // Value::Number",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_bytes(visitor);",
+          "    let value = Value::Number(Number::from(42)); // Value::Number",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_bytes(visitor);",
+          "    assert!(result.is_err()); // Verify that it returns an error",
+          "    assert_eq!(result, Err(value.invalid_type(&visitor))); // Ensure the error is as expected",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Bool(true); // Value::Bool",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_bytes(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let value = Value::Bool(true); // Value::Bool",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_bytes(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind(), ErrorCode::InvalidType);"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Bool(true); // Value::Bool",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_bytes(visitor);",
+          "    let value = Value::Bool(true); // Value::Bool",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_bytes(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind(), ErrorCode::InvalidType);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Null; // Value::Null",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_bytes(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().invalid_type(&visitor), result.err().unwrap());"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Null; // Value::Null",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_bytes(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().invalid_type(&visitor), result.err().unwrap());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

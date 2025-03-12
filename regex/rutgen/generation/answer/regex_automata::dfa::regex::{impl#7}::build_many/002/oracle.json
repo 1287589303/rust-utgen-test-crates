@@ -1,0 +1,207 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![\"abc\", \"a*b\", \"c?d\"];",
+          "    let result = builder.build_many(&patterns);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().matches(\"abc\"), true);",
+          "    assert_eq!(result.unwrap().matches(\"aab\"), true);",
+          "    assert_eq!(result.unwrap().matches(\"cbd\"), false);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::SomeError);"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![\"abc\", \"a*b\", \"c?d\"];",
+          "    let result = builder.build_many(&patterns);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().matches(\"abc\"), true);",
+          "    assert_eq!(result.unwrap().matches(\"aab\"), true);",
+          "    assert_eq!(result.unwrap().matches(\"cbd\"), false);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::SomeError);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![\"a\"];",
+          "    let result = builder.build_many(&patterns);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert!(result.unwrap_err().kind == BuildErrorKind::SomeSpecificError);",
+          "    assert!(matches!(result, Err(BuildError { kind: BuildErrorKind::SomeSpecificError })));",
+          "    assert_eq!(result.unwrap_err(), expected_error);",
+          "    assert!(patterns.len() > 0);",
+          "    assert_eq!(patterns[0], \"a\");",
+          "    assert!(builder.dfa.build_many(&patterns).is_ok());",
+          "    assert!(builder.dfa.clone().configure(dense::Config::new().prefilter(None).specialize_start_states(false).start_kind(StartKind::Anchored).match_kind(MatchKind::All)).thompson(crate::nfa::thompson::Config::new().reverse(true)).build_many(&patterns).is_err());",
+          "    assert_eq!(builder.build_many(&patterns).unwrap_err(), BuildError { kind: BuildErrorKind::SomeSpecificError });"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![\"a\"];",
+          "    let result = builder.build_many(&patterns);",
+          "    assert!(result.is_ok());",
+          "    assert!(result.unwrap_err().kind == BuildErrorKind::SomeSpecificError);",
+          "    assert!(matches!(result, Err(BuildError { kind: BuildErrorKind::SomeSpecificError })));",
+          "    assert_eq!(result.unwrap_err(), expected_error);",
+          "    assert!(patterns.len() > 0);",
+          "    assert_eq!(patterns[0], \"a\");",
+          "    assert!(builder.dfa.build_many(&patterns).is_ok());",
+          "    assert!(builder.dfa.clone().configure(dense::Config::new().prefilter(None).specialize_start_states(false).start_kind(StartKind::Anchored).match_kind(MatchKind::All)).thompson(crate::nfa::thompson::Config::new().reverse(true)).build_many(&patterns).is_err());",
+          "    assert_eq!(builder.build_many(&patterns).unwrap_err(), BuildError { kind: BuildErrorKind::SomeSpecificError });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![r\"\\d\", r\"[a-zA-Z]\", r\"\\s+.\"];",
+          "    let result = builder.build_many(&patterns);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().pattern_ids.len(), 3);",
+          "    assert!(result.unwrap().captures.len() > 0);",
+          "    assert!(result.unwrap().captured_names.is_some());",
+          "    assert!(result.unwrap().is_utf8());",
+          "    ",
+          "    let builder_with_error = Builder::new().dense(dense::Config::new().minimize(true));",
+          "    let result_with_error = builder_with_error.build_many(&patterns);",
+          "    assert!(result_with_error.is_err());",
+          "    assert!(matches!(result_with_error.err().unwrap().kind, BuildErrorKind::SomeError));"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![r\"\\d\", r\"[a-zA-Z]\", r\"\\s+.\"];",
+          "    let result = builder.build_many(&patterns);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().pattern_ids.len(), 3);",
+          "    assert!(result.unwrap().captures.len() > 0);",
+          "    assert!(result.unwrap().captured_names.is_some());",
+          "    assert!(result.unwrap().is_utf8());",
+          "    ",
+          "    let builder_with_error = Builder::new().dense(dense::Config::new().minimize(true));",
+          "    let result_with_error = builder_with_error.build_many(&patterns);",
+          "    assert!(result_with_error.is_err());",
+          "    assert!(matches!(result_with_error.err().unwrap().kind, BuildErrorKind::SomeError));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![&\"a\".repeat(10000)]; // Assuming this length triggers a build error",
+          "    let result = builder.build_many(&patterns);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::SomeExpectedError);"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![&\"a\".repeat(10000)]; // Assuming this length triggers a build error",
+          "    let result = builder.build_many(&patterns);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::SomeExpectedError);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![\"\"];",
+          "    let result = builder.build_many(&patterns);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::SomeExpectedError);",
+          "    assert!(result.is_err());",
+          "    assert!(result.is_err());",
+          "    assert!(result.is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![\"\"];",
+          "    let result = builder.build_many(&patterns);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::SomeExpectedError);",
+          "    assert!(result.is_err());",
+          "    assert!(result.is_err());",
+          "    assert!(result.is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![\"[\", \"abc\", \"def\"];",
+          "    let result = builder.build_many(&patterns); // Here the first pattern is malformed",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().kind == BuildErrorKind::MalformedPattern);",
+          "    assert_eq!(result.unwrap_err().messages.len(), 1);",
+          "    assert_eq!(result.unwrap_err().messages[0], \"Invalid regex pattern: '['\");"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder::new();",
+          "    let patterns: Vec<&str> = vec![\"[\", \"abc\", \"def\"];",
+          "    let result = builder.build_many(&patterns); // Here the first pattern is malformed",
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().kind == BuildErrorKind::MalformedPattern);",
+          "    assert_eq!(result.unwrap_err().messages.len(), 1);",
+          "    assert_eq!(result.unwrap_err().messages[0], \"Invalid regex pattern: '['\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

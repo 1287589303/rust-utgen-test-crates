@@ -1,0 +1,441 @@
+{
+  "name": "bytes::bytes::{impl#0}::slice_ref",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": true,
+  "loc": "src/bytes.rs:440:5:471:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: subset.is_empty() at line 443 is true\n"
+      ],
+      "input_infer": "subset: &[]; subset length: 0; bytes: any Bytes instance (empty or non-empty); subset pointer: any valid pointer within the bounds of the Bytes instance\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"hello world\");",
+                "    let subset: &[u8] = &[];",
+                "    let subslice = bytes.slice_ref(subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(subslice.len(), 0);",
+                "    assert!(subslice.is_empty());",
+                "    assert_eq!(subslice.as_ptr(), Bytes::new().as_ptr());",
+                "    assert_eq!(subslice.data.load(Ordering::SeqCst), AtomicPtr::new(ptr::null_mut()).load(Ordering::SeqCst));"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"hello world\");",
+                "    let subset: &[u8] = &[];",
+                "    let subslice = bytes.slice_ref(subset);",
+                "    assert_eq!(subslice.len(), 0);",
+                "    assert!(subslice.is_empty());",
+                "    assert_eq!(subslice.as_ptr(), Bytes::new().as_ptr());",
+                "    assert_eq!(subslice.data.load(Ordering::SeqCst), AtomicPtr::new(ptr::null_mut()).load(Ordering::SeqCst));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::new();",
+                "    let subset: &[u8] = &[];",
+                "    let subslice = bytes.slice_ref(subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(subslice.len(), 0);",
+                "    assert!(subslice.is_empty());",
+                "    assert!(subslice.as_ptr() == bytes.as_ptr());",
+                "    assert!(bytes.len() == 0);"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::new();",
+                "    let subset: &[u8] = &[];",
+                "    let subslice = bytes.slice_ref(subset);",
+                "    assert_eq!(subslice.len(), 0);",
+                "    assert!(subslice.is_empty());",
+                "    assert!(subslice.as_ptr() == bytes.as_ptr());",
+                "    assert!(bytes.len() == 0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::copy_from_slice(b\"example\");",
+                "    let subset: &[u8] = &[];",
+                "    let subslice = bytes.slice_ref(subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(subslice.len(), 0);",
+                "    assert!(subslice.is_empty());",
+                "    assert_eq!(subslice.as_ptr(), bytes.as_ptr());",
+                "    assert!(subslice.data.load(Ordering::SeqCst).is_null());",
+                "    assert_eq!(bytes.len(), 7);",
+                "    assert_eq!(bytes.as_slice(), b\"example\");"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::copy_from_slice(b\"example\");",
+                "    let subset: &[u8] = &[];",
+                "    let subslice = bytes.slice_ref(subset);",
+                "    assert_eq!(subslice.len(), 0);",
+                "    assert!(subslice.is_empty());",
+                "    assert_eq!(subslice.as_ptr(), bytes.as_ptr());",
+                "    assert!(subslice.data.load(Ordering::SeqCst).is_null());",
+                "    assert_eq!(bytes.len(), 7);",
+                "    assert_eq!(bytes.as_slice(), b\"example\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: subset.is_empty() at line 443 is false\n",
+        "precondition: sub_p >= bytes_p at line 454 is true, with bound sub_p == bytes_p\n",
+        "precondition: sub_p + sub_len <= bytes_p + bytes_len at line 460 is true, with bound sub_p + sub_len == bytes_p + bytes_len\n"
+      ],
+      "input_infer": "subset: non-empty slice of bytes with pointer equal to the start of the Bytes buffer and length equal to the total length of the Bytes buffer\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"hello\");",
+                "    let as_slice = bytes.as_ref();",
+                "    let subset = &as_slice[0..5];  // Full length of the Bytes buffer",
+                "    let _subslice = bytes.slice_ref(&subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes.len(), 5);",
+                "    assert_eq!(subset.len(), 5);",
+                "    assert!(!subset.is_empty());",
+                "    assert!(subset.as_ptr() >= bytes.as_ptr());",
+                "    assert!(subset.as_ptr() as usize + subset.len() <= bytes.as_ptr() as usize + bytes.len());",
+                "    assert_eq!(&subslice[..], b\"hello\");",
+                "    assert_eq!(subslice.len(), 5);"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"hello\");",
+                "    let as_slice = bytes.as_ref();",
+                "    let subset = &as_slice[0..5];  // Full length of the Bytes buffer",
+                "    let _subslice = bytes.slice_ref(&subset);",
+                "    assert_eq!(bytes.len(), 5);",
+                "    assert_eq!(subset.len(), 5);",
+                "    assert!(!subset.is_empty());",
+                "    assert!(subset.as_ptr() >= bytes.as_ptr());",
+                "    assert!(subset.as_ptr() as usize + subset.len() <= bytes.as_ptr() as usize + bytes.len());",
+                "    assert_eq!(&subslice[..], b\"hello\");",
+                "    assert_eq!(subslice.len(), 5);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"world\");",
+                "    let as_slice = bytes.as_ref();",
+                "    let subset = &as_slice[0..5];  // Full length of the Bytes buffer",
+                "    let _subslice = bytes.slice_ref(&subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(!subset.is_empty(), \"Expected non-empty subset\");",
+                "    assert_eq!(sub_p, bytes_p, \"Expected subset pointer to equal bytes pointer\");",
+                "    assert_eq!(sub_p + sub_len, bytes_p + bytes_len, \"Expected subset bounds to equal bytes bounds\");"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"world\");",
+                "    let as_slice = bytes.as_ref();",
+                "    let subset = &as_slice[0..5];  // Full length of the Bytes buffer",
+                "    let _subslice = bytes.slice_ref(&subset);",
+                "    assert!(!subset.is_empty(), \"Expected non-empty subset\");",
+                "    assert_eq!(sub_p, bytes_p, \"Expected subset pointer to equal bytes pointer\");",
+                "    assert_eq!(sub_p + sub_len, bytes_p + bytes_len, \"Expected subset bounds to equal bytes bounds\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: subset.is_empty() at line 443 is false\n",
+        "precondition: sub_p >= bytes_p at line 454 is true, with bound sub_p == bytes_p\n",
+        "precondition: sub_p + sub_len <= bytes_p + bytes_len at line 460 is false\n"
+      ],
+      "input_infer": "subset: non-empty slice of Bytes with a pointer >= self's pointer and end exceeding self's pointer by one or more bytes\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5]);",
+                "    let subset = &bytes[0..5]; // This covers the whole Bytes",
+                "    let _subslice = bytes.slice_ref(subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(subset.is_empty() == false);",
+                "    assert!(sub_p >= bytes_p);",
+                "    assert!(sub_p + sub_len <= bytes_p + bytes_len == false);"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5]);",
+                "    let subset = &bytes[0..5]; // This covers the whole Bytes",
+                "    let _subslice = bytes.slice_ref(subset);",
+                "    assert!(subset.is_empty() == false);",
+                "    assert!(sub_p >= bytes_p);",
+                "    assert!(sub_p + sub_len <= bytes_p + bytes_len == false);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5]);",
+                "    let subset = &bytes[1..6]; // This exceeds the bounds of bytes",
+                "    let _subslice = bytes.slice_ref(subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes.len(), 5);",
+                "    let subset = &[2, 3, 4, 5, 6];",
+                "    assert!(subset.len() > 0);",
+                "    assert!(bytes.len() >= subset.len());",
+                "    assert!(subset.as_ptr() >= bytes.as_ptr());",
+                "    assert!(subset.as_ptr() as usize + subset.len() > bytes.as_ptr() as usize + bytes.len());"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5]);",
+                "    let subset = &bytes[1..6]; // This exceeds the bounds of bytes",
+                "    let _subslice = bytes.slice_ref(subset);",
+                "    assert_eq!(bytes.len(), 5);",
+                "    let subset = &[2, 3, 4, 5, 6];",
+                "    assert!(subset.len() > 0);",
+                "    assert!(bytes.len() >= subset.len());",
+                "    assert!(subset.as_ptr() >= bytes.as_ptr());",
+                "    assert!(subset.as_ptr() as usize + subset.len() > bytes.as_ptr() as usize + bytes.len());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(&[10, 20, 30, 40, 50]);",
+                "    let subset = &bytes[0..3]; // This does not exceed the length of bytes",
+                "    let _subslice = bytes.slice_ref(subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(!subset.is_empty());",
+                "    assert!(subset.as_ptr() as usize >= bytes.as_ptr() as usize);",
+                "    assert!(subset.as_ptr() as usize + subset.len() > bytes.as_ptr() as usize + bytes.len());"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::from_static(&[10, 20, 30, 40, 50]);",
+                "    let subset = &bytes[0..3]; // This does not exceed the length of bytes",
+                "    let _subslice = bytes.slice_ref(subset);",
+                "    assert!(!subset.is_empty());",
+                "    assert!(subset.as_ptr() as usize >= bytes.as_ptr() as usize);",
+                "    assert!(subset.as_ptr() as usize + subset.len() > bytes.as_ptr() as usize + bytes.len());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(&[100, 200, 300, 400, 500]);",
+                "    let subset = &bytes[2..5]; // This is a valid subset",
+                "    let _subslice = bytes.slice_ref(subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(!subset.is_empty(), \"Expected subset to be non-empty.\");",
+                "    let bytes = Bytes::from_static(&[100, 200, 300, 400, 500]);",
+                "    let subset = &bytes[2..5];",
+                "    let bytes_p = bytes.as_ptr() as usize;",
+                "    let sub_p = subset.as_ptr() as usize;",
+                "    assert_eq!(sub_p, bytes_p, \"Expected subset pointer to equal bytes pointer.\");",
+                "    let bytes_len = bytes.len();",
+                "    let sub_len = subset.len();",
+                "    assert!(sub_p + sub_len > bytes_p + bytes_len, \"Expected subset to be out of bounds.\");",
+                "    let _subslice = bytes.slice_ref(subset);",
+                "    assert_eq!(&_subslice[..], &[300, 400], \"Expected subslice to match the values from the subset.\");"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::from_static(&[100, 200, 300, 400, 500]);",
+                "    let subset = &bytes[2..5]; // This is a valid subset",
+                "    let _subslice = bytes.slice_ref(subset);",
+                "    assert!(!subset.is_empty(), \"Expected subset to be non-empty.\");",
+                "    let bytes = Bytes::from_static(&[100, 200, 300, 400, 500]);",
+                "    let subset = &bytes[2..5];",
+                "    let bytes_p = bytes.as_ptr() as usize;",
+                "    let sub_p = subset.as_ptr() as usize;",
+                "    assert_eq!(sub_p, bytes_p, \"Expected subset pointer to equal bytes pointer.\");",
+                "    let bytes_len = bytes.len();",
+                "    let sub_len = subset.len();",
+                "    assert!(sub_p + sub_len > bytes_p + bytes_len, \"Expected subset to be out of bounds.\");",
+                "    let _subslice = bytes.slice_ref(subset);",
+                "    assert_eq!(&_subslice[..], &[300, 400], \"Expected subslice to match the values from the subset.\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: subset.is_empty() at line 443 is false\n",
+        "precondition: sub_p >= bytes_p at line 454 is false\n"
+      ],
+      "input_infer": "subset: non-empty slice of bytes that is within the bounds of the original Bytes instance, with valid memory address range such that sub_p < bytes_p and sub_p + subset.len() <= bytes_p + bytes.len()\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"012345678\");",
+                "",
+                "    let subset: &[u8] = &b\"01\"[..];",
+                "    ",
+                "    let _ = bytes.slice_ref(subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(!subset.is_empty(), \"Expected subset to be non-empty when initiating slice_ref test.\");",
+                "    ",
+                "    let bytes = Bytes::from_static(b\"012345678\");",
+                "    let subset: &[u8] = &b\"01\"[..];",
+                "    ",
+                "    let subset_ptr = subset.as_ptr() as usize;",
+                "    let bytes_ptr = bytes.as_ptr() as usize;",
+                "    assert!(subset_ptr < bytes_ptr, \"Expected subset pointer to be less than Bytes pointer.\");"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"012345678\");",
+                "",
+                "    let subset: &[u8] = &b\"01\"[..];",
+                "    ",
+                "    let _ = bytes.slice_ref(subset);",
+                "    assert!(!subset.is_empty(), \"Expected subset to be non-empty when initiating slice_ref test.\");",
+                "    ",
+                "    let bytes = Bytes::from_static(b\"012345678\");",
+                "    let subset: &[u8] = &b\"01\"[..];",
+                "    ",
+                "    let subset_ptr = subset.as_ptr() as usize;",
+                "    let bytes_ptr = bytes.as_ptr() as usize;",
+                "    assert!(subset_ptr < bytes_ptr, \"Expected subset pointer to be less than Bytes pointer.\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"012345678\");",
+                "    ",
+                "    let subset: &[u8] = &b\"123456789\"[..];",
+                "    ",
+                "    let _ = bytes.slice_ref(subset);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(subset.is_empty() == false);  // Precondition: subset.is_empty() at line 443 is false",
+                "    assert!(subset.as_ptr() as usize < bytes.as_ptr() as usize);  // Precondition: sub_p >= bytes_p at line 454 is false"
+              ],
+              "code": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"012345678\");",
+                "    ",
+                "    let subset: &[u8] = &b\"123456789\"[..];",
+                "    ",
+                "    let _ = bytes.slice_ref(subset);",
+                "    assert!(subset.is_empty() == false);  // Precondition: subset.is_empty() at line 443 is false",
+                "    assert!(subset.as_ptr() as usize < bytes.as_ptr() as usize);  // Precondition: sub_p >= bytes_p at line 454 is false",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,282 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = b\"QUJD\"; // \"ABC\"",
+          "    let _ = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode_to_vec(b\"QUJD\").unwrap(), vec![65, 66, 67]);  // Valid base64 input for \"ABC\"",
+          "    assert!(decode_to_vec(b\"QUJD=\").is_ok());  // Valid base64 input with padding",
+          "    assert!(decode_to_vec(b\"QUJDA\").is_err());  // Invalid base64 input with unexpected symbol after padding",
+          "    assert!(decode_to_vec(b\"QUJDQUJD\").is_ok());  // Valid base64 input for \"ABAB\"",
+          "    assert!(decode_to_vec(b\"\").is_ok());  // Valid empty input should return an empty Vec",
+          "    assert!(decode_to_vec(b\" INVALIDBASE64\").is_err());  // Invalid base64 with leading spaces",
+          "    assert!(decode_to_vec(b\"QUJDA=\").is_err());  // Invalid base64, incorrect padding count",
+          "    assert!(decode_to_vec(b\"QUJD\\xff\").is_err());  // Invalid byte in base64 input",
+          "    assert!(decode_to_vec(b\"QUJDA=B\").is_err());  // Invalid base64 with unexpected symbol before finishing",
+          "    assert!(decode_to_vec(b\"QUJD=\").is_ok());  // Valid base64 input with correct padding for \"AB\""
+        ],
+        "code": [
+          "{",
+          "    let input = b\"QUJD\"; // \"ABC\"",
+          "    let _ = decode_to_vec(input);",
+          "    assert_eq!(decode_to_vec(b\"QUJD\").unwrap(), vec![65, 66, 67]);  // Valid base64 input for \"ABC\"",
+          "    assert!(decode_to_vec(b\"QUJD=\").is_ok());  // Valid base64 input with padding",
+          "    assert!(decode_to_vec(b\"QUJDA\").is_err());  // Invalid base64 input with unexpected symbol after padding",
+          "    assert!(decode_to_vec(b\"QUJDQUJD\").is_ok());  // Valid base64 input for \"ABAB\"",
+          "    assert!(decode_to_vec(b\"\").is_ok());  // Valid empty input should return an empty Vec",
+          "    assert!(decode_to_vec(b\" INVALIDBASE64\").is_err());  // Invalid base64 with leading spaces",
+          "    assert!(decode_to_vec(b\"QUJDA=\").is_err());  // Invalid base64, incorrect padding count",
+          "    assert!(decode_to_vec(b\"QUJD\\xff\").is_err());  // Invalid byte in base64 input",
+          "    assert!(decode_to_vec(b\"QUJDA=B\").is_err());  // Invalid base64 with unexpected symbol before finishing",
+          "    assert!(decode_to_vec(b\"QUJD=\").is_ok());  // Valid base64 input with correct padding for \"AB\"",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = b\"QUJD==\"; // \"ABC\"",
+          "    let _ = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode_to_vec(b\"QUJD==\").unwrap_err(), InvalidBase64(InvalidBase64Details::Padding));",
+          "    assert_eq!(decode_to_vec(b\"QUJD\").unwrap(), vec![65, 66, 67]);",
+          "    assert!(decode_to_vec(b\"QUJ=DA\").is_err());",
+          "    assert!(decode_to_vec(b\"====\").is_err());",
+          "    assert!(decode_to_vec(b\"QUJD=1\").is_err());",
+          "    assert!(decode_to_vec(b\"Q!JD==\").is_err());",
+          "    assert!(decode_to_vec(b\"QUJDB\").is_ok());",
+          "    assert!(decode_to_vec(b\"Q===D\").is_err());",
+          "    assert!(decode_to_vec(b\"QUJD\").is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let input = b\"QUJD==\"; // \"ABC\"",
+          "    let _ = decode_to_vec(input);",
+          "    assert_eq!(decode_to_vec(b\"QUJD==\").unwrap_err(), InvalidBase64(InvalidBase64Details::Padding));",
+          "    assert_eq!(decode_to_vec(b\"QUJD\").unwrap(), vec![65, 66, 67]);",
+          "    assert!(decode_to_vec(b\"QUJ=DA\").is_err());",
+          "    assert!(decode_to_vec(b\"====\").is_err());",
+          "    assert!(decode_to_vec(b\"QUJD=1\").is_err());",
+          "    assert!(decode_to_vec(b\"Q!JD==\").is_err());",
+          "    assert!(decode_to_vec(b\"QUJDB\").is_ok());",
+          "    assert!(decode_to_vec(b\"Q===D\").is_err());",
+          "    assert!(decode_to_vec(b\"QUJD\").is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = b\"QUJD==AA\"; // \"ABC\"",
+          "    let _ = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode_to_vec(b\"QUJD==AA\"), Ok(vec![65, 66, 67])); // \"ABC\"",
+          "    assert!(decode_to_vec(b\"QUJD==A\").is_err()); // Invalid input with padding issue",
+          "    assert!(decode_to_vec(b\"QUJD===\"), is_err()); // Invalid padding",
+          "    assert!(decode_to_vec(b\"QUJDAA\").is_err()); // Invalid input after padding",
+          "    assert!(decode_to_vec(b\"QUJD#\").is_err()); // Invalid symbol",
+          "    assert!(decode_to_vec(b\"QUJD\").is_ok()); // \"ABC\" without padding",
+          "    assert!(decode_to_vec(b\"ABC\").is_err()); // Invalid input, no base64 padding",
+          "    assert_eq!(decode_to_vec(b\"QUJDAA\"), Ok(vec![65, 66, 67])); // \"ABC\" with extra symbols.decoder"
+        ],
+        "code": [
+          "{",
+          "    let input = b\"QUJD==AA\"; // \"ABC\"",
+          "    let _ = decode_to_vec(input);",
+          "    assert_eq!(decode_to_vec(b\"QUJD==AA\"), Ok(vec![65, 66, 67])); // \"ABC\"",
+          "    assert!(decode_to_vec(b\"QUJD==A\").is_err()); // Invalid input with padding issue",
+          "    assert!(decode_to_vec(b\"QUJD===\"), is_err()); // Invalid padding",
+          "    assert!(decode_to_vec(b\"QUJDAA\").is_err()); // Invalid input after padding",
+          "    assert!(decode_to_vec(b\"QUJD#\").is_err()); // Invalid symbol",
+          "    assert!(decode_to_vec(b\"QUJD\").is_ok()); // \"ABC\" without padding",
+          "    assert!(decode_to_vec(b\"ABC\").is_err()); // Invalid input, no base64 padding",
+          "    assert_eq!(decode_to_vec(b\"QUJDAA\"), Ok(vec![65, 66, 67])); // \"ABC\" with extra symbols.decoder",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = b\"Q \\n U\\tJ\\tD\"; // \"ABC\"",
+          "    let _ = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode_to_vec(b\"Q \\n U\\tJ\\tD\"), Ok(vec![65, 66, 67]));",
+          "    assert!(decode_to_vec(b\"Q \\n U\\tJ\\tD\").is_ok());",
+          "    assert!(decode_to_vec(b\"Q \\n U\\tJ\\tD\").unwrap().len() == 3);",
+          "    assert!(decode_to_vec(b\"Q \\n U\\tJ\\tD\").unwrap() == vec![65, 66, 67]);",
+          "    assert!(decode_to_vec(b\"Q \\n U\\tJ\\tD\").is_ok());",
+          "    assert!(decode_to_vec(b\"Q \\n U\\tJ\\tD\").unwrap_err().is_none());"
+        ],
+        "code": [
+          "{",
+          "    let input = b\"Q \\n U\\tJ\\tD\"; // \"ABC\"",
+          "    let _ = decode_to_vec(input);",
+          "    assert_eq!(decode_to_vec(b\"Q \\n U\\tJ\\tD\"), Ok(vec![65, 66, 67]));",
+          "    assert!(decode_to_vec(b\"Q \\n U\\tJ\\tD\").is_ok());",
+          "    assert!(decode_to_vec(b\"Q \\n U\\tJ\\tD\").unwrap().len() == 3);",
+          "    assert!(decode_to_vec(b\"Q \\n U\\tJ\\tD\").unwrap() == vec![65, 66, 67]);",
+          "    assert!(decode_to_vec(b\"Q \\n U\\tJ\\tD\").is_ok());",
+          "    assert!(decode_to_vec(b\"Q \\n U\\tJ\\tD\").unwrap_err().is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = b\"\"; // Empty input",
+          "    let _ = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    Result::Ok(Vec::new()) // For empty input",
+          "    ",
+          "    let input = b\"YQ==\"; // Valid Base64 input for \"a\"",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97])); // Expected result: Ok([\"a\"])",
+          "    ",
+          "    let input = b\"YW55\"; // Valid Base64 input for \"any\"",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97, 110, 121])); // Expected result: Ok([\"a\", \"n\", \"y\"])",
+          "    ",
+          "    let input = b\"YWFhYQ==\"; // Valid Base64 input for \"aa\"",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97, 97])); // Expected result: Ok([\"a\", \"a\"])",
+          "    ",
+          "    let input = b\"YWFhYQ\"; // Invalid Base64 (missing padding)",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err()); // Expected result: Error",
+          "    ",
+          "    let input = b\"YQ== \"; // Valid Base64 input for \"a\" with trailing space",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97])); // Expected result: Ok([\"a\"])",
+          "    ",
+          "    let input = b\"YQ====\"; // Invalid Base64 (too many padding characters)",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err()); // Expected result: Error",
+          "    ",
+          "    let input = b\"YQ\"; // Valid Base64 input for \"a\" without padding",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97])); // Expected result: Ok([\"a\"])",
+          "    ",
+          "    let input = b\"YQ==YQ==\"; // Valid Base64 input for \"a\" with extra padding",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97])); // Expected result: Ok([\"a\"])"
+        ],
+        "code": [
+          "{",
+          "    let input = b\"\"; // Empty input",
+          "    let _ = decode_to_vec(input);",
+          "    Result::Ok(Vec::new()) // For empty input",
+          "    ",
+          "    let input = b\"YQ==\"; // Valid Base64 input for \"a\"",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97])); // Expected result: Ok([\"a\"])",
+          "    ",
+          "    let input = b\"YW55\"; // Valid Base64 input for \"any\"",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97, 110, 121])); // Expected result: Ok([\"a\", \"n\", \"y\"])",
+          "    ",
+          "    let input = b\"YWFhYQ==\"; // Valid Base64 input for \"aa\"",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97, 97])); // Expected result: Ok([\"a\", \"a\"])",
+          "    ",
+          "    let input = b\"YWFhYQ\"; // Invalid Base64 (missing padding)",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err()); // Expected result: Error",
+          "    ",
+          "    let input = b\"YQ== \"; // Valid Base64 input for \"a\" with trailing space",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97])); // Expected result: Ok([\"a\"])",
+          "    ",
+          "    let input = b\"YQ====\"; // Invalid Base64 (too many padding characters)",
+          "    let result = decode_to_vec(input);",
+          "    assert!(result.is_err()); // Expected result: Error",
+          "    ",
+          "    let input = b\"YQ\"; // Valid Base64 input for \"a\" without padding",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97])); // Expected result: Ok([\"a\"])",
+          "    ",
+          "    let input = b\"YQ==YQ==\"; // Valid Base64 input for \"a\" with extra padding",
+          "    let result = decode_to_vec(input);",
+          "    assert_eq!(result, Ok(vec![97])); // Expected result: Ok([\"a\"])",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let input = b\"QUJD#\"; // Invalid base64 character '#'",
+          "    let _ = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode_to_vec(b\"QUJD#\").is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    let input = b\"QUJD#\"; // Invalid base64 character '#'",
+          "    let _ = decode_to_vec(input);",
+          "    assert_eq!(decode_to_vec(b\"QUJD#\").is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let input = b\"Q\"; // Lone symbol without necessary padding",
+          "    let _ = decode_to_vec(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(decode_to_vec(b\"Q\"), Err(InvalidBase64Details::LoneAlphabetSymbol));"
+        ],
+        "code": [
+          "{",
+          "    let input = b\"Q\"; // Lone symbol without necessary padding",
+          "    let _ = decode_to_vec(input);",
+          "    assert_eq!(decode_to_vec(b\"Q\"), Err(InvalidBase64Details::LoneAlphabetSymbol));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

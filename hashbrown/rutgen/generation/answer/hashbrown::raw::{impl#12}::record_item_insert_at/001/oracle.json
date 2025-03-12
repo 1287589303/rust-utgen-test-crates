@@ -1,0 +1,209 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), 1);",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(0, Tag::EMPTY, 0);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert_eq!(table_inner.growth_left, 1);",
+          "    assert_eq!(unsafe { table_inner.ctrl(0).read() }, Tag::full(0));"
+        ],
+        "code": [
+          "{",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), 1);",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(0, Tag::EMPTY, 0);",
+          "    }",
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert_eq!(table_inner.growth_left, 1);",
+          "    assert_eq!(unsafe { table_inner.ctrl(0).read() }, Tag::full(0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let buckets = 16; // Assuming a power of two for the bucket size",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), buckets);",
+          "    let index = buckets - 1;",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(index, Tag::DELETED, u64::MAX);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert_eq!(table_inner.growth_left, 15);",
+          "    assert_eq!(unsafe { table_inner.ctrl(index).read() }, Tag::full(u64::MAX));",
+          "    assert!(unsafe { table_inner.is_bucket_full(index) });",
+          "    assert!(!table_inner.is_empty_singleton());",
+          "    assert_eq!(table_inner.bucket_mask, buckets - 1);",
+          "    assert!(unsafe { table_inner.ctrl_slice().get(index).is_some() });"
+        ],
+        "code": [
+          "{",
+          "    let buckets = 16; // Assuming a power of two for the bucket size",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), buckets);",
+          "    let index = buckets - 1;",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(index, Tag::DELETED, u64::MAX);",
+          "    }",
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert_eq!(table_inner.growth_left, 15);",
+          "    assert_eq!(unsafe { table_inner.ctrl(index).read() }, Tag::full(u64::MAX));",
+          "    assert!(unsafe { table_inner.is_bucket_full(index) });",
+          "    assert!(!table_inner.is_empty_singleton());",
+          "    assert_eq!(table_inner.bucket_mask, buckets - 1);",
+          "    assert!(unsafe { table_inner.ctrl_slice().get(index).is_some() });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), 4);",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(1, Tag::EMPTY, 100);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table_inner.growth_left, 4);",
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert!(unsafe { table_inner.ctrl(1).read() }.is_full());",
+          "    assert_eq!(unsafe { table_inner.ctrl(1).read() }.special_is_empty(), false);",
+          "    assert_eq!(unsafe { table_inner.ctrl(1).read() }.0 & 0xFFFFFFFFFFFFFFFF, 100);"
+        ],
+        "code": [
+          "{",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), 4);",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(1, Tag::EMPTY, 100);",
+          "    }",
+          "    assert_eq!(table_inner.growth_left, 4);",
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert!(unsafe { table_inner.ctrl(1).read() }.is_full());",
+          "    assert_eq!(unsafe { table_inner.ctrl(1).read() }.special_is_empty(), false);",
+          "    assert_eq!(unsafe { table_inner.ctrl(1).read() }.0 & 0xFFFFFFFFFFFFFFFF, 100);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), 8);",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(2, Tag::DELETED, 50);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert_eq!(table_inner.growth_left, bucket_mask_to_capacity(7));",
+          "    assert_eq!(unsafe { table_inner.ctrl(2).read() }, Tag::full(50));"
+        ],
+        "code": [
+          "{",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), 8);",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(2, Tag::DELETED, 50);",
+          "    }",
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert_eq!(table_inner.growth_left, bucket_mask_to_capacity(7));",
+          "    assert_eq!(unsafe { table_inner.ctrl(2).read() }, Tag::full(50));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), 10);",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(3, Tag::DELETED, 1);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert_eq!(table_inner.growth_left, 10);",
+          "    assert_eq!(unsafe { table_inner.ctrl(3).read() }, Tag::full(1));",
+          "    assert!(table_inner.is_empty_singleton() == false);",
+          "    assert!(unsafe { table_inner.is_bucket_full(3) } == false);"
+        ],
+        "code": [
+          "{",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), 10);",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(3, Tag::DELETED, 1);",
+          "    }",
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert_eq!(table_inner.growth_left, 10);",
+          "    assert_eq!(unsafe { table_inner.ctrl(3).read() }, Tag::full(1));",
+          "    assert!(table_inner.is_empty_singleton() == false);",
+          "    assert!(unsafe { table_inner.is_bucket_full(3) } == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), 12);",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(4, Tag::full(200), 200);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert_eq!(table_inner.growth_left, expected_growth_left); // Define expected_growth_left based on initial conditions",
+          "    assert!(table_inner.ctrl(table_inner.buckets()).is_null() == false); // Check if control pointer is not null",
+          "    assert!(table_inner.is_empty_singleton() == false); // Ensure the table is not an empty singleton",
+          "    assert_eq!(unsafe { *table_inner.ctrl(4) }, Tag::full(200)); // Verify that the control at index 4 is set correctly",
+          "    assert!(table_inner.bucket(4).is_full()); // Check if the bucket at index 4 is now full after insertion"
+        ],
+        "code": [
+          "{",
+          "    let mut table_inner = RawTableInner::with_capacity(&Global, TableLayout::default(), 12);",
+          "    unsafe {",
+          "        table_inner.record_item_insert_at(4, Tag::full(200), 200);",
+          "    }",
+          "    assert_eq!(table_inner.items, 1);",
+          "    assert_eq!(table_inner.growth_left, expected_growth_left); // Define expected_growth_left based on initial conditions",
+          "    assert!(table_inner.ctrl(table_inner.buckets()).is_null() == false); // Check if control pointer is not null",
+          "    assert!(table_inner.is_empty_singleton() == false); // Ensure the table is not an empty singleton",
+          "    assert_eq!(unsafe { *table_inner.ctrl(4) }, Tag::full(200)); // Verify that the control at index 4 is set correctly",
+          "    assert!(table_inner.bucket(4).is_full()); // Check if the bucket at index 4 is now full after insertion",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

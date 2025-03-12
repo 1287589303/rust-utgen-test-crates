@@ -1,0 +1,134 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { nest_limit: 10, flags: Flags::empty() };",
+          "    let pattern = \"a\";",
+          "    let compiler = Compiler::new(config, pattern.to_string());",
+          "    ",
+          "    let hir = Hir::parse(config, pattern).unwrap(); // Assuming parse succeeds in this context",
+          "    let result = compiler.c_at_least(&hir, true, 0);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(result.unwrap().start, result.unwrap().end);",
+          "    assert_eq!(result.unwrap().start, 0); // Verifying default initial state ID",
+          "    assert_eq!(compiler.nfa.borrow().states.len(), 2); // One for start, one for end",
+          "    assert!(compiler.nfa.borrow().memory_extra > 0); // Assert memory usage has occurred",
+          "    assert!(compiler.nfa.borrow().states[0] == State::Splits { targets: vec![], reverse: false }); // Verify state type",
+          "    assert!(compiler.nfa.borrow().states[1] == State::Goto { target: 0, look: None }); // Verify initial Goto state",
+          "    assert!(builder.nfa.borrow().is_match_empty == true); // Check if NFA can match empty string",
+          "    assert_eq!(compiler.c(&hir).is_err(), true); // Confirm that c(hir) returns an error",
+          "    assert_eq!(hir.is_match_empty(), true); // Verify that the Hir can match empty as expected"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { nest_limit: 10, flags: Flags::empty() };",
+          "    let pattern = \"a\";",
+          "    let compiler = Compiler::new(config, pattern.to_string());",
+          "    ",
+          "    let hir = Hir::parse(config, pattern).unwrap(); // Assuming parse succeeds in this context",
+          "    let result = compiler.c_at_least(&hir, true, 0);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(result.unwrap().start, result.unwrap().end);",
+          "    assert_eq!(result.unwrap().start, 0); // Verifying default initial state ID",
+          "    assert_eq!(compiler.nfa.borrow().states.len(), 2); // One for start, one for end",
+          "    assert!(compiler.nfa.borrow().memory_extra > 0); // Assert memory usage has occurred",
+          "    assert!(compiler.nfa.borrow().states[0] == State::Splits { targets: vec![], reverse: false }); // Verify state type",
+          "    assert!(compiler.nfa.borrow().states[1] == State::Goto { target: 0, look: None }); // Verify initial Goto state",
+          "    assert!(builder.nfa.borrow().is_match_empty == true); // Check if NFA can match empty string",
+          "    assert_eq!(compiler.c(&hir).is_err(), true); // Confirm that c(hir) returns an error",
+          "    assert_eq!(hir.is_match_empty(), true); // Verify that the Hir can match empty as expected",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { nest_limit: 10, flags: Flags::empty() };",
+          "    let pattern = \"\"; // Empty pattern, should match empty string",
+          "    let compiler = Compiler::new(config, pattern.to_string());",
+          "    ",
+          "    let hir = Hir::empty(); // Directly using Hir's empty",
+          "    let result = compiler.c_at_least(&hir, false, 0);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(result.unwrap().start, result.unwrap().end);",
+          "    assert_eq!(result.unwrap().start, compiler.nfa.borrow().states.len() as StateID - 1);",
+          "    assert!(compiler.nfa.borrow().states.last().unwrap().is_splits());",
+          "    assert!(compiler.nfa.borrow().states.last().unwrap().targets.is_empty());",
+          "    assert_eq!(compiler.nfa.borrow_mut().memory_extra, 0);"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { nest_limit: 10, flags: Flags::empty() };",
+          "    let pattern = \"\"; // Empty pattern, should match empty string",
+          "    let compiler = Compiler::new(config, pattern.to_string());",
+          "    ",
+          "    let hir = Hir::empty(); // Directly using Hir's empty",
+          "    let result = compiler.c_at_least(&hir, false, 0);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(result.unwrap().start, result.unwrap().end);",
+          "    assert_eq!(result.unwrap().start, compiler.nfa.borrow().states.len() as StateID - 1);",
+          "    assert!(compiler.nfa.borrow().states.last().unwrap().is_splits());",
+          "    assert!(compiler.nfa.borrow().states.last().unwrap().targets.is_empty());",
+          "    assert_eq!(compiler.nfa.borrow_mut().memory_extra, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { nest_limit: 10, flags: Flags::empty() };",
+          "    let pattern = \"\"; // Empty pattern stimulates error condition",
+          "    let compiler = Compiler::new(config, pattern.to_string());",
+          "    ",
+          "    let hir = Hir::parse(config, pattern).unwrap();",
+          "    let result = compiler.c_at_least(&hir, true, 1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.unwrap_err().msg, \"expected error message\");",
+          "    assert!(result.is_ok() == false);",
+          "    assert!(result.unwrap_err().msg.contains(\"exhausted\"));",
+          "    assert!(result.unwrap_err().msg.contains(\"invalid pattern\"));",
+          "    assert!(result.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { nest_limit: 10, flags: Flags::empty() };",
+          "    let pattern = \"\"; // Empty pattern stimulates error condition",
+          "    let compiler = Compiler::new(config, pattern.to_string());",
+          "    ",
+          "    let hir = Hir::parse(config, pattern).unwrap();",
+          "    let result = compiler.c_at_least(&hir, true, 1);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.unwrap_err().msg, \"expected error message\");",
+          "    assert!(result.is_ok() == false);",
+          "    assert!(result.unwrap_err().msg.contains(\"exhausted\"));",
+          "    assert!(result.unwrap_err().msg.contains(\"invalid pattern\"));",
+          "    assert!(result.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

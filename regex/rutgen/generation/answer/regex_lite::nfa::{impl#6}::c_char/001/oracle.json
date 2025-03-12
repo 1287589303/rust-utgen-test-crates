@@ -1,0 +1,137 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { nest_limit: 100, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, String::new());",
+          "    compiler.c_char('\\u{0000}').unwrap_err(); // Test with null character",
+          "}"
+        ],
+        "oracle": [
+          "    compiler.c_char('\\u{0001}').unwrap_err(); // Test with control character",
+          "    compiler.c_char('\\u{007F}').unwrap_err(); // Test with delete character",
+          "    compiler.c_char('\\u{0080}').unwrap_err(); // Test with first non-ASCII character",
+          "    compiler.c_char('\\u{FFFD}').unwrap_err(); // Test with Unicode replacement character",
+          "    compiler.c_char('\\u{FFFF}').unwrap_err(); // Test with maximum Unicode character",
+          "    compiler.c_char('\\u{0002}').unwrap_err(); // Test with another control character",
+          "    compiler.c_char('\\u{0030}').unwrap(); // Test with numeric character '0'",
+          "    compiler.c_char('\\u{0031}').unwrap(); // Test with numeric character '1'"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { nest_limit: 100, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, String::new());",
+          "    compiler.c_char('\\u{0000}').unwrap_err(); // Test with null character",
+          "    compiler.c_char('\\u{0001}').unwrap_err(); // Test with control character",
+          "    compiler.c_char('\\u{007F}').unwrap_err(); // Test with delete character",
+          "    compiler.c_char('\\u{0080}').unwrap_err(); // Test with first non-ASCII character",
+          "    compiler.c_char('\\u{FFFD}').unwrap_err(); // Test with Unicode replacement character",
+          "    compiler.c_char('\\u{FFFF}').unwrap_err(); // Test with maximum Unicode character",
+          "    compiler.c_char('\\u{0002}').unwrap_err(); // Test with another control character",
+          "    compiler.c_char('\\u{0030}').unwrap(); // Test with numeric character '0'",
+          "    compiler.c_char('\\u{0031}').unwrap(); // Test with numeric character '1'",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { nest_limit: 100, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, String::new());",
+          "    compiler.c_char('A').unwrap_err(); // Test with a printable character",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(compiler.c_char('A').unwrap_err().msg, \"exhausted state IDs, too many states\");",
+          "    assert!(matches!(compiler.c_char('\\u{FFFF}'), Err(Error { msg: \"exhausted state IDs, too many states\" }));",
+          "    assert!(compiler.c_char(' ').is_err());",
+          "    assert!(compiler.c_char('\\0').is_err());",
+          "    assert!(compiler.c_char('\\n').is_err());"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { nest_limit: 100, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, String::new());",
+          "    compiler.c_char('A').unwrap_err(); // Test with a printable character",
+          "    assert_eq!(compiler.c_char('A').unwrap_err().msg, \"exhausted state IDs, too many states\");",
+          "    assert!(matches!(compiler.c_char('\\u{FFFF}'), Err(Error { msg: \"exhausted state IDs, too many states\" }));",
+          "    assert!(compiler.c_char(' ').is_err());",
+          "    assert!(compiler.c_char('\\0').is_err());",
+          "    assert!(compiler.c_char('\\n').is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { nest_limit: 100, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, String::new());",
+          "    compiler.c_char('\\u{FFFD}').unwrap_err(); // Test with high Unicode character",
+          "}"
+        ],
+        "oracle": [
+          "    compiler.c_char('\\u{FFFD}').unwrap_err(); // Check for high Unicode character handling",
+          "    compiler.c_char('\\u{007F}').unwrap_err(); // Check for DEL control character handling",
+          "    compiler.c_char('\\u{0000}').unwrap_err(); // Check for NULL character handling",
+          "    compiler.c_char(char::MAX).unwrap_err(); // Check for maximum valid char handling",
+          "    compiler.c_char(char::from_u32(0xD800).unwrap()).unwrap_err(); // Check for surrogate character handling"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { nest_limit: 100, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, String::new());",
+          "    compiler.c_char('\\u{FFFD}').unwrap_err(); // Test with high Unicode character",
+          "    compiler.c_char('\\u{FFFD}').unwrap_err(); // Check for high Unicode character handling",
+          "    compiler.c_char('\\u{007F}').unwrap_err(); // Check for DEL control character handling",
+          "    compiler.c_char('\\u{0000}').unwrap_err(); // Check for NULL character handling",
+          "    compiler.c_char(char::MAX).unwrap_err(); // Check for maximum valid char handling",
+          "    compiler.c_char(char::from_u32(0xD800).unwrap()).unwrap_err(); // Check for surrogate character handling",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let config = Config { nest_limit: 100, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, String::new());",
+          "    compiler.c_char('\\u{10000}').unwrap_err(); // Test with out-of-bounds character",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(compiler.c_char('\\u{10000}'), Err(Error { msg: _ })); // Test with out-of-bounds character",
+          "    assert!(matches!(compiler.add(State::Char { target: 0, ch: '\\u{10000}' }), Err(Error { msg: _ })); // Validate add returns error for out-of-bounds character",
+          "    assert_eq!(compiler.c_char('\\u{FFFD}').unwrap_err().msg, \"exhausted state IDs, too many states\"); // Test edge character for error handling"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { nest_limit: 100, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, String::new());",
+          "    compiler.c_char('\\u{10000}').unwrap_err(); // Test with out-of-bounds character",
+          "    assert!(matches!(compiler.c_char('\\u{10000}'), Err(Error { msg: _ })); // Test with out-of-bounds character",
+          "    assert!(matches!(compiler.add(State::Char { target: 0, ch: '\\u{10000}' }), Err(Error { msg: _ })); // Validate add returns error for out-of-bounds character",
+          "    assert_eq!(compiler.c_char('\\u{FFFD}').unwrap_err().msg, \"exhausted state IDs, too many states\"); // Test edge character for error handling",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

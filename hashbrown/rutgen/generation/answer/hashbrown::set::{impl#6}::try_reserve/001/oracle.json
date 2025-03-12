@@ -1,0 +1,199 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(0);",
+          "}"
+        ],
+        "oracle": [
+          "    let result = set.try_reserve(0); assert_eq!(result, Ok(()));",
+          "    let mut set: HashSet<i32> = HashSet::new(); let result = set.try_reserve(usize::MAX); assert!(result.is_err());",
+          "    let mut set: HashSet<i32> = HashSet::new(); let result = set.try_reserve(10); assert_eq!(result, Ok(()));",
+          "    let mut set: HashSet<i32> = HashSet::new(); let result = set.try_reserve(1); assert_eq!(result, Ok(()));",
+          "    let mut set: HashSet<i32> = HashSet::new(); set.try_reserve(10).expect(\"Precondition failed\"); let result = set.try_reserve(10); assert_eq!(result, Ok(()));",
+          "    let mut set: HashSet<i32> = HashSet::new(); set.try_reserve(5).expect(\"Precondition failed\"); let result = set.try_reserve(5); assert_eq!(result, Ok(()));"
+        ],
+        "code": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(0);",
+          "    let result = set.try_reserve(0); assert_eq!(result, Ok(()));",
+          "    let mut set: HashSet<i32> = HashSet::new(); let result = set.try_reserve(usize::MAX); assert!(result.is_err());",
+          "    let mut set: HashSet<i32> = HashSet::new(); let result = set.try_reserve(10); assert_eq!(result, Ok(()));",
+          "    let mut set: HashSet<i32> = HashSet::new(); let result = set.try_reserve(1); assert_eq!(result, Ok(()));",
+          "    let mut set: HashSet<i32> = HashSet::new(); set.try_reserve(10).expect(\"Precondition failed\"); let result = set.try_reserve(10); assert_eq!(result, Ok(()));",
+          "    let mut set: HashSet<i32> = HashSet::new(); set.try_reserve(5).expect(\"Precondition failed\"); let result = set.try_reserve(5); assert_eq!(result, Ok(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(()));",
+          "    let result = set.try_reserve(usize::MAX);",
+          "    assert!(result.is_err());",
+          "    if let Err(error) = result {",
+          "    assert_matches!(error, TryReserveError::CapacityOverflow);",
+          "    }",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    set.try_reserve(10).expect(\"Reservation failed\");",
+          "    let result = set.try_reserve(5);",
+          "    assert_eq!(result, Ok(()));",
+          "    let result = set.try_reserve(0);",
+          "    assert_eq!(result, Ok(()));",
+          "    set.try_reserve(usize::MAX - 1).expect(\"Should succeed before max capacity\");"
+        ],
+        "code": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(1);",
+          "    assert_eq!(result, Ok(()));",
+          "    let result = set.try_reserve(usize::MAX);",
+          "    assert!(result.is_err());",
+          "    if let Err(error) = result {",
+          "    assert_matches!(error, TryReserveError::CapacityOverflow);",
+          "    }",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    set.try_reserve(10).expect(\"Reservation failed\");",
+          "    let result = set.try_reserve(5);",
+          "    assert_eq!(result, Ok(()));",
+          "    let result = set.try_reserve(0);",
+          "    assert_eq!(result, Ok(()));",
+          "    set.try_reserve(usize::MAX - 1).expect(\"Should succeed before max capacity\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(10);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(()));",
+          "    let capacity_before = set.allocation_size();",
+          "    set.try_reserve(20).expect(\"Should succeed reserving more space\");",
+          "    let capacity_after = set.allocation_size();",
+          "    assert!(capacity_after >= capacity_before + 20);",
+          "    let error_result = set.try_reserve(isize::MAX as usize);",
+          "    assert!(error_result.is_err());",
+          "    assert!(matches!(error_result, Err(TryReserveError::CapacityOverflow)));"
+        ],
+        "code": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(10);",
+          "    assert_eq!(result, Ok(()));",
+          "    let capacity_before = set.allocation_size();",
+          "    set.try_reserve(20).expect(\"Should succeed reserving more space\");",
+          "    let capacity_after = set.allocation_size();",
+          "    assert!(capacity_after >= capacity_before + 20);",
+          "    let error_result = set.try_reserve(isize::MAX as usize);",
+          "    assert!(error_result.is_err());",
+          "    assert!(matches!(error_result, Err(TryReserveError::CapacityOverflow)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(100);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(set.allocation_size(), expected_size_after_reserve(100));",
+          "    assert_eq!(set.try_reserve(usize::MAX), Err(TryReserveError::CapacityOverflow));",
+          "    assert_eq!(set.try_reserve(50), Ok(()));",
+          "    assert_eq!(set.try_reserve(0), Ok(()));"
+        ],
+        "code": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(100);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(set.allocation_size(), expected_size_after_reserve(100));",
+          "    assert_eq!(set.try_reserve(usize::MAX), Err(TryReserveError::CapacityOverflow));",
+          "    assert_eq!(set.try_reserve(50), Ok(()));",
+          "    assert_eq!(set.try_reserve(0), Ok(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(usize::MAX - 1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), ());",
+          "    let capacity = set.allocation_size();",
+          "    assert!(capacity > 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(usize::MAX - 1);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), ());",
+          "    let capacity = set.allocation_size();",
+          "    assert!(capacity > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(usize::MAX);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), TryReserveError::CapacityOverflow);"
+        ],
+        "code": [
+          "{",
+          "    let mut set: HashSet<i32> = HashSet::new();",
+          "    let result = set.try_reserve(usize::MAX);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), TryReserveError::CapacityOverflow);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

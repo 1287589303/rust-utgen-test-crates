@@ -1,0 +1,587 @@
+{
+  "name": "hashbrown::set::{impl#6}::get_or_insert_with",
+  "mod_info": {
+    "name": "set",
+    "loc": "src/lib.rs:84:1:84:9"
+  },
+  "visible": true,
+  "loc": "src/set.rs:949:5:964:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: self.map.find_or_find_insert_slot(hash, value) matches Err(slot) at line 955 is true\n",
+        "precondition: value.equivalent(&new) at line 959 is true\n",
+        "expected return value/type: &bucket.as_ref().0\n"
+      ],
+      "input_infer": "value needs to be a non-existent element in the HashSet, additional must be a positive integer to allow for new insertion, and function f must produce a new unique value equivalent to value; value type must implement Hash and Equivalent traits and new value must be of type T.\n",
+      "answers": [
+        {
+          "uses": [
+            "use std::collections::hash_map::DefaultHasher;",
+            "use std::hash::Hash;",
+            "use hashbrown::HashSet;",
+            "use std::hash::Hasher;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "    use std::collections::hash_map::DefaultHasher;",
+                "    use std::hash::{Hash, Hasher};",
+                "",
+                "    struct EquivalentString(String);",
+                "",
+                "    impl Hash for EquivalentString {",
+                "        fn hash<H: Hasher>(&self, state: &mut H) {",
+                "            self.0.hash(state);",
+                "        }",
+                "    }",
+                "",
+                "    impl PartialEq for EquivalentString {",
+                "        fn eq(&self, other: &Self) -> bool {",
+                "            self.0 == other.0",
+                "        }",
+                "    }",
+                "",
+                "    impl Eq for EquivalentString {}",
+                "",
+                "    let mut set: HashSet<EquivalentString, DefaultHasher> = HashSet::new();",
+                "    let value = EquivalentString(\"new_value\".to_string());",
+                "",
+                "    let new_value_ref = set.get_or_insert_with(&value, |v| {",
+                "        let new_value = format!(\"unique_{}\", v.0);",
+                "        EquivalentString(new_value)",
+                "    });",
+                "",
+                "    drop(set);",
+                "    // Using the `new_value_ref` to ensure it holds a reference to a valid element",
+                "    let _ = new_value_ref;",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(set.len(), 1); // a new value should have been inserted",
+                "    let retrieved_value = set.get_or_insert_with(&value, |v| EquivalentString(format!(\"duplicate_{}\", v.0)));",
+                "    assert_eq!(retrieved_value, new_value_ref); // should return the same reference as before",
+                "    assert!(value.equivalent(&new_value_ref)); // value should be equivalent to the new value",
+                "    let new_value_ref2 = unsafe { set.insert_unique_unchecked(EquivalentString(\"another_value\".to_string())) };",
+                "    assert!(!set.is_subset(&set)); // the set should not be a subset of itself after insertions"
+              ],
+              "code": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "  use std::collections::hash_map::DefaultHasher;",
+                "   use std::hash::{Hash, Hasher};",
+                "   use std::string::ToString; // Importing ToString trait",
+                "  struct EquivalentString(std::string::String);",
+                "",
+                "    impl Hash for EquivalentString {",
+                "        fn hash<H: Hasher>(&self, state: &mut H) {",
+                "            self.0.hash(state);",
+                "        }",
+                "    }",
+                "",
+                "    impl PartialEq for EquivalentString {",
+                "        fn eq(&self, other: &Self) -> bool {",
+                "            self.0 == other.0",
+                "        }",
+                "    }",
+                "",
+                "    impl Eq for EquivalentString {}",
+                "",
+                "    let mut set: HashSet<EquivalentString, DefaultHasher> = HashSet::new();",
+                "    let value = EquivalentString(\"new_value\".to_string());",
+                "",
+                "    let new_value_ref = set.get_or_insert_with(&value, |v| {",
+                "        let new_value = format!(\"unique_{}\", v.0);",
+                "        EquivalentString(new_value)",
+                "    });",
+                "",
+                "    drop(set);",
+                "    // Using the `new_value_ref` to ensure it holds a reference to a valid element",
+                "    let _ = new_value_ref;",
+                "    assert_eq!(set.len(), 1); // a new value should have been inserted",
+                "    let retrieved_value = set.get_or_insert_with(&value, |v| EquivalentString(format!(\"duplicate_{}\", v.0)));",
+                "    assert_eq!(retrieved_value, new_value_ref); // should return the same reference as before",
+                "    assert!(value.equivalent(&new_value_ref)); // value should be equivalent to the new value",
+                "    let new_value_ref2 = unsafe { set.insert_unique_unchecked(EquivalentString(\"another_value\".to_string())) };",
+                "    assert!(!set.is_subset(&set)); // the set should not be a subset of itself after insertions",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "    use std::collections::hash_map::DefaultHasher;",
+                "    use std::hash::{Hash, Hasher};",
+                "",
+                "    struct EquivalentString(String);",
+                "",
+                "    impl Hash for EquivalentString {",
+                "        fn hash<H: Hasher>(&self, state: &mut H) {",
+                "            self.0.hash(state);",
+                "        }",
+                "    }",
+                "",
+                "    impl PartialEq for EquivalentString {",
+                "        fn eq(&self, other: &Self) -> bool {",
+                "            self.0 == other.0",
+                "        }",
+                "    }",
+                "",
+                "    impl Eq for EquivalentString {}",
+                "",
+                "    let mut set: HashSet<EquivalentString, DefaultHasher> = HashSet::new();",
+                "    let value = EquivalentString(\"rust\".to_string());",
+                "",
+                "    set.get_or_insert_with(&value, |_| \"\".to_string());",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let mut set: HashSet<EquivalentString, DefaultHasher> = HashSet::new();",
+                "    let value = EquivalentString(\"rust\".to_string());",
+                "    set.get_or_insert_with(&value, |_| String::new());",
+                "    }).is_err(), \"Expected panic when value doesn't match\");"
+              ],
+              "code": [
+                "{",
+                "  use hashbrown::HashSet;",
+                "  use std::collections::hash_map::DefaultHasher;",
+                "  use std::string::String;",
+                "   use std::string::ToString; // Import ToString trait",
+                "    use std::hash::{Hash, Hasher};",
+                "",
+                "    struct EquivalentString(String);",
+                "",
+                "    impl Hash for EquivalentString {",
+                "        fn hash<H: Hasher>(&self, state: &mut H) {",
+                "            self.0.hash(state);",
+                "        }",
+                "    }",
+                "",
+                "    impl PartialEq for EquivalentString {",
+                "        fn eq(&self, other: &Self) -> bool {",
+                "            self.0 == other.0",
+                "        }",
+                "    }",
+                "",
+                "    impl Eq for EquivalentString {}",
+                "",
+                "    let mut set: HashSet<EquivalentString, DefaultHasher> = HashSet::new();",
+                "    let value = EquivalentString(\"rust\".to_string());",
+                "",
+                "    set.get_or_insert_with(&value, |_| \"\".to_string());",
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let mut set: HashSet<EquivalentString, DefaultHasher> = HashSet::new();",
+                "    let value = EquivalentString(\"rust\".to_string());",
+                "  set.get_or_insert_with(&value, |_| \"\".to_string());",
+                "    }).is_err(), \"Expected panic when value doesn't match\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: self.map.find_or_find_insert_slot(hash, value) matches Err(slot) at line 955 is true\n",
+        "precondition: value.equivalent(&new) at line 959 is false\n"
+      ],
+      "input_infer": "HashSet with non-empty initial values, value type T implementing Hash and Equivalent traits with distinct values for value and new, a function F that creates a new value of type T, and a valid allocation strategy through Allocator.\n",
+      "answers": [
+        {
+          "uses": [
+            "use hashbrown::HashSet;",
+            "use std::collections::hash_map::DefaultHasher;",
+            "use std::hash::Hasher;",
+            "use std::hash::Hash;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "    use std::collections::hash_map::DefaultHasher;",
+                "    use std::hash::{Hash, Hasher};",
+                "",
+                "    struct MyHashBuilder;",
+                "",
+                "    impl BuildHasher for MyHashBuilder {",
+                "        fn build_hasher(&self) -> DefaultHasher {",
+                "            DefaultHasher::new()",
+                "        }",
+                "    }",
+                "",
+                "    #[derive(Hash, Eq, PartialEq)]",
+                "    struct MyValue {",
+                "        id: i32,",
+                "    }",
+                "",
+                "    impl Equivalent<MyValue> for MyValue {",
+                "        fn equivalent(&self, other: &MyValue) -> bool {",
+                "            self.id == other.id",
+                "        }",
+                "    }",
+                "",
+                "    let mut set: HashSet<MyValue, MyHashBuilder> = HashSet::new();",
+                "    set.insert(MyValue { id: 1 });",
+                "",
+                "    let value = MyValue { id: 2 };",
+                "    let f = |val: &MyValue| MyValue { id: 3 }; // Creates a new value that doesn't match",
+                "",
+                "    let _result = set.get_or_insert_with(&value, f);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(set.map.find_or_find_insert_slot(make_hash(&set.map.hash_builder, &value), &value).is_err());",
+                "    assert!(!value.equivalent(&f(&value)));",
+                "    assert_eq!(set.len(), 2);"
+              ],
+              "code": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "    use std::collections::hash_map::DefaultHasher;",
+                "    use std::hash::{Hash, Hasher};",
+                "",
+                "   struct MyHashBuilder;  ",
+                " ",
+                "   impl BuildHasher for MyHashBuilder {  ",
+                "       type Hasher = DefaultHasher;  ",
+                " ",
+                "       fn build_hasher(&self) -> Self::Hasher {  ",
+                "           DefaultHasher::new()  ",
+                "       }  ",
+                "    }",
+                "",
+                "    #[derive(Hash, Eq, PartialEq)]",
+                "    struct MyValue {",
+                "        id: i32,",
+                "    }",
+                "",
+                "    impl Equivalent<MyValue> for MyValue {",
+                "        fn equivalent(&self, other: &MyValue) -> bool {",
+                "            self.id == other.id",
+                "        }",
+                "    }",
+                "",
+                "    let mut set: HashSet<MyValue, MyHashBuilder> = HashSet::new();",
+                "    set.insert(MyValue { id: 1 });",
+                "",
+                "    let value = MyValue { id: 2 };",
+                "    let f = |val: &MyValue| MyValue { id: 3 }; // Creates a new value that doesn't match",
+                "",
+                "    let _result = set.get_or_insert_with(&value, f);",
+                "    assert!(set.map.find_or_find_insert_slot(make_hash(&set.map.hash_builder, &value), &value).is_err());",
+                "    assert!(!value.equivalent(&f(&value)));",
+                "    assert_eq!(set.len(), 2);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "    use std::collections::hash_map::DefaultHasher;",
+                "    use std::hash::{Hash, Hasher};",
+                "",
+                "    struct MyHashBuilder;",
+                "",
+                "    impl BuildHasher for MyHashBuilder {",
+                "        fn build_hasher(&self) -> DefaultHasher {",
+                "            DefaultHasher::new()",
+                "        }",
+                "    }",
+                "",
+                "    #[derive(Hash, Eq, PartialEq)]",
+                "    struct MyValue {",
+                "        id: i32,",
+                "    }",
+                "",
+                "    impl Equivalent<MyValue> for MyValue {",
+                "        fn equivalent(&self, other: &MyValue) -> bool {",
+                "            self.id == other.id",
+                "        }",
+                "    }",
+                "",
+                "    let mut set: HashSet<MyValue, MyHashBuilder> = HashSet::new();",
+                "    set.insert(MyValue { id: 1 });",
+                "",
+                "    let value = MyValue { id: 1 }; // Existing value",
+                "    let f = |val: &MyValue| MyValue { id: 2 }; // New value that doesn't match the existing one",
+                "",
+                "    let _result = set.get_or_insert_with(&value, f); // This should panic",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(set.map.find_or_find_insert_slot(hash, value), Err(slot));",
+                "    assert!(!value.equivalent(&new));"
+              ],
+              "code": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "    use std::collections::hash_map::DefaultHasher;",
+                "    use std::hash::{Hash, Hasher};",
+                "",
+                "   struct MyHashBuilder;  ",
+                " ",
+                "   impl BuildHasher for MyHashBuilder {  ",
+                "       type Hasher = DefaultHasher;  ",
+                " ",
+                "       fn build_hasher(&self) -> DefaultHasher {  ",
+                "           DefaultHasher::new()  ",
+                "        }",
+                "    }",
+                "",
+                "    #[derive(Hash, Eq, PartialEq)]",
+                "    struct MyValue {",
+                "        id: i32,",
+                "    }",
+                "",
+                "   // Removed conflicting impl for Equivalent<MyValue>",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "   let mut set: HashSet<MyValue, MyHashBuilder> = HashSet::new();  ",
+                "   set.insert(MyValue { id: 1 });  ",
+                " ",
+                "   let value = MyValue { id: 1 }; // Existing value  ",
+                "   let f = |val: &MyValue| MyValue { id: 2 }; // New value that doesn't match the existing one  ",
+                " ",
+                "   let _result = set.get_or_insert_with(&value, f); // This should panic  ",
+                "   let hash = make_hash(set.hasher(), &value);  ",
+                "  let slot = set.map.find_or_find_insert_slot(hash, value);  ",
+                "  let new = MyValue { id: 2 }; // Defined new value for comparison",
+                "   assert!(!value.equivalent(&new));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: self.map.find_or_find_insert_slot(hash, value) matches Ok(bucket) at line 955 is true\n",
+        "precondition: self.map.find_or_find_insert_slot(hash, value) matches Ok(bucket) at line 955 is true\n",
+        "expected return value/type: &bucket.as_ref().0\n"
+      ],
+      "input_infer": "T: type that implements Eq + Hash, Q: type that implements Hash + Equivalent<T> + ?Sized, f: function that takes &Q and returns T, additional inputs for f must ensure the equivalence condition is satisfied, value should be unique or existing in the structure; test cases must include min/max HashSet sizes, varying lengths for f and value inputs, both existing and non-existing inputs, and edge cases for equivalence assertions.\n",
+      "answers": [
+        {
+          "uses": [
+            "use hashbrown::HashSet;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "",
+                "    let mut set: HashSet<String> = [\"apple\", \"banana\", \"cherry\"].iter().cloned().collect();",
+                "    let value = set.get_or_insert_with(&\"apple\", |&s| s.to_string());",
+                "}"
+              ],
+              "oracle": [
+                "    let mut set: HashSet<String> = [\"apple\", \"banana\", \"cherry\"].iter().cloned().collect();",
+                "    let value = set.get_or_insert_with(&\"apple\", |&s| s.to_string());",
+                "    assert_eq!(value, \"apple\");",
+                "    assert_eq!(set.len(), 3);  // \"apple\" already present, length should remain the same",
+                "    ",
+                "    let new_value = set.get_or_insert_with(&\"date\", |&s| s.to_string());",
+                "    assert_eq!(new_value, \"date\");",
+                "    assert_eq!(set.len(), 4);  // \"date\" should be added, length should increase by 1"
+              ],
+              "code": [
+                "{",
+                "   use std::collections::HashSet;",
+                "   ",
+                "   let mut set: HashSet<String> = [\"apple\", \"banana\", \"cherry\"].iter().cloned().collect();",
+                "   let value = set.get_or_insert_with(&\"apple\", |&s| s.to_string());",
+                "   let mut set: HashSet<String> = [\"apple\", \"banana\", \"cherry\"].iter().cloned().collect();",
+                "   let value = set.get_or_insert_with(&\"apple\", |&s| s.to_string());",
+                "   assert_eq!(value, \"apple\");",
+                "   assert_eq!(set.len(), 3);",
+                "   ",
+                "   let new_value = set.get_or_insert_with(&\"date\", |&s| s.to_string());",
+                "   assert_eq!(new_value, \"date\");",
+                "   assert_eq!(set.len(), 4);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "",
+                "    let mut set: HashSet<String> = [\"apple\", \"banana\", \"cherry\"].iter().cloned().collect();",
+                "    let value = set.get_or_insert_with(&\"date\", |&s| s.to_string());",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(value, \"date\");",
+                "    assert_eq!(set.len(), 4);"
+              ],
+              "code": [
+                "{",
+                "   use std::collections::HashSet;",
+                "   ",
+                "   let mut set: HashSet<String> = [\"apple\", \"banana\", \"cherry\"].iter().cloned().collect();",
+                "   let value = set.get_or_insert_with(&\"date\", |&s| s.to_string());",
+                "   assert_eq!(value, \"date\");",
+                "   assert_eq!(set.len(), 4);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "",
+                "    let mut set: HashSet<String> = HashSet::new();",
+                "    set.get_or_insert_with(\"fruit\", |_| String::from(\"vegetable\"));",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(set.get_or_insert_with(\"fruit\", |_| String::from(\"vegetable\")).is_null());",
+                "    assert_eq!(set.len(), 0);",
+                "    set.get_or_insert_with(\"fruit\", |v| v.to_owned());",
+                "    assert_eq!(set.len(), 1);",
+                "    assert_eq!(set.get_or_insert_with(\"fruit\", |v| v.to_owned()), \"fruit\");",
+                "    assert_eq!(set.get_or_insert_with(\"fruit\", |_| String::from(\"vegetable\")), \"fruit\");",
+                "    assert!(std::panic::catch_unwind(|| { set.get_or_insert_with(\"fruit\", |_| String::new()); }).is_err());"
+              ],
+              "code": [
+                "{",
+                "   use hashbrown::HashSet;",
+                "   use std::string::String;",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "",
+                "    let mut set: HashSet<String> = HashSet::new();",
+                "    let values = vec![\"longer_value\", \"short\", \"medium_length\"];",
+                "",
+                "    for &val in &values {",
+                "        let value = set.get_or_insert_with(&val, |&s| s.to_string());",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(set.len(), 3);",
+                "    assert_eq!(set.get_or_insert_with(&\"longer_value\", |s| s.to_string()), \"longer_value\");",
+                "    assert_eq!(set.get_or_insert_with(&\"short\", |s| s.to_string()), \"short\");",
+                "    assert_eq!(set.get_or_insert_with(&\"medium_length\", |s| s.to_string()), \"medium_length\");"
+              ],
+              "code": [
+                "{",
+                "   use std::collections::HashSet;  ",
+                " ",
+                "   let mut set: HashSet<String> = HashSet::new();  ",
+                "   let values = vec![\"longer_value\", \"short\", \"medium_length\"];  ",
+                " ",
+                "   for &val in &values {  ",
+                "       let value = set.get_or_insert_with(&val, |&s| s.to_string());  ",
+                "   }  ",
+                "   assert_eq!(set.len(), 3);  ",
+                "   assert_eq!(set.get_or_insert_with(&\"longer_value\", |s| s.to_string()), \"longer_value\");  ",
+                "   assert_eq!(set.get_or_insert_with(&\"short\", |s| s.to_string()), \"short\");  ",
+                "   assert_eq!(set.get_or_insert_with(&\"medium_length\", |s| s.to_string()), \"medium_length\");  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use hashbrown::HashSet;",
+                "",
+                "    let mut set: HashSet<String> = HashSet::new();",
+                "    let value = set.get_or_insert_with(&\"peach\", |&s| s.to_string());",
+                "    assert!(value == &\"peach\".to_string());",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(value == &\"peach\".to_string());",
+                "    assert_eq!(set.len(), 1);",
+                "    let value = set.get_or_insert_with(&\"peach\", |&s| s.to_string());",
+                "    assert!(value == &\"peach\".to_string());"
+              ],
+              "code": [
+                "{",
+                "   use hashbrown::HashSet;  ",
+                " ",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

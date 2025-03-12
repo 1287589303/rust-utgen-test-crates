@@ -1,0 +1,241 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    let size = hash_set.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(size, 0);"
+        ],
+        "code": [
+          "{",
+          "    let hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    let size = hash_set.allocation_size();",
+          "    assert_eq!(size, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    hash_set.insert(1);",
+          "    let size = hash_set.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(size, expected_size_after_inserting_1);",
+          "    assert!(size > 0);",
+          "    hash_set.insert(2);",
+          "    let new_size = hash_set.allocation_size();",
+          "    assert!(new_size >= size);",
+          "    hash_set.insert(3);",
+          "    let final_size = hash_set.allocation_size();",
+          "    assert!(final_size >= new_size);",
+          "    hash_set.remove(&1);",
+          "    let size_after_removal = hash_set.allocation_size();",
+          "    assert!(size_after_removal <= final_size);",
+          "    hash_set.shrink_to_fit();",
+          "    let size_after_shrink = hash_set.allocation_size();",
+          "    assert!(size_after_shrink <= size_after_removal);"
+        ],
+        "code": [
+          "{",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    hash_set.insert(1);",
+          "    let size = hash_set.allocation_size();",
+          "    assert_eq!(size, expected_size_after_inserting_1);",
+          "    assert!(size > 0);",
+          "    hash_set.insert(2);",
+          "    let new_size = hash_set.allocation_size();",
+          "    assert!(new_size >= size);",
+          "    hash_set.insert(3);",
+          "    let final_size = hash_set.allocation_size();",
+          "    assert!(final_size >= new_size);",
+          "    hash_set.remove(&1);",
+          "    let size_after_removal = hash_set.allocation_size();",
+          "    assert!(size_after_removal <= final_size);",
+          "    hash_set.shrink_to_fit();",
+          "    let size_after_shrink = hash_set.allocation_size();",
+          "    assert!(size_after_shrink <= size_after_removal);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    hash_set.insert(1);",
+          "    hash_set.insert(2);",
+          "    hash_set.insert(3);",
+          "    let size = hash_set.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(size > 0);",
+          "    assert_eq!(size, hash_set.map.allocation_size());",
+          "    hash_set.insert(4);",
+          "    let new_size = hash_set.allocation_size();",
+          "    assert!(new_size > size);",
+          "    hash_set.remove(&2);",
+          "    let reduced_size = hash_set.allocation_size();",
+          "    assert!(reduced_size < new_size);",
+          "    hash_set.shrink_to_fit();",
+          "    let final_size = hash_set.allocation_size();",
+          "    assert!(final_size <= new_size);"
+        ],
+        "code": [
+          "{",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    hash_set.insert(1);",
+          "    hash_set.insert(2);",
+          "    hash_set.insert(3);",
+          "    let size = hash_set.allocation_size();",
+          "    assert!(size > 0);",
+          "    assert_eq!(size, hash_set.map.allocation_size());",
+          "    hash_set.insert(4);",
+          "    let new_size = hash_set.allocation_size();",
+          "    assert!(new_size > size);",
+          "    hash_set.remove(&2);",
+          "    let reduced_size = hash_set.allocation_size();",
+          "    assert!(reduced_size < new_size);",
+          "    hash_set.shrink_to_fit();",
+          "    let final_size = hash_set.allocation_size();",
+          "    assert!(final_size <= new_size);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let max_size = 1024; // hypothetical max capacity",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    for i in 0..max_size {",
+          "        hash_set.insert(i);",
+          "    }",
+          "    let size = hash_set.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(size > 0);",
+          "    assert!(size <= max_size * std::mem::size_of::<i32>());"
+        ],
+        "code": [
+          "{",
+          "    let max_size = 1024; // hypothetical max capacity",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    for i in 0..max_size {",
+          "        hash_set.insert(i);",
+          "    }",
+          "    let size = hash_set.allocation_size();",
+          "    assert!(size > 0);",
+          "    assert!(size <= max_size * std::mem::size_of::<i32>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    for i in 0..10_000 {",
+          "        hash_set.insert(i);",
+          "    }",
+          "    let size = hash_set.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(size > 0);",
+          "    assert!(size >= 10_000 * std::mem::size_of::<i32>());",
+          "    assert_eq!(hash_set.allocation_size(), hash_set.map.allocation_size());"
+        ],
+        "code": [
+          "{",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    for i in 0..10_000 {",
+          "        hash_set.insert(i);",
+          "    }",
+          "    let size = hash_set.allocation_size();",
+          "    assert!(size > 0);",
+          "    assert!(size >= 10_000 * std::mem::size_of::<i32>());",
+          "    assert_eq!(hash_set.allocation_size(), hash_set.map.allocation_size());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    for i in 0..100 {",
+          "        hash_set.insert(i);",
+          "    }",
+          "    hash_set.shrink_to_fit();",
+          "    let size = hash_set.allocation_size();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    for i in 0..100 { hash_set.insert(i); }",
+          "    hash_set.shrink_to_fit();",
+          "    let size = hash_set.allocation_size();",
+          "    assert!(size >= 0);",
+          "    assert!(size % std::mem::size_of::<i32>() == 0);",
+          "    assert!(size < 100 * std::mem::size_of::<i32>());",
+          "    hash_set.reserve(10);",
+          "    let new_size = hash_set.allocation_size();",
+          "    assert!(new_size > size);",
+          "    hash_set.insert(100);",
+          "    let final_size = hash_set.allocation_size();",
+          "    assert!(final_size >= new_size);"
+        ],
+        "code": [
+          "{",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    for i in 0..100 {",
+          "        hash_set.insert(i);",
+          "    }",
+          "    hash_set.shrink_to_fit();",
+          "    let size = hash_set.allocation_size();",
+          "    let mut hash_set: HashSet<i32> = HashSet { map: HashMap { hash_builder: DefaultHashBuilder::new(), table: RawTable::new() } };",
+          "    for i in 0..100 { hash_set.insert(i); }",
+          "    hash_set.shrink_to_fit();",
+          "    let size = hash_set.allocation_size();",
+          "    assert!(size >= 0);",
+          "    assert!(size % std::mem::size_of::<i32>() == 0);",
+          "    assert!(size < 100 * std::mem::size_of::<i32>());",
+          "    hash_set.reserve(10);",
+          "    let new_size = hash_set.allocation_size();",
+          "    assert!(new_size > size);",
+          "    hash_set.insert(100);",
+          "    let final_size = hash_set.allocation_size();",
+          "    assert!(final_size >= new_size);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

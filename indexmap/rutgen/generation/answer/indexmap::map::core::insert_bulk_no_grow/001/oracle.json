@@ -1,0 +1,164 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut indices: Indices = hash_table::HashTable::with_capacity(5);",
+          "    // Simulate capacity 5, and length 0 for total of 5 - 0 >= 5 entries",
+          "    let entries = vec![",
+          "        Bucket { hash: HashValue(1), key: 1, value: \"a\" },",
+          "        Bucket { hash: HashValue(2), key: 2, value: \"b\" },",
+          "        Bucket { hash: HashValue(3), key: 3, value: \"c\" },",
+          "        Bucket { hash: HashValue(4), key: 4, value: \"d\" },",
+          "        Bucket { hash: HashValue(5), key: 5, value: \"e\" },",
+          "    ];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(indices.capacity() - indices.len() == 5);",
+          "    assert!(entries.len() == 5);",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    let mut indices: Indices = hash_table::HashTable::with_capacity(5);",
+          "    let entries: Vec<Bucket<_, _>> = Vec::new();",
+          "    assert!(std::panic::catch_unwind(|| insert_bulk_no_grow(&mut indices, &entries)).is_err());",
+          "    let entries = vec![Bucket { hash: HashValue(1), key: 1, value: \"a\" }];",
+          "    assert!(indices.len() == 0);",
+          "    insert_bulk_no_grow(&mut indices, &entries);"
+        ],
+        "code": [
+          "{",
+          "    let mut indices: Indices = hash_table::HashTable::with_capacity(5);",
+          "    // Simulate capacity 5, and length 0 for total of 5 - 0 >= 5 entries",
+          "    let entries = vec![",
+          "        Bucket { hash: HashValue(1), key: 1, value: \"a\" },",
+          "        Bucket { hash: HashValue(2), key: 2, value: \"b\" },",
+          "        Bucket { hash: HashValue(3), key: 3, value: \"c\" },",
+          "        Bucket { hash: HashValue(4), key: 4, value: \"d\" },",
+          "        Bucket { hash: HashValue(5), key: 5, value: \"e\" },",
+          "    ];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    assert!(indices.capacity() - indices.len() == 5);",
+          "    assert!(entries.len() == 5);",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    let mut indices: Indices = hash_table::HashTable::with_capacity(5);",
+          "    let entries: Vec<Bucket<_, _>> = Vec::new();",
+          "    assert!(std::panic::catch_unwind(|| insert_bulk_no_grow(&mut indices, &entries)).is_err());",
+          "    let entries = vec![Bucket { hash: HashValue(1), key: 1, value: \"a\" }];",
+          "    assert!(indices.len() == 0);",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut indices: Indices = hash_table::HashTable::with_capacity(5);",
+          "    // Simulate capacity 5, and length 0 for total of 5 - 0 >= 1 entry",
+          "    let entries = vec![",
+          "        Bucket { hash: HashValue(1), key: 1, value: \"a\" },",
+          "    ];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(indices.len() == 1);",
+          "    assert!(indices.capacity() == 5);",
+          "    assert_eq!(indices.get(&1), Some(&\"a\"));",
+          "    assert!(indices.insert_unique(2, indices.len(), |_| unreachable!()).is_ok());",
+          "    assert!(indices.len() == 2);",
+          "    assert!(indices.capacity() - indices.len() == 3);"
+        ],
+        "code": [
+          "{",
+          "    let mut indices: Indices = hash_table::HashTable::with_capacity(5);",
+          "    // Simulate capacity 5, and length 0 for total of 5 - 0 >= 1 entry",
+          "    let entries = vec![",
+          "        Bucket { hash: HashValue(1), key: 1, value: \"a\" },",
+          "    ];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    assert!(indices.len() == 1);",
+          "    assert!(indices.capacity() == 5);",
+          "    assert_eq!(indices.get(&1), Some(&\"a\"));",
+          "    assert!(indices.insert_unique(2, indices.len(), |_| unreachable!()).is_ok());",
+          "    assert!(indices.len() == 2);",
+          "    assert!(indices.capacity() - indices.len() == 3);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut indices: Indices = hash_table::HashTable::with_capacity(5);",
+          "    // Too many entries for the current capacity of the indices",
+          "    let entries = vec![",
+          "        Bucket { hash: HashValue(1), key: 1, value: \"a\" },",
+          "        Bucket { hash: HashValue(2), key: 2, value: \"b\" },",
+          "        Bucket { hash: HashValue(3), key: 3, value: \"c\" },",
+          "        Bucket { hash: HashValue(4), key: 4, value: \"d\" },",
+          "        Bucket { hash: HashValue(5), key: 5, value: \"e\" },",
+          "        Bucket { hash: HashValue(6), key: 6, value: \"f\" },",
+          "    ];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(indices.capacity() - indices.len() >= entries.len());",
+          "    let entries = vec![Bucket { hash: HashValue(1), key: 1, value: \"a\" }];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    let entries = vec![Bucket { hash: HashValue(1), key: 1, value: \"a\" }, Bucket { hash: HashValue(2), key: 2, value: \"b\" }];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    let entries = vec![];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    let entries = vec![Bucket { hash: HashValue(1), key: 1, value: \"a\" }];",
+          "    let result = std::panic::catch_unwind(|| insert_bulk_no_grow(&mut indices, &entries));",
+          "    assert!(result.is_err());",
+          "    let entries = vec![Bucket { hash: HashValue(1), key: 1, value: \"a\" }];",
+          "    indices.insert_unique(entry.hash.get(), indices.len(), |_| unreachable!());"
+        ],
+        "code": [
+          "{",
+          "    let mut indices: Indices = hash_table::HashTable::with_capacity(5);",
+          "    // Too many entries for the current capacity of the indices",
+          "    let entries = vec![",
+          "        Bucket { hash: HashValue(1), key: 1, value: \"a\" },",
+          "        Bucket { hash: HashValue(2), key: 2, value: \"b\" },",
+          "        Bucket { hash: HashValue(3), key: 3, value: \"c\" },",
+          "        Bucket { hash: HashValue(4), key: 4, value: \"d\" },",
+          "        Bucket { hash: HashValue(5), key: 5, value: \"e\" },",
+          "        Bucket { hash: HashValue(6), key: 6, value: \"f\" },",
+          "    ];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    assert!(indices.capacity() - indices.len() >= entries.len());",
+          "    let entries = vec![Bucket { hash: HashValue(1), key: 1, value: \"a\" }];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    let entries = vec![Bucket { hash: HashValue(1), key: 1, value: \"a\" }, Bucket { hash: HashValue(2), key: 2, value: \"b\" }];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    let entries = vec![];",
+          "    insert_bulk_no_grow(&mut indices, &entries);",
+          "    let entries = vec![Bucket { hash: HashValue(1), key: 1, value: \"a\" }];",
+          "    let result = std::panic::catch_unwind(|| insert_bulk_no_grow(&mut indices, &entries));",
+          "    assert!(result.is_err());",
+          "    let entries = vec![Bucket { hash: HashValue(1), key: 1, value: \"a\" }];",
+          "    indices.insert_unique(entry.hash.get(), indices.len(), |_| unreachable!());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

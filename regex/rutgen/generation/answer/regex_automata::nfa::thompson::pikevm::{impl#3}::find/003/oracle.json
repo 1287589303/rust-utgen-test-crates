@@ -1,0 +1,144 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let nfa = NFA::new(\"abc|def\").unwrap(); // Two patterns, length > 1",
+          "    let pike_vm = PikeVM { config: Config::default(), nfa };",
+          "    let mut cache = Cache { stack: vec![], curr: ActiveStates::default(), next: ActiveStates::default() };",
+          "    let input = Input { haystack: b\"abc\", span: Span { start: 0, end: 3 }, anchored: Anchored::None, earliest: false };",
+          "    ",
+          "    let result = pike_vm.find(&mut cache, input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_some());",
+          "    assert!(result.unwrap().span.end == 3);",
+          "    assert!(result.unwrap().span.start == 0);",
+          "    assert!(result.unwrap().pattern == PatternID(SmallIndex(0)));",
+          "    assert_eq!(pike_vm.get_nfa().pattern_len(), 2);",
+          "    assert!(pike_vm.search_slots(&mut cache, &input, &mut vec![None; 4]).is_ok());",
+          "    assert!(pike_vm.search_slots(&mut cache, &input, &mut vec![None; 4]).unwrap().is_some());",
+          "    assert!(pike_vm.get_nfa().group_info().implicit_slot_len() == 4);",
+          "    assert!(slots[0].is_some());",
+          "    assert!(slots[1].is_none());"
+        ],
+        "code": [
+          "{",
+          "    let nfa = NFA::new(\"abc|def\").unwrap(); // Two patterns, length > 1",
+          "    let pike_vm = PikeVM { config: Config::default(), nfa };",
+          "    let mut cache = Cache { stack: vec![], curr: ActiveStates::default(), next: ActiveStates::default() };",
+          "    let input = Input { haystack: b\"abc\", span: Span { start: 0, end: 3 }, anchored: Anchored::None, earliest: false };",
+          "    ",
+          "    let result = pike_vm.find(&mut cache, input);",
+          "    assert!(result.is_some());",
+          "    assert!(result.unwrap().span.end == 3);",
+          "    assert!(result.unwrap().span.start == 0);",
+          "    assert!(result.unwrap().pattern == PatternID(SmallIndex(0)));",
+          "    assert_eq!(pike_vm.get_nfa().pattern_len(), 2);",
+          "    assert!(pike_vm.search_slots(&mut cache, &input, &mut vec![None; 4]).is_ok());",
+          "    assert!(pike_vm.search_slots(&mut cache, &input, &mut vec![None; 4]).unwrap().is_some());",
+          "    assert!(pike_vm.get_nfa().group_info().implicit_slot_len() == 4);",
+          "    assert!(slots[0].is_some());",
+          "    assert!(slots[1].is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let nfa = NFA::new(\"abcd|defg\").unwrap(); // Similar setup",
+          "    let pike_vm = PikeVM { config: Config::default(), nfa };",
+          "    let mut cache = Cache { stack: vec![], curr: ActiveStates::default(), next: ActiveStates::default() };",
+          "    let input = Input { haystack: b\"abc\", span: Span { start: 0, end: 3 }, anchored: Anchored::None, earliest: false };",
+          "    ",
+          "    let result = pike_vm.find(&mut cache, input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);",
+          "    assert!(pike_vm.get_nfa().pattern_len() != 1);",
+          "    assert!(pike_vm.search_slots(&mut cache, input).is_some());",
+          "    assert!(slots[0].is_some());",
+          "    assert!(slots[1].is_none());",
+          "    assert!(result.is_none());"
+        ],
+        "code": [
+          "{",
+          "    let nfa = NFA::new(\"abcd|defg\").unwrap(); // Similar setup",
+          "    let pike_vm = PikeVM { config: Config::default(), nfa };",
+          "    let mut cache = Cache { stack: vec![], curr: ActiveStates::default(), next: ActiveStates::default() };",
+          "    let input = Input { haystack: b\"abc\", span: Span { start: 0, end: 3 }, anchored: Anchored::None, earliest: false };",
+          "    ",
+          "    let result = pike_vm.find(&mut cache, input);",
+          "    assert_eq!(result, None);",
+          "    assert!(pike_vm.get_nfa().pattern_len() != 1);",
+          "    assert!(pike_vm.search_slots(&mut cache, input).is_some());",
+          "    assert!(slots[0].is_some());",
+          "    assert!(slots[1].is_none());",
+          "    assert!(result.is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let nfa = NFA::new(\"abc|def\").unwrap(); // Pattern setup",
+          "    let pike_vm = PikeVM { config: Config::default(), nfa };",
+          "    let mut cache = Cache { stack: vec![], curr: ActiveStates::default(), next: ActiveStates::default() };",
+          "    let input = Input { haystack: b\"\", span: Span { start: 0, end: 0 }, anchored: Anchored::None, earliest: false };",
+          "    ",
+          "    let result = pike_vm.find(&mut cache, input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_none());",
+          "    assert_eq!(cache.stack.len(), 0);",
+          "    assert_eq!(cache.curr, ActiveStates::default());",
+          "    assert_eq!(cache.next, ActiveStates::default());",
+          "    assert_eq!(pike_vm.get_nfa().pattern_len(), 2);",
+          "    assert!(cache.stack.is_empty());",
+          "    assert!(pike_vm.nfa.group_info().implicit_slot_len() > 0);",
+          "    assert!(pike_vm.nfa.states().is_empty());",
+          "    assert!(pike_vm.get_nfa().has_empty());",
+          "    assert!(!pike_vm.get_nfa().has_capture());",
+          "    assert!(pike_vm.nfa.memory_usage() > 0);"
+        ],
+        "code": [
+          "{",
+          "    let nfa = NFA::new(\"abc|def\").unwrap(); // Pattern setup",
+          "    let pike_vm = PikeVM { config: Config::default(), nfa };",
+          "    let mut cache = Cache { stack: vec![], curr: ActiveStates::default(), next: ActiveStates::default() };",
+          "    let input = Input { haystack: b\"\", span: Span { start: 0, end: 0 }, anchored: Anchored::None, earliest: false };",
+          "    ",
+          "    let result = pike_vm.find(&mut cache, input);",
+          "    assert!(result.is_none());",
+          "    assert_eq!(cache.stack.len(), 0);",
+          "    assert_eq!(cache.curr, ActiveStates::default());",
+          "    assert_eq!(cache.next, ActiveStates::default());",
+          "    assert_eq!(pike_vm.get_nfa().pattern_len(), 2);",
+          "    assert!(cache.stack.is_empty());",
+          "    assert!(pike_vm.nfa.group_info().implicit_slot_len() > 0);",
+          "    assert!(pike_vm.nfa.states().is_empty());",
+          "    assert!(pike_vm.get_nfa().has_empty());",
+          "    assert!(!pike_vm.get_nfa().has_capture());",
+          "    assert!(pike_vm.nfa.memory_usage() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,362 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#5}::cache_next_state",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/hybrid/dfa.rs:2119:5:2148:6",
+  "doc": "/// This is marked as 'inline(never)' to avoid bloating methods on 'DFA'\n/// like 'next_state' and 'next_eoi_state' that are called in critical\n/// areas. The idea is to let the optimizer focus on the other areas of\n/// those methods as the hot path.\n///\n/// Here's an example that justifies 'inline(never)'\n///\n/// ```ignore\n/// regex-cli find match hybrid \\\n///   --cache-capacity 100000000 \\\n///   -p '\\pL{100}'\n///   all-codepoints-utf8-100x\n/// ```\n///\n/// Where 'all-codepoints-utf8-100x' is the UTF-8 encoding of every\n/// codepoint, in sequence, repeated 100 times.\n///\n/// With 'inline(never)' hyperfine reports 1.1s per run. With\n/// 'inline(always)', hyperfine reports 1.23s. So that's a 10% improvement.\n",
+  "code": [
+    "fn cache_next_state(",
+    "    &mut self,",
+    "    mut current: LazyStateID,",
+    "    unit: alphabet::Unit,",
+    ") -> Result<LazyStateID, CacheError> {",
+    "    let stride2 = self.dfa.stride2();",
+    "    let empty_builder = self.get_state_builder();",
+    "    let builder = determinize::next(",
+    "        self.dfa.get_nfa(),",
+    "        self.dfa.get_config().get_match_kind(),",
+    "        &mut self.cache.sparses,",
+    "        &mut self.cache.stack,",
+    "        &self.cache.states[current.as_usize_untagged() >> stride2],",
+    "        unit,",
+    "        empty_builder,",
+    "    );",
+    "    let save_state = !self.as_ref().state_builder_fits_in_cache(&builder);",
+    "    if save_state {",
+    "        self.save_state(current);",
+    "    }",
+    "    let next = self.add_builder_state(builder, |sid| sid)?;",
+    "    if save_state {",
+    "        current = self.saved_state_id();",
+    "    }",
+    "    // This is the payoff. The next time 'next_state' is called with this",
+    "    // state and alphabet unit, it will find this transition and avoid",
+    "    // having to re-determinize this transition.",
+    "    self.set_transition(current, unit, next);",
+    "    Ok(next)",
+    "}"
+  ],
+  "size": {
+    "chain": 6,
+    "contra": 0,
+    "min_set": 3
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "save_state",
+          "norm": null,
+          "value": "true",
+          "line": 2136,
+          "bound": null
+        },
+        {
+          "cond": "self.add_builder_state(builder, |sid| sid)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 2139,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        16,
+        17,
+        19,
+        21,
+        22,
+        30,
+        31,
+        32
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "save_state",
+          "norm": null,
+          "value": "true",
+          "line": 2136,
+          "bound": null
+        },
+        {
+          "cond": "self.add_builder_state(builder, |sid| sid)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2139,
+          "bound": null
+        },
+        {
+          "cond": "save_state",
+          "norm": null,
+          "value": "true",
+          "line": 2140,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(next)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        16,
+        17,
+        20,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        32
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "save_state",
+          "norm": null,
+          "value": "true",
+          "line": 2136,
+          "bound": null
+        },
+        {
+          "cond": "self.add_builder_state(builder, |sid| sid)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2139,
+          "bound": null
+        },
+        {
+          "cond": "save_state",
+          "norm": null,
+          "value": "false",
+          "line": 2140,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(next)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        16,
+        17,
+        20,
+        24,
+        26,
+        27,
+        28,
+        29,
+        32
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "save_state",
+          "norm": null,
+          "value": "false",
+          "line": 2136,
+          "bound": null
+        },
+        {
+          "cond": "self.add_builder_state(builder, |sid| sid)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 2139,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        15,
+        16,
+        17,
+        19,
+        21,
+        22,
+        30,
+        31,
+        32
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "save_state",
+          "norm": null,
+          "value": "false",
+          "line": 2136,
+          "bound": null
+        },
+        {
+          "cond": "self.add_builder_state(builder, |sid| sid)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2139,
+          "bound": null
+        },
+        {
+          "cond": "save_state",
+          "norm": null,
+          "value": "true",
+          "line": 2140,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(next)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        15,
+        16,
+        17,
+        20,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        32
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "save_state",
+          "norm": null,
+          "value": "false",
+          "line": 2136,
+          "bound": null
+        },
+        {
+          "cond": "self.add_builder_state(builder, |sid| sid)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 2139,
+          "bound": null
+        },
+        {
+          "cond": "save_state",
+          "norm": null,
+          "value": "false",
+          "line": 2140,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(next)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        15,
+        16,
+        17,
+        20,
+        24,
+        26,
+        27,
+        28,
+        29,
+        32
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

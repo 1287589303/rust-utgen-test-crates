@@ -1,0 +1,130 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct;",
+          "    let lazy = Lazy::<TestStruct, _> {",
+          "        state: AtomicU8::new(LAZY_STATE_INIT),",
+          "        create: Cell::new(Some(|| TestStruct)),",
+          "        data: Cell::new(MaybeUninit::uninit()),",
+          "    };",
+          "    let mut formatter = fmt::Formatter::new();",
+          "    let _ = lazy.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy.state.load(Ordering::Acquire), LAZY_STATE_INIT);",
+          "    assert!(lazy.poll().is_none());",
+          "    assert_eq!(formatter.lines().count(), 0);",
+          "    lazy.state.store(LAZY_STATE_DONE, Ordering::Release);",
+          "    assert!(lazy.poll().is_some());",
+          "    assert!(formatter.lines().count() > 0);"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct;",
+          "    let lazy = Lazy::<TestStruct, _> {",
+          "        state: AtomicU8::new(LAZY_STATE_INIT),",
+          "        create: Cell::new(Some(|| TestStruct)),",
+          "        data: Cell::new(MaybeUninit::uninit()),",
+          "    };",
+          "    let mut formatter = fmt::Formatter::new();",
+          "    let _ = lazy.fmt(&mut formatter);",
+          "    assert_eq!(lazy.state.load(Ordering::Acquire), LAZY_STATE_INIT);",
+          "    assert!(lazy.poll().is_none());",
+          "    assert_eq!(formatter.lines().count(), 0);",
+          "    lazy.state.store(LAZY_STATE_DONE, Ordering::Release);",
+          "    assert!(lazy.poll().is_some());",
+          "    assert!(formatter.lines().count() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct;",
+          "    let lazy = Lazy::<TestStruct, _> {",
+          "        state: AtomicU8::new(LAZY_STATE_BUSY),",
+          "        create: Cell::new(Some(|| TestStruct)),",
+          "        data: Cell::new(MaybeUninit::uninit()),",
+          "    };",
+          "    let mut formatter = fmt::Formatter::new();",
+          "    let _ = lazy.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy.state.load(Ordering::Acquire), LAZY_STATE_BUSY);",
+          "    assert!(lazy.poll().is_none());",
+          "    assert!(formatter.buf.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct;",
+          "    let lazy = Lazy::<TestStruct, _> {",
+          "        state: AtomicU8::new(LAZY_STATE_BUSY),",
+          "        create: Cell::new(Some(|| TestStruct)),",
+          "        data: Cell::new(MaybeUninit::uninit()),",
+          "    };",
+          "    let mut formatter = fmt::Formatter::new();",
+          "    let _ = lazy.fmt(&mut formatter);",
+          "    assert_eq!(lazy.state.load(Ordering::Acquire), LAZY_STATE_BUSY);",
+          "    assert!(lazy.poll().is_none());",
+          "    assert!(formatter.buf.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct;",
+          "    let lazy = Lazy::<TestStruct, _> {",
+          "        state: AtomicU8::new(LAZY_STATE_DONE),",
+          "        create: Cell::new(Some(|| TestStruct)),",
+          "        data: Cell::new(MaybeUninit::new(TestStruct)),",
+          "    };",
+          "    let mut formatter = fmt::Formatter::new();",
+          "    let _ = lazy.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy.state.load(Ordering::Acquire), LAZY_STATE_DONE);",
+          "    assert!(lazy.poll().is_some());",
+          "    assert!(formatter.debug_struct(\"Lazy\").field(\"data\", &lazy.poll()).finish().is_ok());",
+          "    assert!(lazy.create.get().is_some());",
+          "    assert_eq!(std::mem::size_of::<TestStruct>(), std::mem::size_of::<MaybeUninit<TestStruct>>());"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct;",
+          "    let lazy = Lazy::<TestStruct, _> {",
+          "        state: AtomicU8::new(LAZY_STATE_DONE),",
+          "        create: Cell::new(Some(|| TestStruct)),",
+          "        data: Cell::new(MaybeUninit::new(TestStruct)),",
+          "    };",
+          "    let mut formatter = fmt::Formatter::new();",
+          "    let _ = lazy.fmt(&mut formatter);",
+          "    assert_eq!(lazy.state.load(Ordering::Acquire), LAZY_STATE_DONE);",
+          "    assert!(lazy.poll().is_some());",
+          "    assert!(formatter.debug_struct(\"Lazy\").field(\"data\", &lazy.poll()).finish().is_ok());",
+          "    assert!(lazy.create.get().is_some());",
+          "    assert_eq!(std::mem::size_of::<TestStruct>(), std::mem::size_of::<MaybeUninit<TestStruct>>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

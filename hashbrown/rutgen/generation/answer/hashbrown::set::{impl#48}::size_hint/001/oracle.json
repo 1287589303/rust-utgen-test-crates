@@ -1,0 +1,231 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::default() }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::default() }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(difference.size_hint(), (0, None));",
+          "    other.insert(1);",
+          "    assert_eq!(difference.size_hint(), (0, None));",
+          "    other.insert(2);",
+          "    assert_eq!(difference.size_hint(), (0, None));",
+          "    iter.size_hint = || (2, Some(2));",
+          "    assert_eq!(difference.size_hint(), (0, Some(2)));",
+          "    iter.size_hint = || (3, Some(3));",
+          "    assert_eq!(difference.size_hint(), (1, Some(3)));",
+          "    other.insert(3);",
+          "    other.insert(4);",
+          "    assert_eq!(difference.size_hint(), (0, Some(3)));",
+          "    other.clear();",
+          "    assert_eq!(difference.size_hint(), (3, Some(3)));"
+        ],
+        "code": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::default() }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::default() }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "    assert_eq!(difference.size_hint(), (0, None));",
+          "    other.insert(1);",
+          "    assert_eq!(difference.size_hint(), (0, None));",
+          "    other.insert(2);",
+          "    assert_eq!(difference.size_hint(), (0, None));",
+          "    iter.size_hint = || (2, Some(2));",
+          "    assert_eq!(difference.size_hint(), (0, Some(2)));",
+          "    iter.size_hint = || (3, Some(3));",
+          "    assert_eq!(difference.size_hint(), (1, Some(3)));",
+          "    other.insert(3);",
+          "    other.insert(4);",
+          "    assert_eq!(difference.size_hint(), (0, Some(3)));",
+          "    other.clear();",
+          "    assert_eq!(difference.size_hint(), (3, Some(3)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![(1, ()), (2, ())]) }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![3, 4, 5].into_iter()) }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(difference.size_hint(), (1, Some(3)));  // 1 is 3 - 2 (other.len())",
+          "    assert_eq!(difference.size_hint(), (0, Some(3)));  // 0 is 2 - 2 (other.len()) after next() call that reduces lower",
+          "    assert_eq!(difference.size_hint(), (0, None));      // None for upper when iter.exhausted() is reached"
+        ],
+        "code": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![(1, ()), (2, ())]) }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![3, 4, 5].into_iter()) }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "    assert_eq!(difference.size_hint(), (1, Some(3)));  // 1 is 3 - 2 (other.len())",
+          "    assert_eq!(difference.size_hint(), (0, Some(3)));  // 0 is 2 - 2 (other.len()) after next() call that reduces lower",
+          "    assert_eq!(difference.size_hint(), (0, None));      // None for upper when iter.exhausted() is reached",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![(1, ()), (2, ())]) }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![3, 4].into_iter()) }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "}"
+        ],
+        "oracle": [
+          "    let other: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![(1, ()), (2, ())]) };",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![3, 4].into_iter()) };",
+          "    let difference = Difference { iter, other: &other };",
+          "    let size_hint = difference.size_hint();",
+          "    assert_eq!(size_hint.0, 2); // lower = 2 (4 - 2)",
+          "    assert_eq!(size_hint.1, None); // upper is None as per size_hint of iter"
+        ],
+        "code": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![(1, ()), (2, ())]) }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![3, 4].into_iter()) }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![(1, ()), (2, ())]) };",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![3, 4].into_iter()) };",
+          "    let difference = Difference { iter, other: &other };",
+          "    let size_hint = difference.size_hint();",
+          "    assert_eq!(size_hint.0, 2); // lower = 2 (4 - 2)",
+          "    assert_eq!(size_hint.1, None); // upper is None as per size_hint of iter",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![(1, ()), (2, ()), (3, ())]) }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![4].into_iter()) }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(difference.size_hint(), (1, Some(1)));",
+          "    assert_eq!(difference.other.len(), 3);",
+          "    assert_eq!(difference.iter.size_hint(), (1, Some(1)));",
+          "    assert_eq!(difference.size_hint().0, 1 - difference.other.len());",
+          "    assert!(difference.size_hint().1.is_some());",
+          "    assert!(difference.size_hint().1 == Some(1));",
+          "    assert!(difference.size_hint().0 >= 0);"
+        ],
+        "code": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![(1, ()), (2, ()), (3, ())]) }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![4].into_iter()) }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "    assert_eq!(difference.size_hint(), (1, Some(1)));",
+          "    assert_eq!(difference.other.len(), 3);",
+          "    assert_eq!(difference.iter.size_hint(), (1, Some(1)));",
+          "    assert_eq!(difference.size_hint().0, 1 - difference.other.len());",
+          "    assert!(difference.size_hint().1.is_some());",
+          "    assert!(difference.size_hint().1 == Some(1));",
+          "    assert!(difference.size_hint().0 >= 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::default() }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![1, 2, 3].into_iter()) }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(difference.size_hint(), (3, Some(3)));",
+          "    assert_eq!(difference.size_hint(), (2, Some(3)));",
+          "    assert_eq!(difference.size_hint(), (1, Some(3)));",
+          "    assert_eq!(difference.size_hint(), (0, Some(3)));",
+          "    assert_eq!(difference.size_hint(), (3, None));",
+          "    assert_eq!(difference.size_hint(), (2, None));",
+          "    assert_eq!(difference.size_hint(), (1, None));",
+          "    assert_eq!(difference.size_hint(), (0, None));"
+        ],
+        "code": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::default() }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![1, 2, 3].into_iter()) }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "    assert_eq!(difference.size_hint(), (3, Some(3)));",
+          "    assert_eq!(difference.size_hint(), (2, Some(3)));",
+          "    assert_eq!(difference.size_hint(), (1, Some(3)));",
+          "    assert_eq!(difference.size_hint(), (0, Some(3)));",
+          "    assert_eq!(difference.size_hint(), (3, None));",
+          "    assert_eq!(difference.size_hint(), (2, None));",
+          "    assert_eq!(difference.size_hint(), (1, None));",
+          "    assert_eq!(difference.size_hint(), (0, None));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![(1, ()), (2, ())]) }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![1, 2].into_iter()) }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(difference.size_hint(), (0, Some(2)));",
+          "    let other_empty: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![]) };",
+          "    let difference_empty = Difference { iter, other: &other_empty };",
+          "    assert_eq!(difference_empty.size_hint(), (2, Some(2)));"
+        ],
+        "code": [
+          "{",
+          "    let other: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![(1, ()), (2, ())]) }; ",
+          "    let iter: Iter<i32> = Iter { iter: Keys::from(vec![1, 2].into_iter()) }; ",
+          "    let difference = Difference { iter, other: &other };",
+          "    difference.size_hint();",
+          "    assert_eq!(difference.size_hint(), (0, Some(2)));",
+          "    let other_empty: HashSet<i32> = HashSet { map: HashMap::from_iter(vec![]) };",
+          "    let difference_empty = Difference { iter, other: &other_empty };",
+          "    assert_eq!(difference_empty.size_hint(), (2, Some(2)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

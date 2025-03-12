@@ -1,0 +1,392 @@
+{
+  "name": "regex_automata::util::wire::read_label",
+  "mod_info": {
+    "name": "util::wire",
+    "loc": "regex-automata/src/util/mod.rs:46:1:46:14"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/util/wire.rs:421:1:449:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: first_nul matches Some(first_nul) at line 430 is true\n",
+        "precondition: first_nul matches Some(first_nul) at line 430 is true\n",
+        "precondition: slice.len() < len at line 440 is true\n",
+        "expected return value/type: Err(DeserializeError::generic(\n            \"could not find properly sized label at start of serialized object\"\n        ))\n"
+      ],
+      "input_infer": "slice: &[0; 257], expected_label: \"label\"\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 0]; // NUL at the end but size is too short",
+                "    let expected_label = \"label\";",
+                "    let result = read_label(slice, expected_label);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(DeserializeError::generic(\"could not find properly sized label at start of serialized object\")));"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 0]; // NUL at the end but size is too short",
+                "    let expected_label = \"label\";",
+                "    let result = read_label(slice, expected_label);",
+                "    assert_eq!(result, Err(DeserializeError::generic(\"could not find properly sized label at start of serialized object\")));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 0, 0]; // NUL found, but slice is too large",
+                "    let expected_label = \"label\";",
+                "    let result = read_label(slice, expected_label);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(DeserializeError::generic(\"could not find properly sized label at start of serialized object\")));"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 0, 0]; // NUL found, but slice is too large",
+                "    let expected_label = \"label\";",
+                "    let result = read_label(slice, expected_label);",
+                "    assert_eq!(result, Err(DeserializeError::generic(\"could not find properly sized label at start of serialized object\")));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 0, 0, 0, 0]; // NUL at correct place but not enough data for padding",
+                "    let expected_label = \"label\";",
+                "    let result = read_label(slice, expected_label);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(DeserializeError::generic(\"could not find properly sized label at start of serialized object\")));"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[1, 2, 3, 4, 5, 6, 0, 0, 0, 0]; // NUL at correct place but not enough data for padding",
+                "    let expected_label = \"label\";",
+                "    let result = read_label(slice, expected_label);",
+                "    assert_eq!(result, Err(DeserializeError::generic(\"could not find properly sized label at start of serialized object\")));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: first_nul matches Some(first_nul) at line 430 is true\n",
+        "precondition: first_nul matches Some(first_nul) at line 430 is true\n",
+        "precondition: slice.len() < len at line 440 is false, with bound slice.len() == len\n",
+        "precondition: expected_label.as_bytes() != &slice[..first_nul] at line 445 is true\n",
+        "expected return value/type: Err(DeserializeError::label_mismatch(expected_label))\n"
+      ],
+      "input_infer": "slice length == len (where len = first_nul + padding_len(first_nul)), first_nul exists in [0, 256), expected_label.as_bytes() != &slice[..first_nul]\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = b\"wrong_label\\0\"; // first_nul is at index 11, len is 12",
+                "    let expected_label: &'static str = \"correct_label\";",
+                "    ",
+                "    let result = read_label(slice, expected_label);",
+                "    result.unwrap_err(); // Expecting an error for label mismatch",
+                "}"
+              ],
+              "oracle": [
+                "    let slice: &[u8] = b\"wrong_label\\0\";",
+                "    let expected_label: &'static str = \"correct_label\";",
+                "    let result = read_label(slice, expected_label);",
+                "    assert_eq!(result, Err(DeserializeError::label_mismatch(expected_label)));"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = b\"wrong_label\\0\"; // first_nul is at index 11, len is 12",
+                "    let expected_label: &'static str = \"correct_label\";",
+                "    ",
+                "    let result = read_label(slice, expected_label);",
+                "    result.unwrap_err(); // Expecting an error for label mismatch",
+                "    let slice: &[u8] = b\"wrong_label\\0\";",
+                "    let expected_label: &'static str = \"correct_label\";",
+                "    let result = read_label(slice, expected_label);",
+                "    assert_eq!(result, Err(DeserializeError::label_mismatch(expected_label)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = b\"test_label\\0\\0\\0\"; // first_nul at index 10, len is 12",
+                "    let expected_label: &'static str = \"different_label\";",
+                "    ",
+                "    let result = read_label(slice, expected_label);",
+                "    result.unwrap_err(); // Expecting an error for label mismatch",
+                "}"
+              ],
+              "oracle": [
+                "    Err(DeserializeError::label_mismatch(\"different_label\"))"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = b\"test_label\\0\\0\\0\"; // first_nul at index 10, len is 12",
+                "    let expected_label: &'static str = \"different_label\";",
+                "    ",
+                "    let result = read_label(slice, expected_label);",
+                "    result.unwrap_err(); // Expecting an error for label mismatch",
+                "    Err(DeserializeError::label_mismatch(\"different_label\"))",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = b\"boundary_label\\0\\0\\0\"; // first_nul at index 14, len is 16",
+                "    let expected_label: &'static str = \"another_label\";",
+                "    ",
+                "    let result = read_label(slice, expected_label);",
+                "    result.unwrap_err(); // Expecting an error for label mismatch",
+                "}"
+              ],
+              "oracle": [
+                "    let slice: &[u8] = b\"boundary_label\\0\\0\\0\"; // first_nul at index 14, len is 16",
+                "    let expected_label: &'static str = \"another_label\";",
+                "    let result = read_label(slice, expected_label);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap(), DeserializeError::label_mismatch(expected_label));"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = b\"boundary_label\\0\\0\\0\"; // first_nul at index 14, len is 16",
+                "    let expected_label: &'static str = \"another_label\";",
+                "    ",
+                "    let result = read_label(slice, expected_label);",
+                "    result.unwrap_err(); // Expecting an error for label mismatch",
+                "    let slice: &[u8] = b\"boundary_label\\0\\0\\0\"; // first_nul at index 14, len is 16",
+                "    let expected_label: &'static str = \"another_label\";",
+                "    let result = read_label(slice, expected_label);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap(), DeserializeError::label_mismatch(expected_label));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: first_nul matches Some(first_nul) at line 430 is true\n",
+        "precondition: first_nul matches Some(first_nul) at line 430 is true\n",
+        "precondition: slice.len() < len at line 440 is false, with bound slice.len() == len\n",
+        "precondition: expected_label.as_bytes() != &slice[..first_nul] at line 445 is false\n",
+        "expected return value/type: Ok(len)\n"
+      ],
+      "input_infer": "slice should have a length of exact 256 bytes with the first 255 bytes matching the expected_label followed by a NUL byte (0x00) at the 256th position, and expected_label should have a length of 255 bytes.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let expected_label = \"A\".repeat(255);",
+                "    let slice: Vec<u8> = expected_label.as_bytes().iter().cloned().chain(vec![0x00]).collect();",
+                "    let result = read_label(&slice, &expected_label);",
+                "}"
+              ],
+              "oracle": [
+                "    let expected_label = \"A\".repeat(255);",
+                "    let slice: Vec<u8> = expected_label.as_bytes().iter().cloned().chain(vec![0x00]).collect();",
+                "    let result = read_label(&slice, &expected_label);",
+                "    assert_eq!(result, Ok(slice.len()));"
+              ],
+              "code": [
+                "{",
+                "    let expected_label = \"A\".repeat(255);",
+                "    let slice: Vec<u8> = expected_label.as_bytes().iter().cloned().chain(vec![0x00]).collect();",
+                "    let result = read_label(&slice, &expected_label);",
+                "    let expected_label = \"A\".repeat(255);",
+                "    let slice: Vec<u8> = expected_label.as_bytes().iter().cloned().chain(vec![0x00]).collect();",
+                "    let result = read_label(&slice, &expected_label);",
+                "    assert_eq!(result, Ok(slice.len()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let expected_label = \"B\".repeat(255);",
+                "    let slice: Vec<u8> = expected_label.as_bytes().iter().cloned().chain(vec![0x00]).collect();",
+                "    let result = read_label(&slice, &expected_label);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let len = result.unwrap();",
+                "    assert_eq!(len, 256);"
+              ],
+              "code": [
+                "{",
+                "    let expected_label = \"B\".repeat(255);",
+                "    let slice: Vec<u8> = expected_label.as_bytes().iter().cloned().chain(vec![0x00]).collect();",
+                "    let result = read_label(&slice, &expected_label);",
+                "    assert!(result.is_ok());",
+                "    let len = result.unwrap();",
+                "    assert_eq!(len, 256);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: first_nul matches None at line 430 is true\n",
+        "expected return value/type: Err(DeserializeError::generic(\n                \"could not find NUL terminated label \\\n                 at start of serialized object\",\n            ))\n"
+      ],
+      "input_infer": "slice: &[u8] containing more than 256 bytes without a NUL character, expected_label: any valid string\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice = &[1; 300]; // A slice of 300 bytes without any NUL character",
+                "    let expected_label = \"test_label\";",
+                "    let result = read_label(slice, expected_label);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    match result {",
+                "    Err(DeserializeError::generic(msg)) => assert_eq!(msg, \"could not find NUL terminated label at start of serialized object\"),",
+                "    _ => panic!(\"Expected a generic DeserializeError\"),",
+                "    }"
+              ],
+              "code": [
+                "{",
+                "    let slice = &[1; 300]; // A slice of 300 bytes without any NUL character",
+                "    let expected_label = \"test_label\";",
+                "    let result = read_label(slice, expected_label);",
+                "    assert!(result.is_err());",
+                "    match result {",
+                "    Err(DeserializeError::generic(msg)) => assert_eq!(msg, \"could not find NUL terminated label at start of serialized object\"),",
+                "    _ => panic!(\"Expected a generic DeserializeError\"),",
+                "    }",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice = &[1; 256]; // A slice of exactly 256 bytes without any NUL character",
+                "    let expected_label = \"test_label\";",
+                "    let result = read_label(slice, expected_label);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result.is_err(), true);",
+                "    assert_eq!(result.err(), Some(DeserializeError::generic(\"could not find NUL terminated label \\",
+                "    at start of serialized object\")));"
+              ],
+              "code": [
+                "{",
+                "    let slice = &[1; 256]; // A slice of exactly 256 bytes without any NUL character",
+                "    let expected_label = \"test_label\";",
+                "    let result = read_label(slice, expected_label);",
+                "    assert_eq!(result.is_err(), true);",
+                "    assert_eq!(result.err(), Some(DeserializeError::generic(\"could not find NUL terminated label \\",
+                "    at start of serialized object\")));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice = &[2; 257]; // A slice of 257 bytes without any NUL character",
+                "    let expected_label = \"test_label\";",
+                "    let result = read_label(slice, expected_label);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result, Err(DeserializeError::generic(\"could not find NUL terminated label \\",
+                "    at start of serialized object\")));"
+              ],
+              "code": [
+                "{",
+                "    let slice = &[2; 257]; // A slice of 257 bytes without any NUL character",
+                "    let expected_label = \"test_label\";",
+                "    let result = read_label(slice, expected_label);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result, Err(DeserializeError::generic(\"could not find NUL terminated label \\",
+                "    at start of serialized object\")));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

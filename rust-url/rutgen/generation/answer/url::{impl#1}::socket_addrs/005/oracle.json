@@ -1,0 +1,302 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let url = url::Url::parse(\"https://example.com\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    let url = url::Url::parse(\"https://example.com\").unwrap();",
+          "    let host = url.host().unwrap();",
+          "    let port = url.port_or_known_default().unwrap();",
+          "    assert!(matches!(host, Host::Domain(_)));",
+          "    assert!(port.is_some());",
+          "    assert!(url.socket_addrs(|| None).is_ok());",
+          "    let domain = if let Host::Domain(d) = host { d } else { unreachable!() };",
+          "    assert!(url.socket_addrs(|| None).unwrap().is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let url = url::Url::parse(\"https://example.com\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    let url = url::Url::parse(\"https://example.com\").unwrap();",
+          "    let host = url.host().unwrap();",
+          "    let port = url.port_or_known_default().unwrap();",
+          "    assert!(matches!(host, Host::Domain(_)));",
+          "    assert!(port.is_some());",
+          "    assert!(url.socket_addrs(|| None).is_ok());",
+          "    let domain = if let Host::Domain(d) = host { d } else { unreachable!() };",
+          "    assert!(url.socket_addrs(|| None).unwrap().is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let url = url::Url::parse(\"http://example.org:8080\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    let url = url::Url::parse(\"http://example.org:8080\").unwrap();",
+          "    assert!(url.host().is_some());",
+          "    assert!(url.port_or_known_default().is_some());",
+          "    assert!(matches!(url.host(), Some(url::Host::Domain(_))));",
+          "    let default_port = 8080;",
+          "    let addrs = url.socket_addrs(|| Some(default_port)).unwrap();",
+          "    assert!(!addrs.is_empty());",
+          "    for addr in addrs {",
+          "    assert_eq!(addr.port(), default_port);",
+          "    }",
+          "    assert!(url.socket_addrs(|| None).is_ok());",
+          "    assert!(url.socket_addrs(|| Some(80)).is_ok());",
+          "    assert!(url.socket_addrs(|| Some(8080)).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let url = url::Url::parse(\"http://example.org:8080\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    let url = url::Url::parse(\"http://example.org:8080\").unwrap();",
+          "    assert!(url.host().is_some());",
+          "    assert!(url.port_or_known_default().is_some());",
+          "    assert!(matches!(url.host(), Some(url::Host::Domain(_))));",
+          "    let default_port = 8080;",
+          "    let addrs = url.socket_addrs(|| Some(default_port)).unwrap();",
+          "    assert!(!addrs.is_empty());",
+          "    for addr in addrs {",
+          "    assert_eq!(addr.port(), default_port);",
+          "    }",
+          "    assert!(url.socket_addrs(|| None).is_ok());",
+          "    assert!(url.socket_addrs(|| Some(80)).is_ok());",
+          "    assert!(url.socket_addrs(|| Some(8080)).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let url = url::Url::parse(\"ftp://username:password@example.net:21\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(url.host().unwrap(), url::Host::Domain(\"example.net\"));",
+          "    assert_eq!(url.port(), Some(21));",
+          "    assert!(url.socket_addrs(|| None).is_ok());",
+          "    assert!(url.host().is_some());",
+          "    assert!(url.port_or_known_default().is_some());",
+          "    assert_eq!(addrs.len(), 1);"
+        ],
+        "code": [
+          "{",
+          "    let url = url::Url::parse(\"ftp://username:password@example.net:21\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    assert_eq!(url.host().unwrap(), url::Host::Domain(\"example.net\"));",
+          "    assert_eq!(url.port(), Some(21));",
+          "    assert!(url.socket_addrs(|| None).is_ok());",
+          "    assert!(url.host().is_some());",
+          "    assert!(url.port_or_known_default().is_some());",
+          "    assert_eq!(addrs.len(), 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let url = url::Url::parse(\"http://192.168.1.1\").unwrap();",
+          "    let addrs = url.socket_addrs(|| Some(80)).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    let url = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let result = url.socket_addrs(|| Some(80));",
+          "    assert!(result.is_ok());",
+          "    assert!(result.unwrap().len() > 0);",
+          "    let url_with_no_host = url::Url::parse(\"http://\").unwrap();",
+          "    let result_no_host = url_with_no_host.socket_addrs(|| None);",
+          "    assert!(result_no_host.is_err());",
+          "    let url_with_no_port = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let result_no_port = url_with_no_port.socket_addrs(|| None);",
+          "    assert!(result_no_port.is_err());",
+          "    let url_ipv4 = url::Url::parse(\"http://192.168.1.1\").unwrap();",
+          "    let addrs_ipv4 = url_ipv4.socket_addrs(|| Some(80)).unwrap();",
+          "    assert_eq!(addrs_ipv4[0].ip().is_ipv4(), true);",
+          "    let url_ipv6 = url::Url::parse(\"http://[::1]\").unwrap();",
+          "    let addrs_ipv6 = url_ipv6.socket_addrs(|| Some(80)).unwrap();",
+          "    assert_eq!(addrs_ipv6[0].ip().is_ipv6(), true);",
+          "    let url_invalid = url::Url::parse(\"http://invalid_domain\").unwrap();",
+          "    let result_invalid = url_invalid.socket_addrs(|| None);",
+          "    assert!(result_invalid.is_err());",
+          "    let url_default_port = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let addrs_default_port = url_default_port.socket_addrs(|| Some(80)).unwrap();",
+          "    assert!(addrs_default_port.len() > 0);"
+        ],
+        "code": [
+          "{",
+          "    let url = url::Url::parse(\"http://192.168.1.1\").unwrap();",
+          "    let addrs = url.socket_addrs(|| Some(80)).unwrap();",
+          "    let url = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let result = url.socket_addrs(|| Some(80));",
+          "    assert!(result.is_ok());",
+          "    assert!(result.unwrap().len() > 0);",
+          "    let url_with_no_host = url::Url::parse(\"http://\").unwrap();",
+          "    let result_no_host = url_with_no_host.socket_addrs(|| None);",
+          "    assert!(result_no_host.is_err());",
+          "    let url_with_no_port = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let result_no_port = url_with_no_port.socket_addrs(|| None);",
+          "    assert!(result_no_port.is_err());",
+          "    let url_ipv4 = url::Url::parse(\"http://192.168.1.1\").unwrap();",
+          "    let addrs_ipv4 = url_ipv4.socket_addrs(|| Some(80)).unwrap();",
+          "    assert_eq!(addrs_ipv4[0].ip().is_ipv4(), true);",
+          "    let url_ipv6 = url::Url::parse(\"http://[::1]\").unwrap();",
+          "    let addrs_ipv6 = url_ipv6.socket_addrs(|| Some(80)).unwrap();",
+          "    assert_eq!(addrs_ipv6[0].ip().is_ipv6(), true);",
+          "    let url_invalid = url::Url::parse(\"http://invalid_domain\").unwrap();",
+          "    let result_invalid = url_invalid.socket_addrs(|| None);",
+          "    assert!(result_invalid.is_err());",
+          "    let url_default_port = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let addrs_default_port = url_default_port.socket_addrs(|| Some(80)).unwrap();",
+          "    assert!(addrs_default_port.len() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic(expected = \"No host name in the URL\")]"
+        ],
+        "prefix": [
+          "{",
+          "    let url = url::Url::parse(\"http:///\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    let url = url::Url::parse(\"http://example.com:80\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    assert_eq!(addrs.len(), expected_length);",
+          "    let first_addr = addrs[0];",
+          "    assert_eq!(first_addr.ip().is_global(), true);",
+          "    assert_eq!(first_addr.port(), 80);",
+          "    let url = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let addrs = url.socket_addrs(|| Some(8080)).unwrap();",
+          "    assert!(addrs.iter().all(|addr| addr.port() == 8080));",
+          "    let url = url::Url::parse(\"http://localhost\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    assert!(addrs.iter().any(|addr| addr.ip().is_loopback()));",
+          "    let url = url::Url::parse(\"https://example.com\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    assert!(addrs.len() > 0);"
+        ],
+        "code": [
+          "{",
+          "    let url = url::Url::parse(\"http:///\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    let url = url::Url::parse(\"http://example.com:80\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    assert_eq!(addrs.len(), expected_length);",
+          "    let first_addr = addrs[0];",
+          "    assert_eq!(first_addr.ip().is_global(), true);",
+          "    assert_eq!(first_addr.port(), 80);",
+          "    let url = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let addrs = url.socket_addrs(|| Some(8080)).unwrap();",
+          "    assert!(addrs.iter().all(|addr| addr.port() == 8080));",
+          "    let url = url::Url::parse(\"http://localhost\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    assert!(addrs.iter().any(|addr| addr.ip().is_loopback()));",
+          "    let url = url::Url::parse(\"https://example.com\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    assert!(addrs.len() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic(expected = \"No port number in the URL\")]"
+        ],
+        "prefix": [
+          "{",
+          "    let url = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    let url = url::Url::parse(\"http://example.com\").unwrap();",
+          "    assert!(url.host().is_some());",
+          "    assert!(url.port_or_known_default().is_none());",
+          "    let addrs = url.socket_addrs(|| None);",
+          "    assert!(addrs.is_err());",
+          "    assert_eq!(addrs.err().unwrap().kind(), std::io::ErrorKind::InvalidData);"
+        ],
+        "code": [
+          "{",
+          "    let url = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    let url = url::Url::parse(\"http://example.com\").unwrap();",
+          "    assert!(url.host().is_some());",
+          "    assert!(url.port_or_known_default().is_none());",
+          "    let addrs = url.socket_addrs(|| None);",
+          "    assert!(addrs.is_err());",
+          "    assert_eq!(addrs.err().unwrap().kind(), std::io::ErrorKind::InvalidData);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let url = url::Url::parse(\"http://invalid_domain\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    let url = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let addrs = url.socket_addrs(|| Some(80)).unwrap();",
+          "    let url = url::Url::parse(\"http://example.domain\").unwrap();",
+          "    let addrs = url.socket_addrs(|| Some(8080)).unwrap();",
+          "    let url = url::Url::parse(\"https://example.net\").unwrap();",
+          "    let addrs = url.socket_addrs(|| || Some(443)).unwrap();",
+          "    let url = url::Url::parse(\"http://example.org\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();"
+        ],
+        "code": [
+          "{",
+          "    let url = url::Url::parse(\"http://invalid_domain\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "    let url = url::Url::parse(\"http://example.com\").unwrap();",
+          "    let addrs = url.socket_addrs(|| Some(80)).unwrap();",
+          "    let url = url::Url::parse(\"http://example.domain\").unwrap();",
+          "    let addrs = url.socket_addrs(|| Some(8080)).unwrap();",
+          "    let url = url::Url::parse(\"https://example.net\").unwrap();",
+          "    let addrs = url.socket_addrs(|| || Some(443)).unwrap();",
+          "    let url = url::Url::parse(\"http://example.org\").unwrap();",
+          "    let addrs = url.socket_addrs(|| None).unwrap();",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

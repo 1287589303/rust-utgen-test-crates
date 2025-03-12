@@ -1,0 +1,283 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let transitions = DenseTransitions {",
+          "        transitions: Box::new([StateID(0); 256]),",
+          "    };",
+          "    let unit = Unit::u8(128); // Testing with a valid byte value",
+          "    let result = transitions.matches_unit(unit);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None); // Testing with a valid byte value where transitions[byte] is StateID::ZERO",
+          "    let unit_eoi = Unit::eoi(0); // Testing with EOI unit",
+          "    let result_eoi = transitions.matches_unit(unit_eoi);",
+          "    assert_eq!(result_eoi, None); // Check that EOI returns None",
+          "    let unit_invalid = Unit::u8(256); // Testing with an invalid byte value",
+          "    let result_invalid = transitions.matches_unit(unit_invalid);",
+          "    assert_eq!(result_invalid, None); // Check that out of range byte returns None",
+          "    let transitions_non_zero = DenseTransitions { transitions: Box::new([StateID(1); 256]) }; // Set a non-zero state",
+          "    let result_non_zero = transitions_non_zero.matches_unit(unit);",
+          "    assert_eq!(result_non_zero, StateID(1)); // Check that valid byte returns correct non-zero StateID"
+        ],
+        "code": [
+          "{",
+          "    let transitions = DenseTransitions {",
+          "        transitions: Box::new([StateID(0); 256]),",
+          "    };",
+          "    let unit = Unit::u8(128); // Testing with a valid byte value",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, None); // Testing with a valid byte value where transitions[byte] is StateID::ZERO",
+          "    let unit_eoi = Unit::eoi(0); // Testing with EOI unit",
+          "    let result_eoi = transitions.matches_unit(unit_eoi);",
+          "    assert_eq!(result_eoi, None); // Check that EOI returns None",
+          "    let unit_invalid = Unit::u8(256); // Testing with an invalid byte value",
+          "    let result_invalid = transitions.matches_unit(unit_invalid);",
+          "    assert_eq!(result_invalid, None); // Check that out of range byte returns None",
+          "    let transitions_non_zero = DenseTransitions { transitions: Box::new([StateID(1); 256]) }; // Set a non-zero state",
+          "    let result_non_zero = transitions_non_zero.matches_unit(unit);",
+          "    assert_eq!(result_non_zero, StateID(1)); // Check that valid byte returns correct non-zero StateID",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut transitions_vec = vec![StateID(1); 256];",
+          "    transitions_vec[128] = StateID(2); // Simulate a valid state transition for byte 128",
+          "    let transitions = DenseTransitions {",
+          "        transitions: transitions_vec.into_boxed_slice(),",
+          "    };",
+          "    let unit = Unit::u8(128);",
+          "    let result = transitions.matches_unit(unit);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Some(StateID(2)));",
+          "    let unit_invalid = Unit::u8(255);",
+          "    let result_invalid = transitions.matches_unit(unit_invalid);",
+          "    assert_eq!(result_invalid, None);",
+          "    let unit_eoi = Unit::eoi(0);",
+          "    let result_eoi = transitions.matches_unit(unit_eoi);",
+          "    assert_eq!(result_eoi, None);",
+          "    let unit_out_of_bounds = Unit::u8(256);",
+          "    let result_out_of_bounds = transitions.matches_unit(unit_out_of_bounds);",
+          "    assert_eq!(result_out_of_bounds, None);"
+        ],
+        "code": [
+          "{",
+          "    let mut transitions_vec = vec![StateID(1); 256];",
+          "    transitions_vec[128] = StateID(2); // Simulate a valid state transition for byte 128",
+          "    let transitions = DenseTransitions {",
+          "        transitions: transitions_vec.into_boxed_slice(),",
+          "    };",
+          "    let unit = Unit::u8(128);",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, Some(StateID(2)));",
+          "    let unit_invalid = Unit::u8(255);",
+          "    let result_invalid = transitions.matches_unit(unit_invalid);",
+          "    assert_eq!(result_invalid, None);",
+          "    let unit_eoi = Unit::eoi(0);",
+          "    let result_eoi = transitions.matches_unit(unit_eoi);",
+          "    assert_eq!(result_eoi, None);",
+          "    let unit_out_of_bounds = Unit::u8(256);",
+          "    let result_out_of_bounds = transitions.matches_unit(unit_out_of_bounds);",
+          "    assert_eq!(result_out_of_bounds, None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let transitions = DenseTransitions {",
+          "        transitions: Box::new([StateID(0); 256]),",
+          "    };",
+          "    let unit = Unit::u8(256); // Out of valid byte range",
+          "    let result = transitions.matches_unit(unit);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);",
+          "    let unit = Unit::u8(0); // Valid byte range (0-255)",
+          "    assert!(result.is_some());",
+          "    let valid_byte = unit.as_u8().unwrap();",
+          "    assert_eq!(result, Some(transitions.transitions[valid_byte as usize]));",
+          "    let unit = Unit::eoi(0); // EOI case",
+          "    assert_eq!(result, None);",
+          "    let unit = Unit::u8(255); // Valid byte range (255)",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result, Some(transitions.transitions[255 as usize]));",
+          "    let unit = Unit::u8(127); // Valid byte range (127)",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result, Some(transitions.transitions[127 as usize]));"
+        ],
+        "code": [
+          "{",
+          "    let transitions = DenseTransitions {",
+          "        transitions: Box::new([StateID(0); 256]),",
+          "    };",
+          "    let unit = Unit::u8(256); // Out of valid byte range",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, None);",
+          "    let unit = Unit::u8(0); // Valid byte range (0-255)",
+          "    assert!(result.is_some());",
+          "    let valid_byte = unit.as_u8().unwrap();",
+          "    assert_eq!(result, Some(transitions.transitions[valid_byte as usize]));",
+          "    let unit = Unit::eoi(0); // EOI case",
+          "    assert_eq!(result, None);",
+          "    let unit = Unit::u8(255); // Valid byte range (255)",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result, Some(transitions.transitions[255 as usize]));",
+          "    let unit = Unit::u8(127); // Valid byte range (127)",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result, Some(transitions.transitions[127 as usize]));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let transitions = DenseTransitions {",
+          "        transitions: Box::new([StateID(0); 256]),",
+          "    };",
+          "    let unit = Unit::eoi(1); // Testing with an EOI unit",
+          "    let result = transitions.matches_unit(unit);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);",
+          "    let unit = Unit::u8(0); // Testing with a valid byte unit",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, None); // Assuming StateID(0) is not a valid transition",
+          "    let unit = Unit::u8(255); // Testing with the maximum byte value",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, None); // Assuming StateID(0) is not a valid transition",
+          "    let unit = Unit::u8(1); // Testing with a valid byte value that leads to transition",
+          "    transitions.transitions[1] = StateID(1); // Updating transition for testing",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, StateID(1));"
+        ],
+        "code": [
+          "{",
+          "    let transitions = DenseTransitions {",
+          "        transitions: Box::new([StateID(0); 256]),",
+          "    };",
+          "    let unit = Unit::eoi(1); // Testing with an EOI unit",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, None);",
+          "    let unit = Unit::u8(0); // Testing with a valid byte unit",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, None); // Assuming StateID(0) is not a valid transition",
+          "    let unit = Unit::u8(255); // Testing with the maximum byte value",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, None); // Assuming StateID(0) is not a valid transition",
+          "    let unit = Unit::u8(1); // Testing with a valid byte value that leads to transition",
+          "    transitions.transitions[1] = StateID(1); // Updating transition for testing",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, StateID(1));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let transitions = DenseTransitions {",
+          "        transitions: Box::new([StateID(0); 256]),",
+          "    };",
+          "    let unit = Unit::u8(0); // Valid byte with an empty haystack",
+          "    let result = transitions.matches_unit(unit);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);",
+          "    let unit_eoi = Unit::eoi(0); // EOI unit case",
+          "    let result_eoi = transitions.matches_unit(unit_eoi);",
+          "    assert_eq!(result_eoi, None);",
+          "    let unit_invalid = Unit::u8(256); // Invalid byte case (beyond valid range)",
+          "    let result_invalid = transitions.matches_unit(unit_invalid);",
+          "    assert_eq!(result_invalid, None);",
+          "    let unit_valid = Unit::u8(0); // Valid byte within range",
+          "    transitions.transitions[0] = StateID(1);",
+          "    let result_valid = transitions.matches_unit(unit_valid);",
+          "    assert_eq!(result_valid, StateID(1));"
+        ],
+        "code": [
+          "{",
+          "    let transitions = DenseTransitions {",
+          "        transitions: Box::new([StateID(0); 256]),",
+          "    };",
+          "    let unit = Unit::u8(0); // Valid byte with an empty haystack",
+          "    let result = transitions.matches_unit(unit);",
+          "    assert_eq!(result, None);",
+          "    let unit_eoi = Unit::eoi(0); // EOI unit case",
+          "    let result_eoi = transitions.matches_unit(unit_eoi);",
+          "    assert_eq!(result_eoi, None);",
+          "    let unit_invalid = Unit::u8(256); // Invalid byte case (beyond valid range)",
+          "    let result_invalid = transitions.matches_unit(unit_invalid);",
+          "    assert_eq!(result_invalid, None);",
+          "    let unit_valid = Unit::u8(0); // Valid byte within range",
+          "    transitions.transitions[0] = StateID(1);",
+          "    let result_valid = transitions.matches_unit(unit_valid);",
+          "    assert_eq!(result_valid, StateID(1));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let transitions = DenseTransitions {",
+          "        transitions: Box::new([StateID(0); 256]),",
+          "    };",
+          "    let unit_start = Unit::u8(0); // Boundary value at the start of the byte range",
+          "    let unit_end = Unit::u8(255); // Boundary value at the end of the byte range",
+          "    let result_start = transitions.matches_unit(unit_start);",
+          "    let result_end = transitions.matches_unit(unit_end);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result_start, None); // Expect None for unit u8(0) when no transitions set",
+          "    assert_eq!(result_end, None); // Expect None for unit u8(255) when no transitions set",
+          "    assert_eq!(transitions.matches_unit(Unit::eoi(0)), None); // Expect None for EOI unit"
+        ],
+        "code": [
+          "{",
+          "    let transitions = DenseTransitions {",
+          "        transitions: Box::new([StateID(0); 256]),",
+          "    };",
+          "    let unit_start = Unit::u8(0); // Boundary value at the start of the byte range",
+          "    let unit_end = Unit::u8(255); // Boundary value at the end of the byte range",
+          "    let result_start = transitions.matches_unit(unit_start);",
+          "    let result_end = transitions.matches_unit(unit_end);",
+          "    assert_eq!(result_start, None); // Expect None for unit u8(0) when no transitions set",
+          "    assert_eq!(result_end, None); // Expect None for unit u8(255) when no transitions set",
+          "    assert_eq!(transitions.matches_unit(Unit::eoi(0)), None); // Expect None for EOI unit",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

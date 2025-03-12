@@ -1,0 +1,225 @@
+{
+  "name": "regex_syntax::hir::literal::{impl#4}::union_into_empty",
+  "mod_info": {
+    "name": "hir::literal",
+    "loc": "regex-syntax/src/hir/mod.rs:42:1:42:17"
+  },
+  "visible": true,
+  "loc": "regex-syntax/src/hir/literal.rs:1287:5:1314:6",
+  "doc": "/// Unions the `other` sequence into this one by splice the `other`\n/// sequence at the position of the first zero-length literal.\n///\n/// This is useful for preserving preference order semantics when combining\n/// two literal sequences. For example, in the regex `(a||f)+foo`, the\n/// correct preference order prefix sequence is `[a, foo, f]`.\n///\n/// The literals are always drained out of the given `other` sequence,\n/// even if they are being unioned into an infinite sequence. This permits\n/// the caller to reuse the `other` sequence in another context. Note that\n/// the literals are drained even if no union is performed as well, i.e.,\n/// when this sequence does not contain a zero-length literal.\n///\n/// Some literal deduping may be performed. If any deduping happens,\n/// any leftmost-first or \"preference\" order match semantics will be\n/// preserved.\n///\n/// # Example\n///\n/// This example shows basic usage.\n///\n/// ```\n/// use regex_syntax::hir::literal::Seq;\n///\n/// let mut seq1 = Seq::new(&[\"a\", \"\", \"f\", \"\"]);\n/// let mut seq2 = Seq::new(&[\"foo\"]);\n/// seq1.union_into_empty(&mut seq2);\n///\n/// // The literals are pulled out of seq2.\n/// assert_eq!(Some(0), seq2.len());\n/// // 'foo' gets spliced into seq1 where the first empty string occurs.\n/// assert_eq!(Seq::new(&[\"a\", \"foo\", \"f\"]), seq1);\n/// ```\n///\n/// This example shows that literals are drained from `other` even when\n/// they aren't necessarily used.\n///\n/// ```\n/// use regex_syntax::hir::literal::Seq;\n///\n/// let mut seq1 = Seq::new(&[\"foo\", \"bar\"]);\n/// let mut seq2 = Seq::new(&[\"bar\", \"quux\", \"foo\"]);\n/// seq1.union_into_empty(&mut seq2);\n///\n/// // seq1 has no zero length literals, so no splicing happens.\n/// assert_eq!(Seq::new(&[\"foo\", \"bar\"]), seq1);\n/// // Even though no splicing happens, seq2 is still drained.\n/// assert_eq!(Some(0), seq2.len());\n/// ```\n",
+  "code": [
+    "pub fn union_into_empty(&mut self, other: &mut Seq) {",
+    "    let lits2 = other.literals.as_mut().map(|lits| lits.drain(..));",
+    "    let lits1 = match self.literals {",
+    "        None => return,",
+    "        Some(ref mut lits) => lits,",
+    "    };",
+    "    let first_empty = match lits1.iter().position(|m| m.is_empty()) {",
+    "        None => return,",
+    "        Some(i) => i,",
+    "    };",
+    "    let lits2 = match lits2 {",
+    "        None => {",
+    "            // Note that we are only here if we've found an empty literal,",
+    "            // which implies that an infinite sequence infects this seq and",
+    "            // also turns it into an infinite sequence.",
+    "            self.literals = None;",
+    "            return;",
+    "        }",
+    "        Some(lits) => lits,",
+    "    };",
+    "    // Clearing out the empties needs to come before the splice because",
+    "    // the splice might add more empties that we don't want to get rid",
+    "    // of. Since we're splicing into the position of the first empty, the",
+    "    // 'first_empty' position computed above is still correct.",
+    "    lits1.retain(|m| !m.is_empty());",
+    "    lits1.splice(first_empty..first_empty, lits2);",
+    "    self.dedup();",
+    "}"
+  ],
+  "size": {
+    "chain": 4,
+    "contra": 0,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.literals matches Some(ref mut lits)",
+          "norm": null,
+          "value": "true",
+          "line": 1289,
+          "bound": null
+        },
+        {
+          "cond": "lits1.iter().position(|m| m.is_empty()) matches Some(i)",
+          "norm": null,
+          "value": "true",
+          "line": 1293,
+          "bound": null
+        },
+        {
+          "cond": "lits2 matches Some(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 1297,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        7,
+        8,
+        9,
+        12,
+        16,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        31
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.literals matches Some(ref mut lits)",
+          "norm": null,
+          "value": "true",
+          "line": 1289,
+          "bound": null
+        },
+        {
+          "cond": "lits1.iter().position(|m| m.is_empty()) matches Some(i)",
+          "norm": null,
+          "value": "true",
+          "line": 1293,
+          "bound": null
+        },
+        {
+          "cond": "lits2 matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1297,
+          "bound": null
+        },
+        {
+          "cond": "lits2 matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1297,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        7,
+        8,
+        9,
+        12,
+        15,
+        17,
+        18,
+        20,
+        28,
+        29,
+        30,
+        31
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.literals matches Some(ref mut lits)",
+          "norm": null,
+          "value": "true",
+          "line": 1289,
+          "bound": null
+        },
+        {
+          "cond": "lits1.iter().position(|m| m.is_empty()) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1293,
+          "bound": null
+        },
+        {
+          "cond": "lits1.iter().position(|m| m.is_empty()) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1293,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        7,
+        8,
+        9,
+        11,
+        13,
+        28,
+        29,
+        30,
+        31
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.literals matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1289,
+          "bound": null
+        },
+        {
+          "cond": "self.literals matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1289,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        6,
+        29,
+        30,
+        31
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

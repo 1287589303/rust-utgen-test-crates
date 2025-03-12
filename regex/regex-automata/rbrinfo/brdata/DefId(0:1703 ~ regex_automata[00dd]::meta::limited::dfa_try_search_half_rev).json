@@ -1,0 +1,5251 @@
+{
+  "name": "regex_automata::meta::limited::dfa_try_search_half_rev",
+  "mod_info": {
+    "name": "meta::limited",
+    "loc": "regex-automata/src/meta/mod.rs:55:1:55:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/meta/limited.rs:45:1:124:2",
+  "doc": "",
+  "code": [
+    "pub(crate) fn dfa_try_search_half_rev(",
+    "    dfa: &crate::dfa::dense::DFA<alloc::vec::Vec<u32>>,",
+    "    input: &Input<'_>,",
+    "    min_start: usize,",
+    ") -> Result<Option<HalfMatch>, RetryError> {",
+    "    use crate::dfa::Automaton;",
+    "",
+    "    let mut mat = None;",
+    "    let mut sid = dfa.start_state_reverse(input)?;",
+    "    if input.start() == input.end() {",
+    "        dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?;",
+    "        return Ok(mat);",
+    "    }",
+    "    let mut at = input.end() - 1;",
+    "    loop {",
+    "        sid = dfa.next_state(sid, input.haystack()[at]);",
+    "        if dfa.is_special_state(sid) {",
+    "            if dfa.is_match_state(sid) {",
+    "                let pattern = dfa.match_pattern(sid, 0);",
+    "                // Since reverse searches report the beginning of a",
+    "                // match and the beginning is inclusive (not exclusive",
+    "                // like the end of a match), we add 1 to make it",
+    "                // inclusive.",
+    "                mat = Some(HalfMatch::new(pattern, at + 1));",
+    "            } else if dfa.is_dead_state(sid) {",
+    "                return Ok(mat);",
+    "            } else if dfa.is_quit_state(sid) {",
+    "                return Err(MatchError::quit(input.haystack()[at], at).into());",
+    "            }",
+    "        }",
+    "        if at == input.start() {",
+    "            break;",
+    "        }",
+    "        at -= 1;",
+    "        if at < min_start {",
+    "            trace!(",
+    "                \"reached position {} which is before the previous literal \\",
+    "\t\t\t\t match, quitting to avoid quadratic behavior\",",
+    "                at,",
+    "            );",
+    "            return Err(RetryError::Quadratic(RetryQuadraticError::new()));",
+    "        }",
+    "    }",
+    "    let was_dead = dfa.is_dead_state(sid);",
+    "    dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?;",
+    "    // If we reach the beginning of the search and we could otherwise still",
+    "    // potentially keep matching if there was more to match, then we actually",
+    "    // return an error to indicate giving up on this optimization. Why? Because",
+    "    // we can't prove that the real match begins at where we would report it.",
+    "    //",
+    "    // This only happens when all of the following are true:",
+    "    //",
+    "    // 1) We reach the starting point of our search span.",
+    "    // 2) The match we found is before the starting point.",
+    "    // 3) The FSM reports we could possibly find a longer match.",
+    "    //",
+    "    // We need (1) because otherwise the search stopped before the starting",
+    "    // point and there is no possible way to find a more leftmost position.",
+    "    //",
+    "    // We need (2) because if the match found has an offset equal to the minimum",
+    "    // possible offset, then there is no possible more leftmost match.",
+    "    //",
+    "    // We need (3) because if the FSM couldn't continue anyway (i.e., it's in",
+    "    // a dead state), then we know we couldn't find anything more leftmost",
+    "    // than what we have. (We have to check the state we were in prior to the",
+    "    // EOI transition since the EOI transition will usually bring us to a dead",
+    "    // state by virtue of it represents the end-of-input.)",
+    "    if at == input.start()",
+    "        && mat.map_or(false, |m| m.offset() > input.start())",
+    "        && !was_dead",
+    "    {",
+    "        trace!(",
+    "            \"reached beginning of search at offset {} without hitting \\",
+    "             a dead state, quitting to avoid potential false positive match\",",
+    "            at,",
+    "        );",
+    "        return Err(RetryError::Quadratic(RetryQuadraticError::new()));",
+    "    }",
+    "    Ok(mat)",
+    "}"
+  ],
+  "size": {
+    "chain": 45,
+    "contra": 22,
+    "min_set": 12
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 53,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        6,
+        7,
+        83,
+        84,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "true",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 55,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        80,
+        81,
+        82,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "true",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 55,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        16,
+        19,
+        82,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 89,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        60,
+        62,
+        63,
+        74,
+        75,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "true",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        73,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "false",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 113,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        71,
+        73,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        72,
+        73,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "true",
+          "line": 79,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        51,
+        52,
+        53,
+        54,
+        78,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 89,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        60,
+        62,
+        63,
+        74,
+        75,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "true",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "false",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 113,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        71,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        72,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 69,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        37,
+        77,
+        78,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 71,
+          "bound": null
+        }
+      ],
+      "ret": "Err(MatchError::quit(input.haystack()[at], at).into())",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        77,
+        78,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 89,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        60,
+        62,
+        63,
+        74,
+        75,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "true",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        73,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "false",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 113,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        71,
+        73,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        72,
+        73,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "true",
+          "line": 79,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        51,
+        52,
+        53,
+        54,
+        78,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 89,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        60,
+        62,
+        63,
+        74,
+        75,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "true",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "false",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 26,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 113,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        71,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 27,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        72,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 28,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 89,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        60,
+        62,
+        63,
+        74,
+        75,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 29,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "true",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        73,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 30,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "false",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 31,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 113,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        71,
+        73,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 32,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        72,
+        73,
+        86
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 33,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "true",
+          "line": 79,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        53,
+        54,
+        78,
+        79,
+        85,
+        86
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 34,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 89,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        60,
+        62,
+        63,
+        74,
+        75,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 35,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "true",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 36,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "false",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 37,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 113,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        71,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 38,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        72,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 39,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 69,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        37,
+        77,
+        78,
+        79,
+        85,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 40,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 71,
+          "bound": null
+        }
+      ],
+      "ret": "Err(MatchError::quit(input.haystack()[at], at).into())",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        77,
+        78,
+        79,
+        85,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 41,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 89,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        60,
+        62,
+        63,
+        74,
+        75,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 42,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "true",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 43,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "true",
+          "line": 113,
+          "bound": null
+        },
+        {
+          "cond": "was_dead",
+          "norm": null,
+          "value": "false",
+          "line": 114,
+          "bound": null
+        }
+      ],
+      "ret": "Err(RetryError::Quadratic(RetryQuadraticError::new()))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        76,
+        79,
+        85,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 44,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "mat.map_or(false, |m| m.offset() > input.start())",
+          "norm": null,
+          "value": "false",
+          "line": 113,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        66,
+        67,
+        71,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 45,
+      "conds": [
+        {
+          "cond": "dfa.start_state_reverse(input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 53,
+          "bound": null
+        },
+        {
+          "cond": "input.start() == input.end()",
+          "norm": "input.end() == input.start()",
+          "value": "false",
+          "line": 54,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "at < min_start",
+          "norm": null,
+          "value": "false",
+          "line": 79,
+          "bound": "at == min_start"
+        },
+        {
+          "cond": "dfa.is_special_state(sid)",
+          "norm": null,
+          "value": "true",
+          "line": 61,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_match_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 62,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_dead_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 69,
+          "bound": null
+        },
+        {
+          "cond": "dfa.is_quit_state(sid)",
+          "norm": null,
+          "value": "false",
+          "line": 71,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "true",
+          "line": 75,
+          "bound": null
+        },
+        {
+          "cond": "dfa_eoi_rev(dfa, input, &mut sid, &mut mat)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 89,
+          "bound": null
+        },
+        {
+          "cond": "at == input.start()",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(mat)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        47,
+        48,
+        49,
+        51,
+        52,
+        55,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        35,
+        36,
+        38,
+        39,
+        45,
+        46,
+        48,
+        49,
+        50,
+        56,
+        57,
+        58,
+        61,
+        64,
+        65,
+        72,
+        73,
+        86
+      ],
+      "may_contra": true,
+      "min_set": true
+    }
+  ]
+}

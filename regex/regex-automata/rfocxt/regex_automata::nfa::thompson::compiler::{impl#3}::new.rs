@@ -1,0 +1,418 @@
+use core::{borrow::Borrow, cell::RefCell};
+use alloc::{sync::Arc, vec, vec::Vec};
+use regex_syntax::{
+    hir::{self, Hir},
+    utf8::{Utf8Range, Utf8Sequences},
+    ParserBuilder,
+};
+use crate::{
+    nfa::thompson::{
+        builder::Builder, error::BuildError, literal_trie::LiteralTrie,
+        map::{Utf8BoundedMap, Utf8SuffixKey, Utf8SuffixMap},
+        nfa::{Transition, NFA},
+        range_trie::RangeTrie,
+    },
+    util::{
+        look::{Look, LookMatcher},
+        primitives::{PatternID, StateID},
+    },
+};
+#[derive(Clone, Debug)]
+pub struct Compiler {
+    /// A regex parser, used when compiling an NFA directly from a pattern
+    /// string.
+    parser: ParserBuilder,
+    /// The compiler configuration.
+    config: Config,
+    /// The builder for actually constructing an NFA. This provides a
+    /// convenient abstraction for writing a compiler.
+    builder: RefCell<Builder>,
+    /// State used for compiling character classes to UTF-8 byte automata.
+    /// State is not retained between character class compilations. This just
+    /// serves to amortize allocation to the extent possible.
+    utf8_state: RefCell<Utf8State>,
+    /// State used for arranging character classes in reverse into a trie.
+    trie_state: RefCell<RangeTrie>,
+    /// State used for caching common suffixes when compiling reverse UTF-8
+    /// automata (for Unicode character classes).
+    utf8_suffix: RefCell<Utf8SuffixMap>,
+}
+#[derive(Clone)]
+pub struct RangeTrie {
+    /// The states in this trie. The first is always the shared final state.
+    /// The second is always the root state. Otherwise, there is no
+    /// particular order.
+    states: Vec<State>,
+    /// A free-list of states. When a range trie is cleared, all of its states
+    /// are added to this list. Creating a new state reuses states from this
+    /// list before allocating a new one.
+    free: Vec<State>,
+    /// A stack for traversing this trie to yield sequences of byte ranges in
+    /// lexicographic order.
+    iter_stack: RefCell<Vec<NextIter>>,
+    /// A buffer that stores the current sequence during iteration.
+    iter_ranges: RefCell<Vec<Utf8Range>>,
+    /// A stack used for traversing the trie in order to (deeply) duplicate
+    /// a state. States are recursively duplicated when ranges are split.
+    dupe_stack: Vec<NextDupe>,
+    /// A stack used for traversing the trie during insertion of a new
+    /// sequence of byte ranges.
+    insert_stack: Vec<NextInsert>,
+}
+#[derive(Clone, Debug)]
+struct Utf8State {
+    compiled: Utf8BoundedMap,
+    uncompiled: Vec<Utf8Node>,
+}
+#[derive(Clone, Debug, Default)]
+pub struct Builder {
+    /// The ID of the pattern that we're currently building.
+    ///
+    /// Callers are required to set (and unset) this by calling
+    /// {start,finish}_pattern. Otherwise, most methods will panic.
+    pattern_id: Option<PatternID>,
+    /// A sequence of intermediate NFA states. Once a state is added to this
+    /// sequence, it is assigned a state ID equivalent to its index. Once a
+    /// state is added, it is still expected to be mutated, e.g., to set its
+    /// transition to a state that didn't exist at the time it was added.
+    states: Vec<State>,
+    /// The starting states for each individual pattern. Starting at any
+    /// of these states will result in only an anchored search for the
+    /// corresponding pattern. The vec is indexed by pattern ID. When the NFA
+    /// contains a single regex, then `start_pattern[0]` and `start_anchored`
+    /// are always equivalent.
+    start_pattern: Vec<StateID>,
+    /// A map from pattern ID to capture group index to name. (If no name
+    /// exists, then a None entry is present. Thus, all capturing groups are
+    /// present in this mapping.)
+    ///
+    /// The outer vec is indexed by pattern ID, while the inner vec is indexed
+    /// by capture index offset for the corresponding pattern.
+    ///
+    /// The first capture group for each pattern is always unnamed and is thus
+    /// always None.
+    captures: Vec<Vec<Option<Arc<str>>>>,
+    /// The combined memory used by each of the 'State's in 'states'. This
+    /// only includes heap usage by each state, and not the size of the state
+    /// itself. In other words, this tracks heap memory used that isn't
+    /// captured via `size_of::<State>() * states.len()`.
+    memory_states: usize,
+    /// Whether this NFA only matches UTF-8 and whether regex engines using
+    /// this NFA for searching should report empty matches that split a
+    /// codepoint.
+    utf8: bool,
+    /// Whether this NFA should be matched in reverse or not.
+    reverse: bool,
+    /// The matcher to use for look-around assertions.
+    look_matcher: LookMatcher,
+    /// A size limit to respect when building an NFA. If the total heap memory
+    /// of the intermediate NFA states exceeds (or would exceed) this amount,
+    /// then an error is returned.
+    size_limit: Option<usize>,
+}
+#[derive(Clone, Debug)]
+pub struct Utf8SuffixMap {
+    /// The current version of this map. Only entries with matching versions
+    /// are considered during lookups. If an entry is found with a mismatched
+    /// version, then the map behaves as if the entry does not exist.
+    version: u16,
+    /// The total number of entries this map can store.
+    capacity: usize,
+    /// The actual entries, keyed by hash. Collisions between different states
+    /// result in the old state being dropped.
+    map: Vec<Utf8SuffixEntry>,
+}
+#[derive(Clone, Debug, Default)]
+pub struct Config {
+    match_kind: Option<MatchKind>,
+    utf8_empty: Option<bool>,
+    autopre: Option<bool>,
+    pre: Option<Option<Prefilter>>,
+    which_captures: Option<WhichCaptures>,
+    nfa_size_limit: Option<Option<usize>>,
+    onepass_size_limit: Option<Option<usize>>,
+    hybrid_cache_capacity: Option<usize>,
+    hybrid: Option<bool>,
+    dfa: Option<bool>,
+    dfa_size_limit: Option<Option<usize>>,
+    dfa_state_limit: Option<Option<usize>>,
+    onepass: Option<bool>,
+    backtrack: Option<bool>,
+    byte_classes: Option<bool>,
+    line_terminator: Option<u8>,
+}
+#[derive(Clone, Debug)]
+pub struct Config {
+    look_behind: Option<u8>,
+    anchored: Anchored,
+}
+#[derive(Clone, Debug, Default)]
+pub struct Config {
+    pre: Option<Option<Prefilter>>,
+    visited_capacity: Option<usize>,
+}
+#[derive(Clone, Debug)]
+pub struct Builder {
+    #[cfg(feature = "dfa-build")]
+    dfa: dense::Builder,
+}
+#[derive(Clone, Debug)]
+pub struct Builder {
+    config: Config,
+    #[cfg(feature = "syntax")]
+    thompson: thompson::Compiler,
+}
+#[derive(Clone, Debug)]
+pub struct Builder {
+    config: Config,
+    ast: ast::parse::ParserBuilder,
+    hir: hir::translate::TranslatorBuilder,
+}
+#[derive(Clone, Debug, Default)]
+pub struct Config {
+    utf8: Option<bool>,
+    reverse: Option<bool>,
+    nfa_size_limit: Option<Option<usize>>,
+    shrink: Option<bool>,
+    which_captures: Option<WhichCaptures>,
+    look_matcher: Option<LookMatcher>,
+    #[cfg(test)]
+    unanchored_prefix: Option<bool>,
+}
+#[cfg(feature = "dfa-build")]
+#[derive(Clone, Debug, Default)]
+pub struct Config {
+    accelerate: Option<bool>,
+    pre: Option<Option<Prefilter>>,
+    minimize: Option<bool>,
+    match_kind: Option<MatchKind>,
+    start_kind: Option<StartKind>,
+    starts_for_each_pattern: Option<bool>,
+    byte_classes: Option<bool>,
+    unicode_word_boundary: Option<bool>,
+    quitset: Option<ByteSet>,
+    specialize_start_states: Option<bool>,
+    dfa_size_limit: Option<Option<usize>>,
+    determinize_size_limit: Option<Option<usize>>,
+}
+#[derive(Clone, Debug)]
+pub struct Builder {
+    config: Config,
+    #[cfg(feature = "syntax")]
+    thompson: thompson::Compiler,
+}
+#[derive(Clone, Debug)]
+pub struct Builder {
+    config: Config,
+    #[cfg(feature = "syntax")]
+    thompson: thompson::Compiler,
+}
+#[cfg(feature = "dfa-build")]
+#[derive(Clone, Debug)]
+pub struct Builder {
+    config: Config,
+    #[cfg(feature = "syntax")]
+    thompson: thompson::Compiler,
+}
+#[derive(Clone, Copy, Debug)]
+pub struct Config {
+    case_insensitive: bool,
+    multi_line: bool,
+    dot_matches_new_line: bool,
+    crlf: bool,
+    line_terminator: u8,
+    swap_greed: bool,
+    ignore_whitespace: bool,
+    unicode: bool,
+    utf8: bool,
+    nest_limit: u32,
+    octal: bool,
+}
+#[derive(Clone, Debug)]
+pub struct Builder {
+    dfa: dfa::Builder,
+}
+#[derive(Clone, Debug)]
+pub struct Builder {
+    config: Config,
+    #[cfg(feature = "syntax")]
+    thompson: thompson::Compiler,
+}
+#[derive(Clone, Debug, Default)]
+pub struct Config {
+    match_kind: Option<MatchKind>,
+    pre: Option<Option<Prefilter>>,
+    starts_for_each_pattern: Option<bool>,
+    byte_classes: Option<bool>,
+    unicode_word_boundary: Option<bool>,
+    quitset: Option<ByteSet>,
+    specialize_start_states: Option<bool>,
+    cache_capacity: Option<usize>,
+    skip_cache_capacity_check: Option<bool>,
+    minimum_cache_clear_count: Option<Option<usize>>,
+    minimum_bytes_per_state: Option<Option<usize>>,
+}
+#[derive(Clone, Debug, Default)]
+pub struct Config {
+    match_kind: Option<MatchKind>,
+    pre: Option<Option<Prefilter>>,
+}
+#[derive(Clone, Debug, Default)]
+pub struct Config {
+    match_kind: Option<MatchKind>,
+    starts_for_each_pattern: Option<bool>,
+    byte_classes: Option<bool>,
+    size_limit: Option<Option<usize>>,
+}
+#[derive(Clone, Debug)]
+pub(crate) struct Config {
+    match_kind: MatchKind,
+    quit: ByteSet,
+    dfa_size_limit: Option<usize>,
+    determinize_size_limit: Option<usize>,
+}
+impl Compiler {
+    pub fn new() -> Compiler {
+        Compiler {
+            parser: ParserBuilder::new(),
+            config: Config::default(),
+            builder: RefCell::new(Builder::new()),
+            utf8_state: RefCell::new(Utf8State::new()),
+            trie_state: RefCell::new(RangeTrie::new()),
+            utf8_suffix: RefCell::new(Utf8SuffixMap::new(1000)),
+        }
+    }
+    pub fn build(&self, pattern: &str) -> Result<NFA, BuildError> {}
+    pub fn build_many<P: AsRef<str>>(&self, patterns: &[P]) -> Result<NFA, BuildError> {}
+    pub fn build_from_hir(&self, expr: &Hir) -> Result<NFA, BuildError> {}
+    pub fn build_many_from_hir<H: Borrow<Hir>>(
+        &self,
+        exprs: &[H],
+    ) -> Result<NFA, BuildError> {}
+    pub fn configure(&mut self, config: Config) -> &mut Compiler {}
+    pub fn syntax(&mut self, config: crate::util::syntax::Config) -> &mut Compiler {}
+}
+impl RangeTrie {
+    pub fn new() -> RangeTrie {
+        let mut trie = RangeTrie {
+            states: vec![],
+            free: vec![],
+            iter_stack: RefCell::new(vec![]),
+            iter_ranges: RefCell::new(vec![]),
+            dupe_stack: vec![],
+            insert_stack: vec![],
+        };
+        trie.clear();
+        trie
+    }
+    pub fn clear(&mut self) {}
+    pub fn iter<E, F: FnMut(&[Utf8Range]) -> Result<(), E>>(
+        &self,
+        mut f: F,
+    ) -> Result<(), E> {}
+    pub fn insert(&mut self, ranges: &[Utf8Range]) {}
+    pub fn add_empty(&mut self) -> StateID {}
+    fn duplicate(&mut self, old_id: StateID) -> StateID {}
+    fn add_transition(&mut self, from_id: StateID, range: Utf8Range, next_id: StateID) {}
+    fn add_transition_at(
+        &mut self,
+        i: usize,
+        from_id: StateID,
+        range: Utf8Range,
+        next_id: StateID,
+    ) {}
+    fn set_transition_at(
+        &mut self,
+        i: usize,
+        from_id: StateID,
+        range: Utf8Range,
+        next_id: StateID,
+    ) {}
+    fn state(&self, id: StateID) -> &State {}
+    fn state_mut(&mut self, id: StateID) -> &mut State {}
+}
+impl Utf8State {
+    fn new() -> Utf8State {
+        Utf8State {
+            compiled: Utf8BoundedMap::new(10_000),
+            uncompiled: vec![],
+        }
+    }
+    fn clear(&mut self) {}
+}
+impl Builder {
+    pub fn new() -> Builder {
+        Builder::default()
+    }
+    pub fn clear(&mut self) {}
+    pub fn build(
+        &self,
+        start_anchored: StateID,
+        start_unanchored: StateID,
+    ) -> Result<NFA, BuildError> {}
+    pub fn start_pattern(&mut self) -> Result<PatternID, BuildError> {}
+    pub fn finish_pattern(
+        &mut self,
+        start_id: StateID,
+    ) -> Result<PatternID, BuildError> {}
+    pub fn current_pattern_id(&self) -> PatternID {}
+    pub fn pattern_len(&self) -> usize {}
+    pub fn add_empty(&mut self) -> Result<StateID, BuildError> {}
+    pub fn add_union(
+        &mut self,
+        alternates: Vec<StateID>,
+    ) -> Result<StateID, BuildError> {}
+    pub fn add_union_reverse(
+        &mut self,
+        alternates: Vec<StateID>,
+    ) -> Result<StateID, BuildError> {}
+    pub fn add_range(&mut self, trans: Transition) -> Result<StateID, BuildError> {}
+    pub fn add_sparse(
+        &mut self,
+        transitions: Vec<Transition>,
+    ) -> Result<StateID, BuildError> {}
+    pub fn add_look(
+        &mut self,
+        next: StateID,
+        look: Look,
+    ) -> Result<StateID, BuildError> {}
+    pub fn add_capture_start(
+        &mut self,
+        next: StateID,
+        group_index: u32,
+        name: Option<Arc<str>>,
+    ) -> Result<StateID, BuildError> {}
+    pub fn add_capture_end(
+        &mut self,
+        next: StateID,
+        group_index: u32,
+    ) -> Result<StateID, BuildError> {}
+    pub fn add_fail(&mut self) -> Result<StateID, BuildError> {}
+    pub fn add_match(&mut self) -> Result<StateID, BuildError> {}
+    fn add(&mut self, state: State) -> Result<StateID, BuildError> {}
+    pub fn patch(&mut self, from: StateID, to: StateID) -> Result<(), BuildError> {}
+    pub fn set_utf8(&mut self, yes: bool) {}
+    pub fn get_utf8(&self) -> bool {}
+    pub fn set_reverse(&mut self, yes: bool) {}
+    pub fn get_reverse(&self) -> bool {}
+    pub fn set_look_matcher(&mut self, m: LookMatcher) {}
+    pub fn get_look_matcher(&self) -> &LookMatcher {}
+    pub fn set_size_limit(&mut self, limit: Option<usize>) -> Result<(), BuildError> {}
+    pub fn get_size_limit(&self) -> Option<usize> {}
+    pub fn memory_usage(&self) -> usize {}
+    fn check_size_limit(&self) -> Result<(), BuildError> {}
+}
+impl Utf8SuffixMap {
+    pub fn new(capacity: usize) -> Utf8SuffixMap {
+        assert!(capacity > 0);
+        Utf8SuffixMap {
+            version: 0,
+            capacity,
+            map: vec![],
+        }
+    }
+    pub fn clear(&mut self) {}
+    pub fn hash(&self, key: &Utf8SuffixKey) -> usize {}
+    pub fn get(&mut self, key: &Utf8SuffixKey, hash: usize) -> Option<StateID> {}
+    pub fn set(&mut self, key: Utf8SuffixKey, hash: usize, state_id: StateID) {}
+}

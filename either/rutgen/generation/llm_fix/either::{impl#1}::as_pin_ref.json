@@ -1,0 +1,318 @@
+{
+  "name": "either::{impl#1}::as_pin_ref",
+  "mod_info": {
+    "name": "",
+    "loc": "src/lib.rs:1:1:1561:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:270:5:274:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: Pin::get_ref(self) matches Right($pattern) at line 273 is true\n",
+        "expected return value/type: Right($result)\n"
+      ],
+      "input_infer": "Pin<&Either<L, R>> where Either<L, R> is instantiated with Right(R) and R implements Unpin.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct;",
+                "",
+                "    let value = Right(TestStruct);",
+                "    let pinned_value = Pin::new(Box::new(value));",
+                "",
+                "    let _result: Either<Pin<&TestStruct>, Pin<&()>> = pinned_value.as_pin_ref();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, Right(Pin::new_unchecked(&TestStruct)));",
+                "    assert!(matches!(_result, Right(_)));",
+                "    assert!(!_result.is_left());",
+                "    assert!(_result.is_right());",
+                "    assert!(std::ptr::eq(Pin::get_ref(&_result).0.as_ref(), &TestStruct));"
+              ],
+              "code": [
+                "{",
+                "    struct TestStruct;",
+                "",
+                "    let value = Right(TestStruct);",
+                "    let pinned_value = Pin::new(Box::new(value));",
+                "",
+                "    let _result: Either<Pin<&TestStruct>, Pin<&()>> = pinned_value.as_pin_ref();",
+                "    assert_eq!(_result, Right(Pin::new_unchecked(&TestStruct)));",
+                "    assert!(matches!(_result, Right(_)));",
+                "    assert!(!_result.is_left());",
+                "    assert!(_result.is_right());",
+                "    assert!(std::ptr::eq(Pin::get_ref(&_result).0.as_ref(), &TestStruct));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct AnotherStruct;",
+                "",
+                "    let value = Right(AnotherStruct);",
+                "    let pinned_value = Pin::new(Box::new(value));",
+                "",
+                "    let _result: Either<Pin<&AnotherStruct>, Pin<&()>> = pinned_value.as_pin_ref();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(pinned_value.as_pin_ref().is_right());",
+                "    assert_eq!(pinned_value.as_pin_ref().right(), Some(Pin::new_unchecked(&AnotherStruct)));",
+                "    assert!(matches!(pinned_value.as_pin_ref(), Right(_)));"
+              ],
+              "code": [
+                "{",
+                "    struct AnotherStruct;",
+                "",
+                "    let value = Right(AnotherStruct);",
+                "    let pinned_value = Pin::new(Box::new(value));",
+                "",
+                "    let _result: Either<Pin<&AnotherStruct>, Pin<&()>> = pinned_value.as_pin_ref();",
+                "    assert!(pinned_value.as_pin_ref().is_right());",
+                "    assert_eq!(pinned_value.as_pin_ref().right(), Some(Pin::new_unchecked(&AnotherStruct)));",
+                "    assert!(matches!(pinned_value.as_pin_ref(), Right(_)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct UnpinStruct;",
+                "",
+                "    let value = Right(UnpinStruct);",
+                "    let pinned_value = Pin::new(Box::new(value));",
+                "",
+                "    let _result: Either<Pin<&UnpinStruct>, Pin<&()>> = pinned_value.as_pin_ref();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(matches!(_result, Right(_)));",
+                "    assert!(matches!(_result.right(), Some(pin_ref)) && pin_ref.is_pinned());",
+                "    assert_eq!(std::mem::transmute::<_, &UnpinStruct>(pin_ref.as_ref()), &UnpinStruct);",
+                "    assert!(matches!(_result.left(), None));"
+              ],
+              "code": [
+                "{",
+                "    struct UnpinStruct;",
+                "",
+                "    let value = Right(UnpinStruct);",
+                "    let pinned_value = Pin::new(Box::new(value));",
+                "",
+                "    let _result: Either<Pin<&UnpinStruct>, Pin<&()>> = pinned_value.as_pin_ref();",
+                "    assert!(matches!(_result, Right(_)));",
+                "    assert!(matches!(_result.right(), Some(pin_ref)) && pin_ref.is_pinned());",
+                "    assert_eq!(std::mem::transmute::<_, &UnpinStruct>(pin_ref.as_ref()), &UnpinStruct);",
+                "    assert!(matches!(_result.left(), None));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: Pin::get_ref(self) matches Left($pattern) at line 273 is true\n",
+        "expected return value/type: Left($result)\n"
+      ],
+      "input_infer": "Pin<&Either<L, R>> where Either<L, R> is Left(L) for any L type, ensuring L is a type that can be pinned\n",
+      "answers": [
+        {
+          "uses": [
+            "use std::marker::PhantomPinned;",
+            "use std::pin::Pin;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::pin::Pin;",
+                "    use std::marker::PhantomPinned;",
+                "",
+                "    struct PinnedValue {",
+                "        _pin: PhantomPinned,",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let value = PinnedValue {",
+                "        _pin: PhantomPinned,",
+                "        value: 10,",
+                "    };",
+                "",
+                "    let either = Either::Left(value);",
+                "    let pinned_either = Pin::new(&either);",
+                "",
+                "    let result: Either<Pin<&PinnedValue>, ()> = pinned_either.as_pin_ref();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_left());",
+                "    assert_eq!(result.left().unwrap().value, 10);",
+                "    assert!(result.right().is_none());"
+              ],
+              "code": [
+                "{",
+                "    use std::pin::Pin;",
+                "    use std::marker::PhantomPinned;",
+                "",
+                "    struct PinnedValue {",
+                "        _pin: PhantomPinned,",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let value = PinnedValue {",
+                "        _pin: PhantomPinned,",
+                "        value: 10,",
+                "    };",
+                "",
+                "    let either = Either::Left(value);",
+                "    let pinned_either = Pin::new(&either);",
+                "",
+                "    let result: Either<Pin<&PinnedValue>, ()> = pinned_either.as_pin_ref();",
+                "    assert!(result.is_left());",
+                "    assert_eq!(result.left().unwrap().value, 10);",
+                "    assert!(result.right().is_none());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::pin::Pin;",
+                "    use std::marker::PhantomPinned;",
+                "",
+                "    struct PinnedString {",
+                "        _pin: PhantomPinned,",
+                "        value: String,",
+                "    }",
+                "",
+                "    let value = PinnedString {",
+                "        _pin: PhantomPinned,",
+                "        value: String::from(\"Test\"),",
+                "    };",
+                "",
+                "    let either = Either::Left(value);",
+                "    let pinned_either = Pin::new(&either);",
+                "",
+                "    let result: Either<Pin<&PinnedString>, ()> = pinned_either.as_pin_ref();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Either::Left(Pin::new_unchecked(&value)));",
+                "    assert!(result.is_left());",
+                "    assert!(!result.is_right());",
+                "    assert_eq!(result.left().is_some(), true);",
+                "    assert_eq!(result.right().is_none(), true);"
+              ],
+              "code": [
+                "{",
+                "    use std::pin::Pin;",
+                "    use std::marker::PhantomPinned;",
+                "",
+                "    struct PinnedString {",
+                "        _pin: PhantomPinned,",
+                "        value: String,",
+                "    }",
+                "",
+                "    let value = PinnedString {",
+                "        _pin: PhantomPinned,",
+                "        value: String::from(\"Test\"),",
+                "    };",
+                "",
+                "    let either = Either::Left(value);",
+                "    let pinned_either = Pin::new(&either);",
+                "",
+                "    let result: Either<Pin<&PinnedString>, ()> = pinned_either.as_pin_ref();",
+                "    assert_eq!(result, Either::Left(Pin::new_unchecked(&value)));",
+                "    assert!(result.is_left());",
+                "    assert!(!result.is_right());",
+                "    assert_eq!(result.left().is_some(), true);",
+                "    assert_eq!(result.right().is_none(), true);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::pin::Pin;",
+                "    use std::marker::PhantomPinned;",
+                "",
+                "    struct CustomStruct {",
+                "        _pin: PhantomPinned,",
+                "        data: f64,",
+                "    }",
+                "",
+                "    let value = CustomStruct {",
+                "        _pin: PhantomPinned,",
+                "        data: 3.14,",
+                "    };",
+                "",
+                "    let either = Either::Left(value);",
+                "    let pinned_either = Pin::new(&either);",
+                "",
+                "    let result: Either<Pin<&CustomStruct>, ()> = pinned_either.as_pin_ref();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Either::Left(Pin::new(&CustomStruct { _pin: PhantomPinned, data: 3.14 })));"
+              ],
+              "code": [
+                "{",
+                "    use std::pin::Pin;",
+                "    use std::marker::PhantomPinned;",
+                "",
+                "    struct CustomStruct {",
+                "        _pin: PhantomPinned,",
+                "        data: f64,",
+                "    }",
+                "",
+                "    let value = CustomStruct {",
+                "        _pin: PhantomPinned,",
+                "        data: 3.14,",
+                "    };",
+                "",
+                "    let either = Either::Left(value);",
+                "    let pinned_either = Pin::new(&either);",
+                "",
+                "    let result: Either<Pin<&CustomStruct>, ()> = pinned_either.as_pin_ref();",
+                "    assert_eq!(result, Either::Left(Pin::new(&CustomStruct { _pin: PhantomPinned, data: 3.14 })));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

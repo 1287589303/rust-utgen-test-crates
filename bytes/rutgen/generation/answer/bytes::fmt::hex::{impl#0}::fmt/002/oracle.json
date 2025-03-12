@@ -1,0 +1,180 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes_ref = BytesRef(&[]);",
+          "    let _ = bytes_ref.fmt(&mut Formatter::new());",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    let bytes_ref = BytesRef(&[0x01, 0x02, 0x03]);",
+          "    let mut output = String::new();",
+          "    let result = bytes_ref.fmt(&mut output);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(output, \"010203\");",
+          "    let bytes_ref = BytesRef(&[0xff, 0x00]);",
+          "    let mut output = String::new();",
+          "    let result = bytes_ref.fmt(&mut output);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(output, \"ff00\");"
+        ],
+        "code": [
+          "{",
+          "    let bytes_ref = BytesRef(&[]);",
+          "    let _ = bytes_ref.fmt(&mut Formatter::new());",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    let bytes_ref = BytesRef(&[0x01, 0x02, 0x03]);",
+          "    let mut output = String::new();",
+          "    let result = bytes_ref.fmt(&mut output);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(output, \"010203\");",
+          "    let bytes_ref = BytesRef(&[0xff, 0x00]);",
+          "    let mut output = String::new();",
+          "    let result = bytes_ref.fmt(&mut output);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(output, \"ff00\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes_ref = BytesRef(&[0x00]);",
+          "    let _ = bytes_ref.fmt(&mut Formatter::new());",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()), Ok(())); // for scenario where &b in self.0 is true",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()), Ok(())); // for scenario where write!(f, \"{:02x}\", b) results in Ok/Some",
+          "    // Add additional test cases to verify behavior with different byte arrays.",
+          "    let bytes_ref_empty = BytesRef(&[]);",
+          "    assert_eq!(bytes_ref_empty.fmt(&mut Formatter::new()), Ok(())); // for scenario where &b in self.0 is false"
+        ],
+        "code": [
+          "{",
+          "    let bytes_ref = BytesRef(&[0x00]);",
+          "    let _ = bytes_ref.fmt(&mut Formatter::new());",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()), Ok(())); // for scenario where &b in self.0 is true",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()), Ok(())); // for scenario where write!(f, \"{:02x}\", b) results in Ok/Some",
+          "    // Add additional test cases to verify behavior with different byte arrays.",
+          "    let bytes_ref_empty = BytesRef(&[]);",
+          "    assert_eq!(bytes_ref_empty.fmt(&mut Formatter::new()), Ok(())); // for scenario where &b in self.0 is false",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes_ref = BytesRef(&[0x00, 0x01, 0x7F, 0x80, 0xFF]);",
+          "    let _ = bytes_ref.fmt(&mut Formatter::new());",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    let empty_bytes_ref = BytesRef(&[]);",
+          "    assert_eq!(empty_bytes_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    let single_byte_ref = BytesRef(&[0x01]);",
+          "    assert_eq!(single_byte_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    let max_byte_ref = BytesRef(&[0xFF]);",
+          "    assert_eq!(max_byte_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    let boundary_byte_ref = BytesRef(&[0x80]);",
+          "    assert_eq!(boundary_byte_ref.fmt(&mut Formatter::new()), Ok(()));"
+        ],
+        "code": [
+          "{",
+          "    let bytes_ref = BytesRef(&[0x00, 0x01, 0x7F, 0x80, 0xFF]);",
+          "    let _ = bytes_ref.fmt(&mut Formatter::new());",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    let empty_bytes_ref = BytesRef(&[]);",
+          "    assert_eq!(empty_bytes_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    let single_byte_ref = BytesRef(&[0x01]);",
+          "    assert_eq!(single_byte_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    let max_byte_ref = BytesRef(&[0xFF]);",
+          "    assert_eq!(max_byte_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "    let boundary_byte_ref = BytesRef(&[0x80]);",
+          "    assert_eq!(boundary_byte_ref.fmt(&mut Formatter::new()), Ok(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes_ref = BytesRef(&[0xC0, 0xFF]);",
+          "    let _ = bytes_ref.fmt(&mut Formatter::new());",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()).is_ok(), true);",
+          "    assert_eq!(bytes_ref.0, &[0xC0, 0xFF]);",
+          "    assert_eq!(write!(Formatter::new(), \"{:02x}\", 0xC0).unwrap(), \"c0\");",
+          "    assert_eq!(write!(Formatter::new(), \"{:02x}\", 0xFF).unwrap(), \"ff\");",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()).unwrap(), ());",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()).err(), None);",
+          "    assert!(matches!(bytes_ref.fmt(&mut Formatter::new()), Ok(_)));"
+        ],
+        "code": [
+          "{",
+          "    let bytes_ref = BytesRef(&[0xC0, 0xFF]);",
+          "    let _ = bytes_ref.fmt(&mut Formatter::new());",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()).is_ok(), true);",
+          "    assert_eq!(bytes_ref.0, &[0xC0, 0xFF]);",
+          "    assert_eq!(write!(Formatter::new(), \"{:02x}\", 0xC0).unwrap(), \"c0\");",
+          "    assert_eq!(write!(Formatter::new(), \"{:02x}\", 0xFF).unwrap(), \"ff\");",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()).unwrap(), ());",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()).err(), None);",
+          "    assert!(matches!(bytes_ref.fmt(&mut Formatter::new()), Ok(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes_ref = BytesRef(&(0..256).map(|x| x as u8).collect::<Vec<u8>>());",
+          "    let _ = bytes_ref.fmt(&mut Formatter::new());",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()).unwrap(), ());",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()).is_ok(), true);",
+          "    assert!(bytes_ref.fmt(&mut Formatter::new()).is_ok());",
+          "    let empty_bytes_ref = BytesRef(&[]);",
+          "    assert_eq!(empty_bytes_ref.fmt(&mut Formatter::new()).unwrap(), ());"
+        ],
+        "code": [
+          "{",
+          "    let bytes_ref = BytesRef(&(0..256).map(|x| x as u8).collect::<Vec<u8>>());",
+          "    let _ = bytes_ref.fmt(&mut Formatter::new());",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()).unwrap(), ());",
+          "    assert_eq!(bytes_ref.fmt(&mut Formatter::new()).is_ok(), true);",
+          "    assert!(bytes_ref.fmt(&mut Formatter::new()).is_ok());",
+          "    let empty_bytes_ref = BytesRef(&[]);",
+          "    assert_eq!(empty_bytes_ref.fmt(&mut Formatter::new()).unwrap(), ());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

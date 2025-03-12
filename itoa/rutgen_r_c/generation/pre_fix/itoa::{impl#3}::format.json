@@ -1,0 +1,195 @@
+{
+  "name": "itoa::{impl#3}::format",
+  "mod_info": {
+    "name": "",
+    "loc": "src/lib.rs:1:1:329:34"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:97:5:106:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: string.len() > I::MAX_STR_LEN at line 102 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestInteger;",
+                "",
+                "    impl Copy for TestInteger {}",
+                "",
+                "    struct TestBuffer;",
+                "",
+                "    impl Sealed for TestInteger {",
+                "        type Buffer = TestBuffer;",
+                "",
+                "        fn write(self, _buf: &mut Self::Buffer) -> &str {",
+                "            // Simulate a string that exceeds the maximum length",
+                "            let long_string = \"12345678901234567890123456789012345678901234567890\";",
+                "            long_string",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = buffer.format(TestInteger);",
+                "",
+                "    assert!(result.len() > i128::MAX_STR_LEN);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestInteger;",
+                "",
+                "    impl Copy for TestInteger {}",
+                "",
+                "    struct TestBuffer;",
+                "",
+                "    impl Sealed for TestInteger {",
+                "        type Buffer = TestBuffer;",
+                "",
+                "        fn write(self, _buf: &mut Self::Buffer) -> &str {",
+                "            // Simulate a string that exceeds the maximum length",
+                "            let long_string = \"This string is intentionally long to trigger the panic condition caused by exceeding maximum length.\";",
+                "            long_string",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = buffer.format(TestInteger);",
+                "",
+                "    // This expects to panic due to the length check",
+                "    assert!(result.len() > i128::MAX_STR_LEN);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: string.len() > I::MAX_STR_LEN at line 102 is false, with bound string.len() == I::MAX_STR_LEN\n",
+        "expected return value/type: string\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestInteger;",
+                "",
+                "    impl Copy for TestInteger {}",
+                "",
+                "    impl Sealed for TestInteger {",
+                "        type Buffer = [MaybeUninit<u8>; 20]; // Example buffer size for MAX_STR_LEN",
+                "        fn write(self, buf: &mut Self::Buffer) -> &str {",
+                "            let str_rep = \"12345678901234567890\"; // Example string representation",
+                "            buf[..str_rep.len()].copy_from_slice(&str_rep.as_bytes());",
+                "            let ptr = buf.as_ptr() as *const _;",
+                "            unsafe { str::from_utf8_unchecked(slice::from_raw_parts(ptr, str_rep.len())) }",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = buffer.format(TestInteger);",
+                "    assert_eq!(result.len(), 20); // Assuming 20 is the MAX_STR_LEN for TestInteger",
+                "    assert_eq!(result, \"12345678901234567890\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct ZeroInteger;",
+                "",
+                "    impl Copy for ZeroInteger {}",
+                "",
+                "    impl Sealed for ZeroInteger {",
+                "        type Buffer = [MaybeUninit<u8>; 1]; // Example buffer size for MAX_STR_LEN",
+                "        fn write(self, buf: &mut Self::Buffer) -> &str {",
+                "            buf[0] = MaybeUninit::new(b'0');",
+                "            let ptr = buf.as_ptr() as *const _;",
+                "            unsafe { str::from_utf8_unchecked(slice::from_raw_parts(ptr, 1)) }",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = buffer.format(ZeroInteger);",
+                "    assert_eq!(result.len(), 1); // Assuming 1 is the MAX_STR_LEN for ZeroInteger",
+                "    assert_eq!(result, \"0\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct NegativeInteger;",
+                "",
+                "    impl Copy for NegativeInteger {}",
+                "",
+                "    impl Sealed for NegativeInteger {",
+                "        type Buffer = [MaybeUninit<u8>; 12]; // Example buffer size for MAX_STR_LEN",
+                "        fn write(self, buf: &mut Self::Buffer) -> &str {",
+                "            let str_rep = \"-2147483648\"; // Example string representation of a negative integer",
+                "            buf[..str_rep.len()].copy_from_slice(&str_rep.as_bytes());",
+                "            let ptr = buf.as_ptr() as *const _;",
+                "            unsafe { str::from_utf8_unchecked(slice::from_raw_parts(ptr, str_rep.len())) }",
+                "        }",
+                "    }",
+                "",
+                "    let mut buffer = Buffer::new();",
+                "    let result = buffer.format(NegativeInteger);",
+                "    assert_eq!(result.len(), 12); // Assuming 12 is the MAX_STR_LEN for NegativeInteger",
+                "    assert_eq!(result, \"-2147483648\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1598 @@
+{
+  "name": "url::origin::url_origin",
+  "mod_info": {
+    "name": "origin",
+    "loc": "url/src/lib.rs:217:1:217:12"
+  },
+  "visible": true,
+  "loc": "url/src/origin.rs:17:1:36:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: scheme matches \"blob\" at line 20 is true\n",
+        "precondition: scheme matches \"blob\" at line 19 is true\n",
+        "precondition: result matches Err(_) at line 22 is true\n"
+      ],
+      "input_infer": "url input containing scheme \"blob\" and path that cannot be parsed as a valid URL\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let invalid_path = \"invalid_path\"; // A path that cannot be parsed as a valid URL.",
+                "    let url_with_blob = Url {",
+                "        serialization: format!(\"blob:{}\", invalid_path),",
+                "        scheme_end: 4, // Length of \"blob\"",
+                "        username_end: 0,",
+                "        host_start: 0,",
+                "        host_end: 0,",
+                "        host: Host::Domain(\"\".to_owned()), // No host",
+                "        port: None,",
+                "        path_start: 4, // Start after the scheme",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    ",
+                "    let _ = url_origin(&url_with_blob);",
+                "}"
+              ],
+              "oracle": [
+                "    url_origin(&url_with_blob).is_opaque() == true",
+                "    url_origin(&url_with_blob).is_tuple() == false",
+                "    url_origin(&url_with_blob).ascii_serialization() == \"\"",
+                "    url_origin(&url_with_blob).unicode_serialization() == \"\"",
+                "    url_origin(&url_with_blob).0 == 0  // Check if OpaqueOrigin is instantiated",
+                "    url_with_blob.scheme() == \"blob\"",
+                "    url_with_blob.path() == \"invalid_path\"",
+                "    url_with_blob.host().is_none() == true",
+                "    url_with_blob.port_or_known_default().is_none() == true"
+              ],
+              "code": [
+                "{",
+                "    let invalid_path = \"invalid_path\"; // A path that cannot be parsed as a valid URL.",
+                "    let url_with_blob = Url {",
+                "        serialization: format!(\"blob:{}\", invalid_path),",
+                "        scheme_end: 4, // Length of \"blob\"",
+                "        username_end: 0,",
+                "        host_start: 0,",
+                "        host_end: 0,",
+                "        host: Host::Domain(\"\".to_owned()), // No host",
+                "        port: None,",
+                "        path_start: 4, // Start after the scheme",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    ",
+                "    let _ = url_origin(&url_with_blob);",
+                "    url_origin(&url_with_blob).is_opaque() == true",
+                "    url_origin(&url_with_blob).is_tuple() == false",
+                "    url_origin(&url_with_blob).ascii_serialization() == \"\"",
+                "    url_origin(&url_with_blob).unicode_serialization() == \"\"",
+                "    url_origin(&url_with_blob).0 == 0  // Check if OpaqueOrigin is instantiated",
+                "    url_with_blob.scheme() == \"blob\"",
+                "    url_with_blob.path() == \"invalid_path\"",
+                "    url_with_blob.host().is_none() == true",
+                "    url_with_blob.port_or_known_default().is_none() == true",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: scheme matches \"blob\" at line 20 is true\n",
+        "precondition: scheme matches \"blob\" at line 19 is true\n",
+        "precondition: result matches Ok(ref url) at line 22 is true\n",
+        "precondition: result matches Ok(ref url) at line 22 is true\n"
+      ],
+      "input_infer": "input: a Url instance with scheme \"blob\" and a valid path that can be parsed to return a valid Url object in the Ok result of Url::parse\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let valid_blob_url = Url::parse(\"blob:http://example.com/resource\").unwrap();",
+                "    let origin = url_origin(&valid_blob_url);",
+                "}"
+              ],
+              "oracle": [
+                "    let valid_blob_url = Url::parse(\"blob:http://example.com/resource\").unwrap();",
+                "    assert_eq!(origin, Origin::Tuple(\"blob\".to_owned(), valid_blob_url.host().unwrap().to_owned(), valid_blob_url.port_or_known_default().unwrap()));"
+              ],
+              "code": [
+                "{",
+                "    let valid_blob_url = Url::parse(\"blob:http://example.com/resource\").unwrap();",
+                "    let origin = url_origin(&valid_blob_url);",
+                "    let valid_blob_url = Url::parse(\"blob:http://example.com/resource\").unwrap();",
+                "    assert_eq!(origin, Origin::Tuple(\"blob\".to_owned(), valid_blob_url.host().unwrap().to_owned(), valid_blob_url.port_or_known_default().unwrap()));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let valid_blob_url_with_path = Url::parse(\"blob:http://example.com/resource/path\").unwrap();",
+                "    let origin = url_origin(&valid_blob_url_with_path);",
+                "}"
+              ],
+              "oracle": [
+                "    origin.is_tuple() == false",
+                "    origin.ascii_serialization() == origin.unicode_serialization()",
+                "    origin == Origin::new_opaque()  // For \"blob\" scheme",
+                "    origin == Origin::Opaque(OpaqueOrigin(0))  // Opaque origin counter starts at 0",
+                "    url_origin(&valid_blob_url_with_path) == origin  // Consistency check with function call"
+              ],
+              "code": [
+                "{",
+                "    let valid_blob_url_with_path = Url::parse(\"blob:http://example.com/resource/path\").unwrap();",
+                "    let origin = url_origin(&valid_blob_url_with_path);",
+                "    origin.is_tuple() == false",
+                "    origin.ascii_serialization() == origin.unicode_serialization()",
+                "    origin == Origin::new_opaque()  // For \"blob\" scheme",
+                "    origin == Origin::Opaque(OpaqueOrigin(0))  // Opaque origin counter starts at 0",
+                "    url_origin(&valid_blob_url_with_path) == origin  // Consistency check with function call",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let complex_blob_url = Url::parse(\"blob:http://example.com/path/to/resource\").unwrap();",
+                "    let origin = url_origin(&complex_blob_url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(origin, Origin::Tuple(\"blob\".to_owned(), Host::Domain(\"example.com\".to_owned()), 80));",
+                "    assert!(matches!(origin, Origin::Tuple(_, _, _)));",
+                "    assert!(url_origin(&complex_blob_url).is_tuple());",
+                "    assert_eq!(url_origin(&complex_blob_url).ascii_serialization(), \"blob:http://example.com\");",
+                "    assert_eq!(url_origin(&complex_blob_url).unicode_serialization(), \"blob:http://example.com\");"
+              ],
+              "code": [
+                "{",
+                "    let complex_blob_url = Url::parse(\"blob:http://example.com/path/to/resource\").unwrap();",
+                "    let origin = url_origin(&complex_blob_url);",
+                "    assert_eq!(origin, Origin::Tuple(\"blob\".to_owned(), Host::Domain(\"example.com\".to_owned()), 80));",
+                "    assert!(matches!(origin, Origin::Tuple(_, _, _)));",
+                "    assert!(url_origin(&complex_blob_url).is_tuple());",
+                "    assert_eq!(url_origin(&complex_blob_url).ascii_serialization(), \"blob:http://example.com\");",
+                "    assert_eq!(url_origin(&complex_blob_url).unicode_serialization(), \"blob:http://example.com\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: scheme matches \"blob\" at line 20 is false\n",
+        "precondition: scheme matches \"ftp\" at line 27 is true\n",
+        "precondition: scheme matches \"https\" or \"wss\" or \"http\" or \"ftp\" or \"ws\" at line 19 is true\n",
+        "expected return value/type: Origin::Tuple(\n            scheme.to_owned(),\n            url.host().unwrap().to_owned(),\n            url.port_or_known_default().unwrap(),\n        )\n"
+      ],
+      "input_infer": "input: Url object with scheme set to \"ftp\", a valid host, and a port number within the range of 1 to 65535.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"ftp://example.com:21\"),",
+                "        scheme_end: 3,",
+                "        username_end: 0,",
+                "        host_start: 6,",
+                "        host_end: 16,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(21),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_ , Origin::Tuple(",
+                "    \"ftp\".to_owned(),",
+                "    Host::Domain(\"example.com\".to_owned()),",
+                "    Some(21),",
+                "    ));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"ftp://example.com:21\"),",
+                "        scheme_end: 3,",
+                "        username_end: 0,",
+                "        host_start: 6,",
+                "        host_end: 16,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(21),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "    assert_eq!(_ , Origin::Tuple(",
+                "    \"ftp\".to_owned(),",
+                "    Host::Domain(\"example.com\".to_owned()),",
+                "    Some(21),",
+                "    ));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"https://example.com:443\"),",
+                "        scheme_end: 5,",
+                "        username_end: 0,",
+                "        host_start: 8,",
+                "        host_end: 18,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(443),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(url_origin(&url), Origin::Tuple(String::from(\"https\"), Host::Domain(String::from(\"example.com\")), 443));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"https://example.com:443\"),",
+                "        scheme_end: 5,",
+                "        username_end: 0,",
+                "        host_start: 8,",
+                "        host_end: 18,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(443),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "    assert_eq!(url_origin(&url), Origin::Tuple(String::from(\"https\"), Host::Domain(String::from(\"example.com\")), 443));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"http://example.net:80\"),",
+                "        scheme_end: 4,",
+                "        username_end: 0,",
+                "        host_start: 7,",
+                "        host_end: 17,",
+                "        host: Host::Domain(String::from(\"example.net\")),",
+                "        port: Some(80),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    let url = Url {",
+                "    serialization: String::from(\"http://example.net:80\"),",
+                "    scheme_end: 4,",
+                "    username_end: 0,",
+                "    host_start: 7,",
+                "    host_end: 17,",
+                "    host: Host::Domain(String::from(\"example.net\")),",
+                "    port: Some(80),",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    assert_eq!(url_origin(&url), Origin::Tuple(String::from(\"http\"), Host::Domain(String::from(\"example.net\")), 80));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"http://example.net:80\"),",
+                "        scheme_end: 4,",
+                "        username_end: 0,",
+                "        host_start: 7,",
+                "        host_end: 17,",
+                "        host: Host::Domain(String::from(\"example.net\")),",
+                "        port: Some(80),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "    let url = Url {",
+                "    serialization: String::from(\"http://example.net:80\"),",
+                "    scheme_end: 4,",
+                "    username_end: 0,",
+                "    host_start: 7,",
+                "    host_end: 17,",
+                "    host: Host::Domain(String::from(\"example.net\")),",
+                "    port: Some(80),",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    assert_eq!(url_origin(&url), Origin::Tuple(String::from(\"http\"), Host::Domain(String::from(\"example.net\")), 80));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"ws://example.org:8080\"),",
+                "        scheme_end: 2,",
+                "        username_end: 0,",
+                "        host_start: 5,",
+                "        host_end: 15,",
+                "        host: Host::Domain(String::from(\"example.org\")),",
+                "        port: Some(8080),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    let url = Url {",
+                "    serialization: String::from(\"ws://example.org:8080\"),",
+                "    scheme_end: 2,",
+                "    username_end: 0,",
+                "    host_start: 5,",
+                "    host_end: 15,",
+                "    host: Host::Domain(String::from(\"example.org\")),",
+                "    port: Some(8080),",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(String::from(\"ws\"), Host::Domain(String::from(\"example.org\")), 8080));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"ws://example.org:8080\"),",
+                "        scheme_end: 2,",
+                "        username_end: 0,",
+                "        host_start: 5,",
+                "        host_end: 15,",
+                "        host: Host::Domain(String::from(\"example.org\")),",
+                "        port: Some(8080),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "    let url = Url {",
+                "    serialization: String::from(\"ws://example.org:8080\"),",
+                "    scheme_end: 2,",
+                "    username_end: 0,",
+                "    host_start: 5,",
+                "    host_end: 15,",
+                "    host: Host::Domain(String::from(\"example.org\")),",
+                "    port: Some(8080),",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(String::from(\"ws\"), Host::Domain(String::from(\"example.org\")), 8080));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"wss://example.com:8443\"),",
+                "        scheme_end: 4,",
+                "        username_end: 0,",
+                "        host_start: 7,",
+                "        host_end: 17,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(8443),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_,",
+                "    Origin::Tuple(",
+                "    String::from(\"wss\"),",
+                "    Host::Domain(String::from(\"example.com\")),",
+                "    Some(8443),",
+                "    )",
+                "    );"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"wss://example.com:8443\"),",
+                "        scheme_end: 4,",
+                "        username_end: 0,",
+                "        host_start: 7,",
+                "        host_end: 17,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(8443),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "    assert_eq!(_,",
+                "    Origin::Tuple(",
+                "    String::from(\"wss\"),",
+                "    Host::Domain(String::from(\"example.com\")),",
+                "    Some(8443),",
+                "    )",
+                "    );",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: scheme matches \"blob\" at line 20 is false\n",
+        "precondition: scheme matches \"ftp\" at line 27 is false\n",
+        "precondition: scheme matches \"http\" at line 27 is true\n",
+        "precondition: scheme matches \"https\" or \"wss\" or \"http\" or \"ftp\" or \"ws\" at line 19 is true\n",
+        "expected return value/type: Origin::Tuple(\n            scheme.to_owned(),\n            url.host().unwrap().to_owned(),\n            url.port_or_known_default().unwrap(),\n        )\n"
+      ],
+      "input_infer": "input: Any URL string starting with \"http\" followed by a valid host and port, such as \"http://example.com:80\" or \"http://localhost:8080\"\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"http://example.com:80\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(url_origin(&url), Origin::Tuple(\"http\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(80)));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"http://example.com:80\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "    assert_eq!(url_origin(&url), Origin::Tuple(\"http\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(80)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"https://example.com:443\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(url.scheme(), \"https\");",
+                "    assert!(url.host().is_some());",
+                "    assert_eq!(url.port_or_known_default(), Some(443));",
+                "    assert!(matches!(url_origin(&url), Origin::Tuple(_, _, _)));",
+                "    assert!(matches!(url_origin(&url), Origin::Tuple(scheme, _, _) if scheme == \"https\"));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"https://example.com:443\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "    assert_eq!(url.scheme(), \"https\");",
+                "    assert!(url.host().is_some());",
+                "    assert_eq!(url.port_or_known_default(), Some(443));",
+                "    assert!(matches!(url_origin(&url), Origin::Tuple(_, _, _)));",
+                "    assert!(matches!(url_origin(&url), Origin::Tuple(scheme, _, _) if scheme == \"https\"));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"ws://example.com:3000\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(url_origin(&url), Origin::Tuple(\"ws\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(3000)));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"ws://example.com:3000\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "    assert_eq!(url_origin(&url), Origin::Tuple(\"ws\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(3000)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"wss://example.com:3001\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    let url = Url::parse(\"http://example.com:3000\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"http\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(3000)));",
+                "    ",
+                "    let url = Url::parse(\"https://example.com\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"https\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));",
+                "    ",
+                "    let url = Url::parse(\"ws://example.com\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"ws\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(80)));",
+                "    ",
+                "    let url = Url::parse(\"ftp://example.com:21\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"ftp\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(21)));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"wss://example.com:3001\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "    let url = Url::parse(\"http://example.com:3000\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"http\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(3000)));",
+                "    ",
+                "    let url = Url::parse(\"https://example.com\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"https\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));",
+                "    ",
+                "    let url = Url::parse(\"ws://example.com\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"ws\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(80)));",
+                "    ",
+                "    let url = Url::parse(\"ftp://example.com:21\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"ftp\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(21)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"http://localhost:8080\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    url_origin(&url) == Origin::Tuple(\"http\".to_owned(), url.host().unwrap().to_owned(), url.port_or_known_default().unwrap())"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"http://localhost:8080\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "    url_origin(&url) == Origin::Tuple(\"http\".to_owned(), url.host().unwrap().to_owned(), url.port_or_known_default().unwrap())",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"https://localhost:8443\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(url_origin(&url), Origin::Tuple(\"https\".to_owned(), Host::Domain(\"localhost\".to_owned()), Some(8443)));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"https://localhost:8443\").unwrap();",
+                "    let _ = url_origin(&url);",
+                "    assert_eq!(url_origin(&url), Origin::Tuple(\"https\".to_owned(), Host::Domain(\"localhost\".to_owned()), Some(8443)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "precondition: scheme matches \"blob\" at line 20 is false\n",
+        "precondition: scheme matches \"ftp\" at line 27 is false\n",
+        "precondition: scheme matches \"http\" at line 27 is false\n",
+        "precondition: scheme matches \"https\" at line 27 is true\n",
+        "precondition: scheme matches \"https\" or \"wss\" or \"http\" or \"ftp\" or \"ws\" at line 19 is true\n",
+        "expected return value/type: Origin::Tuple(\n            scheme.to_owned(),\n            url.host().unwrap().to_owned(),\n            url.port_or_known_default().unwrap(),\n        )\n"
+      ],
+      "input_infer": "Test input conditions/ranges: input URL string with scheme \"https\", an optional valid host (like \"example.com\"), and an optional port (like 443), ensuring the URL is well-formed without any trailing spaces or illegal characters.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_url = \"https://example.com:443/path\";",
+                "    let url = Url::parse(input_url).unwrap();",
+                "    let origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(origin, Origin::Tuple(\"https\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));"
+              ],
+              "code": [
+                "{",
+                "    let input_url = \"https://example.com:443/path\";",
+                "    let url = Url::parse(input_url).unwrap();",
+                "    let origin = url_origin(&url);",
+                "    assert_eq!(origin, Origin::Tuple(\"https\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_url = \"https://example.com/path\";",
+                "    let url = Url::parse(input_url).unwrap();",
+                "    let origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(origin, Origin::Tuple(\"https\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));"
+              ],
+              "code": [
+                "{",
+                "    let input_url = \"https://example.com/path\";",
+                "    let url = Url::parse(input_url).unwrap();",
+                "    let origin = url_origin(&url);",
+                "    assert_eq!(origin, Origin::Tuple(\"https\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_url = \"https://sub.example.com:443/path\";",
+                "    let url = Url::parse(input_url).unwrap();",
+                "    let origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(origin, Origin::Tuple(\"https\".to_owned(), Host::Domain(\"sub.example.com\".to_owned()), Some(443)));"
+              ],
+              "code": [
+                "{",
+                "    let input_url = \"https://sub.example.com:443/path\";",
+                "    let url = Url::parse(input_url).unwrap();",
+                "    let origin = url_origin(&url);",
+                "    assert_eq!(origin, Origin::Tuple(\"https\".to_owned(), Host::Domain(\"sub.example.com\".to_owned()), Some(443)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_url = \"https://192.168.1.1:443/path\";",
+                "    let url = Url::parse(input_url).unwrap();",
+                "    let origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(origin, Origin::Tuple(\"https\".to_owned(), Host::Ipv4(Ipv4Addr::new(192, 168, 1, 1)), Some(443));"
+              ],
+              "code": [
+                "{",
+                "    let input_url = \"https://192.168.1.1:443/path\";",
+                "    let url = Url::parse(input_url).unwrap();",
+                "    let origin = url_origin(&url);",
+                "    assert_eq!(origin, Origin::Tuple(\"https\".to_owned(), Host::Ipv4(Ipv4Addr::new(192, 168, 1, 1)), Some(443));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_url = \"https://[2001:db8::1]:443/path\";",
+                "    let url = Url::parse(input_url).unwrap();",
+                "    let origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(origin, Origin::Tuple(\"https\".to_owned(), Host::Ipv6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0x1)), 443));"
+              ],
+              "code": [
+                "{",
+                "    let input_url = \"https://[2001:db8::1]:443/path\";",
+                "    let url = Url::parse(input_url).unwrap();",
+                "    let origin = url_origin(&url);",
+                "    assert_eq!(origin, Origin::Tuple(\"https\".to_owned(), Host::Ipv6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0x1)), 443));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "precondition: scheme matches \"blob\" at line 20 is false\n",
+        "precondition: scheme matches \"ftp\" at line 27 is false\n",
+        "precondition: scheme matches \"http\" at line 27 is false\n",
+        "precondition: scheme matches \"https\" at line 27 is false\n",
+        "precondition: scheme matches \"ws\" at line 27 is true\n",
+        "precondition: scheme matches \"https\" or \"wss\" or \"http\" or \"ftp\" or \"ws\" at line 19 is true\n",
+        "expected return value/type: Origin::Tuple(\n            scheme.to_owned(),\n            url.host().unwrap().to_owned(),\n            url.port_or_known_default().unwrap(),\n        )\n"
+      ],
+      "input_infer": "input values for `url.scheme()`: \"ws\", \"wss\", \"ftp\", \"http\", \"https\" with optional host strings and port numbers in valid ranges (0-65535)\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"ws://example.com:8080\"),",
+                "        scheme_end: 2,",
+                "        username_end: 0,",
+                "        host_start: 5,",
+                "        host_end: 16,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(8080),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_, Origin::Tuple(String::from(\"ws\"), Host::Domain(String::from(\"example.com\")), Some(8080)));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"ws://example.com:8080\"),",
+                "        scheme_end: 2,",
+                "        username_end: 0,",
+                "        host_start: 5,",
+                "        host_end: 16,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(8080),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "    assert_eq!(_, Origin::Tuple(String::from(\"ws\"), Host::Domain(String::from(\"example.com\")), Some(8080)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"http://example.com:80\"),",
+                "        scheme_end: 4,",
+                "        username_end: 0,",
+                "        host_start: 7,",
+                "        host_end: 18,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(80),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(",
+                "    url_origin(&url),",
+                "    Origin::Tuple(",
+                "    String::from(\"http\"),",
+                "    Host::Domain(String::from(\"example.com\")),",
+                "    Some(80)",
+                "    )",
+                "    );"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"http://example.com:80\"),",
+                "        scheme_end: 4,",
+                "        username_end: 0,",
+                "        host_start: 7,",
+                "        host_end: 18,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(80),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "    assert_eq!(",
+                "    url_origin(&url),",
+                "    Origin::Tuple(",
+                "    String::from(\"http\"),",
+                "    Host::Domain(String::from(\"example.com\")),",
+                "    Some(80)",
+                "    )",
+                "    );",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"https://example.com:443\"),",
+                "        scheme_end: 5,",
+                "        username_end: 0,",
+                "        host_start: 6,",
+                "        host_end: 17,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(443),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(&_url_origin(&url), Origin::Tuple(\"http\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));",
+                "    ",
+                "    let url = Url {",
+                "    serialization: String::from(\"ftp://example.com:21\"),",
+                "    scheme_end: 4,",
+                "    username_end: 0,",
+                "    host_start: 5,",
+                "    host_end: 17,",
+                "    host: Host::Domain(String::from(\"example.com\")),",
+                "    port: Some(21),",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    assert_eq!(&_url_origin(&url), Origin::Tuple(\"ftp\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(21)));",
+                "    ",
+                "    let url = Url {",
+                "    serialization: String::from(\"ws://example.com:80\"),",
+                "    scheme_end: 2,",
+                "    username_end: 0,",
+                "    host_start: 3,",
+                "    host_end: 17,",
+                "    host: Host::Domain(String::from(\"example.com\")),",
+                "    port: Some(80),",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    assert_eq!(&_url_origin(&url), Origin::Tuple(\"ws\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(80)));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"https://example.com:443\"),",
+                "        scheme_end: 5,",
+                "        username_end: 0,",
+                "        host_start: 6,",
+                "        host_end: 17,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(443),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "    assert_eq!(&_url_origin(&url), Origin::Tuple(\"http\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));",
+                "    ",
+                "    let url = Url {",
+                "    serialization: String::from(\"ftp://example.com:21\"),",
+                "    scheme_end: 4,",
+                "    username_end: 0,",
+                "    host_start: 5,",
+                "    host_end: 17,",
+                "    host: Host::Domain(String::from(\"example.com\")),",
+                "    port: Some(21),",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    assert_eq!(&_url_origin(&url), Origin::Tuple(\"ftp\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(21)));",
+                "    ",
+                "    let url = Url {",
+                "    serialization: String::from(\"ws://example.com:80\"),",
+                "    scheme_end: 2,",
+                "    username_end: 0,",
+                "    host_start: 3,",
+                "    host_end: 17,",
+                "    host: Host::Domain(String::from(\"example.com\")),",
+                "    port: Some(80),",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    assert_eq!(&_url_origin(&url), Origin::Tuple(\"ws\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(80)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"ftp://ftp.example.com:21\"),",
+                "        scheme_end: 3,",
+                "        username_end: 0,",
+                "        host_start: 6,",
+                "        host_end: 20,",
+                "        host: Host::Domain(String::from(\"ftp.example.com\")),",
+                "        port: Some(21),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    url_origin(&url) == Origin::Tuple(",
+                "    String::from(\"ftp\"),",
+                "    Host::Domain(String::from(\"ftp.example.com\")),",
+                "    Some(21)",
+                "    )"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"ftp://ftp.example.com:21\"),",
+                "        scheme_end: 3,",
+                "        username_end: 0,",
+                "        host_start: 6,",
+                "        host_end: 20,",
+                "        host: Host::Domain(String::from(\"ftp.example.com\")),",
+                "        port: Some(21),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "    url_origin(&url) == Origin::Tuple(",
+                "    String::from(\"ftp\"),",
+                "    Host::Domain(String::from(\"ftp.example.com\")),",
+                "    Some(21)",
+                "    )",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"wss://secure.example.com:8443\"),",
+                "        scheme_end: 4,",
+                "        username_end: 0,",
+                "        host_start: 5,",
+                "        host_end: 23,",
+                "        host: Host::Domain(String::from(\"secure.example.com\")),",
+                "        port: Some(8443),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    let scheme = url.scheme(); assert_eq!(scheme, \"wss\");",
+                "    let host = url.host().unwrap(); assert_eq!(host, Host::Domain(String::from(\"secure.example.com\")));",
+                "    let port = url.port_or_known_default().unwrap(); assert_eq!(port, 8443);",
+                "    let origin = url_origin(&url); assert!(matches!(origin, Origin::Tuple(_, _, _)));",
+                "    assert_eq!(origin.scheme(), \"wss\");",
+                "    assert_eq!(origin.host(), Host::Domain(String::from(\"secure.example.com\")));",
+                "    assert_eq!(origin.port(), 8443);"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"wss://secure.example.com:8443\"),",
+                "        scheme_end: 4,",
+                "        username_end: 0,",
+                "        host_start: 5,",
+                "        host_end: 23,",
+                "        host: Host::Domain(String::from(\"secure.example.com\")),",
+                "        port: Some(8443),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _ = url_origin(&url);",
+                "    let scheme = url.scheme(); assert_eq!(scheme, \"wss\");",
+                "    let host = url.host().unwrap(); assert_eq!(host, Host::Domain(String::from(\"secure.example.com\")));",
+                "    let port = url.port_or_known_default().unwrap(); assert_eq!(port, 8443);",
+                "    let origin = url_origin(&url); assert!(matches!(origin, Origin::Tuple(_, _, _)));",
+                "    assert_eq!(origin.scheme(), \"wss\");",
+                "    assert_eq!(origin.host(), Host::Domain(String::from(\"secure.example.com\")));",
+                "    assert_eq!(origin.port(), 8443);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "precondition: scheme matches \"blob\" at line 20 is false\n",
+        "precondition: scheme matches \"ftp\" at line 27 is false\n",
+        "precondition: scheme matches \"http\" at line 27 is false\n",
+        "precondition: scheme matches \"https\" at line 27 is false\n",
+        "precondition: scheme matches \"ws\" at line 27 is false\n",
+        "precondition: scheme matches \"wss\" at line 27 is true\n",
+        "precondition: scheme matches \"https\" or \"wss\" or \"http\" or \"ftp\" or \"ws\" at line 19 is true\n",
+        "expected return value/type: Origin::Tuple(\n            scheme.to_owned(),\n            url.host().unwrap().to_owned(),\n            url.port_or_known_default().unwrap(),\n        )\n"
+      ],
+      "input_infer": "test input conditions or ranges: input URL with scheme \"wss\" where host is valid (e.g., \"wss://example.com\") and port is either specified (e.g., 443 for \"wss\") or defaults to appropriate value for \"wss\" scheme\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"wss://example.com\").unwrap();",
+                "    let result = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Origin::Tuple(\"wss\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"wss://example.com\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"wss\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"wss://example.com:443\").unwrap();",
+                "    let result = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Origin::Tuple(\"wss\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"wss://example.com:443\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"wss\".to_owned(), Host::Domain(\"example.com\".to_owned()), Some(443)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"wss://example.org\").unwrap();",
+                "    let result = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Origin::Tuple(\"wss\".to_owned(), Host::Domain(\"example.org\".to_owned()), Some(default_port(\"wss\"))));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"wss://example.org\").unwrap();",
+                "    let result = url_origin(&url);",
+                "    assert_eq!(result, Origin::Tuple(\"wss\".to_owned(), Host::Domain(\"example.org\".to_owned()), Some(default_port(\"wss\"))));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 8,
+      "prompt_conds": [
+        "precondition: scheme matches \"blob\" at line 20 is false\n",
+        "precondition: scheme matches \"ftp\" at line 27 is false\n",
+        "precondition: scheme matches \"http\" at line 27 is false\n",
+        "precondition: scheme matches \"https\" at line 27 is false\n",
+        "precondition: scheme matches \"ws\" at line 27 is false\n",
+        "precondition: scheme matches \"wss\" at line 27 is false\n",
+        "precondition: scheme matches \"file\" at line 33 is true\n",
+        "precondition: scheme matches \"file\" at line 19 is true\n"
+      ],
+      "input_infer": "input: \"file:///path/to/file.txt\"\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"file:///path/to/file.txt\").unwrap();",
+                "    let origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    let url = Url::parse(\"file:///path/to/file.txt\").unwrap();",
+                "    let origin = url_origin(&url);",
+                "    assert!(matches!(origin, Origin::Opaque(_)));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"file:///path/to/file.txt\").unwrap();",
+                "    let origin = url_origin(&url);",
+                "    let url = Url::parse(\"file:///path/to/file.txt\").unwrap();",
+                "    let origin = url_origin(&url);",
+                "    assert!(matches!(origin, Origin::Opaque(_)));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"file:///\").unwrap();",
+                "    let origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(origin, Origin::new_opaque());"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"file:///\").unwrap();",
+                "    let origin = url_origin(&url);",
+                "    assert_eq!(origin, Origin::new_opaque());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"file:///path/to/file.txt#fragment\").unwrap();",
+                "    let origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(origin, Origin::new_opaque());",
+                "    assert!(url.scheme() == \"file\");",
+                "    assert!(url.path() == \"/path/to/file.txt\");",
+                "    assert!(url.fragment().is_some());",
+                "    assert!(url.host().is_none());",
+                "    assert!(url.port().is_none());"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"file:///path/to/file.txt#fragment\").unwrap();",
+                "    let origin = url_origin(&url);",
+                "    assert_eq!(origin, Origin::new_opaque());",
+                "    assert!(url.scheme() == \"file\");",
+                "    assert!(url.path() == \"/path/to/file.txt\");",
+                "    assert!(url.fragment().is_some());",
+                "    assert!(url.host().is_none());",
+                "    assert!(url.port().is_none());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url::parse(\"file:///path/to/file.txt?query=value\").unwrap();",
+                "    let origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(origin, Origin::new_opaque());"
+              ],
+              "code": [
+                "{",
+                "    let url = Url::parse(\"file:///path/to/file.txt?query=value\").unwrap();",
+                "    let origin = url_origin(&url);",
+                "    assert_eq!(origin, Origin::new_opaque());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 9,
+      "prompt_conds": [
+        "precondition: scheme matches \"blob\" at line 20 is false\n",
+        "precondition: scheme matches \"ftp\" at line 27 is false\n",
+        "precondition: scheme matches \"http\" at line 27 is false\n",
+        "precondition: scheme matches \"https\" at line 27 is false\n",
+        "precondition: scheme matches \"ws\" at line 27 is false\n",
+        "precondition: scheme matches \"wss\" at line 27 is false\n",
+        "precondition: scheme matches \"file\" at line 33 is false\n"
+      ],
+      "input_infer": "The scheme must be any string that is not \"blob\", \"ftp\", \"http\", \"https\", \"ws\", \"wss\", or \"file\".\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"ftp://example.com\"),",
+                "        scheme_end: 3,",
+                "        username_end: 0,",
+                "        host_start: 6,",
+                "        host_end: 18,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(21),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    let url = Url {",
+                "    serialization: String::from(\"ftp://example.com\"),",
+                "    scheme_end: 3,",
+                "    username_end: 0,",
+                "    host_start: 6,",
+                "    host_end: 18,",
+                "    host: Host::Domain(String::from(\"example.com\")),",
+                "    port: Some(21),",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    let _origin = url_origin(&url);",
+                "    assert_eq!(_origin, Origin::new_opaque());"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"ftp://example.com\"),",
+                "        scheme_end: 3,",
+                "        username_end: 0,",
+                "        host_start: 6,",
+                "        host_end: 18,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: Some(21),",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _origin = url_origin(&url);",
+                "    let url = Url {",
+                "    serialization: String::from(\"ftp://example.com\"),",
+                "    scheme_end: 3,",
+                "    username_end: 0,",
+                "    host_start: 6,",
+                "    host_end: 18,",
+                "    host: Host::Domain(String::from(\"example.com\")),",
+                "    port: Some(21),",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    let _origin = url_origin(&url);",
+                "    assert_eq!(_origin, Origin::new_opaque());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"invalidscheme://example.com\"),",
+                "        scheme_end: 14,",
+                "        username_end: 0,",
+                "        host_start: 13,",
+                "        host_end: 25,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: None,",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_origin, Origin::new_opaque());"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"invalidscheme://example.com\"),",
+                "        scheme_end: 14,",
+                "        username_end: 0,",
+                "        host_start: 13,",
+                "        host_end: 25,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: None,",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _origin = url_origin(&url);",
+                "    assert_eq!(_origin, Origin::new_opaque());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"://example.com\"),",
+                "        scheme_end: 0,",
+                "        username_end: 0,",
+                "        host_start: 3,",
+                "        host_end: 15,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: None,",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    let url = Url {",
+                "    serialization: String::from(\"://example.com\"),",
+                "    scheme_end: 0,",
+                "    username_end: 0,",
+                "    host_start: 3,",
+                "    host_end: 15,",
+                "    host: Host::Domain(String::from(\"example.com\")),",
+                "    port: None,",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    let origin = url_origin(&url);",
+                "    assert!(matches!(origin, Origin::Opaque(_)));"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"://example.com\"),",
+                "        scheme_end: 0,",
+                "        username_end: 0,",
+                "        host_start: 3,",
+                "        host_end: 15,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: None,",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _origin = url_origin(&url);",
+                "    let url = Url {",
+                "    serialization: String::from(\"://example.com\"),",
+                "    scheme_end: 0,",
+                "    username_end: 0,",
+                "    host_start: 3,",
+                "    host_end: 15,",
+                "    host: Host::Domain(String::from(\"example.com\")),",
+                "    port: None,",
+                "    path_start: 0,",
+                "    query_start: None,",
+                "    fragment_start: None,",
+                "    };",
+                "    let origin = url_origin(&url);",
+                "    assert!(matches!(origin, Origin::Opaque(_)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"inv@lid://example.com\"),",
+                "        scheme_end: 8,",
+                "        username_end: 0,",
+                "        host_start: 9,",
+                "        host_end: 21,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: None,",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _origin = url_origin(&url);",
+                "}"
+              ],
+              "oracle": [
+                "    _origin is of type Origin",
+                "    _origin should match the pattern Origin::Opaque(_)",
+                "    _origin should not match Origin::Tuple(_, _, _)"
+              ],
+              "code": [
+                "{",
+                "    let url = Url {",
+                "        serialization: String::from(\"inv@lid://example.com\"),",
+                "        scheme_end: 8,",
+                "        username_end: 0,",
+                "        host_start: 9,",
+                "        host_end: 21,",
+                "        host: Host::Domain(String::from(\"example.com\")),",
+                "        port: None,",
+                "        path_start: 0,",
+                "        query_start: None,",
+                "        fragment_start: None,",
+                "    };",
+                "    let _origin = url_origin(&url);",
+                "    _origin is of type Origin",
+                "    _origin should match the pattern Origin::Opaque(_)",
+                "    _origin should not match Origin::Tuple(_, _, _)",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

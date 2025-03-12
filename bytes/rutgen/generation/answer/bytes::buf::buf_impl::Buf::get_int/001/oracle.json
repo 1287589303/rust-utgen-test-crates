@@ -1,0 +1,568 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x7F\"[..];",
+          "    buf.get_int(1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert_eq!(buf.get_int(1), 127);",
+          "    assert_panics!(buf.get_int(2));",
+          "    assert_panics!(buf.get_int(9));"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x7F\"[..];",
+          "    buf.get_int(1);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert_eq!(buf.get_int(1), 127);",
+          "    assert_panics!(buf.get_int(2));",
+          "    assert_panics!(buf.get_int(9));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x80\"[..];",
+          "    buf.get_int(1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(1), -128);",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(10)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(0)).is_err());",
+          "    buf = &b\"\\x00\\x00\\x00\\x01\"[..];",
+          "    assert_eq!(buf.get_int(4), 1);",
+          "    buf = &b\"\\xFF\\xFF\\xFF\\xFF\"[..];",
+          "    assert_eq!(buf.get_int(4), -1);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x80\"[..];",
+          "    buf.get_int(1);",
+          "    assert_eq!(buf.get_int(1), -128);",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(10)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(0)).is_err());",
+          "    buf = &b\"\\x00\\x00\\x00\\x01\"[..];",
+          "    assert_eq!(buf.get_int(4), 1);",
+          "    buf = &b\"\\xFF\\xFF\\xFF\\xFF\"[..];",
+          "    assert_eq!(buf.get_int(4), -1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\\x02\"[..];",
+          "    buf.get_int(2);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(2), 0x000102);",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(3)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(9)).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\\x02\"[..];",
+          "    buf.get_int(2);",
+          "    assert_eq!(buf.get_int(2), 0x000102);",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(3)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(9)).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFE\"[..];",
+          "    buf.get_int(2);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(2), -1);",
+          "    assert_panics!(buf.get_int(3));",
+          "    assert_panics!(buf.get_int(8));",
+          "    assert_eq!(buf.get_int(1), 255);",
+          "    assert_panics!(buf.get_int(0));",
+          "    buf.advance(2);",
+          "    assert!(buf.has_remaining() == false);",
+          "    assert_panics!(buf.get_int(2));",
+          "    buf = &b\"\\x80\\x00\"[..];",
+          "    assert_eq!(buf.get_int(2), -32768);",
+          "    buf = &b\"\\x00\"[..];",
+          "    assert_eq!(buf.get_int(1), 0);",
+          "    buf = &b\"\\xFE\"[..];",
+          "    assert_eq!(buf.get_int(1), -2);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFE\"[..];",
+          "    buf.get_int(2);",
+          "    assert_eq!(buf.get_int(2), -1);",
+          "    assert_panics!(buf.get_int(3));",
+          "    assert_panics!(buf.get_int(8));",
+          "    assert_eq!(buf.get_int(1), 255);",
+          "    assert_panics!(buf.get_int(0));",
+          "    buf.advance(2);",
+          "    assert!(buf.has_remaining() == false);",
+          "    assert_panics!(buf.get_int(2));",
+          "    buf = &b\"\\x80\\x00\"[..];",
+          "    assert_eq!(buf.get_int(2), -32768);",
+          "    buf = &b\"\\x00\"[..];",
+          "    assert_eq!(buf.get_int(1), 0);",
+          "    buf = &b\"\\xFE\"[..];",
+          "    assert_eq!(buf.get_int(1), -2);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\\x02\\x03\"[..];",
+          "    buf.get_int(3);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(3), 0x010203);",
+          "    panic::catch_unwind(|| buf.get_int(9)).is_err();",
+          "    panic::catch_unwind(|| buf.get_int(10)).is_err();",
+          "    let mut buf_empty: &[u8] = &b\"\"[..];",
+          "    panic::catch_unwind(|| buf_empty.get_int(1)).is_err();"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\\x02\\x03\"[..];",
+          "    buf.get_int(3);",
+          "    assert_eq!(buf.get_int(3), 0x010203);",
+          "    panic::catch_unwind(|| buf.get_int(9)).is_err();",
+          "    panic::catch_unwind(|| buf.get_int(10)).is_err();",
+          "    let mut buf_empty: &[u8] = &b\"\"[..];",
+          "    panic::catch_unwind(|| buf_empty.get_int(1)).is_err();",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFE\\xFD\"[..];",
+          "    buf.get_int(3);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(3), -0x010203);",
+          "    assert_panics!(buf.get_int(4));",
+          "    assert_panics!(buf.get_int(8));",
+          "    assert_panics!(buf.get_int(10));",
+          "    buf = &b\"\\x01\\x02\\x03 hello\"[..];",
+          "    assert_eq!(buf.get_int(3), 0x010203);",
+          "    buf = &b\"\\x7F\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\"[..];",
+          "    assert_eq!(buf.get_int(8), 0x7FFFFFFFFFFFFFFF);",
+          "    buf = &b\"\\x80\\x00\\x00\\x00\\x00\\x00\\x00\\x00\"[..];",
+          "    assert_eq!(buf.get_int(8), -0x8000000000000000);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFE\\xFD\"[..];",
+          "    buf.get_int(3);",
+          "    assert_eq!(buf.get_int(3), -0x010203);",
+          "    assert_panics!(buf.get_int(4));",
+          "    assert_panics!(buf.get_int(8));",
+          "    assert_panics!(buf.get_int(10));",
+          "    buf = &b\"\\x01\\x02\\x03 hello\"[..];",
+          "    assert_eq!(buf.get_int(3), 0x010203);",
+          "    buf = &b\"\\x7F\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\"[..];",
+          "    assert_eq!(buf.get_int(8), 0x7FFFFFFFFFFFFFFF);",
+          "    buf = &b\"\\x80\\x00\\x00\\x00\\x00\\x00\\x00\\x00\"[..];",
+          "    assert_eq!(buf.get_int(8), -0x8000000000000000);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x00\\x00\\x00\\x01\"[..];",
+          "    buf.get_int(4);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(4), 1);",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(5)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(0)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(8)).is_err());",
+          "    buf = &b\"\\xFF\\xFF\\xFF\\xFF\"[..];",
+          "    assert_eq!(buf.get_int(4), -1);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x00\\x00\\x00\\x01\"[..];",
+          "    buf.get_int(4);",
+          "    assert_eq!(buf.get_int(4), 1);",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(5)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(0)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(8)).is_err());",
+          "    buf = &b\"\\xFF\\xFF\\xFF\\xFF\"[..];",
+          "    assert_eq!(buf.get_int(4), -1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFE\"[..];",
+          "    buf.get_int(4);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(3), 0xFFFFFFFE);",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(9)).is_err());",
+          "    assert_eq!(buf.get_int(2), 0xFFFF);",
+          "    buf.advance(4);",
+          "    assert!(buf.remaining() == 0);",
+          "    assert!(buf.has_remaining() == false);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFE\"[..];",
+          "    buf.get_int(4);",
+          "    assert_eq!(buf.get_int(3), 0xFFFFFFFE);",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(9)).is_err());",
+          "    assert_eq!(buf.get_int(2), 0xFFFF);",
+          "    buf.advance(4);",
+          "    assert!(buf.remaining() == 0);",
+          "    assert!(buf.has_remaining() == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x00\\x00\\x01\\x02\\x03\"[..];",
+          "    buf.get_int(5);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(3), 0x00000102i64);",
+          "    assert_eq!(buf.get_int(4), 0x00000102i64);",
+          "    assert_eq!(buf.get_int(5), buf.try_get_int(5).unwrap());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(9)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(6)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(0)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(8)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(7)).is_err());",
+          "    assert!(buf.remaining() >= 5);",
+          "    buf.advance(5);",
+          "    assert_eq!(buf.remaining(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x00\\x00\\x01\\x02\\x03\"[..];",
+          "    buf.get_int(5);",
+          "    assert_eq!(buf.get_int(3), 0x00000102i64);",
+          "    assert_eq!(buf.get_int(4), 0x00000102i64);",
+          "    assert_eq!(buf.get_int(5), buf.try_get_int(5).unwrap());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(9)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(6)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(0)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(8)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_int(7)).is_err());",
+          "    assert!(buf.remaining() >= 5);",
+          "    buf.advance(5);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+          "    buf.get_int(5);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(3), 0xFFFFFFFC);",
+          "    assert_eq!(buf.get_int(4), 0xFFFFFFFFFFFFFFFC);",
+          "    assert_panics!(buf.get_int(9));",
+          "    assert_panics!(buf.get_int(8));",
+          "    assert_panics!(buf.get_int(0));"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+          "    buf.get_int(5);",
+          "    assert_eq!(buf.get_int(3), 0xFFFFFFFC);",
+          "    assert_eq!(buf.get_int(4), 0xFFFFFFFFFFFFFFFC);",
+          "    assert_panics!(buf.get_int(9));",
+          "    assert_panics!(buf.get_int(8));",
+          "    assert_panics!(buf.get_int(0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x00\\x00\\x00\\x00\\x00\\x01\"[..];",
+          "    buf.get_int(6);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(6), 1);",
+          "    assert!(buf.get_int(9).is_err());",
+          "    assert!(buf.get_int(8).is_err());",
+          "    assert!(buf.get_int(7).is_err());",
+          "    assert!(buf.get_int(5) == 1);",
+          "    assert!(buf.get_int(4) == 1);",
+          "    assert!(buf.get_int(3) == 1);",
+          "    assert!(buf.get_int(2) == 1);",
+          "    assert!(buf.get_int(1) == 1);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x00\\x00\\x00\\x00\\x00\\x01\"[..];",
+          "    buf.get_int(6);",
+          "    assert_eq!(buf.get_int(6), 1);",
+          "    assert!(buf.get_int(9).is_err());",
+          "    assert!(buf.get_int(8).is_err());",
+          "    assert!(buf.get_int(7).is_err());",
+          "    assert!(buf.get_int(5) == 1);",
+          "    assert!(buf.get_int(4) == 1);",
+          "    assert!(buf.get_int(3) == 1);",
+          "    assert!(buf.get_int(2) == 1);",
+          "    assert!(buf.get_int(1) == 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+          "    buf.get_int(6);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(3), 0xFFFFFFFC);",
+          "    assert!(panic::catch_unwind(|| buf.get_int(9)).is_err());",
+          "    assert!(panic::catch_unwind(|| buf.get_int(6)).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+          "    buf.get_int(6);",
+          "    assert_eq!(buf.get_int(3), 0xFFFFFFFC);",
+          "    assert!(panic::catch_unwind(|| buf.get_int(9)).is_err());",
+          "    assert!(panic::catch_unwind(|| buf.get_int(6)).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x00\\x00\\x00\\x00\\x00\\x00\\x01\"[..];",
+          "    buf.get_int(7);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(7), 0);",
+          "    assert_eq!(buf.get_int(8), 1);",
+          "    assert_panics!(buf.get_int(9));",
+          "    assert_panics!(buf.get_int(0));",
+          "    assert_eq!(buf.get_int(1), 0);",
+          "    assert_eq!(buf.get_int(2), 0);",
+          "    assert_eq!(buf.get_int(3), 0);",
+          "    assert_eq!(buf.get_int(4), 0);",
+          "    assert_eq!(buf.get_int(5), 0);",
+          "    assert_eq!(buf.get_int(6), 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x00\\x00\\x00\\x00\\x00\\x00\\x01\"[..];",
+          "    buf.get_int(7);",
+          "    assert_eq!(buf.get_int(7), 0);",
+          "    assert_eq!(buf.get_int(8), 1);",
+          "    assert_panics!(buf.get_int(9));",
+          "    assert_panics!(buf.get_int(0));",
+          "    assert_eq!(buf.get_int(1), 0);",
+          "    assert_eq!(buf.get_int(2), 0);",
+          "    assert_eq!(buf.get_int(3), 0);",
+          "    assert_eq!(buf.get_int(4), 0);",
+          "    assert_eq!(buf.get_int(5), 0);",
+          "    assert_eq!(buf.get_int(6), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+          "    buf.get_int(7);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(1), 255);",
+          "    assert_eq!(buf.get_int(2), 65535);",
+          "    assert_eq!(buf.get_int(3), 16777215);",
+          "    assert_eq!(buf.get_int(4), 4294967295);",
+          "    assert_eq!(buf.get_int(5), 1);",
+          "    assert_eq!(buf.get_int(6), 68719476735);",
+          "    assert!(std::panic::catch_unwind(|| { buf.get_int(8); }).is_err());",
+          "    assert!(std::panic::catch_unwind(|| { buf.get_int(9); }).is_err());",
+          "    assert!(std::panic::catch_unwind(|| { buf.get_int(0); }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+          "    buf.get_int(7);",
+          "    assert_eq!(buf.get_int(1), 255);",
+          "    assert_eq!(buf.get_int(2), 65535);",
+          "    assert_eq!(buf.get_int(3), 16777215);",
+          "    assert_eq!(buf.get_int(4), 4294967295);",
+          "    assert_eq!(buf.get_int(5), 1);",
+          "    assert_eq!(buf.get_int(6), 68719476735);",
+          "    assert!(std::panic::catch_unwind(|| { buf.get_int(8); }).is_err());",
+          "    assert!(std::panic::catch_unwind(|| { buf.get_int(9); }).is_err());",
+          "    assert!(std::panic::catch_unwind(|| { buf.get_int(0); }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\"[..];",
+          "    buf.get_int(8);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_int(3), 0x0000000000000001);",
+          "    assert_eq!(buf.get_int(4), 0x00000001);",
+          "    assert_eq!(buf.get_int(7), 0x00000000000001);",
+          "    assert_eq!(buf.get_int(8), 1);",
+          "    #[should_panic]",
+          "    buf.get_int(9);",
+          "    #[should_panic]",
+          "    buf.get_int(5);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\"[..];",
+          "    buf.get_int(8);",
+          "    assert_eq!(buf.get_int(3), 0x0000000000000001);",
+          "    assert_eq!(buf.get_int(4), 0x00000001);",
+          "    assert_eq!(buf.get_int(7), 0x00000000000001);",
+          "    assert_eq!(buf.get_int(8), 1);",
+          "    #[should_panic]",
+          "    buf.get_int(9);",
+          "    #[should_panic]",
+          "    buf.get_int(5);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+          "    buf.get_int(8);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.remaining(), 8);",
+          "    assert!(buf.has_remaining());",
+          "    assert!(matches!(buf.get_int(8), Err(TryGetError::InsufficientData)));"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+          "    buf.get_int(8);",
+          "    assert_eq!(buf.remaining(), 8);",
+          "    assert!(buf.has_remaining());",
+          "    assert!(matches!(buf.get_int(8), Err(TryGetError::InsufficientData)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\"[..];",
+          "    buf.get_int(2);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.remaining(), 1);",
+          "    assert_eq!(buf.get_int(2), panic!(\"not enough remaining data in self\"));"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x01\"[..];",
+          "    buf.get_int(2);",
+          "    assert_eq!(buf.remaining(), 1);",
+          "    assert_eq!(buf.get_int(2), panic!(\"not enough remaining data in self\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

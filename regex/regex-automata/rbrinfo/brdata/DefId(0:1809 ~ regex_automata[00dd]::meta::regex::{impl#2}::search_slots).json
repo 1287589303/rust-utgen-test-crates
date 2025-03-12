@@ -1,0 +1,84 @@
+{
+  "name": "regex_automata::meta::regex::{impl#2}::search_slots",
+  "mod_info": {
+    "name": "meta::regex",
+    "loc": "regex-automata/src/meta/mod.rs:57:1:57:11"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/meta/regex.rs:1126:5:1139:6",
+  "doc": "/// Executes a leftmost forward search and writes the spans of capturing\n/// groups that participated in a match into the provided `slots`, and\n/// returns the matching pattern ID. The contents of the slots for patterns\n/// other than the matching pattern are unspecified. If no match was found,\n/// then `None` is returned and the contents of `slots` is unspecified.\n///\n/// This is like [`Regex::search`], but it accepts a raw slots slice\n/// instead of a `Captures` value. This is useful in contexts where you\n/// don't want or need to allocate a `Captures`.\n///\n/// It is legal to pass _any_ number of slots to this routine. If the regex\n/// engine would otherwise write a slot offset that doesn't fit in the\n/// provided slice, then it is simply skipped. In general though, there are\n/// usually three slice lengths you might want to use:\n///\n/// * An empty slice, if you only care about which pattern matched.\n/// * A slice with [`pattern_len() * 2`](Regex::pattern_len) slots, if you\n/// only care about the overall match spans for each matching pattern.\n/// * A slice with\n/// [`slot_len()`](crate::util::captures::GroupInfo::slot_len) slots, which\n/// permits recording match offsets for every capturing group in every\n/// pattern.\n///\n/// # Example\n///\n/// This example shows how to find the overall match offsets in a\n/// multi-pattern search without allocating a `Captures` value. Indeed, we\n/// can put our slots right on the stack.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{meta::Regex, PatternID, Input};\n///\n/// let re = Regex::new_many(&[\n///     r\"\\pL+\",\n///     r\"\\d+\",\n/// ])?;\n/// let input = Input::new(\"!@#123\");\n///\n/// // We only care about the overall match offsets here, so we just\n/// // allocate two slots for each pattern. Each slot records the start\n/// // and end of the match.\n/// let mut slots = [None; 4];\n/// let pid = re.search_slots(&input, &mut slots);\n/// assert_eq!(Some(PatternID::must(1)), pid);\n///\n/// // The overall match offsets are always at 'pid * 2' and 'pid * 2 + 1'.\n/// // See 'GroupInfo' for more details on the mapping between groups and\n/// // slot indices.\n/// let slot_start = pid.unwrap().as_usize() * 2;\n/// let slot_end = slot_start + 1;\n/// assert_eq!(Some(3), slots[slot_start].map(|s| s.get()));\n/// assert_eq!(Some(6), slots[slot_end].map(|s| s.get()));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn search_slots(",
+    "    &self,",
+    "    input: &Input<'_>,",
+    "    slots: &mut [Option<NonMaxUsize>],",
+    ") -> Option<PatternID> {",
+    "    if self.imp.info.is_impossible(input) {",
+    "        return None;",
+    "    }",
+    "    let mut guard = self.pool.get();",
+    "    let result = self.imp.strat.search_slots(&mut guard, input, slots);",
+    "    // See 'Regex::search' for why we put the guard back explicitly.",
+    "    PoolGuard::put(guard);",
+    "    result",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.imp.info.is_impossible(input)",
+          "norm": null,
+          "value": "true",
+          "line": 1131,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.imp.info.is_impossible(input)",
+          "norm": null,
+          "value": "false",
+          "line": 1131,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

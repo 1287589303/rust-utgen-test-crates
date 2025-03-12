@@ -1,0 +1,202 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: IndexMap<i32, i32, RandomState> = IndexMap::default();",
+          "    let empty_iter: Vec<(&i32, &i32)> = vec![];",
+          "    map.extend(empty_iter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(map.len(), 0);",
+          "    assert!(map.is_empty());",
+          "    map.extend(vec![(&1, &10), (&2, &20)]);",
+          "    assert_eq!(map.len(), 2);",
+          "    assert_eq!(map.get(&1), Some(&10));",
+          "    assert_eq!(map.get(&2), Some(&20));",
+          "    map.extend(vec![(&3, &30)]);",
+          "    assert_eq!(map.len(), 3);",
+          "    assert_eq!(map.get(&3), Some(&30));",
+          "    map.extend(vec![(&1, &15)]);",
+          "    assert_eq!(map.get(&1), Some(&15));"
+        ],
+        "code": [
+          "{",
+          "    let mut map: IndexMap<i32, i32, RandomState> = IndexMap::default();",
+          "    let empty_iter: Vec<(&i32, &i32)> = vec![];",
+          "    map.extend(empty_iter);",
+          "    assert_eq!(map.len(), 0);",
+          "    assert!(map.is_empty());",
+          "    map.extend(vec![(&1, &10), (&2, &20)]);",
+          "    assert_eq!(map.len(), 2);",
+          "    assert_eq!(map.get(&1), Some(&10));",
+          "    assert_eq!(map.get(&2), Some(&20));",
+          "    map.extend(vec![(&3, &30)]);",
+          "    assert_eq!(map.len(), 3);",
+          "    assert_eq!(map.get(&3), Some(&30));",
+          "    map.extend(vec![(&1, &15)]);",
+          "    assert_eq!(map.get(&1), Some(&15));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: IndexMap<i32, i32, RandomState> = IndexMap::default();",
+          "    let duplicate_iter: Vec<(&i32, &i32)> = vec![(&1, &10), (&1, &20)];",
+          "    map.extend(duplicate_iter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(map.len(), 1);",
+          "    assert_eq!(map.get(&1), Some(&20));",
+          "    assert_eq!(map.get(&10), None);",
+          "    assert_eq!(map.get(&20), None);"
+        ],
+        "code": [
+          "{",
+          "    let mut map: IndexMap<i32, i32, RandomState> = IndexMap::default();",
+          "    let duplicate_iter: Vec<(&i32, &i32)> = vec![(&1, &10), (&1, &20)];",
+          "    map.extend(duplicate_iter);",
+          "    assert_eq!(map.len(), 1);",
+          "    assert_eq!(map.get(&1), Some(&20));",
+          "    assert_eq!(map.get(&10), None);",
+          "    assert_eq!(map.get(&20), None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: IndexMap<i32, i32, RandomState> = IndexMap::default();",
+          "    let non_unique_iter: Vec<(&i32, &i32)> = vec![(&1, &10), (&2, &20), (&1, &30)];",
+          "    map.extend(non_unique_iter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(map.len(), 3);",
+          "    assert_eq!(map.get(&1), Some(&30));",
+          "    assert_eq!(map.get(&2), Some(&20));",
+          "    assert_eq!(map.iter().count(), 3);",
+          "    assert!(map.contains_key(&1));",
+          "    assert!(map.contains_key(&2));",
+          "    assert!(!map.contains_key(&3));",
+          "    assert_eq!(map.keys().collect::<Vec<_>>(), vec![&1, &2]);",
+          "    assert_eq!(map.values().collect::<Vec<_>>(), vec![&30, &20]);"
+        ],
+        "code": [
+          "{",
+          "    let mut map: IndexMap<i32, i32, RandomState> = IndexMap::default();",
+          "    let non_unique_iter: Vec<(&i32, &i32)> = vec![(&1, &10), (&2, &20), (&1, &30)];",
+          "    map.extend(non_unique_iter);",
+          "    assert_eq!(map.len(), 3);",
+          "    assert_eq!(map.get(&1), Some(&30));",
+          "    assert_eq!(map.get(&2), Some(&20));",
+          "    assert_eq!(map.iter().count(), 3);",
+          "    assert!(map.contains_key(&1));",
+          "    assert!(map.contains_key(&2));",
+          "    assert!(!map.contains_key(&3));",
+          "    assert_eq!(map.keys().collect::<Vec<_>>(), vec![&1, &2]);",
+          "    assert_eq!(map.values().collect::<Vec<_>>(), vec![&30, &20]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: IndexMap<i32, i32, RandomState> = IndexMap::default();",
+          "    let large_iter: Vec<(&i32, &i32)> = (0..1000).map(|i| (&i, &(i * 10))).collect();",
+          "    map.extend(large_iter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(map.len(), 1000);",
+          "    assert_eq!(map.get(&0), Some(&0));",
+          "    assert_eq!(map.get(&1), Some(&10));",
+          "    assert_eq!(map.get(&2), Some(&20));",
+          "    assert_eq!(map.get(&999), Some(&9990));",
+          "    assert!(map.contains_key(&500));",
+          "    assert!(!map.contains_key(&1000));",
+          "    assert_eq!(map.as_entries().len(), 1000);",
+          "    assert_eq!(map.as_entries().get(0), Some((&0, &0)));",
+          "    assert_eq!(map.as_entries().get(500), Some((&500, &5000)));"
+        ],
+        "code": [
+          "{",
+          "    let mut map: IndexMap<i32, i32, RandomState> = IndexMap::default();",
+          "    let large_iter: Vec<(&i32, &i32)> = (0..1000).map(|i| (&i, &(i * 10))).collect();",
+          "    map.extend(large_iter);",
+          "    assert_eq!(map.len(), 1000);",
+          "    assert_eq!(map.get(&0), Some(&0));",
+          "    assert_eq!(map.get(&1), Some(&10));",
+          "    assert_eq!(map.get(&2), Some(&20));",
+          "    assert_eq!(map.get(&999), Some(&9990));",
+          "    assert!(map.contains_key(&500));",
+          "    assert!(!map.contains_key(&1000));",
+          "    assert_eq!(map.as_entries().len(), 1000);",
+          "    assert_eq!(map.as_entries().get(0), Some((&0, &0)));",
+          "    assert_eq!(map.as_entries().get(500), Some((&500, &5000)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: IndexMap<i32, i32, RandomState> = IndexMap::default();",
+          "    let mixed_iter: Vec<(&i32, &i32)> = vec![(&1, &10), (&2, &20), (&3, &30), (&2, &25)];",
+          "    map.extend(mixed_iter);",
+          "}"
+        ],
+        "oracle": [
+          "    map.len() == 3",
+          "    map.get(&1) == Some(&10)",
+          "    map.get(&2) == Some(&25)",
+          "    map.get(&3) == Some(&30)",
+          "    map.contains_key(&1) == true",
+          "    map.contains_key(&2) == true",
+          "    map.contains_key(&3) == true",
+          "    map.contains_key(&4) == false",
+          "    map.keys().collect::<Vec<_>>() == vec![&1, &2, &3]",
+          "    map.values().collect::<Vec<_>>() == vec![&10, &25, &30]"
+        ],
+        "code": [
+          "{",
+          "    let mut map: IndexMap<i32, i32, RandomState> = IndexMap::default();",
+          "    let mixed_iter: Vec<(&i32, &i32)> = vec![(&1, &10), (&2, &20), (&3, &30), (&2, &25)];",
+          "    map.extend(mixed_iter);",
+          "    map.len() == 3",
+          "    map.get(&1) == Some(&10)",
+          "    map.get(&2) == Some(&25)",
+          "    map.get(&3) == Some(&30)",
+          "    map.contains_key(&1) == true",
+          "    map.contains_key(&2) == true",
+          "    map.contains_key(&3) == true",
+          "    map.contains_key(&4) == false",
+          "    map.keys().collect::<Vec<_>>() == vec![&1, &2, &3]",
+          "    map.values().collect::<Vec<_>>() == vec![&10, &25, &30]",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

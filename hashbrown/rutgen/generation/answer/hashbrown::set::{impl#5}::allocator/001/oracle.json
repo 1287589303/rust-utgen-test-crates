@@ -1,0 +1,162 @@
+[
+  {
+    "uses": [
+      "use hashbrown::DefaultHashBuilder;",
+      "use hashbrown::HashSet;",
+      "use hashbrown::Global;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::DefaultHashBuilder;",
+          "    use hashbrown::Global;",
+          "",
+          "    let hasher = DefaultHashBuilder::new();",
+          "    let alloc = Global;",
+          "    let set: hashbrown::HashSet<i32, _, _> = hashbrown::HashSet::with_hasher_in(hasher, alloc);",
+          "    let _allocator = set.allocator();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(set.allocator() as *const _, &alloc as *const _);",
+          "    assert!(set.allocator().allocate(Layout::array::<i32>(1).unwrap()).is_ok());",
+          "    assert!(set.allocator().deallocate(NonNull::dangling(), Layout::array::<i32>(1).unwrap()).is_ok());",
+          "    assert!(std::ptr::eq(set.allocator(), &alloc));",
+          "    assert!(std::mem::size_of::<A>() > 0);"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::DefaultHashBuilder;",
+          "    use hashbrown::Global;",
+          "",
+          "    let hasher = DefaultHashBuilder::new();",
+          "    let alloc = Global;",
+          "    let set: hashbrown::HashSet<i32, _, _> = hashbrown::HashSet::with_hasher_in(hasher, alloc);",
+          "    let _allocator = set.allocator();",
+          "    assert_eq!(set.allocator() as *const _, &alloc as *const _);",
+          "    assert!(set.allocator().allocate(Layout::array::<i32>(1).unwrap()).is_ok());",
+          "    assert!(set.allocator().deallocate(NonNull::dangling(), Layout::array::<i32>(1).unwrap()).is_ok());",
+          "    assert!(std::ptr::eq(set.allocator(), &alloc));",
+          "    assert!(std::mem::size_of::<A>() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::HashSet;",
+          "    use hashbrown::DefaultHashBuilder;",
+          "    use hashbrown::Global;",
+          "",
+          "    struct CustomAllocator;",
+          "",
+          "    unsafe impl hashbrown::Allocator for CustomAllocator {",
+          "        fn allocate(&self, _: Layout) -> Result<NonNull<u8>, ()> {",
+          "            // Mock allocation",
+          "            Ok(NonNull::dangling())",
+          "        }",
+          "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {",
+          "            // Mock deallocation",
+          "        }",
+          "    }",
+          "",
+          "    let hasher = DefaultHashBuilder::new();",
+          "    let alloc = CustomAllocator;",
+          "    let set: HashSet<i32, _, CustomAllocator> = HashSet::with_hasher_in(hasher, alloc);",
+          "    let _allocator = set.allocator();",
+          "}"
+        ],
+        "oracle": [
+          "    let hasher = DefaultHashBuilder::new();",
+          "    let alloc = CustomAllocator;",
+          "    let set: HashSet<i32, _, CustomAllocator> = HashSet::with_hasher_in(hasher, alloc);",
+          "    assert_eq!(set.allocator() as *const _, &alloc as *const _);"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::HashSet;",
+          "    use hashbrown::DefaultHashBuilder;",
+          "    use hashbrown::Global;",
+          "",
+          "    struct CustomAllocator;",
+          "",
+          "    unsafe impl hashbrown::Allocator for CustomAllocator {",
+          "        fn allocate(&self, _: Layout) -> Result<NonNull<u8>, ()> {",
+          "            // Mock allocation",
+          "            Ok(NonNull::dangling())",
+          "        }",
+          "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {",
+          "            // Mock deallocation",
+          "        }",
+          "    }",
+          "",
+          "    let hasher = DefaultHashBuilder::new();",
+          "    let alloc = CustomAllocator;",
+          "    let set: HashSet<i32, _, CustomAllocator> = HashSet::with_hasher_in(hasher, alloc);",
+          "    let _allocator = set.allocator();",
+          "    let hasher = DefaultHashBuilder::new();",
+          "    let alloc = CustomAllocator;",
+          "    let set: HashSet<i32, _, CustomAllocator> = HashSet::with_hasher_in(hasher, alloc);",
+          "    assert_eq!(set.allocator() as *const _, &alloc as *const _);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::DefaultHashBuilder;",
+          "    use hashbrown::Global;",
+          "",
+          "    let hasher = DefaultHashBuilder::new();",
+          "    let alloc = Global;",
+          "    let capacity: usize = 10; // Arbitrarily chosen non-negative integer",
+          "    let set: hashbrown::HashSet<i32, _, _> = hashbrown::HashSet::with_capacity_and_hasher_in(capacity, hasher, alloc);",
+          "    let _allocator = set.allocator();",
+          "}"
+        ],
+        "oracle": [
+          "    let hasher = DefaultHashBuilder::new();",
+          "    let alloc = Global;",
+          "    let capacity: usize = 10;",
+          "    let set: hashbrown::HashSet<i32, _, _> = hashbrown::HashSet::with_capacity_and_hasher_in(capacity, hasher, alloc);",
+          "    let allocator = set.allocator();",
+          "    assert_eq!(allocator, &alloc);",
+          "    assert!(allocator.is_instance_of::<Global>());",
+          "    assert!(allocator.is_not_null());"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::DefaultHashBuilder;",
+          "    use hashbrown::Global;",
+          "",
+          "    let hasher = DefaultHashBuilder::new();",
+          "    let alloc = Global;",
+          "    let capacity: usize = 10; // Arbitrarily chosen non-negative integer",
+          "    let set: hashbrown::HashSet<i32, _, _> = hashbrown::HashSet::with_capacity_and_hasher_in(capacity, hasher, alloc);",
+          "    let _allocator = set.allocator();",
+          "    let hasher = DefaultHashBuilder::new();",
+          "    let alloc = Global;",
+          "    let capacity: usize = 10;",
+          "    let set: hashbrown::HashSet<i32, _, _> = hashbrown::HashSet::with_capacity_and_hasher_in(capacity, hasher, alloc);",
+          "    let allocator = set.allocator();",
+          "    assert_eq!(allocator, &alloc);",
+          "    assert!(allocator.is_instance_of::<Global>());",
+          "    assert!(allocator.is_not_null());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,236 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input_str = \"##this is a raw string \\\"##\\\"\";",
+          "    let cursor = Cursor {",
+          "        rest: input_str,",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    ",
+          "    let result = raw_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(result, Ok(_)));",
+          "    assert!(result.as_ref().unwrap().rest == \"##\\\"\");",
+          "    assert!(result.as_ref().unwrap().len() == 3);",
+          "    assert!(result.is_ok());",
+          "    assert!(input_str.starts_with(\"##this is a raw string \\\"##\\\"\"));",
+          "    assert!(cursor.rest.contains(\"\\\"##\\\"\"));",
+          "    assert!(result.unwrap().starts_with_char('\"'));",
+          "    assert!(result.unwrap().is_empty() == false);",
+          "    assert!(result.unwrap().len() > 0);",
+          "    assert!(result.unwrap().rest.contains(\"##\"));"
+        ],
+        "code": [
+          "{",
+          "    let input_str = \"##this is a raw string \\\"##\\\"\";",
+          "    let cursor = Cursor {",
+          "        rest: input_str,",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    ",
+          "    let result = raw_string(cursor);",
+          "    assert!(matches!(result, Ok(_)));",
+          "    assert!(result.as_ref().unwrap().rest == \"##\\\"\");",
+          "    assert!(result.as_ref().unwrap().len() == 3);",
+          "    assert!(result.is_ok());",
+          "    assert!(input_str.starts_with(\"##this is a raw string \\\"##\\\"\"));",
+          "    assert!(cursor.rest.contains(\"\\\"##\\\"\"));",
+          "    assert!(result.unwrap().starts_with_char('\"'));",
+          "    assert!(result.unwrap().is_empty() == false);",
+          "    assert!(result.unwrap().len() > 0);",
+          "    assert!(result.unwrap().rest.contains(\"##\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input_str = \"##another raw string \\\"###\\\"\";",
+          "    let cursor = Cursor {",
+          "        rest: input_str,",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    ",
+          "    let result = raw_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let (cursor_after, _) = result.unwrap();",
+          "    assert_eq!(cursor_after.rest, \"\");",
+          "    assert_eq!(cursor_after.off, 0);",
+          "    assert!(raw_string(cursor).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let input_str = \"##another raw string \\\"###\\\"\";",
+          "    let cursor = Cursor {",
+          "        rest: input_str,",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    ",
+          "    let result = raw_string(cursor);",
+          "    assert!(result.is_ok());",
+          "    let (cursor_after, _) = result.unwrap();",
+          "    assert_eq!(cursor_after.rest, \"\");",
+          "    assert_eq!(cursor_after.off, 0);",
+          "    assert!(raw_string(cursor).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input_str = \"##string with backslashes \\\\\\\"##\\\"\";",
+          "    let cursor = Cursor {",
+          "        rest: input_str,",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    ",
+          "    let result = raw_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let (rest_cursor, _) = result.unwrap();",
+          "    assert_eq!(rest_cursor.rest, \"##\\\"\");  // Checks the rest after parsing",
+          "    assert!(rest_cursor.is_empty());  // Ensures the cursor is empty after parsing",
+          "    assert_eq!(rest_cursor.bytes().count(), 0);  // Verifies there are no remaining bytes",
+          "    assert!(rest_cursor.starts_with(\"\\\"\"));  // Ensures it starts with the correct delimiter",
+          "    assert!(rest_cursor.starts_with(\"##\"));  // Checks that it starts with the raw string delimiter"
+        ],
+        "code": [
+          "{",
+          "    let input_str = \"##string with backslashes \\\\\\\"##\\\"\";",
+          "    let cursor = Cursor {",
+          "        rest: input_str,",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    ",
+          "    let result = raw_string(cursor);",
+          "    assert!(result.is_ok());",
+          "    let (rest_cursor, _) = result.unwrap();",
+          "    assert_eq!(rest_cursor.rest, \"##\\\"\");  // Checks the rest after parsing",
+          "    assert!(rest_cursor.is_empty());  // Ensures the cursor is empty after parsing",
+          "    assert_eq!(rest_cursor.bytes().count(), 0);  // Verifies there are no remaining bytes",
+          "    assert!(rest_cursor.starts_with(\"\\\"\"));  // Ensures it starts with the correct delimiter",
+          "    assert!(rest_cursor.starts_with(\"##\"));  // Checks that it starts with the raw string delimiter",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input_str = \"##string with nested ## \\\"##\\\"\";",
+          "    let cursor = Cursor {",
+          "        rest: input_str,",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    ",
+          "    let result = raw_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let (rest_cursor) = result.unwrap();",
+          "    assert_eq!(rest_cursor.rest, \"string with nested ## \"); // Expected remaining string",
+          "    assert!(rest_cursor.rest.starts_with(\"##\")); // Expected delimiter to be found",
+          "    assert!(rest_cursor.is_empty() == false); // Cursor should not be empty after parsing",
+          "    assert!(rest_cursor.len() > 0); // Length should be greater than 0 after parsing",
+          "    assert!(rest_cursor.starts_with(\"string\")); // Should start with the expected content"
+        ],
+        "code": [
+          "{",
+          "    let input_str = \"##string with nested ## \\\"##\\\"\";",
+          "    let cursor = Cursor {",
+          "        rest: input_str,",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    ",
+          "    let result = raw_string(cursor);",
+          "    assert!(result.is_ok());",
+          "    let (rest_cursor) = result.unwrap();",
+          "    assert_eq!(rest_cursor.rest, \"string with nested ## \"); // Expected remaining string",
+          "    assert!(rest_cursor.rest.starts_with(\"##\")); // Expected delimiter to be found",
+          "    assert!(rest_cursor.is_empty() == false); // Cursor should not be empty after parsing",
+          "    assert!(rest_cursor.len() > 0); // Length should be greater than 0 after parsing",
+          "    assert!(rest_cursor.starts_with(\"string\")); // Should start with the expected content",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input_str = \"#\\\"#\\\"\";",
+          "    let cursor = Cursor {",
+          "        rest: input_str,",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    ",
+          "    let result = raw_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().rest, \"\");",
+          "    assert_eq!(result.unwrap().off, 0);",
+          "    assert!(result.unwrap().starts_with(\"\"));",
+          "    assert!(result.unwrap().is_empty());",
+          "    assert!(result.unwrap().len() == 0);",
+          "    assert!(result.unwrap().bytes().len() == 0);"
+        ],
+        "code": [
+          "{",
+          "    let input_str = \"#\\\"#\\\"\";",
+          "    let cursor = Cursor {",
+          "        rest: input_str,",
+          "        #[cfg(span_locations)]",
+          "        off: 0,",
+          "    };",
+          "    ",
+          "    let result = raw_string(cursor);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().rest, \"\");",
+          "    assert_eq!(result.unwrap().off, 0);",
+          "    assert!(result.unwrap().starts_with(\"\"));",
+          "    assert!(result.unwrap().is_empty());",
+          "    assert!(result.unwrap().len() == 0);",
+          "    assert!(result.unwrap().bytes().len() == 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

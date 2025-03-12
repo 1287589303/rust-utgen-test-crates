@@ -1,0 +1,547 @@
+{
+  "name": "regex_syntax::hir::literal::{impl#0}::union",
+  "mod_info": {
+    "name": "hir::literal",
+    "loc": "regex-syntax/src/hir/mod.rs:42:1:42:17"
+  },
+  "visible": false,
+  "loc": "regex-syntax/src/hir/literal.rs:577:5:616:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: seq1.max_union_len(seq2).map_or(false, |len| len > self.limit_total) at line 578 is true\n",
+        "precondition: self.kind matches ExtractKind::Suffix at line 594 is true\n",
+        "precondition: seq1\n                .max_union_len(seq2)\n                .map_or(false, |len| len > self.limit_total) at line 606 is true\n",
+        "precondition: seq1.len().map_or(true, |x| x <= self.limit_total) at line 614 is true\n",
+        "expected return value/type: seq1\n"
+      ],
+      "input_infer": "limit_total > seq1.len() + seq2.len() >= 0, ExtractKind::Suffix, seq1.max_union_len(seq2) > limit_total, seq1.len() <= limit_total, seq1 and seq2 contain at least one Literal each\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct MyHir;",
+                "    ",
+                "    let mut extractor = Extractor::new()",
+                "        .kind(ExtractKind::Suffix)",
+                "        .limit_total(10);",
+                "    ",
+                "    let lit1 = Literal::from_bytes(b\"abcd\");",
+                "    let lit2 = Literal::from_bytes(b\"efgh\");",
+                "    let lit3 = Literal::from_bytes(b\"ijkl\");",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![lit1.clone(), lit2.clone()]); // seq1 with 2 literals",
+                "    let mut seq2 = Seq::new(vec![lit3.clone()]); // seq2 with 1 literal",
+                "    ",
+                "    // Set the lengths such that seq1 + seq2 exceeds the limit.",
+                "    extractor.limit_total(4); // Set limit_total to 4, which is less than seq1.len() + seq2.len()",
+                "",
+                "    let result = extractor.union(seq1.clone(), &mut seq2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.len().map_or(true, |x| x <= extractor.limit_total));",
+                "    assert!(seq2.is_finite());",
+                "    assert!(seq2.len().map_or(false, |x| x > 0));",
+                "    assert!(seq1.len().map_or(true, |x| x <= extractor.limit_total));",
+                "    assert!(seq1.is_exact() || seq1.is_inexact());",
+                "    assert_eq!(seq1.max_union_len(&seq2).unwrap(), 10);"
+              ],
+              "code": [
+                "{",
+                "    struct MyHir;",
+                "    ",
+                "    let mut extractor = Extractor::new()",
+                "        .kind(ExtractKind::Suffix)",
+                "        .limit_total(10);",
+                "    ",
+                "    let lit1 = Literal::from_bytes(b\"abcd\");",
+                "    let lit2 = Literal::from_bytes(b\"efgh\");",
+                "    let lit3 = Literal::from_bytes(b\"ijkl\");",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![lit1.clone(), lit2.clone()]); // seq1 with 2 literals",
+                "    let mut seq2 = Seq::new(vec![lit3.clone()]); // seq2 with 1 literal",
+                "    ",
+                "    // Set the lengths such that seq1 + seq2 exceeds the limit.",
+                "    extractor.limit_total(4); // Set limit_total to 4, which is less than seq1.len() + seq2.len()",
+                "",
+                "    let result = extractor.union(seq1.clone(), &mut seq2);",
+                "    assert!(result.len().map_or(true, |x| x <= extractor.limit_total));",
+                "    assert!(seq2.is_finite());",
+                "    assert!(seq2.len().map_or(false, |x| x > 0));",
+                "    assert!(seq1.len().map_or(true, |x| x <= extractor.limit_total));",
+                "    assert!(seq1.is_exact() || seq1.is_inexact());",
+                "    assert_eq!(seq1.max_union_len(&seq2).unwrap(), 10);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct MyHir;",
+                "",
+                "    let mut extractor = Extractor::new()",
+                "        .kind(ExtractKind::Suffix)",
+                "        .limit_total(10);",
+                "    ",
+                "    let lit1 = Literal::from_bytes(b\"abc\");",
+                "    let lit2 = Literal::from_bytes(b\"def\");",
+                "    let lit3 = Literal::from_bytes(b\"gh\"); // Short literal",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![lit1.clone(), lit2.clone()]); // seq1 with standard literals",
+                "    let mut seq2 = Seq::new(vec![lit3.clone()]); // seq2 with short literal",
+                "",
+                "    // Prepare seq1 and seq2 such that seq1 + seq2 meets the limits",
+                "    extractor.limit_total(5); // Set limit_total at the edge",
+                "",
+                "    let result = extractor.union(seq1.clone(), &mut seq2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.len().map_or(true, |x| x <= 10));",
+                "    assert_eq!(result.literals(), Some(&vec![lit2]));",
+                "    assert!(seq2.is_inexact());",
+                "    assert!(seq1.is_finite());",
+                "    assert!(seq1.max_union_len(&seq2).map_or(false, |len| len > 10));",
+                "    assert!(seq1.len().map_or(true, |x| x <= 10));",
+                "    seq1.keep_last_bytes(4);",
+                "    seq2.keep_last_bytes(4);",
+                "    seq1.dedup();",
+                "    seq2.dedup();",
+                "    assert!(seq1.max_union_len(&seq2).map_or(false, |len| len > 10));",
+                "    seq2.make_infinite();"
+              ],
+              "code": [
+                "{",
+                "    struct MyHir;",
+                "",
+                "    let mut extractor = Extractor::new()",
+                "        .kind(ExtractKind::Suffix)",
+                "        .limit_total(10);",
+                "    ",
+                "    let lit1 = Literal::from_bytes(b\"abc\");",
+                "    let lit2 = Literal::from_bytes(b\"def\");",
+                "    let lit3 = Literal::from_bytes(b\"gh\"); // Short literal",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![lit1.clone(), lit2.clone()]); // seq1 with standard literals",
+                "    let mut seq2 = Seq::new(vec![lit3.clone()]); // seq2 with short literal",
+                "",
+                "    // Prepare seq1 and seq2 such that seq1 + seq2 meets the limits",
+                "    extractor.limit_total(5); // Set limit_total at the edge",
+                "",
+                "    let result = extractor.union(seq1.clone(), &mut seq2);",
+                "    assert!(result.len().map_or(true, |x| x <= 10));",
+                "    assert_eq!(result.literals(), Some(&vec![lit2]));",
+                "    assert!(seq2.is_inexact());",
+                "    assert!(seq1.is_finite());",
+                "    assert!(seq1.max_union_len(&seq2).map_or(false, |len| len > 10));",
+                "    assert!(seq1.len().map_or(true, |x| x <= 10));",
+                "    seq1.keep_last_bytes(4);",
+                "    seq2.keep_last_bytes(4);",
+                "    seq1.dedup();",
+                "    seq2.dedup();",
+                "    assert!(seq1.max_union_len(&seq2).map_or(false, |len| len > 10));",
+                "    seq2.make_infinite();",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct MyHir;",
+                "",
+                "    let mut extractor = Extractor::new()",
+                "        .kind(ExtractKind::Suffix)",
+                "        .limit_total(10);",
+                "",
+                "    let lit1 = Literal::from_bytes(b\"abcd\");",
+                "    let lit2 = Literal::from_bytes(b\"efgh\");",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![lit1.clone(), lit2.clone()]); // seq1 with multiple literals",
+                "    let mut seq2 = Seq::infinite(); // seq2 as infinite",
+                "",
+                "    extractor.limit_total(5); // Set limit_total below current length of seq1",
+                "",
+                "    let result = extractor.union(seq1.clone(), &mut seq2); ",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result.len().unwrap(), 6);",
+                "    assert!(seq2.is_inexact());",
+                "    assert!(seq1.len().map_or(true, |x| x <= 10));",
+                "    assert!(seq1.is_finite());",
+                "    assert!(seq2.is_finite());",
+                "    result.dedup();",
+                "    let expected_literals = vec![lit1.clone(), lit2.clone()];",
+                "    assert_eq!(result.literals(), Some(&expected_literals));"
+              ],
+              "code": [
+                "{",
+                "    struct MyHir;",
+                "",
+                "    let mut extractor = Extractor::new()",
+                "        .kind(ExtractKind::Suffix)",
+                "        .limit_total(10);",
+                "",
+                "    let lit1 = Literal::from_bytes(b\"abcd\");",
+                "    let lit2 = Literal::from_bytes(b\"efgh\");",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![lit1.clone(), lit2.clone()]); // seq1 with multiple literals",
+                "    let mut seq2 = Seq::infinite(); // seq2 as infinite",
+                "",
+                "    extractor.limit_total(5); // Set limit_total below current length of seq1",
+                "",
+                "    let result = extractor.union(seq1.clone(), &mut seq2); ",
+                "    assert_eq!(result.len().unwrap(), 6);",
+                "    assert!(seq2.is_inexact());",
+                "    assert!(seq1.len().map_or(true, |x| x <= 10));",
+                "    assert!(seq1.is_finite());",
+                "    assert!(seq2.is_finite());",
+                "    result.dedup();",
+                "    let expected_literals = vec![lit1.clone(), lit2.clone()];",
+                "    assert_eq!(result.literals(), Some(&expected_literals));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 8,
+      "prompt_conds": [
+        "precondition: seq1.max_union_len(seq2).map_or(false, |len| len > self.limit_total) at line 578 is true\n",
+        "precondition: self.kind matches ExtractKind::Prefix at line 594 is true\n",
+        "precondition: self.kind matches ExtractKind::Prefix at line 594 is true\n",
+        "precondition: seq1\n                .max_union_len(seq2)\n                .map_or(false, |len| len > self.limit_total) at line 606 is false\n",
+        "precondition: seq1.len().map_or(true, |x| x <= self.limit_total) at line 614 is false\n"
+      ],
+      "input_infer": "seq1.max_union_len(seq2) > self.limit_total, self.kind == ExtractKind::Prefix, seq1.len() > self.limit_total, seq2 contains literals while seq1 is finite with a non-zero length, limit_total is a positive integer\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut extractor = Extractor::new().kind(ExtractKind::Prefix).limit_total(5);",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![b\"abc\", b\"def\", b\"ghi\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"jkl\", b\"mno\"]);",
+                "",
+                "    // Ensure that seq1.max_union_len(&seq2) > self.limit_total",
+                "    // Since seq1 has 3 literals and seq2 has 2, their combined lengths are more than limit_total",
+                "    let _result = extractor.union(seq1.clone(), &mut seq2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(seq1.len().unwrap(), 3);",
+                "    assert_eq!(seq2.len().unwrap(), 2);",
+                "    assert!(seq1.max_union_len(&seq2).unwrap() > extractor.limit_total);",
+                "    assert_eq!(extractor.kind, ExtractKind::Prefix);",
+                "    assert!(seq1.max_union_len(&seq2).unwrap() > extractor.limit_total);",
+                "    assert!(seq1.len().unwrap() > extractor.limit_total);",
+                "    assert!(seq1.len().map_or(true, |x| x > extractor.limit_total));"
+              ],
+              "code": [
+                "{",
+                "    let mut extractor = Extractor::new().kind(ExtractKind::Prefix).limit_total(5);",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![b\"abc\", b\"def\", b\"ghi\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"jkl\", b\"mno\"]);",
+                "",
+                "    // Ensure that seq1.max_union_len(&seq2) > self.limit_total",
+                "    // Since seq1 has 3 literals and seq2 has 2, their combined lengths are more than limit_total",
+                "    let _result = extractor.union(seq1.clone(), &mut seq2);",
+                "    assert_eq!(seq1.len().unwrap(), 3);",
+                "    assert_eq!(seq2.len().unwrap(), 2);",
+                "    assert!(seq1.max_union_len(&seq2).unwrap() > extractor.limit_total);",
+                "    assert_eq!(extractor.kind, ExtractKind::Prefix);",
+                "    assert!(seq1.max_union_len(&seq2).unwrap() > extractor.limit_total);",
+                "    assert!(seq1.len().unwrap() > extractor.limit_total);",
+                "    assert!(seq1.len().map_or(true, |x| x > extractor.limit_total));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut extractor = Extractor::new().kind(ExtractKind::Prefix).limit_total(7);",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![b\"abcd\", b\"efgh\", b\"ijkl\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"mnop\", b\"qrst\"]);",
+                "",
+                "    // Ensure seq1.max_union_len(&seq2) > self.limit_total",
+                "    // Combined length is greater than 7",
+                "    let _result = extractor.union(seq1.clone(), &mut seq2);",
+                "",
+                "    // The resulting length of seq1 should still be managed to be less than or equal to limit_total",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(seq1.max_union_len(&seq2).is_some());",
+                "    assert!(seq1.max_union_len(&seq2).unwrap() > extractor.limit_total);",
+                "    assert_eq!(extractor.kind, ExtractKind::Prefix);",
+                "    assert!(seq1.len().map_or(true, |x| x > extractor.limit_total));",
+                "    assert!(seq1.len().map_or(false, |x| x > extractor.limit_total));",
+                "    assert!(seq2.literals.is_some());",
+                "    assert!(seq1.len().map_or(false, |len| len <= extractor.limit_total));",
+                "    assert!(seq2.len().map_or(false, |len| len <= extractor.limit_total));"
+              ],
+              "code": [
+                "{",
+                "    let mut extractor = Extractor::new().kind(ExtractKind::Prefix).limit_total(7);",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![b\"abcd\", b\"efgh\", b\"ijkl\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"mnop\", b\"qrst\"]);",
+                "",
+                "    // Ensure seq1.max_union_len(&seq2) > self.limit_total",
+                "    // Combined length is greater than 7",
+                "    let _result = extractor.union(seq1.clone(), &mut seq2);",
+                "",
+                "    // The resulting length of seq1 should still be managed to be less than or equal to limit_total",
+                "    assert!(seq1.max_union_len(&seq2).is_some());",
+                "    assert!(seq1.max_union_len(&seq2).unwrap() > extractor.limit_total);",
+                "    assert_eq!(extractor.kind, ExtractKind::Prefix);",
+                "    assert!(seq1.len().map_or(true, |x| x > extractor.limit_total));",
+                "    assert!(seq1.len().map_or(false, |x| x > extractor.limit_total));",
+                "    assert!(seq2.literals.is_some());",
+                "    assert!(seq1.len().map_or(false, |len| len <= extractor.limit_total));",
+                "    assert!(seq2.len().map_or(false, |len| len <= extractor.limit_total));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut extractor = Extractor::new().kind(ExtractKind::Prefix).limit_total(6);",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![b\"abc\", b\"de\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"f\", b\"g\"]);",
+                "",
+                "    // Ensure that seq1.max_union_len(&seq2) > self.limit_total",
+                "    let _result = extractor.union(seq1.clone(), &mut seq2);",
+                "",
+                "    // Here, seq1 should still have a max length that's less than or equal to limit_total after any adjustments",
+                "    // And we can assert that seq1.len() > limit_total initially to test the fine handling of the union",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(seq1.max_union_len(&seq2).map_or(false, |len| len > extractor.limit_total));",
+                "    assert_eq!(extractor.kind, ExtractKind::Prefix);",
+                "    assert!(seq1.max_union_len(&seq2).map_or(false, |len| len > extractor.limit_total) == true);",
+                "    assert!(seq1.len().map_or(true, |x| x <= extractor.limit_total) == false);"
+              ],
+              "code": [
+                "{",
+                "    let mut extractor = Extractor::new().kind(ExtractKind::Prefix).limit_total(6);",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![b\"abc\", b\"de\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"f\", b\"g\"]);",
+                "",
+                "    // Ensure that seq1.max_union_len(&seq2) > self.limit_total",
+                "    let _result = extractor.union(seq1.clone(), &mut seq2);",
+                "",
+                "    // Here, seq1 should still have a max length that's less than or equal to limit_total after any adjustments",
+                "    // And we can assert that seq1.len() > limit_total initially to test the fine handling of the union",
+                "    assert!(seq1.max_union_len(&seq2).map_or(false, |len| len > extractor.limit_total));",
+                "    assert_eq!(extractor.kind, ExtractKind::Prefix);",
+                "    assert!(seq1.max_union_len(&seq2).map_or(false, |len| len > extractor.limit_total) == true);",
+                "    assert!(seq1.len().map_or(true, |x| x <= extractor.limit_total) == false);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut extractor = Extractor::new().kind(ExtractKind::Prefix).limit_total(10);",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![b\"hello\", b\"world\", b\"test\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"example\", b\"test\"]);",
+                "",
+                "    // Ensure that seq1.max_union_len(&seq2) exceeds limit_total",
+                "    let _result = extractor.union(seq1.clone(), &mut seq2);",
+                "    ",
+                "    // Ensure that the resulting seq1 exceeds limit_total after union",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(seq1.max_union_len(&seq2).unwrap() > extractor.limit_total);",
+                "    assert_eq!(extractor.kind, ExtractKind::Prefix);",
+                "    assert!(!seq1.max_union_len(&seq2).map_or(false, |len| len > extractor.limit_total));",
+                "    assert!(seq1.len().unwrap() > extractor.limit_total);"
+              ],
+              "code": [
+                "{",
+                "    let mut extractor = Extractor::new().kind(ExtractKind::Prefix).limit_total(10);",
+                "    ",
+                "    let mut seq1 = Seq::new(vec![b\"hello\", b\"world\", b\"test\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"example\", b\"test\"]);",
+                "",
+                "    // Ensure that seq1.max_union_len(&seq2) exceeds limit_total",
+                "    let _result = extractor.union(seq1.clone(), &mut seq2);",
+                "    ",
+                "    // Ensure that the resulting seq1 exceeds limit_total after union",
+                "    assert!(seq1.max_union_len(&seq2).unwrap() > extractor.limit_total);",
+                "    assert_eq!(extractor.kind, ExtractKind::Prefix);",
+                "    assert!(!seq1.max_union_len(&seq2).map_or(false, |len| len > extractor.limit_total));",
+                "    assert!(seq1.len().unwrap() > extractor.limit_total);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 10,
+      "prompt_conds": [
+        "precondition: seq1.max_union_len(seq2).map_or(false, |len| len > self.limit_total) at line 578 is false\n",
+        "precondition: seq1.len().map_or(true, |x| x <= self.limit_total) at line 614 is false\n"
+      ],
+      "input_infer": "seq1 limit_total less than or equal to max_union_len(seq2), seq1 length greater than limit_total, limit_class, limit_repeat, limit_literal_len, limit_total all greater than 0\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut extractor = Extractor::new()",
+                "        .kind(ExtractKind::Prefix)",
+                "        .limit_class(1)",
+                "        .limit_repeat(2)",
+                "        .limit_literal_len(3)",
+                "        .limit_total(4);",
+                "",
+                "    let mut seq1 = Seq::new(vec![b\"abc\", b\"def\", b\"ghi\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"jkl\", b\"mno\", b\"pqr\"]);",
+                "",
+                "    extractor.union(seq1.clone(), &mut seq2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(seq1.len(), Some(3));",
+                "    assert!(seq1.max_union_len(&seq2).is_some() && seq1.max_union_len(&seq2).unwrap() <= extractor.limit_total);",
+                "    assert!(seq2.len().map_or(true, |x| x <= extractor.limit_total));",
+                "    assert!(seq2.literals().is_some() && seq2.literals().unwrap().len() == 3);",
+                "    assert!(seq2.literals().unwrap().iter().all(|lit| lit.as_bytes().len() <= 3));",
+                "    assert!(seq1.literals().is_some() && seq1.literals().unwrap().len() == 3);",
+                "    assert!(seq1.literals().unwrap().iter().all(|lit| lit.as_bytes().len() <= 3));"
+              ],
+              "code": [
+                "{",
+                "    let mut extractor = Extractor::new()",
+                "        .kind(ExtractKind::Prefix)",
+                "        .limit_class(1)",
+                "        .limit_repeat(2)",
+                "        .limit_literal_len(3)",
+                "        .limit_total(4);",
+                "",
+                "    let mut seq1 = Seq::new(vec![b\"abc\", b\"def\", b\"ghi\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"jkl\", b\"mno\", b\"pqr\"]);",
+                "",
+                "    extractor.union(seq1.clone(), &mut seq2);",
+                "    assert_eq!(seq1.len(), Some(3));",
+                "    assert!(seq1.max_union_len(&seq2).is_some() && seq1.max_union_len(&seq2).unwrap() <= extractor.limit_total);",
+                "    assert!(seq2.len().map_or(true, |x| x <= extractor.limit_total));",
+                "    assert!(seq2.literals().is_some() && seq2.literals().unwrap().len() == 3);",
+                "    assert!(seq2.literals().unwrap().iter().all(|lit| lit.as_bytes().len() <= 3));",
+                "    assert!(seq1.literals().is_some() && seq1.literals().unwrap().len() == 3);",
+                "    assert!(seq1.literals().unwrap().iter().all(|lit| lit.as_bytes().len() <= 3));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut extractor = Extractor::new()",
+                "        .kind(ExtractKind::Suffix)",
+                "        .limit_class(1)",
+                "        .limit_repeat(2)",
+                "        .limit_literal_len(3)",
+                "        .limit_total(2);",
+                "",
+                "    let mut seq1 = Seq::new(vec![b\"abcd\", b\"efgh\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"ijkl\"]);",
+                "",
+                "    extractor.union(seq1.clone(), &mut seq2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(seq1.len(), Some(2));",
+                "    assert!(seq1.max_union_len(&seq2).map_or(true, |len| len <= extractor.limit_total));",
+                "    assert!(extractor.limit_total == 2);",
+                "    assert!(seq2.len().map_or(true, |x| x <= extractor.limit_total));",
+                "    assert!(seq2.is_finite());",
+                "    assert!(seq1.is_finite());",
+                "    seq1.dedup();",
+                "    seq2.dedup();"
+              ],
+              "code": [
+                "{",
+                "    let mut extractor = Extractor::new()",
+                "        .kind(ExtractKind::Suffix)",
+                "        .limit_class(1)",
+                "        .limit_repeat(2)",
+                "        .limit_literal_len(3)",
+                "        .limit_total(2);",
+                "",
+                "    let mut seq1 = Seq::new(vec![b\"abcd\", b\"efgh\"]);",
+                "    let mut seq2 = Seq::new(vec![b\"ijkl\"]);",
+                "",
+                "    extractor.union(seq1.clone(), &mut seq2);",
+                "    assert_eq!(seq1.len(), Some(2));",
+                "    assert!(seq1.max_union_len(&seq2).map_or(true, |len| len <= extractor.limit_total));",
+                "    assert!(extractor.limit_total == 2);",
+                "    assert!(seq2.len().map_or(true, |x| x <= extractor.limit_total));",
+                "    assert!(seq2.is_finite());",
+                "    assert!(seq1.is_finite());",
+                "    seq1.dedup();",
+                "    seq2.dedup();",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

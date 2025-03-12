@@ -1,0 +1,138 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00]; // state_len = 2",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let (match_states, bytes_read) = result.unwrap();",
+          "    assert_eq!(match_states.pattern_len, 3);",
+          "    assert_eq!(bytes_read, 4);",
+          "    assert_eq!(match_states.slices.len(), 4);",
+          "    assert_eq!(match_states.pattern_ids.len(), 2);",
+          "    assert!(match_states.pattern_ids[0] < match_states.pattern_ids[1]);",
+          "    assert!(match_states.slices[0] <= match_states.slices[1]);",
+          "    assert!(match_states.slices[2] <= match_states.slices[3]);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00]; // state_len = 2",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "    assert!(result.is_ok());",
+          "    let (match_states, bytes_read) = result.unwrap();",
+          "    assert_eq!(match_states.pattern_len, 3);",
+          "    assert_eq!(bytes_read, 4);",
+          "    assert_eq!(match_states.slices.len(), 4);",
+          "    assert_eq!(match_states.pattern_ids.len(), 2);",
+          "    assert!(match_states.pattern_ids[0] < match_states.pattern_ids[1]);",
+          "    assert!(match_states.slices[0] <= match_states.slices[1]);",
+          "    assert!(match_states.slices[2] <= match_states.slices[3]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_len: u32 = (usize::MAX / 8) as u32; // Near max usize/2",
+          "    let state_len_bytes: &[u8] = &state_len.to_le_bytes();",
+          "    let slice: Vec<u8> = [state_len_bytes, &[0x00; 8]].concat(); // Generates a slice that eventually causes overflow",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(&slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind(), DeserializeErrorKind::ArithmeticOverflow);",
+          "    assert!(slice.len() > 0);",
+          "    assert_eq!(slice[0..4], state_len_bytes);"
+        ],
+        "code": [
+          "{",
+          "    let state_len: u32 = (usize::MAX / 8) as u32; // Near max usize/2",
+          "    let state_len_bytes: &[u8] = &state_len.to_le_bytes();",
+          "    let slice: Vec<u8> = [state_len_bytes, &[0x00; 8]].concat(); // Generates a slice that eventually causes overflow",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(&slice) };",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind(), DeserializeErrorKind::ArithmeticOverflow);",
+          "    assert!(slice.len() > 0);",
+          "    assert_eq!(slice[0..4], state_len_bytes);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_len: u32 = 1;",
+          "    let state_len_bytes: &[u8] = &state_len.to_le_bytes();",
+          "    let slice: Vec<u8> = [state_len_bytes, &[0x00; 8]].concat(); // Ensures slice length for pairs exceeds available length",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(&slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    let state_len: u32 = 1;",
+          "    let state_len_bytes: &[u8] = &state_len.to_le_bytes();",
+          "    let slice: Vec<u8> = [state_len_bytes, &[0x00; 8]].concat();",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(&slice) };",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap(), DeserializeError::buffer_too_small(\"match state slices\"));",
+          "    let state_len: u32 = 2;",
+          "    let state_len_bytes: &[u8] = &state_len.to_le_bytes();",
+          "    let slice: Vec<u8> = [state_len_bytes, &[0x00; 8]].concat();",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(&slice) };",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap(), DeserializeError::buffer_too_small(\"match state slices\"));",
+          "    let state_len: u32 = 1;",
+          "    let pattern_id_len: usize = 1;",
+          "    let pattern_id_len_bytes: &[u8] = &(pattern_id_len as u32).to_le_bytes();",
+          "    let slice: Vec<u8> = [state_len_bytes, &[0x00; 8], pattern_id_len_bytes, &[0x00]].concat();",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(&slice) };",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().1, slice.len() - state_len_bytes.len() - pattern_id_len_bytes.len());"
+        ],
+        "code": [
+          "{",
+          "    let state_len: u32 = 1;",
+          "    let state_len_bytes: &[u8] = &state_len.to_le_bytes();",
+          "    let slice: Vec<u8> = [state_len_bytes, &[0x00; 8]].concat(); // Ensures slice length for pairs exceeds available length",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(&slice) };",
+          "    let state_len: u32 = 1;",
+          "    let state_len_bytes: &[u8] = &state_len.to_le_bytes();",
+          "    let slice: Vec<u8> = [state_len_bytes, &[0x00; 8]].concat();",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(&slice) };",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap(), DeserializeError::buffer_too_small(\"match state slices\"));",
+          "    let state_len: u32 = 2;",
+          "    let state_len_bytes: &[u8] = &state_len.to_le_bytes();",
+          "    let slice: Vec<u8> = [state_len_bytes, &[0x00; 8]].concat();",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(&slice) };",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap(), DeserializeError::buffer_too_small(\"match state slices\"));",
+          "    let state_len: u32 = 1;",
+          "    let pattern_id_len: usize = 1;",
+          "    let pattern_id_len_bytes: &[u8] = &(pattern_id_len as u32).to_le_bytes();",
+          "    let slice: Vec<u8> = [state_len_bytes, &[0x00; 8], pattern_id_len_bytes, &[0x00]].concat();",
+          "    let result = unsafe { MatchStates::from_bytes_unchecked(&slice) };",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().1, slice.len() - state_len_bytes.len() - pattern_id_len_bytes.len());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

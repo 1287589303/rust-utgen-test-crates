@@ -1,0 +1,445 @@
+{
+  "name": "serde_json::ser::to_vec",
+  "mod_info": {
+    "name": "ser",
+    "loc": "src/lib.rs:423:1:423:13"
+  },
+  "visible": true,
+  "loc": "src/ser.rs:2205:1:2212:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: to_writer(&mut writer, value) matches core::result::Result::Err(err) at line 2210 is true\n",
+        "expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "value containing non-serializable types, value containing a map with non-string keys, value that triggers an error in its Serialize implementation, value with an excessively large structure causing memory issues\n",
+      "answers": [
+        {
+          "uses": [
+            "use serde::Serialize;",
+            "use std::collections::HashMap;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct NonSerializable;",
+                "",
+                "    let value = NonSerializable;",
+                "    let result = serde_json::to_vec(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    struct NonSerializable;",
+                "",
+                "    let value = NonSerializable;",
+                "    let result = serde_json::to_vec(&value);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::collections::HashMap;",
+                "",
+                "    let mut map: HashMap<i32, String> = HashMap::new();",
+                "    map.insert(1, \"value\".to_string());",
+                "",
+                "    let result = serde_json::to_vec(&map);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert!(result.unwrap_err().is::<Error>());"
+              ],
+              "code": [
+                "{",
+                "    use std::collections::HashMap;",
+                "",
+                "    let mut map: HashMap<i32, String> = HashMap::new();",
+                "    map.insert(1, \"value\".to_string());",
+                "",
+                "    let result = serde_json::to_vec(&map);",
+                "    assert!(result.is_err());",
+                "    assert!(result.unwrap_err().is::<Error>());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use serde::Serialize;",
+                "",
+                "    struct FailingSerialize;",
+                "",
+                "    impl Serialize for FailingSerialize {",
+                "        fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>",
+                "        where",
+                "            S: serde::Serializer,",
+                "        {",
+                "            Err(ser::Error::custom(\"serialization failed\"))",
+                "        }",
+                "    }",
+                "",
+                "    let value = FailingSerialize;",
+                "    let result = serde_json::to_vec(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert!(matches!(result, Err(ser::Error::custom(\"serialization failed\"))));"
+              ],
+              "code": [
+                "{",
+                "    use serde::Serialize;",
+                "",
+                "    struct FailingSerialize;",
+                "",
+                "    impl Serialize for FailingSerialize {",
+                "        fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>",
+                "        where",
+                "            S: serde::Serializer,",
+                "        {",
+                "            Err(ser::Error::custom(\"serialization failed\"))",
+                "        }",
+                "    }",
+                "",
+                "    let value = FailingSerialize;",
+                "    let result = serde_json::to_vec(&value);",
+                "    assert!(result.is_err());",
+                "    assert!(matches!(result, Err(ser::Error::custom(\"serialization failed\"))));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let value = vec![0; usize::MAX]; // Attempting to create a very large vector.",
+                "",
+                "    let result = serde_json::to_vec(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let value = vec![0; usize::MAX]; // Attempting to create a very large vector.",
+                "",
+                "    let result = serde_json::to_vec(&value);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: to_writer(&mut writer, value) matches core::result::Result::Ok(val) at line 2210 is true\n",
+        "precondition: to_writer(&mut writer, value) matches core::result::Result::Ok(val) at line 2210 is true\n",
+        "expected return value/type: Ok(writer)\n"
+      ],
+      "input_infer": "valid JSON serializable types (e.g., structs, enums, maps with string keys); edge cases: empty structs, structs with optional fields, maps with multiple keys, varying data types (integers, strings, booleans), deeply nested structures, and large data structures approaching capacity limits of Vec<u8>\n",
+      "answers": [
+        {
+          "uses": [
+            "use std::collections::HashMap;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(Serialize)]",
+                "    struct EmptyStruct;",
+                "",
+                "    let value = EmptyStruct;",
+                "    let _result = to_vec(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, Ok(Vec::new()));",
+                "    assert!(_result.is_ok());",
+                "    assert!(matches!(_result, Ok(_)));",
+                "    assert!(matches!(_result, Ok(ref v) if v.is_empty()));",
+                "    assert_eq!(_result.unwrap(), Vec::<u8>::new());"
+              ],
+              "code": [
+                "{",
+                "    #[derive(Serialize)]",
+                "    struct EmptyStruct;",
+                "",
+                "    let value = EmptyStruct;",
+                "    let _result = to_vec(&value);",
+                "    assert_eq!(_result, Ok(Vec::new()));",
+                "    assert!(_result.is_ok());",
+                "    assert!(matches!(_result, Ok(_)));",
+                "    assert!(matches!(_result, Ok(ref v) if v.is_empty()));",
+                "    assert_eq!(_result.unwrap(), Vec::<u8>::new());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(Serialize)]",
+                "    struct StructWithOptional {",
+                "        name: String,",
+                "        age: Option<u32>,",
+                "    }",
+                "",
+                "    let value = StructWithOptional {",
+                "        name: String::from(\"Alice\"),",
+                "        age: Some(30),",
+                "    };",
+                "    let _result = to_vec(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, Ok(vec![/* expected serialized byte values */]));",
+                "    assert!(_result.is_ok());",
+                "    assert!(matches!(_result, Ok(_)));",
+                "    assert_eq!(_result.as_ref().unwrap().len(), /* expected length */);",
+                "    assert!(/* check specific serialized byte values in the result */);",
+                "    assert!(/* check that serialization handles Option properly */);",
+                "    assert!(_result.as_ref().unwrap().contains(&QU));"
+              ],
+              "code": [
+                "{",
+                "    #[derive(Serialize)]",
+                "    struct StructWithOptional {",
+                "        name: String,",
+                "        age: Option<u32>,",
+                "    }",
+                "",
+                "    let value = StructWithOptional {",
+                "        name: String::from(\"Alice\"),",
+                "        age: Some(30),",
+                "    };",
+                "    let _result = to_vec(&value);",
+                "    assert_eq!(_result, Ok(vec![/* expected serialized byte values */]));",
+                "    assert!(_result.is_ok());",
+                "    assert!(matches!(_result, Ok(_)));",
+                "    assert_eq!(_result.as_ref().unwrap().len(), /* expected length */);",
+                "    assert!(/* check specific serialized byte values in the result */);",
+                "    assert!(/* check that serialization handles Option properly */);",
+                "    assert!(_result.as_ref().unwrap().contains(&QU));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(Serialize)]",
+                "    struct Person {",
+                "        name: String,",
+                "        age: u32,",
+                "        is_student: bool,",
+                "    }",
+                "",
+                "    let value = Person {",
+                "        name: String::from(\"Bob\"),",
+                "        age: 25,",
+                "        is_student: false,",
+                "    };",
+                "    let _result = to_vec(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    let person = Person { name: String::from(\"Bob\"), age: 25, is_student: false };",
+                "    let result = to_vec(&person);",
+                "    assert!(result.is_ok());",
+                "    let byte_vector = result.unwrap();",
+                "    assert_eq!(byte_vector.len(), expected_length);",
+                "    assert_eq!(byte_vector[0], expected_first_byte);",
+                "    assert_eq!(byte_vector[1], expected_second_byte);"
+              ],
+              "code": [
+                "{",
+                "    #[derive(Serialize)]",
+                "    struct Person {",
+                "        name: String,",
+                "        age: u32,",
+                "        is_student: bool,",
+                "    }",
+                "",
+                "    let value = Person {",
+                "        name: String::from(\"Bob\"),",
+                "        age: 25,",
+                "        is_student: false,",
+                "    };",
+                "    let _result = to_vec(&value);",
+                "    let person = Person { name: String::from(\"Bob\"), age: 25, is_student: false };",
+                "    let result = to_vec(&person);",
+                "    assert!(result.is_ok());",
+                "    let byte_vector = result.unwrap();",
+                "    assert_eq!(byte_vector.len(), expected_length);",
+                "    assert_eq!(byte_vector[0], expected_first_byte);",
+                "    assert_eq!(byte_vector[1], expected_second_byte);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::collections::HashMap;",
+                "",
+                "    let mut map = HashMap::new();",
+                "    map.insert(String::from(\"key1\"), 10);",
+                "    map.insert(String::from(\"key2\"), 20);",
+                "    let _result = to_vec(&map);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result.is_ok(), true);",
+                "    assert_eq!(_result.unwrap(), vec![/* expected serialized output here */]);",
+                "    assert!(matches!(_result, Ok(_)));",
+                "    assert!(matches!(_result, Ok(vec)) && vec.len() > 0);",
+                "    assert!(matches!(_result, Ok(vec)) && vec[0] == expected_first_byte);"
+              ],
+              "code": [
+                "{",
+                "    use std::collections::HashMap;",
+                "",
+                "    let mut map = HashMap::new();",
+                "    map.insert(String::from(\"key1\"), 10);",
+                "    map.insert(String::from(\"key2\"), 20);",
+                "    let _result = to_vec(&map);",
+                "    assert_eq!(_result.is_ok(), true);",
+                "    assert_eq!(_result.unwrap(), vec![/* expected serialized output here */]);",
+                "    assert!(matches!(_result, Ok(_)));",
+                "    assert!(matches!(_result, Ok(vec)) && vec.len() > 0);",
+                "    assert!(matches!(_result, Ok(vec)) && vec[0] == expected_first_byte);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(Serialize)]",
+                "    struct Nested {",
+                "        value: String,",
+                "    }",
+                "",
+                "    #[derive(Serialize)]",
+                "    struct DeeplyNested {",
+                "        nested: Nested,",
+                "        number: u32,",
+                "    }",
+                "",
+                "    let value = DeeplyNested {",
+                "        nested: Nested {",
+                "            value: String::from(\"Hello\"),",
+                "        },",
+                "        number: 42,",
+                "    };",
+                "    let _result = to_vec(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result.is_ok(), true);",
+                "    assert_eq!(_result.unwrap(), b\"{\\\"nested\\\":{\\\"value\\\":\\\"Hello\\\"},\\\"number\\\":42}\");",
+                "    assert_eq!(_result.as_ref().unwrap().len() > 0, true);",
+                "    assert!(matches!(_result, Ok(_)));"
+              ],
+              "code": [
+                "{",
+                "    #[derive(Serialize)]",
+                "    struct Nested {",
+                "        value: String,",
+                "    }",
+                "",
+                "    #[derive(Serialize)]",
+                "    struct DeeplyNested {",
+                "        nested: Nested,",
+                "        number: u32,",
+                "    }",
+                "",
+                "    let value = DeeplyNested {",
+                "        nested: Nested {",
+                "            value: String::from(\"Hello\"),",
+                "        },",
+                "        number: 42,",
+                "    };",
+                "    let _result = to_vec(&value);",
+                "    assert_eq!(_result.is_ok(), true);",
+                "    assert_eq!(_result.unwrap(), b\"{\\\"nested\\\":{\\\"value\\\":\\\"Hello\\\"},\\\"number\\\":42}\");",
+                "    assert_eq!(_result.as_ref().unwrap().len() > 0, true);",
+                "    assert!(matches!(_result, Ok(_)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let large_vec: Vec<u32> = (0..1000).collect();",
+                "    let _result = to_vec(&large_vec);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, Ok(writer));",
+                "    assert!(_result.is_ok());",
+                "    assert!(matches!(_result, Ok(_)));",
+                "    assert!(matches!(_result, Ok(ref v) if v.len() > 0));",
+                "    assert!(writer.capacity() >= 128);"
+              ],
+              "code": [
+                "{",
+                "    let large_vec: Vec<u32> = (0..1000).collect();",
+                "    let _result = to_vec(&large_vec);",
+                "    assert_eq!(_result, Ok(writer));",
+                "    assert!(_result.is_ok());",
+                "    assert!(matches!(_result, Ok(_)));",
+                "    assert!(matches!(_result, Ok(ref v) if v.len() > 0));",
+                "    assert!(writer.capacity() >= 128);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

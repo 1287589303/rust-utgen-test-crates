@@ -1,0 +1,102 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: Box<[u8]> = Box::from([1, 2, 3, 4, 5]); // Non-empty slice with length > 0",
+          "    let bytes = Bytes::from(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(bytes.len() == 5);",
+          "    assert_eq!(bytes.ptr, Box::into_raw(slice) as *mut u8);",
+          "    assert!(bytes.data.load(Ordering::SeqCst) as usize & KIND_MASK == KIND_VEC);",
+          "    assert_eq!(bytes.vtable, &PROMOTABLE_EVEN_VTABLE);"
+        ],
+        "code": [
+          "{",
+          "    let slice: Box<[u8]> = Box::from([1, 2, 3, 4, 5]); // Non-empty slice with length > 0",
+          "    let bytes = Bytes::from(slice);",
+          "    assert!(bytes.len() == 5);",
+          "    assert_eq!(bytes.ptr, Box::into_raw(slice) as *mut u8);",
+          "    assert!(bytes.data.load(Ordering::SeqCst) as usize & KIND_MASK == KIND_VEC);",
+          "    assert_eq!(bytes.vtable, &PROMOTABLE_EVEN_VTABLE);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: Box<[u8]> = Box::from([10; 100]); // Non-empty slice with length > 0",
+          "    let bytes = Bytes::from(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: Box<[u8]> = Box::from([10; 100]);",
+          "    assert!(!slice.is_empty());",
+          "    let ptr = Box::into_raw(slice) as *mut u8;",
+          "    assert_eq!(ptr as usize & 0x1, 0);",
+          "    assert_eq!(bytes.ptr, ptr);",
+          "    assert_eq!(bytes.len, 100);",
+          "    assert_eq!(bytes.vtable, &PROMOTABLE_EVEN_VTABLE);"
+        ],
+        "code": [
+          "{",
+          "    let slice: Box<[u8]> = Box::from([10; 100]); // Non-empty slice with length > 0",
+          "    let bytes = Bytes::from(slice);",
+          "    let slice: Box<[u8]> = Box::from([10; 100]);",
+          "    assert!(!slice.is_empty());",
+          "    let ptr = Box::into_raw(slice) as *mut u8;",
+          "    assert_eq!(ptr as usize & 0x1, 0);",
+          "    assert_eq!(bytes.ptr, ptr);",
+          "    assert_eq!(bytes.len, 100);",
+          "    assert_eq!(bytes.vtable, &PROMOTABLE_EVEN_VTABLE);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: Box<[u8]> = Box::from([0, 1, 2]); // Non-empty slice with length > 0",
+          "    let bytes = Bytes::from(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(!slice.is_empty(), \"Precondition failed: slice must not be empty\");",
+          "    let expected_len = 3;",
+          "    let expected_data = ptr_map(Box::into_raw(slice) as *mut u8, |addr| addr | KIND_VEC);",
+          "    assert_eq!(bytes.len, expected_len, \"Expected length did not match\");",
+          "    assert_eq!(bytes.ptr, Box::into_raw(slice) as *mut u8, \"Expected pointer did not match\");",
+          "    assert_eq!(bytes.data, AtomicPtr::new(expected_data.cast()), \"Expected data did not match\");",
+          "    assert_eq!(bytes.vtable, &PROMOTABLE_EVEN_VTABLE, \"Expected vtable did not match\");"
+        ],
+        "code": [
+          "{",
+          "    let slice: Box<[u8]> = Box::from([0, 1, 2]); // Non-empty slice with length > 0",
+          "    let bytes = Bytes::from(slice);",
+          "    assert!(!slice.is_empty(), \"Precondition failed: slice must not be empty\");",
+          "    let expected_len = 3;",
+          "    let expected_data = ptr_map(Box::into_raw(slice) as *mut u8, |addr| addr | KIND_VEC);",
+          "    assert_eq!(bytes.len, expected_len, \"Expected length did not match\");",
+          "    assert_eq!(bytes.ptr, Box::into_raw(slice) as *mut u8, \"Expected pointer did not match\");",
+          "    assert_eq!(bytes.data, AtomicPtr::new(expected_data.cast()), \"Expected data did not match\");",
+          "    assert_eq!(bytes.vtable, &PROMOTABLE_EVEN_VTABLE, \"Expected vtable did not match\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

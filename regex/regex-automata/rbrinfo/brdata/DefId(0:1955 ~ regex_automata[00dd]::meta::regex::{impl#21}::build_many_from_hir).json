@@ -1,0 +1,122 @@
+{
+  "name": "regex_automata::meta::regex::{impl#21}::build_many_from_hir",
+  "mod_info": {
+    "name": "meta::regex",
+    "loc": "regex-automata/src/meta/mod.rs:57:1:57:11"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/meta/regex.rs:3543:5:3560:6",
+  "doc": "/// Builds a `Regex` directly from many `Hir` expressions.\n///\n/// This is useful if you needed to parse pattern strings into `Hir`\n/// expressions for other reasons (such as analysis or transformations).\n/// This routine permits building a `Regex` directly from the `Hir`\n/// expressions instead of first converting the `Hir` expressions back to\n/// pattern strings.\n///\n/// When using this method, any options set via [`Builder::syntax`] are\n/// ignored. Namely, the syntax options only apply when parsing a pattern\n/// string, which isn't relevant here.\n///\n/// If there was a problem building the underlying regex matcher for the\n/// given `Hir` expressions, then an error is returned.\n///\n/// Note that unlike [`Builder::build_many`], this can only fail as a\n/// result of building the underlying matcher. In that case, there is\n/// no single `Hir` expression that can be isolated as a reason for the\n/// failure. So if this routine fails, it's not possible to determine which\n/// `Hir` expression caused the failure.\n///\n/// # Example\n///\n/// This example shows how one can hand-construct multiple `Hir`\n/// expressions and build a single regex from them without doing any\n/// parsing at all.\n///\n/// ```\n/// use {\n///     regex_automata::{meta::Regex, Match},\n///     regex_syntax::hir::{Hir, Look},\n/// };\n///\n/// // (?Rm)^foo$\n/// let hir1 = Hir::concat(vec![\n///     Hir::look(Look::StartCRLF),\n///     Hir::literal(\"foo\".as_bytes()),\n///     Hir::look(Look::EndCRLF),\n/// ]);\n/// // (?Rm)^bar$\n/// let hir2 = Hir::concat(vec![\n///     Hir::look(Look::StartCRLF),\n///     Hir::literal(\"bar\".as_bytes()),\n///     Hir::look(Look::EndCRLF),\n/// ]);\n/// let re = Regex::builder()\n///     .build_many_from_hir(&[&hir1, &hir2])?;\n/// let hay = \"\\r\\nfoo\\r\\nbar\";\n/// let got: Vec<Match> = re.find_iter(hay).collect();\n/// let expected = vec![\n///     Match::must(0, 2..5),\n///     Match::must(1, 7..10),\n/// ];\n/// assert_eq!(expected, got);\n///\n/// Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn build_many_from_hir<H: Borrow<Hir>>(",
+    "    &self,",
+    "    hirs: &[H],",
+    ") -> Result<Regex, BuildError> {",
+    "    let config = self.config.clone();",
+    "    // We collect the HIRs into a vec so we can write internal routines",
+    "    // with '&[&Hir]'. i.e., Don't use generics everywhere to keep code",
+    "    // bloat down..",
+    "    let hirs: Vec<&Hir> = hirs.iter().map(|hir| hir.borrow()).collect();",
+    "    let info = RegexInfo::new(config, &hirs);",
+    "    let strat = strategy::new(&info, &hirs)?;",
+    "    let pool = {",
+    "        let strat = Arc::clone(&strat);",
+    "        let create: CachePoolFn = Box::new(move || strat.create_cache());",
+    "        Pool::new(create)",
+    "    };",
+    "    Ok(Regex { imp: Arc::new(RegexI { strat, info }), pool })",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "strategy::new(&info, &hirs)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 3553,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        13,
+        14,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "strategy::new(&info, &hirs)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3553,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(Regex { imp: Arc::new(RegexI { strat, info }), pool })",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        12,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        40
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

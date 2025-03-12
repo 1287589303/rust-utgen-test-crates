@@ -1,0 +1,199 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestCache;",
+          "    ",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache);",
+          "    let mut stack = Vec::new();",
+          "    stack.push(Box::new(TestCache));",
+          "    ",
+          "    let pool = Pool {",
+          "        stack: Mutex::new(stack),",
+          "        create: create_fn,",
+          "    };",
+          "",
+          "    let guard = pool.get(); // This should succeed since stack has a value.",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(guard.value.is_some());",
+          "    assert_eq!(guard.pool, &pool);",
+          "    assert!(guard.value.as_ref().unwrap().is::<TestCache>());"
+        ],
+        "code": [
+          "{",
+          "    struct TestCache;",
+          "    ",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache);",
+          "    let mut stack = Vec::new();",
+          "    stack.push(Box::new(TestCache));",
+          "    ",
+          "    let pool = Pool {",
+          "        stack: Mutex::new(stack),",
+          "        create: create_fn,",
+          "    };",
+          "",
+          "    let guard = pool.get(); // This should succeed since stack has a value.",
+          "    assert!(guard.value.is_some());",
+          "    assert_eq!(guard.pool, &pool);",
+          "    assert!(guard.value.as_ref().unwrap().is::<TestCache>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestCache;",
+          "    ",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache);",
+          "    let mut stack = Vec::new();",
+          "    stack.push(Box::new(TestCache));",
+          "    stack.push(Box::new(TestCache));",
+          "    ",
+          "    let pool = Pool {",
+          "        stack: Mutex::new(stack),",
+          "        create: create_fn,",
+          "    };",
+          "",
+          "    let guard1 = pool.get(); // This should succeed and return the first value.",
+          "    let guard2 = pool.get(); // This should succeed and return the second value.",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(guard1.value.is_some());",
+          "    assert_eq!(guard1.value.as_ref().unwrap().as_ref().type_id(), std::any::TypeId::of::<TestCache>());",
+          "    assert!(guard2.value.is_some());",
+          "    assert_eq!(guard2.value.as_ref().unwrap().as_ref().type_id(), std::any::TypeId::of::<TestCache>());"
+        ],
+        "code": [
+          "{",
+          "    struct TestCache;",
+          "    ",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache);",
+          "    let mut stack = Vec::new();",
+          "    stack.push(Box::new(TestCache));",
+          "    stack.push(Box::new(TestCache));",
+          "    ",
+          "    let pool = Pool {",
+          "        stack: Mutex::new(stack),",
+          "        create: create_fn,",
+          "    };",
+          "",
+          "    let guard1 = pool.get(); // This should succeed and return the first value.",
+          "    let guard2 = pool.get(); // This should succeed and return the second value.",
+          "    assert!(guard1.value.is_some());",
+          "    assert_eq!(guard1.value.as_ref().unwrap().as_ref().type_id(), std::any::TypeId::of::<TestCache>());",
+          "    assert!(guard2.value.is_some());",
+          "    assert_eq!(guard2.value.as_ref().unwrap().as_ref().type_id(), std::any::TypeId::of::<TestCache>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestCache;",
+          "    ",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache);",
+          "    let mut stack = Vec::new();",
+          "    stack.push(Box::new(TestCache));",
+          "    ",
+          "    let pool = Pool {",
+          "        stack: Mutex::new(stack),",
+          "        create: create_fn,",
+          "    };",
+          "",
+          "    let guard = pool.get(); // This should succeed and return the single value.",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(guard.pool, &pool);",
+          "    assert!(guard.value.is_some());",
+          "    assert!(guard.value.unwrap().is::<TestCache>());"
+        ],
+        "code": [
+          "{",
+          "    struct TestCache;",
+          "    ",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache);",
+          "    let mut stack = Vec::new();",
+          "    stack.push(Box::new(TestCache));",
+          "    ",
+          "    let pool = Pool {",
+          "        stack: Mutex::new(stack),",
+          "        create: create_fn,",
+          "    };",
+          "",
+          "    let guard = pool.get(); // This should succeed and return the single value.",
+          "    assert_eq!(guard.pool, &pool);",
+          "    assert!(guard.value.is_some());",
+          "    assert!(guard.value.unwrap().is::<TestCache>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestCache;",
+          "    ",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache);",
+          "    let mut stack = Vec::new();",
+          "    stack.push(Box::new(TestCache));",
+          "    ",
+          "    let pool = Pool {",
+          "        stack: Mutex::new(stack),",
+          "        create: create_fn,",
+          "    };",
+          "",
+          "    let guards: Vec<_> = (0..10).map(|_| pool.get()).collect(); // This should succeed for multiple calls.",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(guards.len(), 10);",
+          "    for guard in &guards { assert!(guard.value.is_some()); }",
+          "    for guard in &guards { assert_eq!(guard.pool, &pool); }",
+          "    assert!(stack.is_empty());",
+          "    assert!(std::thread::panicking::is_panic_enabled());"
+        ],
+        "code": [
+          "{",
+          "    struct TestCache;",
+          "    ",
+          "    let create_fn: CachePoolFn = Box::new(|| TestCache);",
+          "    let mut stack = Vec::new();",
+          "    stack.push(Box::new(TestCache));",
+          "    ",
+          "    let pool = Pool {",
+          "        stack: Mutex::new(stack),",
+          "        create: create_fn,",
+          "    };",
+          "",
+          "    let guards: Vec<_> = (0..10).map(|_| pool.get()).collect(); // This should succeed for multiple calls.",
+          "    assert_eq!(guards.len(), 10);",
+          "    for guard in &guards { assert!(guard.value.is_some()); }",
+          "    for guard in &guards { assert_eq!(guard.pool, &pool); }",
+          "    assert!(stack.is_empty());",
+          "    assert!(std::thread::panicking::is_panic_enabled());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

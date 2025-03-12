@@ -1,0 +1,183 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let state_id_empty = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    let state_id_union = builder.add(State::Union { alternates: vec![] }).unwrap();",
+          "",
+          "    builder.patch(state_id_empty, state_id_union).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    builder.patch(state_id_empty, state_id_union).unwrap(); // test patching from Empty to Union state, expect Ok(())",
+          "    assert_eq!(builder.memory_states, old_memory_states + mem::size_of::<StateID>()); // verify memory states increased",
+          "    assert!(builder.check_size_limit().is_ok()); // check size limit is still ok after patching"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let state_id_empty = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    let state_id_union = builder.add(State::Union { alternates: vec![] }).unwrap();",
+          "",
+          "    builder.patch(state_id_empty, state_id_union).unwrap();",
+          "    builder.patch(state_id_empty, state_id_union).unwrap(); // test patching from Empty to Union state, expect Ok(())",
+          "    assert_eq!(builder.memory_states, old_memory_states + mem::size_of::<StateID>()); // verify memory states increased",
+          "    assert!(builder.check_size_limit().is_ok()); // check size limit is still ok after patching",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let state_id_empty = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    let state_id_union_reverse = builder.add(State::UnionReverse { alternates: vec![] }).unwrap();",
+          "",
+          "    builder.patch(state_id_empty, state_id_union_reverse).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    self.states[from] = State::Empty { next: some_state_id };",
+          "    old_memory_states = initial_memory_states;",
+          "    self.memory_states = increased_memory_states; // ensure memory_states has increased",
+          "    self.check_size_limit().unwrap();  // ensure check_size_limit returns Ok",
+          "    let result = builder.patch(state_id_empty, state_id_union_reverse);",
+          "    assert_eq!(result, Ok(()));"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let state_id_empty = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    let state_id_union_reverse = builder.add(State::UnionReverse { alternates: vec![] }).unwrap();",
+          "",
+          "    builder.patch(state_id_empty, state_id_union_reverse).unwrap();",
+          "    self.states[from] = State::Empty { next: some_state_id };",
+          "    old_memory_states = initial_memory_states;",
+          "    self.memory_states = increased_memory_states; // ensure memory_states has increased",
+          "    self.check_size_limit().unwrap();  // ensure check_size_limit returns Ok",
+          "    let result = builder.patch(state_id_empty, state_id_union_reverse);",
+          "    assert_eq!(result, Ok(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.set_size_limit(Some(1024)).unwrap();  // Set a memory limit",
+          "",
+          "    let state_id_empty = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    let state_id_union = builder.add(State::Union { alternates: vec![] }).unwrap();",
+          "",
+          "    builder.patch(state_id_empty, state_id_union).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    builder.set_size_limit(Some(1024)).unwrap();",
+          "    let state_id_empty = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    let state_id_union = builder.add(State::Union { alternates: vec![] }).unwrap();",
+          "    builder.patch(state_id_empty, state_id_union).unwrap();",
+          "    assert_eq!(builder.memory_states, old_memory_states + mem::size_of::<StateID>());",
+          "    assert!(builder.check_size_limit().is_ok());",
+          "    assert_eq!(builder.patch(state_id_empty, state_id_union), Ok(()));",
+          "    assert!(matches!(builder.states[state_id_empty], State::Empty { next: state_id_union }));"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.set_size_limit(Some(1024)).unwrap();  // Set a memory limit",
+          "",
+          "    let state_id_empty = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    let state_id_union = builder.add(State::Union { alternates: vec![] }).unwrap();",
+          "",
+          "    builder.patch(state_id_empty, state_id_union).unwrap();",
+          "    builder.set_size_limit(Some(1024)).unwrap();",
+          "    let state_id_empty = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    let state_id_union = builder.add(State::Union { alternates: vec![] }).unwrap();",
+          "    builder.patch(state_id_empty, state_id_union).unwrap();",
+          "    assert_eq!(builder.memory_states, old_memory_states + mem::size_of::<StateID>());",
+          "    assert!(builder.check_size_limit().is_ok());",
+          "    assert_eq!(builder.patch(state_id_empty, state_id_union), Ok(()));",
+          "    assert!(matches!(builder.states[state_id_empty], State::Empty { next: state_id_union }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let state_id_sparse = builder.add(State::Sparse { transitions: vec![] }).unwrap();",
+          "    let state_id_empty = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "",
+          "    builder.patch(state_id_sparse, state_id_empty).unwrap(); // This should panic",
+          "}"
+        ],
+        "oracle": [
+          "    builder.patch(state_id_empty, state_id_empty).unwrap(); // Expect Ok(())",
+          "    ",
+          "    let mut builder = Builder::new();",
+          "    let state_id_empty1 = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    let state_id_empty2 = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    builder.patch(state_id_empty1, state_id_empty2).unwrap(); // Expect Ok(())",
+          "    ",
+          "    builder.memory_states = builder.memory_states + 1; // Simulate memory increase",
+          "    let patch_result = builder.check_size_limit(); // Expect Ok(())",
+          "    ",
+          "    assert!(patch_result.is_ok()); // Check if check_size_limit returns Ok",
+          "    builder.patch(state_id_empty1, state_id_empty2).unwrap(); // Expect Ok(())",
+          "    ",
+          "    let state_id_union = builder.add(State::Union { alternates: vec![] }).unwrap();",
+          "    let patch_result = builder.patch(state_id_union, state_id_empty); // Expect Ok(())",
+          "    ",
+          "    assert_eq!(builder.memory_states, old_memory_states + mem::size_of::<StateID>()); // Check memory increase"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let state_id_sparse = builder.add(State::Sparse { transitions: vec![] }).unwrap();",
+          "    let state_id_empty = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "",
+          "    builder.patch(state_id_sparse, state_id_empty).unwrap(); // This should panic",
+          "    builder.patch(state_id_empty, state_id_empty).unwrap(); // Expect Ok(())",
+          "    ",
+          "    let mut builder = Builder::new();",
+          "    let state_id_empty1 = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    let state_id_empty2 = builder.add(State::Empty { next: StateID(SmallIndex::default()) }).unwrap();",
+          "    builder.patch(state_id_empty1, state_id_empty2).unwrap(); // Expect Ok(())",
+          "    ",
+          "    builder.memory_states = builder.memory_states + 1; // Simulate memory increase",
+          "    let patch_result = builder.check_size_limit(); // Expect Ok(())",
+          "    ",
+          "    assert!(patch_result.is_ok()); // Check if check_size_limit returns Ok",
+          "    builder.patch(state_id_empty1, state_id_empty2).unwrap(); // Expect Ok(())",
+          "    ",
+          "    let state_id_union = builder.add(State::Union { alternates: vec![] }).unwrap();",
+          "    let patch_result = builder.patch(state_id_union, state_id_empty); // Expect Ok(())",
+          "    ",
+          "    assert_eq!(builder.memory_states, old_memory_states + mem::size_of::<StateID>()); // Check memory increase",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

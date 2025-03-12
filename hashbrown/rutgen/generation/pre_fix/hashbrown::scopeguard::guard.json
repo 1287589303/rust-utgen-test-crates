@@ -1,0 +1,190 @@
+{
+  "name": "hashbrown::scopeguard::guard",
+  "mod_info": {
+    "name": "scopeguard",
+    "loc": "src/lib.rs:83:1:83:16"
+  },
+  "visible": true,
+  "loc": "src/scopeguard.rs:17:1:22:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "expected return value/type: ScopeGuard { dropfn, value }\n"
+      ],
+      "input_infer": "value: any type, dropfn: any function implementing FnMut(&mut T) with compatibility of T; test with edge cases like null, large allocations, and varying function behaviors (e.g., modifying value, logging).\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut value = 42;",
+                "    let dropfn = |v: &mut i32| { *v += 1; };",
+                "    let guard_instance = guard(value, dropfn);",
+                "}"
+              ],
+              "oracle": [
+                "    let mut value = 42;",
+                "    let dropfn = |v: &mut i32| { *v += 1; };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    assert_eq!(guard_instance.value, 42);",
+                "    assert_eq!(std::any::type_name::<ScopeGuard<i32, _>>(), \"ScopeGuard<i32, _>\");",
+                "    assert!(std::mem::size_of::<ScopeGuard<i32, _>>() > 0);",
+                "    assert!(std::mem::align_of::<ScopeGuard<i32, _>>() > 0);"
+              ],
+              "code": [
+                "{",
+                "    let mut value = 42;",
+                "    let dropfn = |v: &mut i32| { *v += 1; };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    let mut value = 42;",
+                "    let dropfn = |v: &mut i32| { *v += 1; };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    assert_eq!(guard_instance.value, 42);",
+                "    assert_eq!(std::any::type_name::<ScopeGuard<i32, _>>(), \"ScopeGuard<i32, _>\");",
+                "    assert!(std::mem::size_of::<ScopeGuard<i32, _>>() > 0);",
+                "    assert!(std::mem::align_of::<ScopeGuard<i32, _>>() > 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut value = String::from(\"Hello\");",
+                "    let dropfn = |v: &mut String| { v.push_str(\", World!\"); };",
+                "    let guard_instance = guard(value, dropfn);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(guard_instance.value, String::from(\"Hello\"));",
+                "    assert!(std::ptr::eq(&guard_instance.dropfn as *const _ as *const (), &dropfn as *const _ as *const ()));",
+                "    assert!(std::any::type_name::<ScopeGuard<String, _>>() == \"ScopeGuard<String, F>\");"
+              ],
+              "code": [
+                "{",
+                "    let mut value = String::from(\"Hello\");",
+                "    let dropfn = |v: &mut String| { v.push_str(\", World!\"); };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    assert_eq!(guard_instance.value, String::from(\"Hello\"));",
+                "    assert!(std::ptr::eq(&guard_instance.dropfn as *const _ as *const (), &dropfn as *const _ as *const ()));",
+                "    assert!(std::any::type_name::<ScopeGuard<String, _>>() == \"ScopeGuard<String, F>\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut value: Option<i32> = None;",
+                "    let dropfn = |v: &mut Option<i32>| { *v = Some(99); };",
+                "    let guard_instance = guard(value, dropfn);",
+                "}"
+              ],
+              "oracle": [
+                "    let mut value: Option<i32> = None;",
+                "    let dropfn = |v: &mut Option<i32>| { *v = Some(99); };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    assert_eq!(guard_instance.value, value);",
+                "    assert!(guard_instance.dropfn as *const _ != ptr::null());",
+                "    assert_eq!(guard_instance.dropfn as *const _, dropfn as *const _);"
+              ],
+              "code": [
+                "{",
+                "    let mut value: Option<i32> = None;",
+                "    let dropfn = |v: &mut Option<i32>| { *v = Some(99); };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    let mut value: Option<i32> = None;",
+                "    let dropfn = |v: &mut Option<i32>| { *v = Some(99); };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    assert_eq!(guard_instance.value, value);",
+                "    assert!(guard_instance.dropfn as *const _ != ptr::null());",
+                "    assert_eq!(guard_instance.dropfn as *const _, dropfn as *const _);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut value = vec![0; 1_000_000];",
+                "    let dropfn = |v: &mut Vec<i32>| { v.push(1); };",
+                "    let guard_instance = guard(value, dropfn);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(guard_instance.value.len() == 1_000_000);",
+                "    assert!(guard_instance.value[999_999] == 0);",
+                "    let mut drop_value = guard_instance.value;",
+                "    (guard_instance.dropfn)(&mut drop_value);",
+                "    assert!(drop_value.len() == 1_000_001);",
+                "    assert!(drop_value[1_000_000] == 1);"
+              ],
+              "code": [
+                "{",
+                "    let mut value = vec![0; 1_000_000];",
+                "    let dropfn = |v: &mut Vec<i32>| { v.push(1); };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    assert!(guard_instance.value.len() == 1_000_000);",
+                "    assert!(guard_instance.value[999_999] == 0);",
+                "    let mut drop_value = guard_instance.value;",
+                "    (guard_instance.dropfn)(&mut drop_value);",
+                "    assert!(drop_value.len() == 1_000_001);",
+                "    assert!(drop_value[1_000_000] == 1);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut value = 0;",
+                "    let dropfn = |v: &mut i32| { println!(\"Value before dropfn: {}\", v); *v += 10; };",
+                "    let guard_instance = guard(value, dropfn);",
+                "}"
+              ],
+              "oracle": [
+                "    let mut value = 0;",
+                "    let dropfn = |v: &mut i32| { println!(\"Value before dropfn: {}\", v); *v += 10; };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    assert!(std::mem::size_of_val(&guard_instance) == std::mem::size_of::<ScopeGuard<i32, _>>());",
+                "    assert_eq!(guard_instance.value, 0);",
+                "    let dropfn_ref = &mut guard_instance.dropfn;",
+                "    assert!(dropfn_ref as *mut _ != ptr::null_mut());"
+              ],
+              "code": [
+                "{",
+                "    let mut value = 0;",
+                "    let dropfn = |v: &mut i32| { println!(\"Value before dropfn: {}\", v); *v += 10; };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    let mut value = 0;",
+                "    let dropfn = |v: &mut i32| { println!(\"Value before dropfn: {}\", v); *v += 10; };",
+                "    let guard_instance = guard(value, dropfn);",
+                "    assert!(std::mem::size_of_val(&guard_instance) == std::mem::size_of::<ScopeGuard<i32, _>>());",
+                "    assert_eq!(guard_instance.value, 0);",
+                "    let dropfn_ref = &mut guard_instance.dropfn;",
+                "    assert!(dropfn_ref as *mut _ != ptr::null_mut());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

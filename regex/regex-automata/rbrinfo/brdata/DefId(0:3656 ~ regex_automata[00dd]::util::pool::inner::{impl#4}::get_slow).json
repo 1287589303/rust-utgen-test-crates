@@ -1,0 +1,624 @@
+{
+  "name": "regex_automata::util::pool::inner::{impl#4}::get_slow",
+  "mod_info": {
+    "name": "util::pool::inner",
+    "loc": "regex-automata/src/util/pool.rs:235:1:793:2"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/util/pool.rs:542:9:598:10",
+  "doc": "/// This is the \"slow\" version that goes through a mutex to pop an\n/// allocated value off a stack to return to the caller. (Or, if the\n/// stack is empty, a new value is created.)\n///\n/// If the pool has no owner, then this will set the owner.\n",
+  "code": [
+    "fn get_slow(",
+    "    &self,",
+    "    caller: usize,",
+    "    owner: usize,",
+    ") -> PoolGuard<'_, T, F> {",
+    "    if owner == THREAD_ID_UNOWNED {",
+    "        // This sentinel means this pool is not yet owned. We try to",
+    "        // atomically set the owner. If we do, then this thread becomes",
+    "        // the owner and we can return a guard that represents the",
+    "        // special T for the owner.",
+    "        //",
+    "        // Note that we set the owner to a different sentinel that",
+    "        // indicates that the owned value is in use. The owner ID will",
+    "        // get updated to the actual ID of this thread once the guard",
+    "        // returned by this function is put back into the pool.",
+    "        let res = self.owner.compare_exchange(",
+    "            THREAD_ID_UNOWNED,",
+    "            THREAD_ID_INUSE,",
+    "            Ordering::AcqRel,",
+    "            Ordering::Acquire,",
+    "        );",
+    "        if res.is_ok() {",
+    "            // SAFETY: A successful CAS above implies this thread is",
+    "            // the owner and that this is the only such thread that",
+    "            // can reach here. Thus, there is no data race.",
+    "            unsafe {",
+    "                *self.owner_val.get() = Some((self.create)());",
+    "            }",
+    "            return self.guard_owned(caller);",
+    "        }",
+    "    }",
+    "    let stack_id = caller % self.stacks.len();",
+    "    // We try to acquire exclusive access to this thread's stack, and",
+    "    // if so, grab a value from it if we can. We put this in a loop so",
+    "    // that it's easy to tweak and experiment with a different number",
+    "    // of tries. In the end, I couldn't see anything obviously better",
+    "    // than one attempt in ad hoc testing.",
+    "    for _ in 0..1 {",
+    "        let mut stack = match self.stacks[stack_id].0.try_lock() {",
+    "            Err(_) => continue,",
+    "            Ok(stack) => stack,",
+    "        };",
+    "        if let Some(value) = stack.pop() {",
+    "            return self.guard_stack(value);",
+    "        }",
+    "        // Unlock the mutex guarding the stack before creating a fresh",
+    "        // value since we no longer need the stack.",
+    "        drop(stack);",
+    "        let value = Box::new((self.create)());",
+    "        return self.guard_stack(value);",
+    "    }",
+    "    // We're only here if we could get access to our stack, so just",
+    "    // create a new value. This seems like it could be wasteful, but",
+    "    // waiting for exclusive access to a stack when there's high",
+    "    // contention is brutal for perf.",
+    "    self.guard_stack_transient(Box::new((self.create)()))",
+    "}"
+  ],
+  "size": {
+    "chain": 9,
+    "contra": 2,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "owner == THREAD_ID_UNOWNED",
+          "norm": "THREAD_ID_UNOWNED == owner",
+          "value": "true",
+          "line": 547,
+          "bound": null
+        },
+        {
+          "cond": "res.is_ok()",
+          "norm": null,
+          "value": "true",
+          "line": 563,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "owner == THREAD_ID_UNOWNED",
+          "norm": "THREAD_ID_UNOWNED == owner",
+          "value": "true",
+          "line": 547,
+          "bound": null
+        },
+        {
+          "cond": "res.is_ok()",
+          "norm": null,
+          "value": "false",
+          "line": 563,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..1",
+          "norm": null,
+          "value": "true",
+          "line": 579,
+          "bound": null
+        },
+        {
+          "cond": "self.stacks[stack_id].0.try_lock() matches Err(_)",
+          "norm": null,
+          "value": "true",
+          "line": 580,
+          "bound": null
+        },
+        {
+          "cond": "self.stacks[stack_id].0.try_lock() matches Err(_)",
+          "norm": null,
+          "value": "true",
+          "line": 580,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..1",
+          "norm": null,
+          "value": "false",
+          "line": 579,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        28,
+        43,
+        44,
+        18,
+        19,
+        20,
+        22,
+        24,
+        45,
+        46,
+        47,
+        53
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "owner == THREAD_ID_UNOWNED",
+          "norm": "THREAD_ID_UNOWNED == owner",
+          "value": "true",
+          "line": 547,
+          "bound": null
+        },
+        {
+          "cond": "res.is_ok()",
+          "norm": null,
+          "value": "false",
+          "line": 563,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..1",
+          "norm": null,
+          "value": "true",
+          "line": 579,
+          "bound": null
+        },
+        {
+          "cond": "self.stacks[stack_id].0.try_lock() matches Ok(stack)",
+          "norm": null,
+          "value": "true",
+          "line": 580,
+          "bound": null
+        },
+        {
+          "cond": "let Some(value) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 584,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        29,
+        30,
+        31,
+        32,
+        33,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        48,
+        51,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "owner == THREAD_ID_UNOWNED",
+          "norm": "THREAD_ID_UNOWNED == owner",
+          "value": "true",
+          "line": 547,
+          "bound": null
+        },
+        {
+          "cond": "res.is_ok()",
+          "norm": null,
+          "value": "false",
+          "line": 563,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..1",
+          "norm": null,
+          "value": "true",
+          "line": 579,
+          "bound": null
+        },
+        {
+          "cond": "self.stacks[stack_id].0.try_lock() matches Ok(stack)",
+          "norm": null,
+          "value": "true",
+          "line": 580,
+          "bound": null
+        },
+        {
+          "cond": "let Some(value) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 584,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "owner == THREAD_ID_UNOWNED",
+          "norm": "THREAD_ID_UNOWNED == owner",
+          "value": "true",
+          "line": 547,
+          "bound": null
+        },
+        {
+          "cond": "res.is_ok()",
+          "norm": null,
+          "value": "false",
+          "line": 563,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..1",
+          "norm": null,
+          "value": "false",
+          "line": 579,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        24,
+        45,
+        46,
+        47,
+        53
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "owner == THREAD_ID_UNOWNED",
+          "norm": "THREAD_ID_UNOWNED == owner",
+          "value": "false",
+          "line": 547,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..1",
+          "norm": null,
+          "value": "true",
+          "line": 579,
+          "bound": null
+        },
+        {
+          "cond": "self.stacks[stack_id].0.try_lock() matches Err(_)",
+          "norm": null,
+          "value": "true",
+          "line": 580,
+          "bound": null
+        },
+        {
+          "cond": "self.stacks[stack_id].0.try_lock() matches Err(_)",
+          "norm": null,
+          "value": "true",
+          "line": 580,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..1",
+          "norm": null,
+          "value": "false",
+          "line": 579,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        28,
+        43,
+        44,
+        18,
+        19,
+        20,
+        22,
+        24,
+        45,
+        46,
+        47,
+        53
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "owner == THREAD_ID_UNOWNED",
+          "norm": "THREAD_ID_UNOWNED == owner",
+          "value": "false",
+          "line": 547,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..1",
+          "norm": null,
+          "value": "true",
+          "line": 579,
+          "bound": null
+        },
+        {
+          "cond": "self.stacks[stack_id].0.try_lock() matches Ok(stack)",
+          "norm": null,
+          "value": "true",
+          "line": 580,
+          "bound": null
+        },
+        {
+          "cond": "let Some(value) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 584,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        29,
+        30,
+        31,
+        32,
+        33,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        48,
+        51,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "owner == THREAD_ID_UNOWNED",
+          "norm": "THREAD_ID_UNOWNED == owner",
+          "value": "false",
+          "line": 547,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..1",
+          "norm": null,
+          "value": "true",
+          "line": 579,
+          "bound": null
+        },
+        {
+          "cond": "self.stacks[stack_id].0.try_lock() matches Ok(stack)",
+          "norm": null,
+          "value": "true",
+          "line": 580,
+          "bound": null
+        },
+        {
+          "cond": "let Some(value) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 584,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "owner == THREAD_ID_UNOWNED",
+          "norm": "THREAD_ID_UNOWNED == owner",
+          "value": "false",
+          "line": 547,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..1",
+          "norm": null,
+          "value": "false",
+          "line": 579,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        24,
+        45,
+        46,
+        47,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

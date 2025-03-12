@@ -1,0 +1,69 @@
+use crate::net::{Ipv4Addr, Ipv6Addr};
+use alloc::borrow::Cow;
+use alloc::borrow::ToOwned;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+use core::cmp;
+use core::fmt::{self, Formatter};
+use percent_encoding::{percent_decode, utf8_percent_encode, CONTROLS};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+use crate::parser::{ParseError, ParseResult};
+fn parse_ipv4addr(input: &str) -> ParseResult<Ipv4Addr> {
+    let mut parts: Vec<&str> = input.split('.').collect();
+    if parts.last() == Some(&"") {
+        parts.pop();
+    }
+    if parts.len() > 4 {
+        return Err(ParseError::InvalidIpv4Address);
+    }
+    let mut numbers: Vec<u32> = Vec::new();
+    for part in parts {
+        match parse_ipv4number(part) {
+            Ok(Some(n)) => numbers.push(n),
+            Ok(None) => return Err(ParseError::InvalidIpv4Address),
+            Err(()) => return Err(ParseError::InvalidIpv4Address),
+        };
+    }
+    let mut ipv4 = numbers.pop().expect("a non-empty list of numbers");
+    if ipv4 > u32::MAX >> (8 * numbers.len() as u32) {
+        return Err(ParseError::InvalidIpv4Address);
+    }
+    if numbers.iter().any(|x| *x > 255) {
+        return Err(ParseError::InvalidIpv4Address);
+    }
+    for (counter, n) in numbers.iter().enumerate() {
+        ipv4 += n << (8 * (3 - counter as u32));
+    }
+    Ok(Ipv4Addr::from(ipv4))
+}
+fn parse_ipv4number(mut input: &str) -> Result<Option<u32>, ()> {
+    if input.is_empty() {
+        return Err(());
+    }
+    let mut r = 10;
+    if input.starts_with("0x") || input.starts_with("0X") {
+        input = &input[2..];
+        r = 16;
+    } else if input.len() >= 2 && input.starts_with('0') {
+        input = &input[1..];
+        r = 8;
+    }
+    if input.is_empty() {
+        return Ok(Some(0));
+    }
+    let valid_number = match r {
+        8 => input.as_bytes().iter().all(|c| (b'0'..=b'7').contains(c)),
+        10 => input.as_bytes().iter().all(|c| c.is_ascii_digit()),
+        16 => input.as_bytes().iter().all(|c| c.is_ascii_hexdigit()),
+        _ => false,
+    };
+    if !valid_number {
+        return Err(());
+    }
+    match u32::from_str_radix(input, r) {
+        Ok(num) => Ok(Some(num)),
+        Err(_) => Ok(None),
+    }
+}

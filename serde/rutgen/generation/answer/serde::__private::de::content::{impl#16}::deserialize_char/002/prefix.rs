@@ -1,0 +1,64 @@
+// Answer 0
+
+#[test]
+fn test_deserialize_char_with_string_content() {
+    struct TestVisitor;
+
+    impl<'de> Visitor<'de> for TestVisitor {
+        type Value = String;
+
+        fn visit_char(self, _value: char) -> Result<Self::Value, ()> {
+            Ok("char_visited".to_string())
+        }
+
+        fn visit_string(self, value: String) -> Result<Self::Value, ()> {
+            Ok(value)
+        }
+
+        fn visit_borrowed_str(self, value: &'de str) -> Result<Self::Value, ()> {
+            Ok(value.to_string())
+        }
+
+        fn visit_unit(self) -> Result<Self::Value, ()> {
+            Ok("unit_visited".to_string())
+        }
+    }
+
+    let content = Content::String("test_string".to_string());
+    let deserializer = ContentDeserializer::<()>::new(content);
+    let visitor = TestVisitor;
+
+    let _result = deserializer.deserialize_char(visitor);
+}
+
+#[test]
+fn test_deserialize_char_with_char_content() {
+    struct TestVisitor;
+
+    impl<'de> Visitor<'de> for TestVisitor {
+        type Value = String;
+
+        fn visit_char(self, value: char) -> Result<Self::Value, ()> {
+            Ok(value.to_string())
+        }
+
+        fn visit_string(self, value: String) -> Result<Self::Value, ()> {
+            Ok(value)
+        }
+
+        fn visit_borrowed_str(self, value: &'de str) -> Result<Self::Value, ()> {
+            Ok(value.to_string())
+        }
+
+        fn visit_unit(self) -> Result<Self::Value, ()> {
+            Ok("unit_visited".to_string())
+        }
+    }
+
+    let content = Content::Char('a');
+    let deserializer = ContentDeserializer::<()>::new(content);
+    let visitor = TestVisitor;
+
+    let _result = deserializer.deserialize_char(visitor);
+}
+

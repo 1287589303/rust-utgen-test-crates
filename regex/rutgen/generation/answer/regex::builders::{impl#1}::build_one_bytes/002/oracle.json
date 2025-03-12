@@ -1,0 +1,196 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder {",
+          "        pats: vec![\"a*b\".to_string(), \"c*d\".to_string()], // Invalid: More than one pattern",
+          "        metac: meta::Config::default(),",
+          "        syntaxc: syntax::Config::default(),",
+          "    };",
+          "    let _ = builder.build_one_bytes(); // Expect an error due to multiple patterns",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(builder.build_one_bytes().is_err());",
+          "    assert_eq!(builder.build_one_bytes().unwrap_err(), Error::CompiledTooBig(0));"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder {",
+          "        pats: vec![\"a*b\".to_string(), \"c*d\".to_string()], // Invalid: More than one pattern",
+          "        metac: meta::Config::default(),",
+          "        syntaxc: syntax::Config::default(),",
+          "    };",
+          "    let _ = builder.build_one_bytes(); // Expect an error due to multiple patterns",
+          "    assert!(builder.build_one_bytes().is_err());",
+          "    assert_eq!(builder.build_one_bytes().unwrap_err(), Error::CompiledTooBig(0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder {",
+          "        pats: vec![\"\".to_string()], // Valid: One empty pattern",
+          "        metac: meta::Config::default(),",
+          "        syntaxc: syntax::Config::default(),",
+          "    };",
+          "    let _ = builder.build_one_bytes(); // Expect an error due to empty regex pattern",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(builder.build_one_bytes().is_err()); // Expect an error due to empty regex pattern",
+          "    assert_eq!(builder.build_one_bytes().err().unwrap(), Error::CompiledTooBig(0)); // Validate specific error type",
+          "    builder.pats.push(\"valid_pattern\".to_string()); // Valid: Add a valid pattern",
+          "    assert!(builder.build_one_bytes().is_ok()); // Expect success after adding a valid pattern"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder {",
+          "        pats: vec![\"\".to_string()], // Valid: One empty pattern",
+          "        metac: meta::Config::default(),",
+          "        syntaxc: syntax::Config::default(),",
+          "    };",
+          "    let _ = builder.build_one_bytes(); // Expect an error due to empty regex pattern",
+          "    assert!(builder.build_one_bytes().is_err()); // Expect an error due to empty regex pattern",
+          "    assert_eq!(builder.build_one_bytes().err().unwrap(), Error::CompiledTooBig(0)); // Validate specific error type",
+          "    builder.pats.push(\"valid_pattern\".to_string()); // Valid: Add a valid pattern",
+          "    assert!(builder.build_one_bytes().is_ok()); // Expect success after adding a valid pattern",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder {",
+          "        pats: vec![\"\\\\d+\".to_string()], // Valid: One pattern",
+          "        metac: meta::Config::default(),",
+          "        syntaxc: syntax::Config::default(),",
+          "    };",
+          "    let _ = builder.build_one_bytes(); // Expect success with valid regex pattern",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(1, builder.pats.len()); // Ensure one pattern is present",
+          "    assert!(builder.build_one_bytes().is_ok()); // Validate successful build of Regex from one pattern",
+          "    assert_eq!(Some(&\"\\\\d+\".to_string()), builder.pats.get(0)); // Check that the pattern matches expected value",
+          "    assert_ne!(Error::CompiledTooBig(0), builder.build_one_bytes().err()); // Ensure no compilation error due to size limit",
+          "    assert!(builder.metac.utf8_empty()); // Validate initial state for utf8_empty setting",
+          "    assert!(builder.syntaxc.utf8()); // Validate initial state for utf8 setting in syntax config"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder {",
+          "        pats: vec![\"\\\\d+\".to_string()], // Valid: One pattern",
+          "        metac: meta::Config::default(),",
+          "        syntaxc: syntax::Config::default(),",
+          "    };",
+          "    let _ = builder.build_one_bytes(); // Expect success with valid regex pattern",
+          "    assert_eq!(1, builder.pats.len()); // Ensure one pattern is present",
+          "    assert!(builder.build_one_bytes().is_ok()); // Validate successful build of Regex from one pattern",
+          "    assert_eq!(Some(&\"\\\\d+\".to_string()), builder.pats.get(0)); // Check that the pattern matches expected value",
+          "    assert_ne!(Error::CompiledTooBig(0), builder.build_one_bytes().err()); // Ensure no compilation error due to size limit",
+          "    assert!(builder.metac.utf8_empty()); // Validate initial state for utf8_empty setting",
+          "    assert!(builder.syntaxc.utf8()); // Validate initial state for utf8 setting in syntax config",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let builder = Builder {",
+          "        pats: vec![\"a{10000}\".to_string()], // Valid: One pattern with potential large size",
+          "        metac: meta::Config::default().size_limit(10000), // Set size limit",
+          "        syntaxc: syntax::Config::default(),",
+          "    };",
+          "    let _ = builder.build_one_bytes(); // Expect success with large pattern within size limit",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(1, builder.pats.len()); // Ensure one pattern is set",
+          "    assert!(builder.metac.size_limit() == 10000); // Verify size limit is set correctly",
+          "    let result = builder.build_one_bytes(); // Test the function",
+          "    assert!(result.is_ok()); // Expect a successful result",
+          "    let regex = result.unwrap(); // Unwrap the successful result",
+          "    assert_eq!(regex.pattern.as_ref(), \"a{10000}\"); // Verify the pattern is as expected",
+          "    assert_eq!(regex.meta.size_limit(), 10000); // Verify that the meta regex size limit is still as expected"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder {",
+          "        pats: vec![\"a{10000}\".to_string()], // Valid: One pattern with potential large size",
+          "        metac: meta::Config::default().size_limit(10000), // Set size limit",
+          "        syntaxc: syntax::Config::default(),",
+          "    };",
+          "    let _ = builder.build_one_bytes(); // Expect success with large pattern within size limit",
+          "    assert_eq!(1, builder.pats.len()); // Ensure one pattern is set",
+          "    assert!(builder.metac.size_limit() == 10000); // Verify size limit is set correctly",
+          "    let result = builder.build_one_bytes(); // Test the function",
+          "    assert!(result.is_ok()); // Expect a successful result",
+          "    let regex = result.unwrap(); // Unwrap the successful result",
+          "    assert_eq!(regex.pattern.as_ref(), \"a{10000}\"); // Verify the pattern is as expected",
+          "    assert_eq!(regex.meta.size_limit(), 10000); // Verify that the meta regex size limit is still as expected",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let builder = Builder {",
+          "        pats: vec![\"a{100000}\".to_string()], // Large pattern that exceeds reasonable size limit",
+          "        metac: meta::Config::default().size_limit(10000), // Set a lower size limit",
+          "        syntaxc: syntax::Config::default(),",
+          "    };",
+          "    let _ = builder.build_one_bytes(); // Expect panic due to exceeded size limit",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(1, builder.pats.len());",
+          "    let metac_pattern = builder.metac.clone().size_limit(10000);",
+          "    let expected_error = Error::CompiledTooBig(10000);",
+          "    let result = builder.build_one_bytes();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err(), Some(expected_error));"
+        ],
+        "code": [
+          "{",
+          "    let builder = Builder {",
+          "        pats: vec![\"a{100000}\".to_string()], // Large pattern that exceeds reasonable size limit",
+          "        metac: meta::Config::default().size_limit(10000), // Set a lower size limit",
+          "        syntaxc: syntax::Config::default(),",
+          "    };",
+          "    let _ = builder.build_one_bytes(); // Expect panic due to exceeded size limit",
+          "    assert_eq!(1, builder.pats.len());",
+          "    let metac_pattern = builder.metac.clone().size_limit(10000);",
+          "    let expected_error = Error::CompiledTooBig(10000);",
+          "    let result = builder.build_one_bytes();",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err(), Some(expected_error));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

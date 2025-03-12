@@ -1,0 +1,163 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[];",
+          "    let expected_version: u32 = 0;",
+          "    let _result = read_version(slice, expected_version);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(_result.is_err());",
+          "    assert_eq!(_result.err().unwrap().0, \"version\");",
+          "    assert_eq!(_result.err().unwrap().kind, DeserializeErrorKind::BufferTooSmall);",
+          "    assert!(matches!(_result.err().unwrap(), DeserializeError::BufferTooSmall(_)));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[];",
+          "    let expected_version: u32 = 0;",
+          "    let _result = read_version(slice, expected_version);",
+          "    assert!(_result.is_err());",
+          "    assert_eq!(_result.err().unwrap().0, \"version\");",
+          "    assert_eq!(_result.err().unwrap().kind, DeserializeErrorKind::BufferTooSmall);",
+          "    assert!(matches!(_result.err().unwrap(), DeserializeError::BufferTooSmall(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3]; // 3 bytes, less than 4",
+          "    let expected_version: u32 = 1;",
+          "    let _result = read_version(slice, expected_version);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result.is_err(), true);",
+          "    assert!(matches!(_result, Err(DeserializeError::buffer_too_small(\"version\"))));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3]; // 3 bytes, less than 4",
+          "    let expected_version: u32 = 1;",
+          "    let _result = read_version(slice, expected_version);",
+          "    assert_eq!(_result.is_err(), true);",
+          "    assert!(matches!(_result, Err(DeserializeError::buffer_too_small(\"version\"))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4]; // This will not represent a valid expected_version",
+          "    let expected_version: u32 = 4294967295; // maximum u32",
+          "    let _result = read_version(slice, expected_version);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(_result.is_err());",
+          "    assert_eq!(_result.unwrap_err().0, DeserializeErrorKind::VersionMismatch { expected: expected_version, found: 0 });"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[1, 2, 3, 4]; // This will not represent a valid expected_version",
+          "    let expected_version: u32 = 4294967295; // maximum u32",
+          "    let _result = read_version(slice, expected_version);",
+          "    assert!(_result.is_err());",
+          "    assert_eq!(_result.unwrap_err().0, DeserializeErrorKind::VersionMismatch { expected: expected_version, found: 0 });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0, 0, 0, 1]; // represents u32: 1",
+          "    let expected_version: u32 = 0; // expected version is invalid (does not match)",
+          "    let _result = read_version(slice, expected_version);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(_result.is_err());",
+          "    assert_eq!(_result.unwrap_err(), DeserializeError::version_mismatch(expected_version, 1));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0, 0, 0, 1]; // represents u32: 1",
+          "    let expected_version: u32 = 0; // expected version is invalid (does not match)",
+          "    let _result = read_version(slice, expected_version);",
+          "    assert!(_result.is_err());",
+          "    assert_eq!(_result.unwrap_err(), DeserializeError::version_mismatch(expected_version, 1));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[255, 255, 255, 255]; // represents u32: 4294967295",
+          "    let expected_version: u32 = 4294967295; // expected version matches max u32",
+          "    let _result = read_version(slice, expected_version);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result.is_err(), true);",
+          "    assert!(matches!(_result, Err(DeserializeError::VersionMismatch { expected: 4294967295, found: 4294967295 })));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[255, 255, 255, 255]; // represents u32: 4294967295",
+          "    let expected_version: u32 = 4294967295; // expected version matches max u32",
+          "    let _result = read_version(slice, expected_version);",
+          "    assert_eq!(_result.is_err(), true);",
+          "    assert!(matches!(_result, Err(DeserializeError::VersionMismatch { expected: 4294967295, found: 4294967295 })));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0, 0, 0, 0]; // represents u32: 0",
+          "    let expected_version: u32 = 0; // expected version matches min u32",
+          "    let _result = read_version(slice, expected_version);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(_result.is_err());",
+          "    assert_eq!(_result.unwrap_err(), DeserializeError::buffer_too_small(\"version\"));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0, 0, 0, 0]; // represents u32: 0",
+          "    let expected_version: u32 = 0; // expected version matches min u32",
+          "    let _result = read_version(slice, expected_version);",
+          "    assert!(_result.is_err());",
+          "    assert_eq!(_result.unwrap_err(), DeserializeError::buffer_too_small(\"version\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

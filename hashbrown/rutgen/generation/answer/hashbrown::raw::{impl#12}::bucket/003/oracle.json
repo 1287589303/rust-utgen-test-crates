@@ -1,0 +1,109 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestAllocator;",
+          "    ",
+          "    let allocator = TestAllocator;",
+          "    let table_layout = TableLayout::default();",
+          "    let capacity = 4; // Assuming 4 buckets to keep it small and simple",
+          "",
+          "    unsafe {",
+          "        let raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);",
+          "        let index = raw_table.buckets(); // index == buckets",
+          "",
+          "        let bucket = raw_table.bucket::<u32>(index); // This should cause a panic due to the violation of index < self.buckets()",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(raw_table.buckets(), 4);",
+          "    let index = raw_table.buckets();",
+          "    assert!(index >= 4);",
+          "    let result = std::panic::catch_unwind(|| {",
+          "    raw_table.bucket::<u32>(index)",
+          "    });",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().downcast_ref::<&str>(), Some(&\"assertion failed\"));"
+        ],
+        "code": [
+          "{",
+          "    struct TestAllocator;",
+          "    ",
+          "    let allocator = TestAllocator;",
+          "    let table_layout = TableLayout::default();",
+          "    let capacity = 4; // Assuming 4 buckets to keep it small and simple",
+          "",
+          "    unsafe {",
+          "        let raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);",
+          "        let index = raw_table.buckets(); // index == buckets",
+          "",
+          "        let bucket = raw_table.bucket::<u32>(index); // This should cause a panic due to the violation of index < self.buckets()",
+          "    }",
+          "    assert_eq!(raw_table.buckets(), 4);",
+          "    let index = raw_table.buckets();",
+          "    assert!(index >= 4);",
+          "    let result = std::panic::catch_unwind(|| {",
+          "    raw_table.bucket::<u32>(index)",
+          "    });",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().downcast_ref::<&str>(), Some(&\"assertion failed\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestAllocator;",
+          "",
+          "    let allocator = TestAllocator;",
+          "    let table_layout = TableLayout::default();",
+          "    let capacity = 4; // Assuming 4 buckets for consistency",
+          "",
+          "    unsafe {",
+          "        let raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);",
+          "        let index = raw_table.buckets(); // index == buckets",
+          "",
+          "        let bucket = raw_table.bucket::<()>(index); // This should also cause a panic due to the violation of index < self.buckets()",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    debug_assert_ne!(self.bucket_mask, 0);",
+          "    debug_assert!(index < self.buckets()); // should panic when index == buckets",
+          "    let bucket = raw_table.bucket::<()>(index); // unsafe call with index == buckets, should lead to panic"
+        ],
+        "code": [
+          "{",
+          "    struct TestAllocator;",
+          "",
+          "    let allocator = TestAllocator;",
+          "    let table_layout = TableLayout::default();",
+          "    let capacity = 4; // Assuming 4 buckets for consistency",
+          "",
+          "    unsafe {",
+          "        let raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);",
+          "        let index = raw_table.buckets(); // index == buckets",
+          "",
+          "        let bucket = raw_table.bucket::<()>(index); // This should also cause a panic due to the violation of index < self.buckets()",
+          "    }",
+          "    debug_assert_ne!(self.bucket_mask, 0);",
+          "    debug_assert!(index < self.buckets()); // should panic when index == buckets",
+          "    let bucket = raw_table.bucket::<()>(index); // unsafe call with index == buckets, should lead to panic",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

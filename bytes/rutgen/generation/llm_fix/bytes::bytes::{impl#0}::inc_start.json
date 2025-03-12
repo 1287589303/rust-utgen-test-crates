@@ -1,0 +1,178 @@
+{
+  "name": "bytes::bytes::{impl#0}::inc_start",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:672:5:677:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: self.len >= by at line 674 is true, with bound self.len == by\n"
+      ],
+      "input_infer": "self.len must be in the range [1, usize::MAX] and by must be in the range [0, self.len] for the function to operate correctly, covering the case where self.len == by.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes = Bytes::from_static(&[1, 2, 3, 4]);",
+                "    let by = bytes.len(); // self.len == by",
+                "    unsafe { bytes.inc_start(by) };",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes.len(), 0);",
+                "    assert_eq!(bytes.ptr, bytes.ptr.wrapping_add(by));",
+                "    assert!(bytes.is_empty());"
+              ],
+              "code": [
+                "{",
+                "    let mut bytes = Bytes::from_static(&[1, 2, 3, 4]);",
+                "    let by = bytes.len(); // self.len == by",
+                "    unsafe { bytes.inc_start(by) };",
+                "    assert_eq!(bytes.len(), 0);",
+                "    assert_eq!(bytes.ptr, bytes.ptr.wrapping_add(by));",
+                "    assert!(bytes.is_empty());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes = Bytes::from_static(&[1, 2, 3, 4]);",
+                "    let by = 2; // self.len > by",
+                "    unsafe { bytes.inc_start(by) };",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes.len(), 2);",
+                "    assert_eq!(bytes.as_ptr(), unsafe { bytes.ptr.add(2) });"
+              ],
+              "code": [
+                "{",
+                "    let mut bytes = Bytes::from_static(&[1, 2, 3, 4]);",
+                "    let by = 2; // self.len > by",
+                "    unsafe { bytes.inc_start(by) };",
+                "    assert_eq!(bytes.len(), 2);",
+                "    assert_eq!(bytes.as_ptr(), unsafe { bytes.ptr.add(2) });",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: self.len >= by at line 674 is false\n"
+      ],
+      "input_infer": "self.len < by, with self.len ranging from 0 to some positive value, and by greater than self.len.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let mut bytes = Bytes::new(); // self.len is 0",
+                "    unsafe { bytes.inc_start(1); } // by is greater than self.len",
+                "}"
+              ],
+              "oracle": [
+                "    #[should_panic]",
+                "    unsafe { bytes.inc_start(1); } // self.len is 0, by is greater than self.len"
+              ],
+              "code": [
+                "{",
+                "    let mut bytes = Bytes::new(); // self.len is 0",
+                "    unsafe { bytes.inc_start(1); } // by is greater than self.len",
+                "    #[should_panic]",
+                "    unsafe { bytes.inc_start(1); } // self.len is 0, by is greater than self.len",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let mut bytes = Bytes::from_static(b\"Hello\"); // self.len is 5",
+                "    unsafe { bytes.inc_start(6); } // by is greater than self.len",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(matches!(std::panic::catch_unwind(|| {",
+                "    let mut bytes = Bytes::from_static(b\"Hello\");",
+                "    unsafe { bytes.inc_start(6); }",
+                "    }), Err(_)), \"Expected panic when inc_start is called with by greater than self.len.\");"
+              ],
+              "code": [
+                "{",
+                "    let mut bytes = Bytes::from_static(b\"Hello\"); // self.len is 5",
+                "    unsafe { bytes.inc_start(6); } // by is greater than self.len",
+                "    assert!(matches!(std::panic::catch_unwind(|| {",
+                "    let mut bytes = Bytes::from_static(b\"Hello\");",
+                "    unsafe { bytes.inc_start(6); }",
+                "    }), Err(_)), \"Expected panic when inc_start is called with by greater than self.len.\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"ABC\"); // self.len is 3",
+                "    unsafe { bytes.inc_start(5); } // by is greater than self.len",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let bytes = Bytes::from_static(b\"ABC\");",
+                "    unsafe { bytes.inc_start(5) };",
+                "    }).is_err(), \"Expected panic when invoking inc_start with by greater than self.len\");"
+              ],
+              "code": [
+                "{",
+                "   let mut bytes = Bytes::from_static(b\"ABC\"); // self.len is 3",
+                "   unsafe { bytes.inc_start(5); } // by is greater than self.len",
+                "   assert!(std::panic::catch_unwind(|| {",
+                "   let mut bytes = Bytes::from_static(b\"ABC\");",
+                "   unsafe { bytes.inc_start(5) };",
+                "   }).is_err(), \"Expected panic when invoking inc_start with by greater than self.len\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

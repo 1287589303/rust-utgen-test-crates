@@ -1,0 +1,402 @@
+{
+  "name": "bytes::bytes::{impl#4}::clone",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": true,
+  "loc": "src/bytes.rs:693:5:695:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "test input conditions: valid `Bytes` instances with varying lengths (0 to N where N is a large positive integer), null pointer scenarios, atomic data states (unique vs non-unique), and correctness of returned `Bytes` after cloning across different `vtable` types (OWNED, PROMOTABLE_EVEN, PROMOTABLE_ODD, SHARED, STATIC).\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([1u8; 10])) as *const u8,",
+                "        len: 10,",
+                "        data,",
+                "        vtable: &OWNED_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(_cloned_bytes.ptr != bytes.ptr);",
+                "    assert_eq!(_cloned_bytes.len, bytes.len);",
+                "    assert!(_cloned_bytes.data.load(Ordering::SeqCst) != bytes.data.load(Ordering::SeqCst));",
+                "    assert!(_cloned_bytes.data.load(Ordering::SeqCst).is_null() == false);",
+                "    assert_eq!(_cloned_bytes.vtable, bytes.vtable);",
+                "    assert!(_cloned_bytes.is_unique());",
+                "    assert!(!bytes.is_unique());"
+              ],
+              "code": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([1u8; 10])) as *const u8,",
+                "        len: 10,",
+                "        data,",
+                "        vtable: &OWNED_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "    assert!(_cloned_bytes.ptr != bytes.ptr);",
+                "    assert_eq!(_cloned_bytes.len, bytes.len);",
+                "    assert!(_cloned_bytes.data.load(Ordering::SeqCst) != bytes.data.load(Ordering::SeqCst));",
+                "    assert!(_cloned_bytes.data.load(Ordering::SeqCst).is_null() == false);",
+                "    assert_eq!(_cloned_bytes.vtable, bytes.vtable);",
+                "    assert!(_cloned_bytes.is_unique());",
+                "    assert!(!bytes.is_unique());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([2u8; 20])) as *const u8,",
+                "        len: 20,",
+                "        data,",
+                "        vtable: &PROMOTABLE_EVEN_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(_cloned_bytes.ptr != bytes.ptr);",
+                "    assert_eq!(_cloned_bytes.len, bytes.len);",
+                "    assert!(_cloned_bytes.data.load(Ordering::SeqCst) != bytes.data.load(Ordering::SeqCst));",
+                "    assert!(unsafe { PROMOTABLE_EVEN_VTABLE.is_unique(&bytes.data) });",
+                "    assert!(unsafe { PROMOTABLE_EVEN_VTABLE.is_unique(&_cloned_bytes.data) });"
+              ],
+              "code": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([2u8; 20])) as *const u8,",
+                "        len: 20,",
+                "        data,",
+                "        vtable: &PROMOTABLE_EVEN_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "    assert!(_cloned_bytes.ptr != bytes.ptr);",
+                "    assert_eq!(_cloned_bytes.len, bytes.len);",
+                "    assert!(_cloned_bytes.data.load(Ordering::SeqCst) != bytes.data.load(Ordering::SeqCst));",
+                "    assert!(unsafe { PROMOTABLE_EVEN_VTABLE.is_unique(&bytes.data) });",
+                "    assert!(unsafe { PROMOTABLE_EVEN_VTABLE.is_unique(&_cloned_bytes.data) });",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([3u8; 30])) as *const u8,",
+                "        len: 30,",
+                "        data,",
+                "        vtable: &PROMOTABLE_ODD_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes.len, _cloned_bytes.len);",
+                "    assert!(!ptr::eq(bytes.ptr, _cloned_bytes.ptr));",
+                "    assert_eq!(unsafe { (bytes.vtable.is_unique)(&bytes.data) }, false);",
+                "    assert_eq!(unsafe { (bytes.vtable.is_unique)(&_cloned_bytes.data) }, false);",
+                "    assert_ne!(bytes.data.load(Ordering::SeqCst), _cloned_bytes.data.load(Ordering::SeqCst));"
+              ],
+              "code": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([3u8; 30])) as *const u8,",
+                "        len: 30,",
+                "        data,",
+                "        vtable: &PROMOTABLE_ODD_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "    assert_eq!(bytes.len, _cloned_bytes.len);",
+                "    assert!(!ptr::eq(bytes.ptr, _cloned_bytes.ptr));",
+                "    assert_eq!(unsafe { (bytes.vtable.is_unique)(&bytes.data) }, false);",
+                "    assert_eq!(unsafe { (bytes.vtable.is_unique)(&_cloned_bytes.data) }, false);",
+                "    assert_ne!(bytes.data.load(Ordering::SeqCst), _cloned_bytes.data.load(Ordering::SeqCst));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([4u8; 40])) as *const u8,",
+                "        len: 40,",
+                "        data,",
+                "        vtable: &SHARED_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_cloned_bytes.len, bytes.len);",
+                "    assert_eq!(_cloned_bytes.ptr, bytes.ptr);",
+                "    assert!(!_cloned_bytes.data.is_null());",
+                "    assert_ne!(bytes.data, _cloned_bytes.data);",
+                "    assert_eq!(_cloned_bytes.vtable, bytes.vtable);"
+              ],
+              "code": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([4u8; 40])) as *const u8,",
+                "        len: 40,",
+                "        data,",
+                "        vtable: &SHARED_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "    assert_eq!(_cloned_bytes.len, bytes.len);",
+                "    assert_eq!(_cloned_bytes.ptr, bytes.ptr);",
+                "    assert!(!_cloned_bytes.data.is_null());",
+                "    assert_ne!(bytes.data, _cloned_bytes.data);",
+                "    assert_eq!(_cloned_bytes.vtable, bytes.vtable);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([5u8; 50])) as *const u8,",
+                "        len: 50,",
+                "        data,",
+                "        vtable: &STATIC_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_cloned_bytes.len, bytes.len);",
+                "    assert_eq!(_cloned_bytes.ptr, bytes.ptr);",
+                "    assert!(!_cloned_bytes.data.is_null());",
+                "    assert!(!ptr::eq(_cloned_bytes.data.load(Ordering::SeqCst), bytes.data.load(Ordering::SeqCst)));",
+                "    assert!(!_cloned_bytes.ptr.is_null());"
+              ],
+              "code": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([5u8; 50])) as *const u8,",
+                "        len: 50,",
+                "        data,",
+                "        vtable: &STATIC_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "    assert_eq!(_cloned_bytes.len, bytes.len);",
+                "    assert_eq!(_cloned_bytes.ptr, bytes.ptr);",
+                "    assert!(!_cloned_bytes.data.is_null());",
+                "    assert!(!ptr::eq(_cloned_bytes.data.load(Ordering::SeqCst), bytes.data.load(Ordering::SeqCst)));",
+                "    assert!(!_cloned_bytes.ptr.is_null());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: std::ptr::null(),",
+                "        len: 0,",
+                "        data,",
+                "        vtable: &OWNED_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(!std::ptr::eq(bytes.ptr, _cloned_bytes.ptr));",
+                "    assert_eq!(bytes.len, _cloned_bytes.len);",
+                "    assert_eq!(bytes.data.load(Ordering::SeqCst), _cloned_bytes.data.load(Ordering::SeqCst));",
+                "    assert!(unsafe { (bytes.vtable.is_unique)(&bytes.data) });",
+                "    assert!(!unsafe { (bytes.vtable.is_unique)(&_cloned_bytes.data) });"
+              ],
+              "code": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: std::ptr::null(),",
+                "        len: 0,",
+                "        data,",
+                "        vtable: &OWNED_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "    assert!(!std::ptr::eq(bytes.ptr, _cloned_bytes.ptr));",
+                "    assert_eq!(bytes.len, _cloned_bytes.len);",
+                "    assert_eq!(bytes.data.load(Ordering::SeqCst), _cloned_bytes.data.load(Ordering::SeqCst));",
+                "    assert!(unsafe { (bytes.vtable.is_unique)(&bytes.data) });",
+                "    assert!(!unsafe { (bytes.vtable.is_unique)(&_cloned_bytes.data) });",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: std::ptr::null(),",
+                "        len: 10,",
+                "        data,",
+                "        vtable: &PROMOTABLE_EVEN_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_cloned_bytes.len, 10);",
+                "    assert!(!_cloned_bytes.ptr.is_null());",
+                "    assert_ne!(bytes.data.load(Ordering::SeqCst), _cloned_bytes.data.load(Ordering::SeqCst));",
+                "    assert!(unsafe { (PROMOTABLE_EVEN_VTABLE.is_unique)(&_cloned_bytes.data) });",
+                "    assert!(unsafe { (PROMOTABLE_EVEN_VTABLE.is_unique)(&bytes.data) });"
+              ],
+              "code": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(42)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: std::ptr::null(),",
+                "        len: 10,",
+                "        data,",
+                "        vtable: &PROMOTABLE_EVEN_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "    assert_eq!(_cloned_bytes.len, 10);",
+                "    assert!(!_cloned_bytes.ptr.is_null());",
+                "    assert_ne!(bytes.data.load(Ordering::SeqCst), _cloned_bytes.data.load(Ordering::SeqCst));",
+                "    assert!(unsafe { (PROMOTABLE_EVEN_VTABLE.is_unique)(&_cloned_bytes.data) });",
+                "    assert!(unsafe { (PROMOTABLE_EVEN_VTABLE.is_unique)(&bytes.data) });",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(21)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([6u8; 60])) as *const u8,",
+                "        len: 60,",
+                "        data,",
+                "        vtable: &SHARED_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(!_cloned_bytes.ptr.is_null());",
+                "    assert_eq!(_cloned_bytes.len, 60);",
+                "    assert_eq!(*(_cloned_bytes.data.load(Ordering::SeqCst) as *const usize), 21);",
+                "    assert!(bytes.data.load(Ordering::SeqCst) == bytes.data.load(Ordering::SeqCst));",
+                "    assert!(unsafe { (bytes.vtable.is_unique)(&bytes.data) == false });",
+                "    assert!(unsafe { (SHARED_VTABLE.is_unique)(&_cloned_bytes.data) });"
+              ],
+              "code": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(21)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([6u8; 60])) as *const u8,",
+                "        len: 60,",
+                "        data,",
+                "        vtable: &SHARED_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "    assert!(!_cloned_bytes.ptr.is_null());",
+                "    assert_eq!(_cloned_bytes.len, 60);",
+                "    assert_eq!(*(_cloned_bytes.data.load(Ordering::SeqCst) as *const usize), 21);",
+                "    assert!(bytes.data.load(Ordering::SeqCst) == bytes.data.load(Ordering::SeqCst));",
+                "    assert!(unsafe { (bytes.vtable.is_unique)(&bytes.data) == false });",
+                "    assert!(unsafe { (SHARED_VTABLE.is_unique)(&_cloned_bytes.data) });",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(21)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([7u8; 70])) as *const u8,",
+                "        len: 70,",
+                "        data,",
+                "        vtable: &SHARED_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(_cloned_bytes.ptr != bytes.ptr);",
+                "    assert_eq!(_cloned_bytes.len, bytes.len);",
+                "    assert!(_cloned_bytes.data.load(Ordering::SeqCst) != bytes.data.load(Ordering::SeqCst));",
+                "    assert!(unsafe { (_cloned_bytes.vtable.is_unique)(&bytes.data) });",
+                "    assert_eq!(unsafe { _cloned_bytes.vtable.clone }(&bytes.data, bytes.ptr, bytes.len), _cloned_bytes);",
+                "    assert_eq!(unsafe { _cloned_bytes.vtable.into_vec }(&bytes.data, bytes.ptr, bytes.len).as_slice(), &[7u8; 70]);"
+              ],
+              "code": [
+                "{",
+                "    let data = AtomicPtr::new(Box::into_raw(Box::new(21)) as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr: Box::into_raw(Box::new([7u8; 70])) as *const u8,",
+                "        len: 70,",
+                "        data,",
+                "        vtable: &SHARED_VTABLE,",
+                "    };",
+                "    let _cloned_bytes = bytes.clone();",
+                "    assert!(_cloned_bytes.ptr != bytes.ptr);",
+                "    assert_eq!(_cloned_bytes.len, bytes.len);",
+                "    assert!(_cloned_bytes.data.load(Ordering::SeqCst) != bytes.data.load(Ordering::SeqCst));",
+                "    assert!(unsafe { (_cloned_bytes.vtable.is_unique)(&bytes.data) });",
+                "    assert_eq!(unsafe { _cloned_bytes.vtable.clone }(&bytes.data, bytes.ptr, bytes.len), _cloned_bytes);",
+                "    assert_eq!(unsafe { _cloned_bytes.vtable.into_vec }(&bytes.data, bytes.ptr, bytes.len).as_slice(), &[7u8; 70]);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

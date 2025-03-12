@@ -1,0 +1,187 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_fn = || 42;",
+          "    let lazy_value: Lazy<i32> = Lazy::new(create_fn);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy_value.data.get_ref().is_initialized(), true);",
+          "    assert_eq!(lazy_value.create.get().is_some(), true);",
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert_eq!(lazy_value.data.get_ref().assume_init(), 0);",
+          "    let created_value = (create_fn)();",
+          "    assert_eq!(created_value, 42);",
+          "    assert!(matches!(lazy_value, Lazy { .. }));"
+        ],
+        "code": [
+          "{",
+          "    let create_fn = || 42;",
+          "    let lazy_value: Lazy<i32> = Lazy::new(create_fn);",
+          "    assert_eq!(lazy_value.data.get_ref().is_initialized(), true);",
+          "    assert_eq!(lazy_value.create.get().is_some(), true);",
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert_eq!(lazy_value.data.get_ref().assume_init(), 0);",
+          "    let created_value = (create_fn)();",
+          "    assert_eq!(created_value, 42);",
+          "    assert!(matches!(lazy_value, Lazy { .. }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_fn = || String::from(\"Hello, World!\");",
+          "    let lazy_value: Lazy<String> = Lazy::new(create_fn);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    let created_value = (lazy_value.create.get().unwrap())();",
+          "    assert_eq!(lazy_value.data.get().assume_init(), &created_value);"
+        ],
+        "code": [
+          "{",
+          "    let create_fn = || String::from(\"Hello, World!\");",
+          "    let lazy_value: Lazy<String> = Lazy::new(create_fn);",
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    let created_value = (lazy_value.create.get().unwrap())();",
+          "    assert_eq!(lazy_value.data.get().assume_init(), &created_value);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_fn = || Vec::<i32>::new();",
+          "    let lazy_value: Lazy<Vec<i32>> = Lazy::new(create_fn);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    assert!(lazy_value.data.get().as_ptr() == MaybeUninit::uninit().as_ptr());",
+          "    assert!(lazy_value.data.get().is_uninit());",
+          "    assert!(lazy_value.create.get() == Some(create_fn));"
+        ],
+        "code": [
+          "{",
+          "    let create_fn = || Vec::<i32>::new();",
+          "    let lazy_value: Lazy<Vec<i32>> = Lazy::new(create_fn);",
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    assert!(lazy_value.data.get().as_ptr() == MaybeUninit::uninit().as_ptr());",
+          "    assert!(lazy_value.data.get().is_uninit());",
+          "    assert!(lazy_value.create.get() == Some(create_fn));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_fn = || None::<i32>;",
+          "    let lazy_value: Lazy<Option<i32>> = Lazy::new(create_fn);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    assert!(lazy_value.data.get().as_ptr() == MaybeUninit::uninit().as_ptr());",
+          "    assert_eq!(lazy_value.create.get().unwrap()(), None);"
+        ],
+        "code": [
+          "{",
+          "    let create_fn = || None::<i32>;",
+          "    let lazy_value: Lazy<Option<i32>> = Lazy::new(create_fn);",
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    assert!(lazy_value.data.get().as_ptr() == MaybeUninit::uninit().as_ptr());",
+          "    assert_eq!(lazy_value.create.get().unwrap()(), None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_fn = || -> i32 { panic!(\"This function is invalid\"); };",
+          "    // This test will panic on execution; it demonstrates the invalid function type case.",
+          "    let lazy_value: Lazy<i32> = Lazy::new(create_fn);",
+          "}"
+        ],
+        "oracle": [
+          "    let create_fn = || -> i32 { panic!(\"This function is invalid\"); };",
+          "    let lazy_value: Lazy<i32> = Lazy::new(create_fn);",
+          "    assert!(matches!(lazy_value, Lazy(_)));",
+          "    assert_eq!(lazy_value.0.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.0.create.get().is_some());",
+          "    assert!(lazy_value.0.data.get().uninit().is_null());"
+        ],
+        "code": [
+          "{",
+          "    let create_fn = || -> i32 { panic!(\"This function is invalid\"); };",
+          "    // This test will panic on execution; it demonstrates the invalid function type case.",
+          "    let lazy_value: Lazy<i32> = Lazy::new(create_fn);",
+          "    let create_fn = || -> i32 { panic!(\"This function is invalid\"); };",
+          "    let lazy_value: Lazy<i32> = Lazy::new(create_fn);",
+          "    assert!(matches!(lazy_value, Lazy(_)));",
+          "    assert_eq!(lazy_value.0.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.0.create.get().is_some());",
+          "    assert!(lazy_value.0.data.get().uninit().is_null());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let create_fn = || -> i32 { panic!(\"Intentional panic for testing\") };",
+          "    let lazy_value: Lazy<i32> = Lazy::new(create_fn);",
+          "}"
+        ],
+        "oracle": [
+          "    Lazy(lazy::Lazy::new(create_fn))  // Ensure that Lazy is created with the provided create function.",
+          "    Lazy(lazy::Lazy::new(create_fn).state.load(Ordering::SeqCst) == LAZY_STATE_INIT)  // Check the initial state of the Lazy instance.",
+          "    Lazy(lazy::Lazy::new(create_fn).create.get().is_some())  // Verify that the create function is stored and is not None.",
+          "    Lazy(lazy::Lazy::new(create_fn).data.get().is_uninit())  // Confirm that the data is uninitialized."
+        ],
+        "code": [
+          "{",
+          "    let create_fn = || -> i32 { panic!(\"Intentional panic for testing\") };",
+          "    let lazy_value: Lazy<i32> = Lazy::new(create_fn);",
+          "    Lazy(lazy::Lazy::new(create_fn))  // Ensure that Lazy is created with the provided create function.",
+          "    Lazy(lazy::Lazy::new(create_fn).state.load(Ordering::SeqCst) == LAZY_STATE_INIT)  // Check the initial state of the Lazy instance.",
+          "    Lazy(lazy::Lazy::new(create_fn).create.get().is_some())  // Verify that the create function is stored and is not None.",
+          "    Lazy(lazy::Lazy::new(create_fn).data.get().is_uninit())  // Confirm that the data is uninitialized.",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,202 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct MockVisitor;",
+      "",
+      "impl<'de> Visitor<'de> for MockVisitor {",
+      "    type Value = ();",
+      "",
+      "    fn visit_borrowed_str(self, _value: &'de str) -> Result<Self::Value, Error> {",
+      "        Err(Error::default()) // Simulated response",
+      "    }",
+      "",
+      "    // Implement other required methods for the Visitor trait",
+      "    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+      "        formatter.write_str(\"a borrowed string\")",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Null;",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let value = Value::Null;",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_str(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().code(), ErrorCode::InvalidType);"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Null;",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "    let value = Value::Null;",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_str(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().code(), ErrorCode::InvalidType);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Bool(true);",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let value = Value::Bool(true);",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_str(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), value.invalid_type(&visitor));"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Bool(true);",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "    let value = Value::Bool(true);",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_str(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), value.invalid_type(&visitor));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Bool(false);",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let value = Value::Bool(false);",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_str(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().code(), ErrorCode::InvalidType);"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Bool(false);",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "    let value = Value::Bool(false);",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_str(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().code(), ErrorCode::InvalidType);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Number(Number::from(42));",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let value = Value::Number(Number::from(42));",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_str(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"invalid type\");"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Number(Number::from(42));",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "    let value = Value::Number(Number::from(42));",
+          "    let visitor = MockVisitor;",
+          "    let result = value.deserialize_str(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"invalid type\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Array(vec![Value::String(\"test\".to_string())]);",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value.deserialize_str(visitor).is_err(), true);",
+          "    assert!(matches!(value.deserialize_str(visitor), Err(_)));",
+          "    assert_eq!(value.deserialize_str(visitor).unwrap_err().kind(), ErrorKind::InvalidType);"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Array(vec![Value::String(\"test\".to_string())]);",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "    assert_eq!(value.deserialize_str(visitor).is_err(), true);",
+          "    assert!(matches!(value.deserialize_str(visitor), Err(_)));",
+          "    assert_eq!(value.deserialize_str(visitor).unwrap_err().kind(), ErrorKind::InvalidType);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = Value::Object(Map::new());",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let value = Value::Object(Map::new());",
+          "    let visitor = MockVisitor;",
+          "    assert!(value.deserialize_str(visitor).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let value = Value::Object(Map::new());",
+          "    let visitor = MockVisitor;",
+          "    let _ = value.deserialize_str(visitor);",
+          "    let value = Value::Object(Map::new());",
+          "    let visitor = MockVisitor;",
+          "    assert!(value.deserialize_str(visitor).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

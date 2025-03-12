@@ -1,0 +1,148 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_set = StateSet::empty();",
+          "    state_set.iter(|id| {",
+          "        // Do nothing, as we expect no iteration",
+          "    });",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(state_set.len(), 0);",
+          "    assert!(state_set.is_empty());",
+          "    state_set.clear();",
+          "    let mut collected_ids = Vec::new();",
+          "    state_set.iter(|id| collected_ids.push(id));",
+          "    assert!(collected_ids.is_empty());",
+          "    let state_id = StateID(0);",
+          "    state_set.add(state_id);",
+          "    let mut collected_ids_2 = Vec::new();",
+          "    state_set.iter(|id| collected_ids_2.push(id));",
+          "    assert_eq!(collected_ids_2.len(), 1);",
+          "    assert!(collected_ids_2.contains(&state_id));"
+        ],
+        "code": [
+          "{",
+          "    let state_set = StateSet::empty();",
+          "    state_set.iter(|id| {",
+          "        // Do nothing, as we expect no iteration",
+          "    });",
+          "    assert_eq!(state_set.len(), 0);",
+          "    assert!(state_set.is_empty());",
+          "    state_set.clear();",
+          "    let mut collected_ids = Vec::new();",
+          "    state_set.iter(|id| collected_ids.push(id));",
+          "    assert!(collected_ids.is_empty());",
+          "    let state_id = StateID(0);",
+          "    state_set.add(state_id);",
+          "    let mut collected_ids_2 = Vec::new();",
+          "    state_set.iter(|id| collected_ids_2.push(id));",
+          "    assert_eq!(collected_ids_2.len(), 1);",
+          "    assert!(collected_ids_2.contains(&state_id));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_id = StateID(SmallIndex::new(1));",
+          "    let mut state_set = StateSet::empty();",
+          "    state_set.add(state_id);",
+          "    state_set.iter(|id| {",
+          "        // Process or observe the single id",
+          "    });",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(state_set.len(), 1);",
+          "    assert!(!state_set.is_empty());",
+          "    state_set.iter(|id| assert_eq!(id, state_id));",
+          "    state_set.clear();",
+          "    assert_eq!(state_set.len(), 0);",
+          "    assert!(state_set.is_empty());",
+          "    state_set.iter(|_id| panic!(\"Iterator should not call function since set is empty\"));"
+        ],
+        "code": [
+          "{",
+          "    let state_id = StateID(SmallIndex::new(1));",
+          "    let mut state_set = StateSet::empty();",
+          "    state_set.add(state_id);",
+          "    state_set.iter(|id| {",
+          "        // Process or observe the single id",
+          "    });",
+          "    assert_eq!(state_set.len(), 1);",
+          "    assert!(!state_set.is_empty());",
+          "    state_set.iter(|id| assert_eq!(id, state_id));",
+          "    state_set.clear();",
+          "    assert_eq!(state_set.len(), 0);",
+          "    assert!(state_set.is_empty());",
+          "    state_set.iter(|_id| panic!(\"Iterator should not call function since set is empty\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_id1 = StateID(SmallIndex::new(1));",
+          "    let state_id2 = StateID(SmallIndex::new(2));",
+          "    let mut state_set = StateSet::empty();",
+          "    state_set.add(state_id1);",
+          "    state_set.add(state_id2);",
+          "    state_set.iter(|id| {",
+          "        // Process or observe each id, expecting both state_id1 and state_id2 to be iterated",
+          "    });",
+          "}"
+        ],
+        "oracle": [
+          "    state_set.add(state_id1); // Precondition: &id in self.ids.borrow().iter() at line 381 is true",
+          "    state_set.add(state_id2); // Precondition: &id in self.ids.borrow().iter() at line 381 is true",
+          "    let mut observed_ids = Vec::new(); // Prepare to collect observed IDs",
+          "    state_set.iter(|id| observed_ids.push(id)); // Execute the iterator",
+          "    assert_eq!(observed_ids, vec![state_id1, state_id2]); // Validate expected iteration result",
+          "    ",
+          "    let empty_state_set = StateSet::empty(); // Precondition: &id in self.ids.borrow().iter() at line 381 is false",
+          "    let mut empty_observed_ids = Vec::new(); // Prepare to collect observed IDs",
+          "    empty_state_set.iter(|id| empty_observed_ids.push(id)); // Execute the iterator",
+          "    assert_eq!(empty_observed_ids, Vec::<StateID>::new()); // Validate that no IDs are observed"
+        ],
+        "code": [
+          "{",
+          "    let state_id1 = StateID(SmallIndex::new(1));",
+          "    let state_id2 = StateID(SmallIndex::new(2));",
+          "    let mut state_set = StateSet::empty();",
+          "    state_set.add(state_id1);",
+          "    state_set.add(state_id2);",
+          "    state_set.iter(|id| {",
+          "        // Process or observe each id, expecting both state_id1 and state_id2 to be iterated",
+          "    });",
+          "    state_set.add(state_id1); // Precondition: &id in self.ids.borrow().iter() at line 381 is true",
+          "    state_set.add(state_id2); // Precondition: &id in self.ids.borrow().iter() at line 381 is true",
+          "    let mut observed_ids = Vec::new(); // Prepare to collect observed IDs",
+          "    state_set.iter(|id| observed_ids.push(id)); // Execute the iterator",
+          "    assert_eq!(observed_ids, vec![state_id1, state_id2]); // Validate expected iteration result",
+          "    ",
+          "    let empty_state_set = StateSet::empty(); // Precondition: &id in self.ids.borrow().iter() at line 381 is false",
+          "    let mut empty_observed_ids = Vec::new(); // Prepare to collect observed IDs",
+          "    empty_state_set.iter(|id| empty_observed_ids.push(id)); // Execute the iterator",
+          "    assert_eq!(empty_observed_ids, Vec::<StateID>::new()); // Validate that no IDs are observed",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

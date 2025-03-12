@@ -1,0 +1,237 @@
+{
+  "name": "bytes::bytes::promotable_is_unique",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1338:1:1348:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: kind == KIND_ARC at line 1342 is true\n",
+        "expected return value/type: ref_cnt == 1\n"
+      ],
+      "input_infer": "AtomicPtr pointing to a Shared struct with ref_cnt set to 1 and kind equal to KIND_ARC.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    // Define the Shared struct directly inside the test for minimal scope",
+                "    struct Shared {",
+                "        buf: *mut u8,",
+                "        cap: usize,",
+                "        ref_cnt: AtomicUsize,",
+                "    }",
+                "",
+                "    // Allocate memory for a Shared struct and create an AtomicPtr pointing to it",
+                "    let buf = Box::into_raw(Box::new(0u8)); // Sample buffer",
+                "    let shared = Box::into_raw(Box::new(Shared {",
+                "        buf,",
+                "        cap: 1,",
+                "        ref_cnt: AtomicUsize::new(1), // Set ref_cnt to 1",
+                "    }));",
+                "",
+                "    // Create an AtomicPtr that points to the Shared struct",
+                "    let data = AtomicPtr::new(shared as *mut ());",
+                "",
+                "    // Call the function under test",
+                "    let _result = unsafe { promotable_is_unique(&data) };",
+                "",
+                "    // Clean up",
+                "    // NOTE: Proper deallocation would require careful handling to ensure safety.",
+                "    let _ = data.load(Ordering::Relaxed); // Ensure we load the pointer before cleanup",
+                "    unsafe {",
+                "        let shared_ptr = Box::from_raw(shared);",
+                "        dealloc(shared_ptr.buf, Layout::from_size_align(1, 1).unwrap());",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    unsafe { assert_eq!(promotable_is_unique(&data), true); }",
+                "    let ref_cnt_value = (*shared.cast::<Shared>()).ref_cnt.load(Ordering::Relaxed);",
+                "    assert_eq!(ref_cnt_value, 1);"
+              ],
+              "code": [
+                "{",
+                "    // Define the Shared struct directly inside the test for minimal scope",
+                "    struct Shared {",
+                "        buf: *mut u8,",
+                "        cap: usize,",
+                "        ref_cnt: AtomicUsize,",
+                "    }",
+                "",
+                "    // Allocate memory for a Shared struct and create an AtomicPtr pointing to it",
+                "    let buf = Box::into_raw(Box::new(0u8)); // Sample buffer",
+                "    let shared = Box::into_raw(Box::new(Shared {",
+                "        buf,",
+                "        cap: 1,",
+                "        ref_cnt: AtomicUsize::new(1), // Set ref_cnt to 1",
+                "    }));",
+                "",
+                "    // Create an AtomicPtr that points to the Shared struct",
+                "    let data = AtomicPtr::new(shared as *mut ());",
+                "",
+                "    // Call the function under test",
+                "    let _result = unsafe { promotable_is_unique(&data) };",
+                "",
+                "    // Clean up",
+                "    // NOTE: Proper deallocation would require careful handling to ensure safety.",
+                "    let _ = data.load(Ordering::Relaxed); // Ensure we load the pointer before cleanup",
+                "    unsafe {",
+                "        let shared_ptr = Box::from_raw(shared);",
+                "        dealloc(shared_ptr.buf, Layout::from_size_align(1, 1).unwrap());",
+                "    }",
+                "    unsafe { assert_eq!(promotable_is_unique(&data), true); }",
+                "    let ref_cnt_value = (*shared.cast::<Shared>()).ref_cnt.load(Ordering::Relaxed);",
+                "    assert_eq!(ref_cnt_value, 1);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: kind == KIND_ARC at line 1342 is false\n",
+        "expected return value/type: true\n"
+      ],
+      "input_infer": "input: data pointing to a memory location where the kind is not KIND_ARC (i.e., any pointer that does not correspond to an ARC type structure)\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let kind_vec: usize = 0b1; // KIND_VEC",
+                "    let shared = kind_vec as *mut u8;",
+                "    let data = AtomicPtr::new(shared);",
+                "    unsafe {",
+                "        let result = promotable_is_unique(&data);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    let kind_vec: usize = 0b1; // KIND_VEC",
+                "    let shared = kind_vec as *mut u8;",
+                "    let data = AtomicPtr::new(shared);",
+                "    unsafe {",
+                "    let result = promotable_is_unique(&data);",
+                "    assert_eq!(result, true);",
+                "    }"
+              ],
+              "code": [
+                "{",
+                "    let kind_vec: usize = 0b1; // KIND_VEC",
+                "    let shared = kind_vec as *mut u8;",
+                "    let data = AtomicPtr::new(shared);",
+                "    unsafe {",
+                "        let result = promotable_is_unique(&data);",
+                "    }",
+                "    let kind_vec: usize = 0b1; // KIND_VEC",
+                "    let shared = kind_vec as *mut u8;",
+                "    let data = AtomicPtr::new(shared);",
+                "    unsafe {",
+                "    let result = promotable_is_unique(&data);",
+                "    assert_eq!(result, true);",
+                "    }",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let shared: *mut u8 = std::ptr::null_mut();",
+                "    let data = AtomicPtr::new(shared);",
+                "    unsafe {",
+                "        let result = promotable_is_unique(&data);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    let shared: *mut u8 = std::ptr::null_mut();",
+                "    let data = AtomicPtr::new(shared);",
+                "    let result = promotable_is_unique(&data);",
+                "    assert_eq!(result, true);"
+              ],
+              "code": [
+                "{",
+                "    let shared: *mut u8 = std::ptr::null_mut();",
+                "    let data = AtomicPtr::new(shared);",
+                "    unsafe {",
+                "        let result = promotable_is_unique(&data);",
+                "    }",
+                "    let shared: *mut u8 = std::ptr::null_mut();",
+                "    let data = AtomicPtr::new(shared);",
+                "    let result = promotable_is_unique(&data);",
+                "    assert_eq!(result, true);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let non_arc_value: usize = 0xFE; // Any arbitrary value not corresponding to an ARC type",
+                "    let shared = non_arc_value as *mut u8;",
+                "    let data = AtomicPtr::new(shared);",
+                "    unsafe {",
+                "        let result = promotable_is_unique(&data);",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    let non_arc_value: usize = 0xFE; // Any arbitrary value not corresponding to an ARC type",
+                "    let shared = non_arc_value as *mut u8;",
+                "    let data = AtomicPtr::new(shared);",
+                "    unsafe {",
+                "    let result = promotable_is_unique(&data);",
+                "    assert_eq!(result, true);",
+                "    }"
+              ],
+              "code": [
+                "{",
+                "    let non_arc_value: usize = 0xFE; // Any arbitrary value not corresponding to an ARC type",
+                "    let shared = non_arc_value as *mut u8;",
+                "    let data = AtomicPtr::new(shared);",
+                "    unsafe {",
+                "        let result = promotable_is_unique(&data);",
+                "    }",
+                "    let non_arc_value: usize = 0xFE; // Any arbitrary value not corresponding to an ARC type",
+                "    let shared = non_arc_value as *mut u8;",
+                "    let data = AtomicPtr::new(shared);",
+                "    unsafe {",
+                "    let result = promotable_is_unique(&data);",
+                "    assert_eq!(result, true);",
+                "    }",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

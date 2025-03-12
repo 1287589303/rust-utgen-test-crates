@@ -1,0 +1,168 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0xFE, 0xFF, 0x00, 0x00]; // Proper endianness check",
+          "    let result = read_endianness_check(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(4));",
+          "    assert!(slice.len() >= size_of::<u32>());",
+          "    assert!(result.is_ok());",
+          "    assert!(matches!(result, Ok(_)));",
+          "    assert!(result.unwrap() == 4);",
+          "    assert!(result.is_err() == false);",
+          "    assert!(n == 0xFEFF);",
+          "    assert!(nr == write_endianness_check_len());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0xFE, 0xFF, 0x00, 0x00]; // Proper endianness check",
+          "    let result = read_endianness_check(slice);",
+          "    assert_eq!(result, Ok(4));",
+          "    assert!(slice.len() >= size_of::<u32>());",
+          "    assert!(result.is_ok());",
+          "    assert!(matches!(result, Ok(_)));",
+          "    assert!(result.unwrap() == 4);",
+          "    assert!(result.is_err() == false);",
+          "    assert!(n == 0xFEFF);",
+          "    assert!(nr == write_endianness_check_len());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00]; // Invalid endianness value",
+          "    let result = read_endianness_check(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().0, DeserializeErrorKind::EndianMismatch { expected: 0xFEFF, found: 0 });",
+          "    assert_eq!(result.err().unwrap().0, DeserializeErrorKind::generic(\"endianness check\"));",
+          "    assert!(result.unwrap_err().is::<DeserializeError>());"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00]; // Invalid endianness value",
+          "    let result = read_endianness_check(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().0, DeserializeErrorKind::EndianMismatch { expected: 0xFEFF, found: 0 });",
+          "    assert_eq!(result.err().unwrap().0, DeserializeErrorKind::generic(\"endianness check\"));",
+          "    assert!(result.unwrap_err().is::<DeserializeError>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0xDE, 0xAD, 0xBE, 0xEF]; // Another invalid value",
+          "    let result = read_endianness_check(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap(), DeserializeError::endian_mismatch(0xFEFF, 0xEFBEADDE));",
+          "    assert!(matches!(result.err().unwrap(), DeserializeError(DeserializeErrorKind::EndianMismatch { expected: 0xFEFF, found: _ })));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0xDE, 0xAD, 0xBE, 0xEF]; // Another invalid value",
+          "    let result = read_endianness_check(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap(), DeserializeError::endian_mismatch(0xFEFF, 0xEFBEADDE));",
+          "    assert!(matches!(result.err().unwrap(), DeserializeError(DeserializeErrorKind::EndianMismatch { expected: 0xFEFF, found: _ })));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0xFE, 0xFF]; // Too small, less than required 4 bytes",
+          "    let result = read_endianness_check(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), DeserializeError::endian_mismatch(0xFEFF, 0xFF00));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0xFE, 0xFF]; // Too small, less than required 4 bytes",
+          "    let result = read_endianness_check(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), DeserializeError::endian_mismatch(0xFEFF, 0xFF00));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = &[0xFE, 0xFF, 0x00, 0x01]; // Exactly 4 bytes with valid check",
+          "    let result = read_endianness_check(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(4));",
+          "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00]; // Test case for endian mismatch",
+          "    let result = read_endianness_check(slice);",
+          "    assert!(result.is_err());",
+          "    let expected_err = DeserializeError::endian_mismatch(0xFEFF, 0);",
+          "    assert_eq!(result.err(), Some(expected_err));",
+          "    let slice: &[u8] = &[0xFE]; // Test case for buffer too small",
+          "    let result = read_endianness_check(slice);",
+          "    assert!(result.is_err());",
+          "    let expected_err = DeserializeError::buffer_too_small(\"endianness check\");",
+          "    assert_eq!(result.err(), Some(expected_err));",
+          "    let slice: &[u8] = &[0xFE, 0xFF, 0x00]; // Test case for buffer too small (not enough bytes)",
+          "    let result = read_endianness_check(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err(), Some(expected_err));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = &[0xFE, 0xFF, 0x00, 0x01]; // Exactly 4 bytes with valid check",
+          "    let result = read_endianness_check(slice);",
+          "    assert_eq!(result, Ok(4));",
+          "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00]; // Test case for endian mismatch",
+          "    let result = read_endianness_check(slice);",
+          "    assert!(result.is_err());",
+          "    let expected_err = DeserializeError::endian_mismatch(0xFEFF, 0);",
+          "    assert_eq!(result.err(), Some(expected_err));",
+          "    let slice: &[u8] = &[0xFE]; // Test case for buffer too small",
+          "    let result = read_endianness_check(slice);",
+          "    assert!(result.is_err());",
+          "    let expected_err = DeserializeError::buffer_too_small(\"endianness check\");",
+          "    assert_eq!(result.err(), Some(expected_err));",
+          "    let slice: &[u8] = &[0xFE, 0xFF, 0x00]; // Test case for buffer too small (not enough bytes)",
+          "    let result = read_endianness_check(slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err(), Some(expected_err));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

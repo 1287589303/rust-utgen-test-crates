@@ -1,0 +1,121 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "// Mock visitor for testing purposes",
+      "struct MockVisitor {",
+      "    expected_length: usize,",
+      "}",
+      "",
+      "impl MockVisitor {",
+      "    fn new(expected_length: usize) -> Self {",
+      "        MockVisitor { expected_length }",
+      "    }",
+      "}",
+      "",
+      "impl<'de> Visitor<'de> for MockVisitor {",
+      "    type Value = ();",
+      "",
+      "    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+      "        formatter.write_str(\"Map containing elements\")",
+      "    }",
+      "",
+      "    fn visit_map<V>(self, _: V) -> Result<Self::Value, serde::de::Error>",
+      "    where",
+      "        V: MapAccess<'de>,",
+      "    {",
+      "        Err(serde::de::Error::custom(\"mock error\"))",
+      "    }",
+      "}",
+      "",
+      "// Invalid visitor that always returns an error",
+      "struct InvalidVisitor {}",
+      "",
+      "impl<'de> Visitor<'de> for InvalidVisitor {",
+      "    type Value = ();",
+      "",
+      "    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+      "        formatter.write_str(\"Invalid visitor expecting a map\")",
+      "    }",
+      "",
+      "    fn visit_map<V>(self, _: V) -> Result<Self::Value, serde::de::Error>",
+      "    where",
+      "        V: MapAccess<'de>,",
+      "    {",
+      "        Err(serde::de::Error::custom(\"invalid visitor error\"))",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let map: Map<String, Value> = Map::new();",
+          "    let visitor = MockVisitor::new(0); // Simulate visitor that returns an error for empty map",
+          "    let result = map.deserialize_any(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().to_string(), \"mock error\");",
+          "    assert_eq!(result.unwrap_err().kind(), serde::de::ErrorCode::Custom);",
+          "    assert!(result.unwrap_err().is_invalid_length());",
+          "    assert!(matches!(result, Err(_)));"
+        ],
+        "code": [
+          "{",
+          "    let map: Map<String, Value> = Map::new();",
+          "    let visitor = MockVisitor::new(0); // Simulate visitor that returns an error for empty map",
+          "    let result = map.deserialize_any(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().to_string(), \"mock error\");",
+          "    assert_eq!(result.unwrap_err().kind(), serde::de::ErrorCode::Custom);",
+          "    assert!(result.unwrap_err().is_invalid_length());",
+          "    assert!(matches!(result, Err(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: Map<String, Value> = Map::new();",
+          "    let visitor = InvalidVisitor {}; // A visitor that guarantees an error response",
+          "    let result = map.deserialize_any(visitor);",
+          "}"
+        ],
+        "oracle": [
+          "    let visitor = MockVisitor::new(0);",
+          "    let result = map.deserialize_any(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"mock error\");",
+          "    let visitor = InvalidVisitor {};",
+          "    let result = map.deserialize_any(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"invalid visitor error\");"
+        ],
+        "code": [
+          "{",
+          "    let mut map: Map<String, Value> = Map::new();",
+          "    let visitor = InvalidVisitor {}; // A visitor that guarantees an error response",
+          "    let result = map.deserialize_any(visitor);",
+          "    let visitor = MockVisitor::new(0);",
+          "    let result = map.deserialize_any(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"mock error\");",
+          "    let visitor = InvalidVisitor {};",
+          "    let result = map.deserialize_any(visitor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"invalid visitor error\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

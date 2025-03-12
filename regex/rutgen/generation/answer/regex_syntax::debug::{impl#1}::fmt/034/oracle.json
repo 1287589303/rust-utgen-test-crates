@@ -1,0 +1,186 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes(&[0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x0a, 0x57, 0x6f, 0x72, 0x6c, 0x64]); // \"Hello\\nWorld\"",
+          "    let _ = format!(\"{:?}\", bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(write!(f, \"\\\"\").is_ok());",
+          "    assert!(utf8_decode(bytes).is_some());",
+          "    assert!(matches!(utf8_decode(bytes), Some(Ok(_))));",
+          "    assert!(matches!(utf8_decode(bytes), Some(Ok(ch)) if ch == '\\n'));",
+          "    assert!(matches!(utf8_decode(bytes), Some(Ok(ch)) if ch == '\\t'));",
+          "    assert!(write!(f, \"{}\", ch.escape_debug()).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes(&[0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x0a, 0x57, 0x6f, 0x72, 0x6c, 0x64]); // \"Hello\\nWorld\"",
+          "    let _ = format!(\"{:?}\", bytes);",
+          "    assert!(write!(f, \"\\\"\").is_ok());",
+          "    assert!(utf8_decode(bytes).is_some());",
+          "    assert!(matches!(utf8_decode(bytes), Some(Ok(_))));",
+          "    assert!(matches!(utf8_decode(bytes), Some(Ok(ch)) if ch == '\\n'));",
+          "    assert!(matches!(utf8_decode(bytes), Some(Ok(ch)) if ch == '\\t'));",
+          "    assert!(write!(f, \"{}\", ch.escape_debug()).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes(&[0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x09, 0x57, 0x6f, 0x72, 0x6c, 0x64]); // \"Hello\\tWorld\"",
+          "    let _ = format!(\"{:?}\", bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").unwrap();",
+          "    let bytes = &bytes[0..];",
+          "    utf8_decode(&bytes).is_some();",
+          "    if let Some(Ok(ch)) = utf8_decode(bytes) {",
+          "    ch == '\\n';",
+          "    }",
+          "    if let Some(Ok(ch)) = utf8_decode(bytes) {",
+          "    ch == '\\t';",
+          "    }",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err();",
+          "    format!(\"{:?}\", bytes);",
+          "    let output = format!(\"{:?}\", bytes);",
+          "    assert_eq!(output, \"\\\"Hello\\\\tWorld\\\"\");"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes(&[0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x09, 0x57, 0x6f, 0x72, 0x6c, 0x64]); // \"Hello\\tWorld\"",
+          "    let _ = format!(\"{:?}\", bytes);",
+          "    write!(f, \"\\\"\").unwrap();",
+          "    let bytes = &bytes[0..];",
+          "    utf8_decode(&bytes).is_some();",
+          "    if let Some(Ok(ch)) = utf8_decode(bytes) {",
+          "    ch == '\\n';",
+          "    }",
+          "    if let Some(Ok(ch)) = utf8_decode(bytes) {",
+          "    ch == '\\t';",
+          "    }",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err();",
+          "    format!(\"{:?}\", bytes);",
+          "    let output = format!(\"{:?}\", bytes);",
+          "    assert_eq!(output, \"\\\"Hello\\\\tWorld\\\"\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes(&[0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]); // Control characters",
+          "    let _ = format!(\"{:?}\", bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").is_ok();",
+          "    utf8_decode(bytes).is_some();",
+          "    result.is_ok();",
+          "    ch == '\\n';",
+          "    ch == '\\t';",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err();"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes(&[0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]); // Control characters",
+          "    let _ = format!(\"{:?}\", bytes);",
+          "    write!(f, \"\\\"\").is_ok();",
+          "    utf8_decode(bytes).is_some();",
+          "    result.is_ok();",
+          "    ch == '\\n';",
+          "    ch == '\\t';",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err();",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes(&[0xC3, 0x28]); // Invalid UTF-8 sequence",
+          "    let _ = format!(\"{:?}\", bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").is_ok();",
+          "    utf8_decode(&bytes).is_some();",
+          "    utf8_decode(&bytes).unwrap().is_ok();",
+          "    let ch = utf8_decode(&bytes).unwrap().unwrap();",
+          "    ch == '\\n';",
+          "    ch == '\\t';",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err();"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes(&[0xC3, 0x28]); // Invalid UTF-8 sequence",
+          "    let _ = format!(\"{:?}\", bytes);",
+          "    write!(f, \"\\\"\").is_ok();",
+          "    utf8_decode(&bytes).is_some();",
+          "    utf8_decode(&bytes).unwrap().is_ok();",
+          "    let ch = utf8_decode(&bytes).unwrap().unwrap();",
+          "    ch == '\\n';",
+          "    ch == '\\t';",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err();",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes(&[0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x09, 0xA2, 0x82, 0x58]); // \"Hello\\t ¥X\"",
+          "    let _ = format!(\"{:?}\", bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").is_ok();",
+          "    utf8_decode(bytes).is_some();",
+          "    matches!(utf8_decode(bytes), Some(Ok(ch)));",
+          "    matches!(utf8_decode(bytes), Some(Ok(ch))) && ch == '\\n';",
+          "    matches!(utf8_decode(bytes), Some(Ok(ch))) && ch == '\\t';",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err();",
+          "    format!(\"{:?}\", bytes).contains(\"\\\\t\");",
+          "    format!(\"{:?}\", bytes).contains(\"¥\");",
+          "    format!(\"{:?}\", bytes).contains(\"X\");"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes(&[0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x09, 0xA2, 0x82, 0x58]); // \"Hello\\t ¥X\"",
+          "    let _ = format!(\"{:?}\", bytes);",
+          "    write!(f, \"\\\"\").is_ok();",
+          "    utf8_decode(bytes).is_some();",
+          "    matches!(utf8_decode(bytes), Some(Ok(ch)));",
+          "    matches!(utf8_decode(bytes), Some(Ok(ch))) && ch == '\\n';",
+          "    matches!(utf8_decode(bytes), Some(Ok(ch))) && ch == '\\t';",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err();",
+          "    format!(\"{:?}\", bytes).contains(\"\\\\t\");",
+          "    format!(\"{:?}\", bytes).contains(\"¥\");",
+          "    format!(\"{:?}\", bytes).contains(\"X\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

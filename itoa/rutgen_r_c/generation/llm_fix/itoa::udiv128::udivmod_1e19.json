@@ -1,0 +1,152 @@
+{
+  "name": "itoa::udiv128::udivmod_1e19",
+  "mod_info": {
+    "name": "udiv128",
+    "loc": "src/lib.rs:45:1:45:13"
+  },
+  "visible": true,
+  "loc": "src/udiv128.rs:34:1:48:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: n < 1 << 83 at line 37 is true\n",
+        "precondition: (*left_val == *right_val) at line 40 is true\n",
+        "precondition: (*left_val == *right_val) at line 40 is true\n",
+        "expected return value/type: (quot, rem)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let n: u128 = 1_000_000_000_000_000_000; // Example value less than 1 << 83",
+                "    let (quot, rem) = udivmod_1e19(n);",
+                "    assert_eq!(quot, 0);",
+                "    assert_eq!(rem, 1_000_000_000_000_000_000); // n is less than 10^19",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let n: u128 = 10_000_000_000_000_000_000; // Exactly 10^19",
+                "    let (quot, rem) = udivmod_1e19(n);",
+                "    assert_eq!(quot, 1);",
+                "    assert_eq!(rem, 0); // 10^19 is divisible by 10^19",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let n: u128 = 1_000_000_000_000_000_000_000; // Example value greater than 10^19 but less than 1 << 83",
+                "    let (quot, rem) = udivmod_1e19(n);",
+                "    assert_eq!(quot, 100); // 1e21 / 1e19 = 100",
+                "    assert_eq!(rem, 0); // 1e21 is exactly divisible by 1e19",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let n: u128 = (1u128 << 83) - 1; // Max value less than 1 << 83",
+                "    let (quot, rem) = udivmod_1e19(n);",
+                "    assert!(quot < (1 << 64)); // Ensure the quotient fits within u64",
+                "    assert!(rem < 10_000_000_000_000_000_000); // Ensure remainder is smaller than d",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "precondition: n < 1 << 83 at line 37 is false, with bound n == 1 << 83\n",
+        "precondition: (*left_val == *right_val) at line 40 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let result = udivmod_1e19(0);",
+                "    assert_eq!(result, (0, 0));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let n = 1 << 83; // This should cause n < 1 << 83 to be false",
+                "    let result = udivmod_1e19(n);",
+                "    // Verify that the quotient and remainder are correct",
+                "    assert!(result.0 > 0); // Since n is a large number, quotient should be greater than 0",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "   let n = 1 << 83; // This value should trigger the high-case multiplication",
+                "   let (_, rem) = udivmod_1e19(n);",
+                "   // Verifying that the remainder calculation is failing to meet (*left_val == *right_val)",
+                "   assert!(u128::from(rem) != n % 10_000_000_000_000_000_000); // This checks for inconsistency with a known faulty case",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

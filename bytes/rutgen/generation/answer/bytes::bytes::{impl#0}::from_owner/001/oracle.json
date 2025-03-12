@@ -1,0 +1,203 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct ValidOwner {",
+          "        data: Vec<u8>,",
+          "    }",
+          "",
+          "    impl AsRef<[u8]> for ValidOwner {",
+          "        fn as_ref(&self) -> &[u8] {",
+          "            &self.data",
+          "        }",
+          "    }",
+          "",
+          "    let owner = ValidOwner { data: vec![1, 2, 3, 4] };",
+          "    let bytes = Bytes::from_owner(owner);",
+          "}"
+        ],
+        "oracle": [
+          "    let owner = ValidOwner { data: vec![1, 2, 3, 4] };",
+          "    let bytes = Bytes::from_owner(owner);",
+          "    assert_eq!(bytes.len(), 4);",
+          "    assert!(!bytes.is_empty());",
+          "    assert_eq!(unsafe { slice::from_raw_parts(bytes.ptr, bytes.len) }, [1, 2, 3, 4]);",
+          "    assert!(bytes.is_unique());"
+        ],
+        "code": [
+          "{",
+          "    struct ValidOwner {",
+          "        data: Vec<u8>,",
+          "    }",
+          "",
+          "    impl AsRef<[u8]> for ValidOwner {",
+          "        fn as_ref(&self) -> &[u8] {",
+          "            &self.data",
+          "        }",
+          "    }",
+          "",
+          "    let owner = ValidOwner { data: vec![1, 2, 3, 4] };",
+          "    let bytes = Bytes::from_owner(owner);",
+          "    let owner = ValidOwner { data: vec![1, 2, 3, 4] };",
+          "    let bytes = Bytes::from_owner(owner);",
+          "    assert_eq!(bytes.len(), 4);",
+          "    assert!(!bytes.is_empty());",
+          "    assert_eq!(unsafe { slice::from_raw_parts(bytes.ptr, bytes.len) }, [1, 2, 3, 4]);",
+          "    assert!(bytes.is_unique());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct EmptyOwner {",
+          "        data: Vec<u8>,",
+          "    }",
+          "",
+          "    impl AsRef<[u8]> for EmptyOwner {",
+          "        fn as_ref(&self) -> &[u8] {",
+          "            &self.data",
+          "        }",
+          "    }",
+          "",
+          "    let owner = EmptyOwner { data: vec![] };",
+          "    let bytes = Bytes::from_owner(owner);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes.len(), 0);",
+          "    assert!(bytes.is_empty());",
+          "    assert!(bytes.is_unique());",
+          "    assert_eq!(bytes.as_slice(), &[]);",
+          "    assert!(bytes.data.load(Ordering::SeqCst).is_null());"
+        ],
+        "code": [
+          "{",
+          "    struct EmptyOwner {",
+          "        data: Vec<u8>,",
+          "    }",
+          "",
+          "    impl AsRef<[u8]> for EmptyOwner {",
+          "        fn as_ref(&self) -> &[u8] {",
+          "            &self.data",
+          "        }",
+          "    }",
+          "",
+          "    let owner = EmptyOwner { data: vec![] };",
+          "    let bytes = Bytes::from_owner(owner);",
+          "    assert_eq!(bytes.len(), 0);",
+          "    assert!(bytes.is_empty());",
+          "    assert!(bytes.is_unique());",
+          "    assert_eq!(bytes.as_slice(), &[]);",
+          "    assert!(bytes.data.load(Ordering::SeqCst).is_null());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct SingleByteOwner {",
+          "        data: Vec<u8>,",
+          "    }",
+          "",
+          "    impl AsRef<[u8]> for SingleByteOwner {",
+          "        fn as_ref(&self) -> &[u8] {",
+          "            &self.data",
+          "        }",
+          "    }",
+          "",
+          "    let owner = SingleByteOwner { data: vec![42] };",
+          "    let bytes = Bytes::from_owner(owner);",
+          "}"
+        ],
+        "oracle": [
+          "    let owner = SingleByteOwner { data: vec![42] };",
+          "    let bytes = Bytes::from_owner(owner);",
+          "    assert_eq!(bytes.len(), 1);",
+          "    assert!(!bytes.is_empty());",
+          "    assert_eq!(unsafe { bytes.as_slice() }, [42]);"
+        ],
+        "code": [
+          "{",
+          "    struct SingleByteOwner {",
+          "        data: Vec<u8>,",
+          "    }",
+          "",
+          "    impl AsRef<[u8]> for SingleByteOwner {",
+          "        fn as_ref(&self) -> &[u8] {",
+          "            &self.data",
+          "        }",
+          "    }",
+          "",
+          "    let owner = SingleByteOwner { data: vec![42] };",
+          "    let bytes = Bytes::from_owner(owner);",
+          "    let owner = SingleByteOwner { data: vec![42] };",
+          "    let bytes = Bytes::from_owner(owner);",
+          "    assert_eq!(bytes.len(), 1);",
+          "    assert!(!bytes.is_empty());",
+          "    assert_eq!(unsafe { bytes.as_slice() }, [42]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct NullOwner;",
+          "",
+          "    impl AsRef<[u8]> for NullOwner {",
+          "        fn as_ref(&self) -> &[u8] {",
+          "            // This function should never be called as the owner should be null",
+          "            panic!(\"Should not be called\");",
+          "        }",
+          "    }",
+          "",
+          "    let owner = NullOwner;",
+          "    let _bytes = Bytes::from_owner(owner); // This should lead to panic",
+          "}"
+        ],
+        "oracle": [
+          "    let owner = NullOwner;",
+          "    let _bytes = Bytes::from_owner(owner); // This should lead to panic",
+          "    assert!(std::panic::catch_unwind(|| Bytes::from_owner(owner)).is_err());"
+        ],
+        "code": [
+          "{",
+          "    struct NullOwner;",
+          "",
+          "    impl AsRef<[u8]> for NullOwner {",
+          "        fn as_ref(&self) -> &[u8] {",
+          "            // This function should never be called as the owner should be null",
+          "            panic!(\"Should not be called\");",
+          "        }",
+          "    }",
+          "",
+          "    let owner = NullOwner;",
+          "    let _bytes = Bytes::from_owner(owner); // This should lead to panic",
+          "    let owner = NullOwner;",
+          "    let _bytes = Bytes::from_owner(owner); // This should lead to panic",
+          "    assert!(std::panic::catch_unwind(|| Bytes::from_owner(owner)).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

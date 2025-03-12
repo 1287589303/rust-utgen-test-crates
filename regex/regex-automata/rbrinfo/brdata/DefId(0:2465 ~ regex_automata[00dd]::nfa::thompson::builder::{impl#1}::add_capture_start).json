@@ -1,0 +1,795 @@
+{
+  "name": "regex_automata::nfa::thompson::builder::{impl#1}::add_capture_start",
+  "mod_info": {
+    "name": "nfa::thompson::builder",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:58:1:58:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/nfa/thompson/builder.rs:991:5:1026:6",
+  "doc": "/// Add a \"start capture\" NFA state.\n///\n/// A \"start capture\" NFA state corresponds to a state with exactly one\n/// outgoing unconditional epsilon transition to another state. Unlike\n/// \"empty\" states, a \"start capture\" state also carries with it an\n/// instruction for saving the current position of input to a particular\n/// location in memory. NFA simulations, like the Pike VM, may use this\n/// information to report the match locations of capturing groups in a\n/// regex pattern.\n///\n/// If the corresponding capturing group has a name, then callers should\n/// include it here.\n///\n/// Callers may provide a \"dummy\" state ID (typically [`StateID::ZERO`]),\n/// and then change it later with [`patch`](Builder::patch).\n///\n/// Note that unlike `start_pattern`/`finish_pattern`, capturing start and\n/// end states may be interleaved. Indeed, it is typical for many \"start\n/// capture\" NFA states to appear before the first \"end capture\" state.\n///\n/// # Errors\n///\n/// This returns an error if the state identifier space is exhausted, or if\n/// the configured heap size limit has been exceeded or if the given\n/// capture index overflows `usize`.\n///\n/// While the above are the only conditions in which this routine can\n/// currently return an error, it is possible to call this method with an\n/// inputs that results in the final `build()` step failing to produce an\n/// NFA. For example, if one adds two distinct capturing groups with the\n/// same name, then that will result in `build()` failing with an error.\n///\n/// See the [`GroupInfo`](crate::util::captures::GroupInfo) type for\n/// more information on what qualifies as valid capturing groups.\n///\n/// # Example\n///\n/// This example shows that an error occurs when one tries to add multiple\n/// capturing groups with the same name to the same pattern.\n///\n/// ```\n/// use regex_automata::{\n///     nfa::thompson::Builder,\n///     util::primitives::StateID,\n/// };\n///\n/// let name = Some(std::sync::Arc::from(\"foo\"));\n/// let mut builder = Builder::new();\n/// builder.start_pattern()?;\n/// // 0th capture group should always be unnamed.\n/// let start = builder.add_capture_start(StateID::ZERO, 0, None)?;\n/// // OK\n/// builder.add_capture_start(StateID::ZERO, 1, name.clone())?;\n/// // This is not OK, but 'add_capture_start' still succeeds. We don't\n/// // get an error until we call 'build' below. Without this call, the\n/// // call to 'build' below would succeed.\n/// builder.add_capture_start(StateID::ZERO, 2, name.clone())?;\n/// // Finish our pattern so we can try to build the NFA.\n/// builder.finish_pattern(start)?;\n/// let result = builder.build(start, start);\n/// assert!(result.is_err());\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// However, adding multiple capturing groups with the same name to\n/// distinct patterns is okay:\n///\n/// ```\n/// use std::sync::Arc;\n///\n/// use regex_automata::{\n///     nfa::thompson::{pikevm::PikeVM, Builder, Transition},\n///     util::{\n///         captures::Captures,\n///         primitives::{PatternID, StateID},\n///     },\n///     Span,\n/// };\n///\n/// // Hand-compile the patterns '(?P<foo>[a-z])' and '(?P<foo>[A-Z])'.\n/// let mut builder = Builder::new();\n/// // We compile them to support an unanchored search, which requires\n/// // adding an implicit '(?s-u:.)*?' prefix before adding either pattern.\n/// let unanchored_prefix = builder.add_union_reverse(vec![])?;\n/// let any = builder.add_range(Transition {\n///     start: b'\\x00', end: b'\\xFF', next: StateID::ZERO,\n/// })?;\n/// builder.patch(unanchored_prefix, any)?;\n/// builder.patch(any, unanchored_prefix)?;\n///\n/// // Compile an alternation that permits matching multiple patterns.\n/// let alt = builder.add_union(vec![])?;\n/// builder.patch(unanchored_prefix, alt)?;\n///\n/// // Compile '(?P<foo>[a-z]+)'.\n/// builder.start_pattern()?;\n/// let start0 = builder.add_capture_start(StateID::ZERO, 0, None)?;\n/// // N.B. 0th capture group must always be unnamed.\n/// let foo_start0 = builder.add_capture_start(\n///     StateID::ZERO, 1, Some(Arc::from(\"foo\")),\n/// )?;\n/// let lowercase = builder.add_range(Transition {\n///     start: b'a', end: b'z', next: StateID::ZERO,\n/// })?;\n/// let foo_end0 = builder.add_capture_end(StateID::ZERO, 1)?;\n/// let end0 = builder.add_capture_end(StateID::ZERO, 0)?;\n/// let match0 = builder.add_match()?;\n/// builder.patch(start0, foo_start0)?;\n/// builder.patch(foo_start0, lowercase)?;\n/// builder.patch(lowercase, foo_end0)?;\n/// builder.patch(foo_end0, end0)?;\n/// builder.patch(end0, match0)?;\n/// builder.finish_pattern(start0)?;\n///\n/// // Compile '(?P<foo>[A-Z]+)'.\n/// builder.start_pattern()?;\n/// let start1 = builder.add_capture_start(StateID::ZERO, 0, None)?;\n/// // N.B. 0th capture group must always be unnamed.\n/// let foo_start1 = builder.add_capture_start(\n///     StateID::ZERO, 1, Some(Arc::from(\"foo\")),\n/// )?;\n/// let uppercase = builder.add_range(Transition {\n///     start: b'A', end: b'Z', next: StateID::ZERO,\n/// })?;\n/// let foo_end1 = builder.add_capture_end(StateID::ZERO, 1)?;\n/// let end1 = builder.add_capture_end(StateID::ZERO, 0)?;\n/// let match1 = builder.add_match()?;\n/// builder.patch(start1, foo_start1)?;\n/// builder.patch(foo_start1, uppercase)?;\n/// builder.patch(uppercase, foo_end1)?;\n/// builder.patch(foo_end1, end1)?;\n/// builder.patch(end1, match1)?;\n/// builder.finish_pattern(start1)?;\n///\n/// // Now add the patterns to our alternation that we started above.\n/// builder.patch(alt, start0)?;\n/// builder.patch(alt, start1)?;\n///\n/// // Finally build the NFA. The first argument is the anchored starting\n/// // state (the pattern alternation) where as the second is the\n/// // unanchored starting state (the unanchored prefix).\n/// let nfa = builder.build(alt, unanchored_prefix)?;\n///\n/// // Now build a Pike VM from our NFA and access the 'foo' capture\n/// // group regardless of which pattern matched, since it is defined\n/// // for both patterns.\n/// let vm = PikeVM::new_from_nfa(nfa)?;\n/// let mut cache = vm.create_cache();\n/// let caps: Vec<Captures> =\n///     vm.captures_iter(&mut cache, \"0123aAaAA\").collect();\n/// assert_eq!(5, caps.len());\n///\n/// assert_eq!(Some(PatternID::must(0)), caps[0].pattern());\n/// assert_eq!(Some(Span::from(4..5)), caps[0].get_group_by_name(\"foo\"));\n///\n/// assert_eq!(Some(PatternID::must(1)), caps[1].pattern());\n/// assert_eq!(Some(Span::from(5..6)), caps[1].get_group_by_name(\"foo\"));\n///\n/// assert_eq!(Some(PatternID::must(0)), caps[2].pattern());\n/// assert_eq!(Some(Span::from(6..7)), caps[2].get_group_by_name(\"foo\"));\n///\n/// assert_eq!(Some(PatternID::must(1)), caps[3].pattern());\n/// assert_eq!(Some(Span::from(7..8)), caps[3].get_group_by_name(\"foo\"));\n///\n/// assert_eq!(Some(PatternID::must(1)), caps[4].pattern());\n/// assert_eq!(Some(Span::from(8..9)), caps[4].get_group_by_name(\"foo\"));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn add_capture_start(",
+    "    &mut self,",
+    "    next: StateID,",
+    "    group_index: u32,",
+    "    name: Option<Arc<str>>,",
+    ") -> Result<StateID, BuildError> {",
+    "    let pid = self.current_pattern_id();",
+    "    let group_index = match SmallIndex::try_from(group_index) {",
+    "        Err(_) => {",
+    "            return Err(BuildError::invalid_capture_index(group_index))",
+    "        }",
+    "        Ok(group_index) => group_index,",
+    "    };",
+    "    // Make sure we have space to insert our (pid,index)|-->name mapping.",
+    "    if pid.as_usize() >= self.captures.len() {",
+    "        for _ in 0..=(pid.as_usize() - self.captures.len()) {",
+    "            self.captures.push(vec![]);",
+    "        }",
+    "    }",
+    "    // In the case where 'group_index < self.captures[pid].len()', it means",
+    "    // that we are adding a duplicate capture group. This is somewhat",
+    "    // weird, but permissible because the capture group itself can be",
+    "    // repeated in the syntax. For example, '([a-z]){4}' will produce 4",
+    "    // capture groups. In practice, only the last will be set at search",
+    "    // time when a match occurs. For duplicates, we don't need to push",
+    "    // anything other than a CaptureStart NFA state.",
+    "    if group_index.as_usize() >= self.captures[pid].len() {",
+    "        // For discontiguous indices, push placeholders for earlier capture",
+    "        // groups that weren't explicitly added.",
+    "        for _ in 0..(group_index.as_usize() - self.captures[pid].len()) {",
+    "            self.captures[pid].push(None);",
+    "        }",
+    "        self.captures[pid].push(name);",
+    "    }",
+    "    self.add(State::CaptureStart { pattern_id: pid, group_index, next })",
+    "}"
+  ],
+  "size": {
+    "chain": 10,
+    "contra": 5,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Err(_)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        },
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Err(_)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        }
+      ],
+      "ret": "Err(BuildError::invalid_capture_index(group_index))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        6,
+        7,
+        8,
+        51
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Ok(group_index)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        },
+        {
+          "cond": "pid.as_usize() >= self.captures.len()",
+          "norm": null,
+          "value": "true",
+          "line": 1005,
+          "bound": "pid.as_usize() == self.captures.len()"
+        },
+        {
+          "cond": "_ in 0..=(pid.as_usize() - self.captures.len())",
+          "norm": null,
+          "value": "true",
+          "line": 1006,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..=(pid.as_usize() - self.captures.len())",
+          "norm": null,
+          "value": "false",
+          "line": 1006,
+          "bound": null
+        },
+        {
+          "cond": "group_index.as_usize() >= self.captures[pid].len()",
+          "norm": null,
+          "value": "true",
+          "line": 1017,
+          "bound": "group_index.as_usize() == self.captures[pid].len()"
+        },
+        {
+          "cond": "_ in 0..(group_index.as_usize() - self.captures[pid].len())",
+          "norm": null,
+          "value": "true",
+          "line": 1020,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..(group_index.as_usize() - self.captures[pid].len())",
+          "norm": null,
+          "value": "false",
+          "line": 1020,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        22,
+        24,
+        25,
+        17,
+        18,
+        19,
+        21,
+        23,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        44,
+        45,
+        37,
+        38,
+        39,
+        41,
+        43,
+        46,
+        47,
+        49,
+        50,
+        51
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Ok(group_index)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        },
+        {
+          "cond": "pid.as_usize() >= self.captures.len()",
+          "norm": null,
+          "value": "true",
+          "line": 1005,
+          "bound": "pid.as_usize() == self.captures.len()"
+        },
+        {
+          "cond": "_ in 0..=(pid.as_usize() - self.captures.len())",
+          "norm": null,
+          "value": "true",
+          "line": 1006,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..=(pid.as_usize() - self.captures.len())",
+          "norm": null,
+          "value": "false",
+          "line": 1006,
+          "bound": null
+        },
+        {
+          "cond": "group_index.as_usize() >= self.captures[pid].len()",
+          "norm": null,
+          "value": "true",
+          "line": 1017,
+          "bound": "group_index.as_usize() == self.captures[pid].len()"
+        },
+        {
+          "cond": "_ in 0..(group_index.as_usize() - self.captures[pid].len())",
+          "norm": null,
+          "value": "false",
+          "line": 1020,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        22,
+        24,
+        25,
+        17,
+        18,
+        19,
+        21,
+        23,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        43,
+        46,
+        47,
+        49,
+        50,
+        51
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Ok(group_index)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        },
+        {
+          "cond": "pid.as_usize() >= self.captures.len()",
+          "norm": null,
+          "value": "true",
+          "line": 1005,
+          "bound": "pid.as_usize() == self.captures.len()"
+        },
+        {
+          "cond": "_ in 0..=(pid.as_usize() - self.captures.len())",
+          "norm": null,
+          "value": "true",
+          "line": 1006,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..=(pid.as_usize() - self.captures.len())",
+          "norm": null,
+          "value": "false",
+          "line": 1006,
+          "bound": null
+        },
+        {
+          "cond": "group_index.as_usize() >= self.captures[pid].len()",
+          "norm": null,
+          "value": "false",
+          "line": 1017,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        22,
+        24,
+        25,
+        17,
+        18,
+        19,
+        21,
+        23,
+        27,
+        28,
+        29,
+        30,
+        48,
+        49,
+        50,
+        51
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Ok(group_index)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        },
+        {
+          "cond": "pid.as_usize() >= self.captures.len()",
+          "norm": null,
+          "value": "true",
+          "line": 1005,
+          "bound": "pid.as_usize() == self.captures.len()"
+        },
+        {
+          "cond": "_ in 0..=(pid.as_usize() - self.captures.len())",
+          "norm": null,
+          "value": "false",
+          "line": 1006,
+          "bound": null
+        },
+        {
+          "cond": "group_index.as_usize() >= self.captures[pid].len()",
+          "norm": null,
+          "value": "true",
+          "line": 1017,
+          "bound": "group_index.as_usize() == self.captures[pid].len()"
+        },
+        {
+          "cond": "_ in 0..(group_index.as_usize() - self.captures[pid].len())",
+          "norm": null,
+          "value": "true",
+          "line": 1020,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..(group_index.as_usize() - self.captures[pid].len())",
+          "norm": null,
+          "value": "false",
+          "line": 1020,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        21,
+        23,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        44,
+        45,
+        37,
+        38,
+        39,
+        41,
+        43,
+        46,
+        47,
+        49,
+        50,
+        51
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Ok(group_index)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        },
+        {
+          "cond": "pid.as_usize() >= self.captures.len()",
+          "norm": null,
+          "value": "true",
+          "line": 1005,
+          "bound": "pid.as_usize() == self.captures.len()"
+        },
+        {
+          "cond": "_ in 0..=(pid.as_usize() - self.captures.len())",
+          "norm": null,
+          "value": "false",
+          "line": 1006,
+          "bound": null
+        },
+        {
+          "cond": "group_index.as_usize() >= self.captures[pid].len()",
+          "norm": null,
+          "value": "true",
+          "line": 1017,
+          "bound": "group_index.as_usize() == self.captures[pid].len()"
+        },
+        {
+          "cond": "_ in 0..(group_index.as_usize() - self.captures[pid].len())",
+          "norm": null,
+          "value": "false",
+          "line": 1020,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        21,
+        23,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        43,
+        46,
+        47,
+        49,
+        50,
+        51
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Ok(group_index)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        },
+        {
+          "cond": "pid.as_usize() >= self.captures.len()",
+          "norm": null,
+          "value": "true",
+          "line": 1005,
+          "bound": "pid.as_usize() == self.captures.len()"
+        },
+        {
+          "cond": "_ in 0..=(pid.as_usize() - self.captures.len())",
+          "norm": null,
+          "value": "false",
+          "line": 1006,
+          "bound": null
+        },
+        {
+          "cond": "group_index.as_usize() >= self.captures[pid].len()",
+          "norm": null,
+          "value": "false",
+          "line": 1017,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        21,
+        23,
+        27,
+        28,
+        29,
+        30,
+        48,
+        49,
+        50,
+        51
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Ok(group_index)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        },
+        {
+          "cond": "pid.as_usize() >= self.captures.len()",
+          "norm": null,
+          "value": "false",
+          "line": 1005,
+          "bound": null
+        },
+        {
+          "cond": "group_index.as_usize() >= self.captures[pid].len()",
+          "norm": null,
+          "value": "true",
+          "line": 1017,
+          "bound": "group_index.as_usize() == self.captures[pid].len()"
+        },
+        {
+          "cond": "_ in 0..(group_index.as_usize() - self.captures[pid].len())",
+          "norm": null,
+          "value": "true",
+          "line": 1020,
+          "bound": null
+        },
+        {
+          "cond": "_ in 0..(group_index.as_usize() - self.captures[pid].len())",
+          "norm": null,
+          "value": "false",
+          "line": 1020,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        44,
+        45,
+        37,
+        38,
+        39,
+        41,
+        43,
+        46,
+        47,
+        49,
+        50,
+        51
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Ok(group_index)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        },
+        {
+          "cond": "pid.as_usize() >= self.captures.len()",
+          "norm": null,
+          "value": "false",
+          "line": 1005,
+          "bound": null
+        },
+        {
+          "cond": "group_index.as_usize() >= self.captures[pid].len()",
+          "norm": null,
+          "value": "true",
+          "line": 1017,
+          "bound": "group_index.as_usize() == self.captures[pid].len()"
+        },
+        {
+          "cond": "_ in 0..(group_index.as_usize() - self.captures[pid].len())",
+          "norm": null,
+          "value": "false",
+          "line": 1020,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        43,
+        46,
+        47,
+        49,
+        50,
+        51
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "SmallIndex::try_from(group_index) matches Ok(group_index)",
+          "norm": null,
+          "value": "true",
+          "line": 998,
+          "bound": null
+        },
+        {
+          "cond": "pid.as_usize() >= self.captures.len()",
+          "norm": null,
+          "value": "false",
+          "line": 1005,
+          "bound": null
+        },
+        {
+          "cond": "group_index.as_usize() >= self.captures[pid].len()",
+          "norm": null,
+          "value": "false",
+          "line": 1017,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        26,
+        27,
+        28,
+        29,
+        30,
+        48,
+        49,
+        50,
+        51
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

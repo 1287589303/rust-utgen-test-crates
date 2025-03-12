@@ -1,0 +1,239 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let result = parser.parse(\"\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(Ast::Empty(Box::new(Span { start: 0, end: 0 }))));"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let result = parser.parse(\"\");",
+          "    assert_eq!(result, Ok(Ast::Empty(Box::new(Span { start: 0, end: 0 }))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let result = parser.parse(\"a\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), Ast::Literal(Box::new(ast::Literal { /* expected fields */ })));"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let result = parser.parse(\"a\");",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), Ast::Literal(Box::new(ast::Literal { /* expected fields */ })));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let result = parser.parse(\"(a|b)*\");",
+          "}"
+        ],
+        "oracle": [
+          "    let mut parser = Parser::new();",
+          "    let result = parser.parse(\"(a|b)*\");",
+          "    assert!(result.is_ok());",
+          "    if let Ok(ast) = result {",
+          "    assert!(matches!(ast, Ast::Repetition(_)));",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let result = parser.parse(\"(a|b)*\");",
+          "    let mut parser = Parser::new();",
+          "    let result = parser.parse(\"(a|b)*\");",
+          "    assert!(result.is_ok());",
+          "    if let Ok(ast) = result {",
+          "    assert!(matches!(ast, Ast::Repetition(_)));",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    parser.nest_limit = 2; // Setting a nesting limit",
+          "    let result = parser.parse(\"((a|b)|(c|d))\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert!(matches!(result.unwrap(), Ast::Group(..)));",
+          "    assert!(result.unwrap().to_string().contains(\"((a|b)|(c|d))\"));"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    parser.nest_limit = 2; // Setting a nesting limit",
+          "    let result = parser.parse(\"((a|b)|(c|d))\");",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert!(matches!(result.unwrap(), Ast::Group(..)));",
+          "    assert!(result.unwrap().to_string().contains(\"((a|b)|(c|d))\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    parser.octal = true; // Allow octal syntax",
+          "    let result = parser.parse(\"\\\\12\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let ast = result.unwrap();",
+          "    assert_eq!(ast, Ast::Literal(Box::new(ast::Literal { /* expected properties */ })));"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    parser.octal = true; // Allow octal syntax",
+          "    let result = parser.parse(\"\\\\12\");",
+          "    assert!(result.is_ok());",
+          "    let ast = result.unwrap();",
+          "    assert_eq!(ast, Ast::Literal(Box::new(ast::Literal { /* expected properties */ })));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    parser.octal = false; // Disallow octal syntax",
+          "    let result = parser.parse(\"\\\\8\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind, ErrorKind::InvalidEscape);",
+          "    assert!(result.err().unwrap().pattern.contains(\"\\\\8\"));",
+          "    assert!(result.err().unwrap().span.offset > 0);",
+          "    assert!(result.err().unwrap().span.line > 0);",
+          "    assert!(result.err().unwrap().span.column > 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    parser.octal = false; // Disallow octal syntax",
+          "    let result = parser.parse(\"\\\\8\");",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind, ErrorKind::InvalidEscape);",
+          "    assert!(result.err().unwrap().pattern.contains(\"\\\\8\"));",
+          "    assert!(result.err().unwrap().span.offset > 0);",
+          "    assert!(result.err().unwrap().span.line > 0);",
+          "    assert!(result.err().unwrap().span.column > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    parser.ignore_whitespace.set(true); // Enable ignoring whitespace",
+          "    let result = parser.parse(\"   a b   \");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let ast = result.unwrap();",
+          "    assert!(matches!(ast, Ast::Concat(_)));",
+          "    assert_eq!(parser.ignore_whitespace.get(), true);",
+          "    assert!(parser.scratch.borrow().is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    parser.ignore_whitespace.set(true); // Enable ignoring whitespace",
+          "    let result = parser.parse(\"   a b   \");",
+          "    assert!(result.is_ok());",
+          "    let ast = result.unwrap();",
+          "    assert!(matches!(ast, Ast::Concat(_)));",
+          "    assert_eq!(parser.ignore_whitespace.get(), true);",
+          "    assert!(parser.scratch.borrow().is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    parser.ignore_whitespace.set(true); // Enable ignoring whitespace for comments",
+          "    let result = parser.parse(\"# this is a comment\\na\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    if let Ok(ast) = result {",
+          "    assert!(matches!(ast, Ast::Concat(_)));",
+          "    }",
+          "    assert_eq!(parser.comments.borrow().len(), 1);",
+          "    assert_eq!(parser.comments.borrow()[0].comment, \" this is a comment\");",
+          "    assert_eq!(parser.comments.borrow()[0].span.start, 0);",
+          "    assert_eq!(parser.comments.borrow()[0].span.end, 21);"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    parser.ignore_whitespace.set(true); // Enable ignoring whitespace for comments",
+          "    let result = parser.parse(\"# this is a comment\\na\");",
+          "    assert!(result.is_ok());",
+          "    if let Ok(ast) = result {",
+          "    assert!(matches!(ast, Ast::Concat(_)));",
+          "    }",
+          "    assert_eq!(parser.comments.borrow().len(), 1);",
+          "    assert_eq!(parser.comments.borrow()[0].comment, \" this is a comment\");",
+          "    assert_eq!(parser.comments.borrow()[0].span.start, 0);",
+          "    assert_eq!(parser.comments.borrow()[0].span.end, 21);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

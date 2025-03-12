@@ -1,0 +1,79 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#2}::next_state_untagged",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:1343:5:1353:6",
+  "doc": "/// Transitions from the current state to the next state, given the next\n/// byte of input and a state ID that is not tagged.\n///\n/// The only reason to use this routine is performance. In particular, the\n/// `next_state` method needs to do some additional checks, among them is\n/// to account for identifiers to states that are not yet computed. In\n/// such a case, the transition is computed on the fly. However, if it is\n/// known that the `current` state ID is untagged, then these checks can be\n/// omitted.\n///\n/// Since this routine does not compute states on the fly, it does not\n/// modify the cache and thus cannot return an error. Consequently, `cache`\n/// does not need to be mutable and it is possible for this routine to\n/// return a state ID corresponding to the special \"unknown\" state. In\n/// this case, it is the caller's responsibility to use the prior state\n/// ID and `input` with `next_state` in order to force the computation of\n/// the unknown transition. Otherwise, trying to use the \"unknown\" state\n/// ID will just result in transitioning back to itself, and thus never\n/// terminating. (This is technically a special exemption to the state ID\n/// validity rules, but is permissible since this routine is guarateed to\n/// never mutate the given `cache`, and thus the identifier is guaranteed\n/// to remain valid.)\n///\n/// See [`LazyStateID`] for more details on what it means for a state ID\n/// to be tagged. Also, see\n/// [`next_state_untagged_unchecked`](DFA::next_state_untagged_unchecked)\n/// for this same idea, but with bounds checks forcefully elided.\n///\n/// # State identifier validity\n///\n/// The only valid value for `current` is an **untagged** lazy\n/// state ID returned by the most recent call to `next_state`,\n/// `next_state_untagged`, `next_state_untagged_unchecked`,\n/// `start_state_forward` or `state_state_reverse` for the given `cache`.\n/// Any state ID returned from prior calls to these routines (with the\n/// same `cache`) is considered invalid (even if it gives an appearance\n/// of working). State IDs returned from _any_ prior call for different\n/// `cache` values are also always invalid.\n///\n/// The returned ID is always a valid ID when `current` refers to a valid\n/// ID, although it may be tagged. Moreover, this routine is defined for\n/// all possible values of `input`.\n///\n/// Not all validity rules are checked, even in debug mode. Callers are\n/// required to uphold these rules themselves.\n///\n/// Violating these state ID validity rules will not sacrifice memory\n/// safety, but _may_ produce an incorrect result or a panic.\n///\n/// # Panics\n///\n/// If the given ID does not refer to a valid state, then this routine\n/// may panic but it also may not panic and instead return an invalid or\n/// incorrect ID.\n///\n/// # Example\n///\n/// This shows a simplistic example for walking a lazy DFA for a given\n/// haystack by using the `next_state_untagged` method where possible.\n///\n/// ```\n/// use regex_automata::{hybrid::dfa::DFA, Input};\n///\n/// let dfa = DFA::new(r\"[a-z]+r\")?;\n/// let mut cache = dfa.create_cache();\n/// let haystack = \"bar\".as_bytes();\n///\n/// // The start state is determined by inspecting the position and the\n/// // initial bytes of the haystack.\n/// let mut sid = dfa.start_state_forward(\n///     &mut cache, &Input::new(haystack),\n/// )?;\n/// // Walk all the bytes in the haystack.\n/// let mut at = 0;\n/// while at < haystack.len() {\n///     if sid.is_tagged() {\n///         sid = dfa.next_state(&mut cache, sid, haystack[at])?;\n///     } else {\n///         let mut prev_sid = sid;\n///         // We attempt to chew through as much as we can while moving\n///         // through untagged state IDs. Thus, the transition function\n///         // does less work on average per byte. (Unrolling this loop\n///         // may help even more.)\n///         while at < haystack.len() {\n///             prev_sid = sid;\n///             sid = dfa.next_state_untagged(\n///                 &mut cache, sid, haystack[at],\n///             );\n///             at += 1;\n///             if sid.is_tagged() {\n///                 break;\n///             }\n///         }\n///         // We must ensure that we never proceed to the next iteration\n///         // with an unknown state ID. If we don't account for this\n///         // case, then search isn't guaranteed to terminate since all\n///         // transitions on unknown states loop back to itself.\n///         if sid.is_unknown() {\n///             sid = dfa.next_state(\n///                 &mut cache, prev_sid, haystack[at - 1],\n///             )?;\n///         }\n///     }\n/// }\n/// // Matches are always delayed by 1 byte, so we must explicitly walk the\n/// // special \"EOI\" transition at the end of the search.\n/// sid = dfa.next_eoi_state(&mut cache, sid)?;\n/// assert!(sid.is_match());\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn next_state_untagged(",
+    "    &self,",
+    "    cache: &Cache,",
+    "    current: LazyStateID,",
+    "    input: u8,",
+    ") -> LazyStateID {",
+    "    debug_assert!(!current.is_tagged());",
+    "    let class = usize::from(self.classes.get(input));",
+    "    let offset = current.as_usize_unchecked() + class;",
+    "    cache.trans[offset]",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "current.is_tagged()",
+          "norm": null,
+          "value": "true",
+          "line": 1349,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        12
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "current.is_tagged()",
+          "norm": null,
+          "value": "false",
+          "line": 1349,
+          "bound": null
+        }
+      ],
+      "ret": "cache.trans[offset]",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

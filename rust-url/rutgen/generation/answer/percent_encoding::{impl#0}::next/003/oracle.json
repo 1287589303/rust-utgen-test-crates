@@ -1,0 +1,144 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let first_byte = b'A'; // ASCII character not requiring percent encoding",
+          "    let bytes: &[u8] = &[first_byte, 0xE9]; // Following byte is a non-ASCII byte (é)",
+          "    let ascii_set = AsciiSet::EMPTY; // Should be modified for your use case",
+          "    ",
+          "    let mut encoder = PercentEncode {",
+          "        bytes,",
+          "        ascii_set: &ascii_set,",
+          "    };",
+          "    ",
+          "    encoder.next();",
+          "}"
+        ],
+        "oracle": [
+          "    encoder.bytes = &[b'A', 0xE9];",
+          "    assert_eq!(encoder.next(), Some(unsafe { str::from_utf8_unchecked(&[b'A']) }));",
+          "    encoder.bytes = &[0xE9];",
+          "    assert_eq!(encoder.next(), Some(unsafe { str::from_utf8_unchecked(&[0xE9]) }));",
+          "    encoder.bytes = &[];",
+          "    assert_eq!(encoder.next(), None);",
+          "    encoder.bytes = &[b'A', b'B', b'C', 0xE9];",
+          "    assert_eq!(encoder.next(), Some(unsafe { str::from_utf8_unchecked(&[b'A', b'B', b'C']) }));",
+          "    encoder.bytes = &[b'A', b'B', 0xE9];",
+          "    assert_eq!(encoder.next(), Some(unsafe { str::from_utf8_unchecked(&[b'A', b'B']) }));"
+        ],
+        "code": [
+          "{",
+          "    let first_byte = b'A'; // ASCII character not requiring percent encoding",
+          "    let bytes: &[u8] = &[first_byte, 0xE9]; // Following byte is a non-ASCII byte (é)",
+          "    let ascii_set = AsciiSet::EMPTY; // Should be modified for your use case",
+          "    ",
+          "    let mut encoder = PercentEncode {",
+          "        bytes,",
+          "        ascii_set: &ascii_set,",
+          "    };",
+          "    ",
+          "    encoder.next();",
+          "    encoder.bytes = &[b'A', 0xE9];",
+          "    assert_eq!(encoder.next(), Some(unsafe { str::from_utf8_unchecked(&[b'A']) }));",
+          "    encoder.bytes = &[0xE9];",
+          "    assert_eq!(encoder.next(), Some(unsafe { str::from_utf8_unchecked(&[0xE9]) }));",
+          "    encoder.bytes = &[];",
+          "    assert_eq!(encoder.next(), None);",
+          "    encoder.bytes = &[b'A', b'B', b'C', 0xE9];",
+          "    assert_eq!(encoder.next(), Some(unsafe { str::from_utf8_unchecked(&[b'A', b'B', b'C']) }));",
+          "    encoder.bytes = &[b'A', b'B', 0xE9];",
+          "    assert_eq!(encoder.next(), Some(unsafe { str::from_utf8_unchecked(&[b'A', b'B']) }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let first_byte = b'A'; // ASCII character not requiring percent encoding",
+          "    let bytes: &[u8] = &[first_byte, b' ']; // Following byte is an ASCII space character requiring encoding",
+          "    let ascii_set = AsciiSet::EMPTY.union(AsciiSet::EMPTY.add(b' ')); // Add space to the ascii_set to require encoding",
+          "",
+          "    let mut encoder = PercentEncode {",
+          "        bytes,",
+          "        ascii_set: &ascii_set,",
+          "    };",
+          "    ",
+          "    encoder.next();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(encoder.next(), Some(\"A\"));"
+        ],
+        "code": [
+          "{",
+          "    let first_byte = b'A'; // ASCII character not requiring percent encoding",
+          "    let bytes: &[u8] = &[first_byte, b' ']; // Following byte is an ASCII space character requiring encoding",
+          "    let ascii_set = AsciiSet::EMPTY.union(AsciiSet::EMPTY.add(b' ')); // Add space to the ascii_set to require encoding",
+          "",
+          "    let mut encoder = PercentEncode {",
+          "        bytes,",
+          "        ascii_set: &ascii_set,",
+          "    };",
+          "    ",
+          "    encoder.next();",
+          "    assert_eq!(encoder.next(), Some(\"A\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let first_byte = b'O'; // ASCII character not requiring percent encoding",
+          "    let bytes: &[u8] = &[first_byte, b'#', b'$', 0xE5]; // Following bytes include special characters and a non-ASCII character",
+          "    let ascii_set = AsciiSet::EMPTY.union(AsciiSet::EMPTY.add(b'#')).union(AsciiSet::EMPTY.add(b'$')); // Add characters that need encoding",
+          "",
+          "    let mut encoder = PercentEncode {",
+          "        bytes,",
+          "        ascii_set: &ascii_set,",
+          "    };",
+          "    ",
+          "    encoder.next();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(encoder.next(), Some(unsafe { str::from_utf8_unchecked(&[b'O']) }));",
+          "    assert_eq!(encoder.bytes, &[b'#', b'$', 0xE5]);",
+          "    assert_eq!(encoder.ascii_set.should_percent_encode(b'#'), true);",
+          "    assert_eq!(encoder.ascii_set.should_percent_encode(b'$'), true);"
+        ],
+        "code": [
+          "{",
+          "    let first_byte = b'O'; // ASCII character not requiring percent encoding",
+          "    let bytes: &[u8] = &[first_byte, b'#', b'$', 0xE5]; // Following bytes include special characters and a non-ASCII character",
+          "    let ascii_set = AsciiSet::EMPTY.union(AsciiSet::EMPTY.add(b'#')).union(AsciiSet::EMPTY.add(b'$')); // Add characters that need encoding",
+          "",
+          "    let mut encoder = PercentEncode {",
+          "        bytes,",
+          "        ascii_set: &ascii_set,",
+          "    };",
+          "    ",
+          "    encoder.next();",
+          "    assert_eq!(encoder.next(), Some(unsafe { str::from_utf8_unchecked(&[b'O']) }));",
+          "    assert_eq!(encoder.bytes, &[b'#', b'$', 0xE5]);",
+          "    assert_eq!(encoder.ascii_set.should_percent_encode(b'#'), true);",
+          "    assert_eq!(encoder.ascii_set.should_percent_encode(b'$'), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

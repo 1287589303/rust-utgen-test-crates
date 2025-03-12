@@ -1,0 +1,550 @@
+{
+  "name": "bytes::buf::buf_mut::BufMut::put_int_le",
+  "mod_info": {
+    "name": "buf::buf_mut",
+    "loc": "src/buf/mod.rs:18:1:18:13"
+  },
+  "visible": true,
+  "loc": "src/buf/buf_mut.rs:1078:5:1086:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: slice.get(..nbytes) matches Some(slice) at line 1080 is true\n",
+        "precondition: slice.get(..nbytes) matches Some(slice) at line 1080 is true\n"
+      ],
+      "input_infer": "nbytes must be in the range 1 to 8, and n must be a signed integer whose byte representation fits within the nbytes limit.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = Vec::with_capacity(1);",
+                "    buf.put_int_le(-1, 1);",
+                "}"
+              ],
+              "oracle": [
+                "    buf.put_int_le(-1, 1); // Expected to write the least significant byte of -1 (0xFF) to the buffer.",
+                "    assert_eq!(buf, b\"\\xFF\"); // Validate the content of the buffer after the operation.",
+                "    ",
+                "    buf.put_int_le(0, 1); // Expected to write the least significant byte of 0 (0x00) to the buffer.",
+                "    assert_eq!(buf, b\"\\x00\"); // Validate that the buffer correctly contains the zero byte.",
+                "    ",
+                "    let mut buf_capacity = Vec::with_capacity(8);",
+                "    buf_capacity.put_int_le(0x0504010203, 3); // Write 3 bytes of the integer in little-endian order.",
+                "    assert_eq!(buf_capacity, b\"\\x03\\x02\\x01\"); // Validate the content matches the expected output.",
+                "    ",
+                "    let mut buf_overflow = Vec::with_capacity(4);",
+                "    buf_overflow.put_int_le(-1, 9); // Panics if nbytes is greater than 8.",
+                "    assert_panics!(buf_overflow.put_int_le(-1, 9)); // Ensure it triggers a panic for out of bounds."
+              ],
+              "code": [
+                "{",
+                "    let mut buf = Vec::with_capacity(1);",
+                "    buf.put_int_le(-1, 1);",
+                "    buf.put_int_le(-1, 1); // Expected to write the least significant byte of -1 (0xFF) to the buffer.",
+                "    assert_eq!(buf, b\"\\xFF\"); // Validate the content of the buffer after the operation.",
+                "    ",
+                "    buf.put_int_le(0, 1); // Expected to write the least significant byte of 0 (0x00) to the buffer.",
+                "    assert_eq!(buf, b\"\\x00\"); // Validate that the buffer correctly contains the zero byte.",
+                "    ",
+                "    let mut buf_capacity = Vec::with_capacity(8);",
+                "    buf_capacity.put_int_le(0x0504010203, 3); // Write 3 bytes of the integer in little-endian order.",
+                "    assert_eq!(buf_capacity, b\"\\x03\\x02\\x01\"); // Validate the content matches the expected output.",
+                "    ",
+                "    let mut buf_overflow = Vec::with_capacity(4);",
+                "    buf_overflow.put_int_le(-1, 9); // Panics if nbytes is greater than 8.",
+                "    assert_panics!(buf_overflow.put_int_le(-1, 9)); // Ensure it triggers a panic for out of bounds.",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = Vec::with_capacity(2);",
+                "    buf.put_int_le(-256, 2);",
+                "}"
+              ],
+              "oracle": [
+                "    buf.put_int_le(-256, 2);",
+                "    assert_eq!(buf, b\"\\x00\\xFF\");"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = Vec::with_capacity(2);",
+                "    buf.put_int_le(-256, 2);",
+                "    buf.put_int_le(-256, 2);",
+                "    assert_eq!(buf, b\"\\x00\\xFF\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = Vec::with_capacity(3);",
+                "    buf.put_int_le(-65793, 3);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(buf.len(), 3);",
+                "    assert_eq!(buf[0], 0x03);",
+                "    assert_eq!(buf[1], 0x01);",
+                "    assert_eq!(buf[2], 0xFF);",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(-65793, 4)).is_err());",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(-65793, 5)).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = Vec::with_capacity(3);",
+                "    buf.put_int_le(-65793, 3);",
+                "    assert_eq!(buf.len(), 3);",
+                "    assert_eq!(buf[0], 0x03);",
+                "    assert_eq!(buf[1], 0x01);",
+                "    assert_eq!(buf[2], 0xFF);",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(-65793, 4)).is_err());",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(-65793, 5)).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = Vec::with_capacity(4);",
+                "    buf.put_int_le(-16909060, 4);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(buf, b\"\\x04\\x03\\x02\\x01\");",
+                "    assert_eq!(buf.remaining_mut(), 0);",
+                "    buf.put_int_le(-1, 8);",
+                "    buf.put_int_le(255, 1);",
+                "    assert_eq!(buf, b\"\\x04\\x03\\x02\\x01\\xFF\");",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(1, 9)).is_err());",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(1, 5)).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = Vec::with_capacity(4);",
+                "    buf.put_int_le(-16909060, 4);",
+                "    assert_eq!(buf, b\"\\x04\\x03\\x02\\x01\");",
+                "    assert_eq!(buf.remaining_mut(), 0);",
+                "    buf.put_int_le(-1, 8);",
+                "    buf.put_int_le(255, 1);",
+                "    assert_eq!(buf, b\"\\x04\\x03\\x02\\x01\\xFF\");",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(1, 9)).is_err());",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(1, 5)).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = Vec::with_capacity(5);",
+                "    buf.put_int_le(-280602721, 5);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(buf.len(), 5);",
+                "    assert_eq!(buf, b\"\\x01\\xfd\\xcf\\xb3\\xff\");",
+                "    assert!((buf.len() <= 5) && (buf.len() > 0));",
+                "    assert!(matches!(std::panic::catch_unwind(|| buf.put_int_le(-280602721, 9)), Err(_)));",
+                "    assert!((buf.remaining_mut() >= 0) && (buf.remaining_mut() < 5));"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = Vec::with_capacity(5);",
+                "    buf.put_int_le(-280602721, 5);",
+                "    assert_eq!(buf.len(), 5);",
+                "    assert_eq!(buf, b\"\\x01\\xfd\\xcf\\xb3\\xff\");",
+                "    assert!((buf.len() <= 5) && (buf.len() > 0));",
+                "    assert!(matches!(std::panic::catch_unwind(|| buf.put_int_le(-280602721, 9)), Err(_)));",
+                "    assert!((buf.remaining_mut() >= 0) && (buf.remaining_mut() < 5));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = Vec::with_capacity(6);",
+                "    buf.put_int_le(-15039414, 6);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(buf, b\"\\xC2\\x8A\\x14\\xD3\\xFF\\xFF\");",
+                "    assert_eq!(buf.len(), 6);",
+                "    assert!(buf.remaining_mut() == 0);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = Vec::with_capacity(6);",
+                "    buf.put_int_le(-15039414, 6);",
+                "    assert_eq!(buf, b\"\\xC2\\x8A\\x14\\xD3\\xFF\\xFF\");",
+                "    assert_eq!(buf.len(), 6);",
+                "    assert!(buf.remaining_mut() == 0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = Vec::with_capacity(7);",
+                "    buf.put_int_le(-12297829382473, 7);",
+                "}"
+              ],
+              "oracle": [
+                "    buf.put_int_le(-12297829382473, 7);",
+                "    assert_eq!(buf, b\"\\x03\\x02\\x01\\x00\\x00\\x00\\x00\");",
+                "    assert_eq!(buf.remaining_mut(), 0);",
+                "    assert!(!buf.has_remaining_mut());",
+                "    ",
+                "    buf.put_int_le(1, 1);",
+                "    assert_eq!(buf, b\"\\x01\\x02\\x01\\x00\\x00\\x00\\x00\");",
+                "    assert_eq!(buf.remaining_mut(), 0);",
+                "    assert!(!buf.has_remaining_mut());",
+                "    ",
+                "    let result = std::panic::catch_unwind(|| {",
+                "    buf.put_int_le(0, 8);",
+                "    });",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let result = std::panic::catch_unwind(|| {",
+                "    buf.put_int_le(-1, 9);",
+                "    });",
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = Vec::with_capacity(7);",
+                "    buf.put_int_le(-12297829382473, 7);",
+                "    buf.put_int_le(-12297829382473, 7);",
+                "    assert_eq!(buf, b\"\\x03\\x02\\x01\\x00\\x00\\x00\\x00\");",
+                "    assert_eq!(buf.remaining_mut(), 0);",
+                "    assert!(!buf.has_remaining_mut());",
+                "    ",
+                "    buf.put_int_le(1, 1);",
+                "    assert_eq!(buf, b\"\\x01\\x02\\x01\\x00\\x00\\x00\\x00\");",
+                "    assert_eq!(buf.remaining_mut(), 0);",
+                "    assert!(!buf.has_remaining_mut());",
+                "    ",
+                "    let result = std::panic::catch_unwind(|| {",
+                "    buf.put_int_le(0, 8);",
+                "    });",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let result = std::panic::catch_unwind(|| {",
+                "    buf.put_int_le(-1, 9);",
+                "    });",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = Vec::with_capacity(8);",
+                "    buf.put_int_le(-9223372036854775808, 8);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(buf.len(), 8);",
+                "    assert_eq!(buf[0], 0x00);",
+                "    assert_eq!(buf[1], 0x00);",
+                "    assert_eq!(buf[2], 0x00);",
+                "    assert_eq!(buf[3], 0x00);",
+                "    assert_eq!(buf[4], 0x00);",
+                "    assert_eq!(buf[5], 0x00);",
+                "    assert_eq!(buf[6], 0x00);",
+                "    assert_eq!(buf[7], 0x80);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = Vec::with_capacity(8);",
+                "    buf.put_int_le(-9223372036854775808, 8);",
+                "    assert_eq!(buf.len(), 8);",
+                "    assert_eq!(buf[0], 0x00);",
+                "    assert_eq!(buf[1], 0x00);",
+                "    assert_eq!(buf[2], 0x00);",
+                "    assert_eq!(buf[3], 0x00);",
+                "    assert_eq!(buf[4], 0x00);",
+                "    assert_eq!(buf[5], 0x00);",
+                "    assert_eq!(buf[6], 0x00);",
+                "    assert_eq!(buf[7], 0x80);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: slice.get(..nbytes) matches None at line 1080 is true\n"
+      ],
+      "input_infer": "nbytes > 8 or nbytes < 0\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        pos: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(size: usize) -> Self {",
+                "            TestBuf {",
+                "                data: vec![0; size],",
+                "                pos: 0,",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    unsafe impl BufMut for TestBuf {",
+                "        fn remaining_mut(&self) -> usize {",
+                "            self.data.len() - self.pos",
+                "        }",
+                "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                "            self.pos += cnt;",
+                "        }",
+                "        fn has_remaining_mut(&self) -> bool {",
+                "            self.remaining_mut() > 0",
+                "        }",
+                "        fn chunk_mut(&mut self) -> &mut UninitSlice {",
+                "            // Implementation of this method is not required for the test.",
+                "            unimplemented!()",
+                "        }",
+                "        fn put_slice(&mut self, src: &[u8]) {",
+                "            // Implementation of this method is not required for the test.",
+                "            unimplemented!()",
+                "        }",
+                "        fn put_int_le(&mut self, n: i64, nbytes: usize) {",
+                "            let slice = n.to_le_bytes();",
+                "            let slice = match slice.get(..nbytes) {",
+                "                Some(slice) => slice,",
+                "                None => panic_does_not_fit(nbytes, slice.len()),",
+                "            };",
+                "            self.put_slice(slice);",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(8);",
+                "    buf.put_int_le(0x0504010203040506, 9);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(buf.remaining_mut(), 0);",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(0x0504010203040506, 9)).is_err());",
+                "    assert!(buf.pos == 0);",
+                "    assert_eq!(buf.data, vec![0; 8]);",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(0x0504010203040506, 10)).is_err());"
+              ],
+              "code": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        pos: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(size: usize) -> Self {",
+                "            TestBuf {",
+                "                data: vec![0; size],",
+                "                pos: 0,",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    unsafe impl BufMut for TestBuf {",
+                "        fn remaining_mut(&self) -> usize {",
+                "            self.data.len() - self.pos",
+                "        }",
+                "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                "            self.pos += cnt;",
+                "        }",
+                "        fn has_remaining_mut(&self) -> bool {",
+                "            self.remaining_mut() > 0",
+                "        }",
+                "        fn chunk_mut(&mut self) -> &mut UninitSlice {",
+                "            // Implementation of this method is not required for the test.",
+                "            unimplemented!()",
+                "        }",
+                "        fn put_slice(&mut self, src: &[u8]) {",
+                "            // Implementation of this method is not required for the test.",
+                "            unimplemented!()",
+                "        }",
+                "        fn put_int_le(&mut self, n: i64, nbytes: usize) {",
+                "            let slice = n.to_le_bytes();",
+                "            let slice = match slice.get(..nbytes) {",
+                "                Some(slice) => slice,",
+                "                None => panic_does_not_fit(nbytes, slice.len()),",
+                "            };",
+                "            self.put_slice(slice);",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(8);",
+                "    buf.put_int_le(0x0504010203040506, 9);",
+                "    assert_eq!(buf.remaining_mut(), 0);",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(0x0504010203040506, 9)).is_err());",
+                "    assert!(buf.pos == 0);",
+                "    assert_eq!(buf.data, vec![0; 8]);",
+                "    assert!(std::panic::catch_unwind(|| buf.put_int_le(0x0504010203040506, 10)).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        pos: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(size: usize) -> Self {",
+                "            TestBuf {",
+                "                data: vec![0; size],",
+                "                pos: 0,",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    unsafe impl BufMut for TestBuf {",
+                "        fn remaining_mut(&self) -> usize {",
+                "            self.data.len() - self.pos",
+                "        }",
+                "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                "            self.pos += cnt;",
+                "        }",
+                "        fn has_remaining_mut(&self) -> bool {",
+                "            self.remaining_mut() > 0",
+                "        }",
+                "        fn chunk_mut(&mut self) -> &mut UninitSlice {",
+                "            // Implementation of this method is not required for the test.",
+                "            unimplemented!()",
+                "        }",
+                "        fn put_slice(&mut self, src: &[u8]) {",
+                "            // Implementation of this method is not required for the test.",
+                "            unimplemented!()",
+                "        }",
+                "        fn put_int_le(&mut self, n: i64, nbytes: usize) {",
+                "            let slice = n.to_le_bytes();",
+                "            let slice = match slice.get(..nbytes) {",
+                "                Some(slice) => slice,",
+                "                None => panic_does_not_fit(nbytes, slice.len()),",
+                "            };",
+                "            self.put_slice(slice);",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(8);",
+                "    buf.put_int_le(0x0504010203040506, -1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_panics!(buf.put_int_le(0x0504010203040506, 9));",
+                "    assert_panics!(buf.put_int_le(0x0504010203040506, 10));",
+                "    assert_panics!(buf.put_int_le(0x0504010203040506, usize::MAX));"
+              ],
+              "code": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        pos: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(size: usize) -> Self {",
+                "            TestBuf {",
+                "                data: vec![0; size],",
+                "                pos: 0,",
+                "            }",
+                "        }",
+                "    }",
+                "",
+                "    unsafe impl BufMut for TestBuf {",
+                "        fn remaining_mut(&self) -> usize {",
+                "            self.data.len() - self.pos",
+                "        }",
+                "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                "            self.pos += cnt;",
+                "        }",
+                "        fn has_remaining_mut(&self) -> bool {",
+                "            self.remaining_mut() > 0",
+                "        }",
+                "        fn chunk_mut(&mut self) -> &mut UninitSlice {",
+                "            // Implementation of this method is not required for the test.",
+                "            unimplemented!()",
+                "        }",
+                "        fn put_slice(&mut self, src: &[u8]) {",
+                "            // Implementation of this method is not required for the test.",
+                "            unimplemented!()",
+                "        }",
+                "        fn put_int_le(&mut self, n: i64, nbytes: usize) {",
+                "            let slice = n.to_le_bytes();",
+                "            let slice = match slice.get(..nbytes) {",
+                "                Some(slice) => slice,",
+                "                None => panic_does_not_fit(nbytes, slice.len()),",
+                "            };",
+                "            self.put_slice(slice);",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(8);",
+                "    buf.put_int_le(0x0504010203040506, -1);",
+                "    assert_panics!(buf.put_int_le(0x0504010203040506, 9));",
+                "    assert_panics!(buf.put_int_le(0x0504010203040506, 10));",
+                "    assert_panics!(buf.put_int_le(0x0504010203040506, usize::MAX));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,204 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.start_pattern().unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    builder.start_pattern();  // Expecting Ok(PatternID(0)) for the first call",
+          "    assert!(builder.current_pattern_id().0 == 0);  // Ensure the pattern ID is as expected after the call",
+          "    assert!(builder.pattern_len() == 1);  // Validate that the pattern length increases",
+          "    assert!(builder.start_pattern.len() == 1);  // Check that start_pattern vector has one entry",
+          "    assert!(builder.pattern_id.is_some());  // Confirm that pattern_id is now set"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.start_pattern().unwrap();",
+          "    builder.start_pattern();  // Expecting Ok(PatternID(0)) for the first call",
+          "    assert!(builder.current_pattern_id().0 == 0);  // Ensure the pattern ID is as expected after the call",
+          "    assert!(builder.pattern_len() == 1);  // Validate that the pattern length increases",
+          "    assert!(builder.start_pattern.len() == 1);  // Check that start_pattern vector has one entry",
+          "    assert!(builder.pattern_id.is_some());  // Confirm that pattern_id is now set",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.start_pattern().unwrap();",
+          "    builder.finish_pattern(StateID::ZERO).unwrap();",
+          "    builder.start_pattern().unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    builder.start_pattern().unwrap();",
+          "    assert!(builder.current_pattern_id().0 == 0);",
+          "    builder.clear();",
+          "    builder.start_pattern().unwrap();",
+          "    assert!(builder.current_pattern_id().0 == 1);"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.start_pattern().unwrap();",
+          "    builder.finish_pattern(StateID::ZERO).unwrap();",
+          "    builder.start_pattern().unwrap();",
+          "    builder.start_pattern().unwrap();",
+          "    assert!(builder.current_pattern_id().0 == 0);",
+          "    builder.clear();",
+          "    builder.start_pattern().unwrap();",
+          "    assert!(builder.current_pattern_id().0 == 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    for i in 0..=MAX_PATTERN_ID {",
+          "        builder.start_pattern().unwrap();",
+          "        builder.finish_pattern(StateID::ZERO).unwrap();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    builder.start_pattern(); // should succeed with Ok(pid) when self.pattern_id.is_none()",
+          "    builder.start_pattern(); // should panic if called before finish_pattern",
+          "    builder.start_pattern(); // should return Ok(pid) until MAX_PATTERN_ID patterns are reached",
+          "    builder.start_pattern(); // should return Err(BuildError) when pattern identifier space is exhausted",
+          "    builder.start_pattern(); // checks for proper handling of pattern ID incrementation and exhaustion"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    for i in 0..=MAX_PATTERN_ID {",
+          "        builder.start_pattern().unwrap();",
+          "        builder.finish_pattern(StateID::ZERO).unwrap();",
+          "    }",
+          "    builder.start_pattern(); // should succeed with Ok(pid) when self.pattern_id.is_none()",
+          "    builder.start_pattern(); // should panic if called before finish_pattern",
+          "    builder.start_pattern(); // should return Ok(pid) until MAX_PATTERN_ID patterns are reached",
+          "    builder.start_pattern(); // should return Err(BuildError) when pattern identifier space is exhausted",
+          "    builder.start_pattern(); // checks for proper handling of pattern ID incrementation and exhaustion",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.start_pattern().unwrap();",
+          "    builder.start_pattern();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(Builder::new().start_pattern().is_ok());",
+          "    assert_matches!(Builder::new().start_pattern(), Ok(_));",
+          "    let mut builder = Builder::new();",
+          "    assert!(builder.pattern_id.is_none());",
+          "    assert_eq!(builder.start_pattern.len(), 0);",
+          "    assert!(builder.start_pattern().is_ok());",
+          "    assert!(builder.pattern_id.is_some());",
+          "    let proposed = builder.start_pattern.len();",
+          "    assert!(PatternID::new(proposed).map_err(|_| BuildError::too_many_patterns(proposed)).is_ok());",
+          "    assert_eq!(builder.start_pattern.len(), 1);",
+          "    let pid = builder.start_pattern().unwrap();",
+          "    assert_eq!(pid, PatternID::new(0).unwrap());"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.start_pattern().unwrap();",
+          "    builder.start_pattern();",
+          "    assert!(Builder::new().start_pattern().is_ok());",
+          "    assert_matches!(Builder::new().start_pattern(), Ok(_));",
+          "    let mut builder = Builder::new();",
+          "    assert!(builder.pattern_id.is_none());",
+          "    assert_eq!(builder.start_pattern.len(), 0);",
+          "    assert!(builder.start_pattern().is_ok());",
+          "    assert!(builder.pattern_id.is_some());",
+          "    let proposed = builder.start_pattern.len();",
+          "    assert!(PatternID::new(proposed).map_err(|_| BuildError::too_many_patterns(proposed)).is_ok());",
+          "    assert_eq!(builder.start_pattern.len(), 1);",
+          "    let pid = builder.start_pattern().unwrap();",
+          "    assert_eq!(pid, PatternID::new(0).unwrap());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    for _ in 0..5 {",
+          "        builder.start_pattern().unwrap();",
+          "        builder.finish_pattern(StateID::ZERO).unwrap();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(builder.current_pattern_id().0 == PatternID(SmallIndex(0)));",
+          "    assert!(builder.pattern_len() == 0);",
+          "    assert!(builder.start_pattern.len() == 5);",
+          "    assert!(builder.memory_usage() > 0);",
+          "    assert!(builder.get_utf8() == false);",
+          "    assert!(builder.get_reverse() == false);",
+          "    assert!(builder.get_size_limit().is_none());",
+          "    assert!(builder.start_pattern().is_ok());",
+          "    assert!(builder.start_pattern().unwrap().0 == PatternID(SmallIndex(5)));",
+          "    assert!(builder.start_pattern().unwrap_err().kind == BuildErrorKind::TooManyPatterns);",
+          "    assert!(builder.pattern_id.is_some());",
+          "    assert!(builder.finish_pattern(StateID::ZERO).is_ok());",
+          "    assert!(builder.finish_pattern(StateID::ZERO).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    for _ in 0..5 {",
+          "        builder.start_pattern().unwrap();",
+          "        builder.finish_pattern(StateID::ZERO).unwrap();",
+          "    }",
+          "    assert!(builder.current_pattern_id().0 == PatternID(SmallIndex(0)));",
+          "    assert!(builder.pattern_len() == 0);",
+          "    assert!(builder.start_pattern.len() == 5);",
+          "    assert!(builder.memory_usage() > 0);",
+          "    assert!(builder.get_utf8() == false);",
+          "    assert!(builder.get_reverse() == false);",
+          "    assert!(builder.get_size_limit().is_none());",
+          "    assert!(builder.start_pattern().is_ok());",
+          "    assert!(builder.start_pattern().unwrap().0 == PatternID(SmallIndex(5)));",
+          "    assert!(builder.start_pattern().unwrap_err().kind == BuildErrorKind::TooManyPatterns);",
+          "    assert!(builder.pattern_id.is_some());",
+          "    assert!(builder.finish_pattern(StateID::ZERO).is_ok());",
+          "    assert!(builder.finish_pattern(StateID::ZERO).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

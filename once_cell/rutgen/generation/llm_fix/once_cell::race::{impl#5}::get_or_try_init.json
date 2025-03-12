@@ -1,0 +1,284 @@
+{
+  "name": "once_cell::race::{impl#5}::get_or_try_init",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": true,
+  "loc": "src/race.rs:276:5:297:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: ptr.is_null() at line 282 is true\n",
+        "precondition: f()? at line 284 is Err/None\n"
+      ],
+      "input_infer": "ptr.is_null() is true and f() returns Err or None\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct;",
+                "",
+                "    let once_ref = OnceRef::<TestStruct>::new();",
+                "    let result = once_ref.get_or_try_init(|| Err(\"Initialization failed\"));",
+                "    // Result should be an error, but we focus on input setup.",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result.is_err(), true);",
+                "    assert!(result.err().is_some());",
+                "    assert_eq!(once_ref.inner.load(Ordering::Acquire).is_null(), true);"
+              ],
+              "code": [
+                "{",
+                "    struct TestStruct;",
+                "",
+                "    let once_ref = OnceRef::<TestStruct>::new();",
+                "    let result = once_ref.get_or_try_init(|| Err(\"Initialization failed\"));",
+                "    // Result should be an error, but we focus on input setup.",
+                "    assert_eq!(result.is_err(), true);",
+                "    assert!(result.err().is_some());",
+                "    assert_eq!(once_ref.inner.load(Ordering::Acquire).is_null(), true);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct;",
+                "",
+                "    let once_ref = OnceRef::<TestStruct>::new();",
+                "    let result = once_ref.get_or_try_init(|| None);",
+                "    // Result should be None, but we focus on input setup.",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "   struct TestStruct;",
+                "",
+                "   let once_ref = OnceRef::<TestStruct>::new();",
+                "   let result = once_ref.get_or_try_init(|| Err(()));",
+                "    // Result should be None, but we focus on input setup.",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: ptr.is_null() at line 282 is true\n",
+        "precondition: f()? at line 284 is Ok/Some\n",
+        "precondition: let Err(old) = exchange at line 291 is true\n",
+        "expected return value/type: Ok(unsafe { &*ptr })\n"
+      ],
+      "input_infer": "ptr.is_null() == true, f returns Ok/Some, exchange returns Err(old) with old not null\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct Test {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let cell = OnceRef::<Test>::new();",
+                "    let init_value = Test { value: 42 };",
+                "",
+                "    let result = cell.get_or_try_init(|| {",
+                "        // Simulate successful initialization",
+                "        Ok(&init_value)",
+                "    });",
+                "",
+                "    let old_ptr = cell.inner.load(Ordering::Acquire);",
+                "    assert!(old_ptr.is_null() == false, \"Expected the pointer to be non-null after the first initialization.\");",
+                "",
+                "    // Simulate a second thread initializing the value",
+                "    let result_second_thread = cell.get_or_try_init(|| {",
+                "        // Simulate successful initialization which would fail on exchange due to already set value",
+                "        Ok(&init_value)",
+                "    });",
+                "",
+                "    assert!(result_second_thread.is_ok(), \"Expected the second call to successfully return the already initialized value.\");",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok(), \"Expected get_or_try_init to succeed on first call.\");",
+                "    assert_eq!(result.unwrap(), &init_value, \"Expected the result to be the initialized value.\");",
+                "    assert!(old_ptr.is_null() == false, \"Expected the pointer to be non-null after the first initialization.\");",
+                "    assert!(result_second_thread.is_ok(), \"Expected the second call to successfully return the already initialized value.\");",
+                "    assert_eq!(result_second_thread.unwrap(), &init_value, \"Expected the second result to be the same initialized value as the first.\");"
+              ],
+              "code": [
+                "{",
+                "  #[derive(Debug, PartialEq)]  ",
+                "  struct Test {  ",
+                "      value: i32,  ",
+                "  }  ",
+                " ",
+                "   let cell = OnceRef::<Test>::new();  ",
+                "   let init_value = Test { value: 42 };  ",
+                " ",
+                "  let result: Result<&Test, Box<dyn std::error::Error>> = cell.get_or_try_init(|| {  ",
+                "      // Simulate successful initialization  ",
+                "      Ok(&init_value)  ",
+                "   });  ",
+                " ",
+                "   let old_ptr = cell.inner.load(Ordering::Acquire);  ",
+                "   assert!(old_ptr.is_null() == false, \"Expected the pointer to be non-null after the first initialization.\");  ",
+                " ",
+                "   // Simulate a second thread initializing the value  ",
+                "  let result_second_thread: Result<&Test, Box<dyn std::error::Error>> = cell.get_or_try_init(|| {  ",
+                "      // Simulate successful initialization which would fail on exchange due to already set value  ",
+                "      Ok(&init_value)  ",
+                "   });  ",
+                " ",
+                "  assert!(result_second_thread.is_ok(), \"Expected the second call to successfully return the already initialized value.\");  ",
+                "   assert!(result.is_ok(), \"Expected get_or_try_init to succeed on first call.\");  ",
+                "   assert_eq!(result.unwrap(), &init_value, \"Expected the result to be the initialized value.\");  ",
+                "   assert!(old_ptr.is_null() == false, \"Expected the pointer to be non-null after the first initialization.\");  ",
+                "   assert!(result_second_thread.is_ok(), \"Expected the second call to successfully return the already initialized value.\");  ",
+                "   assert_eq!(result_second_thread.unwrap(), &init_value, \"Expected the second result to be the same initialized value as the first.\");  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: ptr.is_null() at line 282 is false\n",
+        "expected return value/type: Ok(unsafe { &*ptr })\n"
+      ],
+      "input_infer": "ptr should be a valid non-null pointer to an instance of type T (where T is defined as &'a T) and the function f should always return a Result::Ok with a non-null reference to T.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestType {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let data = TestType { value: 42 };",
+                "    let once_ref: OnceRef<TestType> = OnceRef::new();",
+                "    ",
+                "    let result = once_ref.get_or_try_init(|| Ok(&data));",
+                "    let _value = result.unwrap(); // Expected to be Ok(non-null reference to data)",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(*_value, data);",
+                "    assert_eq!(_value.value, 42);",
+                "    assert!(once_ref.inner.load(Ordering::Acquire).is_non_null());",
+                "    assert_eq!(once_ref.get(), Some(&_value));",
+                "    assert_eq!(once_ref.get_or_init(|| Ok(&data)), &_value);"
+              ],
+              "code": [
+                "{",
+                "  #[derive(Debug, PartialEq)]",
+                "  struct TestType {",
+                "      value: i32,",
+                "  }",
+                "  let data = TestType { value: 42 };",
+                "  let once_ref: OnceRef<TestType> = OnceRef::new();",
+                "  ",
+                "  let result = once_ref.get_or_try_init(|| Ok(&data));",
+                "  let _value = result.unwrap(); // Expected to be Ok(non-null reference to data)",
+                "  assert!(result.is_ok());",
+                "  assert_eq!(*_value, data);",
+                "  assert_eq!(_value.value, 42);",
+                " assert!(!once_ref.inner.load(Ordering::Acquire).is_null());",
+                "   assert_eq!(once_ref.get(), Some(&_value).map(|v| &**v));  ",
+                " assert_eq!(once_ref.get_or_try_init(|| Ok(&data)).unwrap(), &_value);  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct DifferentTestType {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let another_data = DifferentTestType { value: 100 };",
+                "    let once_ref: OnceRef<DifferentTestType> = OnceRef::new();",
+                "    ",
+                "    let result = once_ref.get_or_try_init(|| Ok(&another_data));",
+                "    let _value = result.unwrap(); // Expected to be Ok(non-null reference to another_data)",
+                "}"
+              ],
+              "oracle": [
+                "    let once_ref: OnceRef<DifferentTestType> = OnceRef::new();",
+                "    assert!(once_ref.inner.load(Ordering::Acquire).is_null());",
+                "    let another_data = DifferentTestType { value: 100 };",
+                "    let result = once_ref.get_or_try_init(|| Ok(&another_data));",
+                "    assert!(result.is_ok());",
+                "    let _value = result.unwrap();",
+                "    assert!(ptr::eq(_value, &another_data));"
+              ],
+              "code": [
+                "{",
+                "    struct DifferentTestType {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let another_data = DifferentTestType { value: 100 };",
+                "    let once_ref: OnceRef<DifferentTestType> = OnceRef::new();",
+                "    ",
+                "   let result: Result<&DifferentTestType, ()> = once_ref.get_or_try_init(|| Ok(&another_data));  ",
+                "    let _value = result.unwrap(); // Expected to be Ok(non-null reference to another_data)",
+                "    let once_ref: OnceRef<DifferentTestType> = OnceRef::new();",
+                "    assert!(once_ref.inner.load(Ordering::Acquire).is_null());",
+                "    let another_data = DifferentTestType { value: 100 };",
+                "   let result: Result<&DifferentTestType, ()> = once_ref.get_or_try_init(|| Ok(&another_data));  ",
+                "    assert!(result.is_ok());",
+                "    let _value = result.unwrap();",
+                "    assert!(ptr::eq(_value, &another_data));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

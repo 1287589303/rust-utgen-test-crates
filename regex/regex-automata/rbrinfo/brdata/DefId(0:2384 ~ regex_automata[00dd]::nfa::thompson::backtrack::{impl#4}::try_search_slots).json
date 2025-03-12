@@ -1,0 +1,1055 @@
+{
+  "name": "regex_automata::nfa::thompson::backtrack::{impl#4}::try_search_slots",
+  "mod_info": {
+    "name": "nfa::thompson::backtrack",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:57:1:57:19"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/nfa/thompson/backtrack.rs:1293:5:1324:6",
+  "doc": "/// Executes a leftmost forward search and writes the spans of capturing\n/// groups that participated in a match into the provided `slots`, and\n/// returns the matching pattern ID. The contents of the slots for patterns\n/// other than the matching pattern are unspecified. If no match was found,\n/// then `None` is returned and the contents of all `slots` is unspecified.\n///\n/// This is like [`BoundedBacktracker::try_search`], but it accepts a raw\n/// slots slice instead of a `Captures` value. This is useful in contexts\n/// where you don't want or need to allocate a `Captures`.\n///\n/// It is legal to pass _any_ number of slots to this routine. If the regex\n/// engine would otherwise write a slot offset that doesn't fit in the\n/// provided slice, then it is simply skipped. In general though, there are\n/// usually three slice lengths you might want to use:\n///\n/// * An empty slice, if you only care about which pattern matched.\n/// * A slice with\n/// [`pattern_len() * 2`](crate::nfa::thompson::NFA::pattern_len)\n/// slots, if you only care about the overall match spans for each matching\n/// pattern.\n/// * A slice with\n/// [`slot_len()`](crate::util::captures::GroupInfo::slot_len) slots, which\n/// permits recording match offsets for every capturing group in every\n/// pattern.\n///\n/// # Errors\n///\n/// This routine only errors if the search could not complete. For this\n/// backtracking regex engine, this only occurs when the haystack length\n/// exceeds [`BoundedBacktracker::max_haystack_len`].\n///\n/// When a search cannot complete, callers cannot know whether a match\n/// exists or not.\n///\n/// # Example\n///\n/// This example shows how to find the overall match offsets in a\n/// multi-pattern search without allocating a `Captures` value. Indeed, we\n/// can put our slots right on the stack.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{\n///     nfa::thompson::backtrack::BoundedBacktracker,\n///     PatternID, Input,\n/// };\n///\n/// let re = BoundedBacktracker::new_many(&[\n///     r\"\\pL+\",\n///     r\"\\d+\",\n/// ])?;\n/// let mut cache = re.create_cache();\n/// let input = Input::new(\"!@#123\");\n///\n/// // We only care about the overall match offsets here, so we just\n/// // allocate two slots for each pattern. Each slot records the start\n/// // and end of the match.\n/// let mut slots = [None; 4];\n/// let pid = re.try_search_slots(&mut cache, &input, &mut slots)?;\n/// assert_eq!(Some(PatternID::must(1)), pid);\n///\n/// // The overall match offsets are always at 'pid * 2' and 'pid * 2 + 1'.\n/// // See 'GroupInfo' for more details on the mapping between groups and\n/// // slot indices.\n/// let slot_start = pid.unwrap().as_usize() * 2;\n/// let slot_end = slot_start + 1;\n/// assert_eq!(Some(3), slots[slot_start].map(|s| s.get()));\n/// assert_eq!(Some(6), slots[slot_end].map(|s| s.get()));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn try_search_slots(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    "    slots: &mut [Option<NonMaxUsize>],",
+    ") -> Result<Option<PatternID>, MatchError> {",
+    "    let utf8empty = self.get_nfa().has_empty() && self.get_nfa().is_utf8();",
+    "    if !utf8empty {",
+    "        let maybe_hm = self.try_search_slots_imp(cache, input, slots)?;",
+    "        return Ok(maybe_hm.map(|hm| hm.pattern()));",
+    "    }",
+    "    // See PikeVM::try_search_slots for why we do this.",
+    "    let min = self.get_nfa().group_info().implicit_slot_len();",
+    "    if slots.len() >= min {",
+    "        let maybe_hm = self.try_search_slots_imp(cache, input, slots)?;",
+    "        return Ok(maybe_hm.map(|hm| hm.pattern()));",
+    "    }",
+    "    if self.get_nfa().pattern_len() == 1 {",
+    "        let mut enough = [None, None];",
+    "        let got = self.try_search_slots_imp(cache, input, &mut enough)?;",
+    "        // This is OK because we know `enough_slots` is strictly bigger",
+    "        // than `slots`, otherwise this special case isn't reached.",
+    "        slots.copy_from_slice(&enough[..slots.len()]);",
+    "        return Ok(got.map(|hm| hm.pattern()));",
+    "    }",
+    "    let mut enough = vec![None; min];",
+    "    let got = self.try_search_slots_imp(cache, input, &mut enough)?;",
+    "    // This is OK because we know `enough_slots` is strictly bigger than",
+    "    // `slots`, otherwise this special case isn't reached.",
+    "    slots.copy_from_slice(&enough[..slots.len()]);",
+    "    Ok(got.map(|hm| hm.pattern()))",
+    "}"
+  ],
+  "size": {
+    "chain": 16,
+    "contra": 0,
+    "min_set": 8
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "true",
+          "line": 1306,
+          "bound": "slots.len() == min"
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, slots)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1307,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        29,
+        30,
+        71,
+        72,
+        73,
+        74,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "true",
+          "line": 1306,
+          "bound": "slots.len() == min"
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, slots)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1307,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(maybe_hm.map(|hm| hm.pattern()))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        28,
+        31,
+        32,
+        73,
+        74,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1306,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1310,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1312,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        40,
+        42,
+        43,
+        68,
+        69,
+        70,
+        74,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1306,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1310,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1312,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(got.map(|hm| hm.pattern()))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        44,
+        45,
+        46,
+        47,
+        48,
+        70,
+        74,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1306,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1310,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1319,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        33,
+        34,
+        35,
+        49,
+        50,
+        51,
+        52,
+        53,
+        55,
+        57,
+        58,
+        65,
+        66,
+        67,
+        74,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1306,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1310,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1319,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(got.map(|hm| hm.pattern()))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        33,
+        34,
+        35,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        79
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, slots)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1301,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        14,
+        15,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, slots)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1301,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(maybe_hm.map(|hm| hm.pattern()))",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        17,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "true",
+          "line": 1306,
+          "bound": "slots.len() == min"
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, slots)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1307,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        29,
+        30,
+        71,
+        72,
+        73,
+        74,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "true",
+          "line": 1306,
+          "bound": "slots.len() == min"
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, slots)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1307,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(maybe_hm.map(|hm| hm.pattern()))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        28,
+        31,
+        32,
+        73,
+        74,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1306,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1310,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1312,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        40,
+        42,
+        43,
+        68,
+        69,
+        70,
+        74,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1306,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1310,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1312,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(got.map(|hm| hm.pattern()))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        44,
+        45,
+        46,
+        47,
+        48,
+        70,
+        74,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1306,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1310,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1319,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        33,
+        34,
+        35,
+        49,
+        50,
+        51,
+        52,
+        53,
+        55,
+        57,
+        58,
+        65,
+        66,
+        67,
+        74,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1306,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1310,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1319,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(got.map(|hm| hm.pattern()))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        18,
+        19,
+        20,
+        21,
+        22,
+        33,
+        34,
+        35,
+        49,
+        50,
+        51,
+        52,
+        53,
+        56,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, slots)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1301,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        10,
+        12,
+        14,
+        15,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1299,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 1300,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, slots)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1301,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(maybe_hm.map(|hm| hm.pattern()))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        10,
+        13,
+        16,
+        17,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

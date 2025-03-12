@@ -1,0 +1,165 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let dense_dfa = dense::DFA::new(); // Assume proper constructor for an empty DFA",
+          "    let result = DFA::from_dense(&dense_dfa);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates);",
+          "    assert_eq!(remap.len(), dense_dfa.state_len());",
+          "    assert_eq!(sparse.len(), 0);",
+          "    assert!(dfa.states().len() > 0);",
+          "    assert!(dfa.states().all(|state| state.is_valid());"
+        ],
+        "code": [
+          "{",
+          "    let dense_dfa = dense::DFA::new(); // Assume proper constructor for an empty DFA",
+          "    let result = DFA::from_dense(&dense_dfa);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates);",
+          "    assert_eq!(remap.len(), dense_dfa.state_len());",
+          "    assert_eq!(sparse.len(), 0);",
+          "    assert!(dfa.states().len() > 0);",
+          "    assert!(dfa.states().all(|state| state.is_valid());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let max_states = 65536; // Assuming this is the limit",
+          "    let states = (0..max_states)",
+          "        .map(|_| dense::State::new()) // Assume a function that creates a new state",
+          "        .collect::<Vec<_>>();",
+          "    let dense_dfa = dense::DFA::from_states(states); // Assuming a way to construct from states",
+          "    let _ = DFA::from_dense(&dense_dfa);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(dfa.states().len() > 0);",
+          "    assert!(StateID::new(65536).is_err());",
+          "    assert_eq!(DFA::from_dense(&dense_dfa), Err(BuildError::too_many_states()));",
+          "    assert!(dfa.states().iter().all(|s| s.is_valid()));",
+          "    assert!(dfa.state_len() <= 65536);",
+          "    assert!(dfa.pattern_len() >= 0);",
+          "    assert!(dfa.quitset().is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let max_states = 65536; // Assuming this is the limit",
+          "    let states = (0..max_states)",
+          "        .map(|_| dense::State::new()) // Assume a function that creates a new state",
+          "        .collect::<Vec<_>>();",
+          "    let dense_dfa = dense::DFA::from_states(states); // Assuming a way to construct from states",
+          "    let _ = DFA::from_dense(&dense_dfa);",
+          "    assert!(dfa.states().len() > 0);",
+          "    assert!(StateID::new(65536).is_err());",
+          "    assert_eq!(DFA::from_dense(&dense_dfa), Err(BuildError::too_many_states()));",
+          "    assert!(dfa.states().iter().all(|s| s.is_valid()));",
+          "    assert!(dfa.state_len() <= 65536);",
+          "    assert!(dfa.pattern_len() >= 0);",
+          "    assert!(dfa.quitset().is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut state = dense::State::new();",
+          "    // Simulate 257 transitions (max allowed)",
+          "    for _ in 0..257 {",
+          "        state.add_transition(Transition::new()); // Assume a method that adds transitions",
+          "    }",
+          "    let dense_dfa = dense::DFA::from_states(vec![state]);",
+          "    let result = DFA::from_dense(&dense_dfa);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err(), \"Expected an error when attempting to create sparse DFA from dense DFA with too many state transitions.\");",
+          "    assert_eq!(result.unwrap_err(), BuildError::too_many_states(), \"Expected BuildError::too_many_states when exceeding max transitions.\");"
+        ],
+        "code": [
+          "{",
+          "    let mut state = dense::State::new();",
+          "    // Simulate 257 transitions (max allowed)",
+          "    for _ in 0..257 {",
+          "        state.add_transition(Transition::new()); // Assume a method that adds transitions",
+          "    }",
+          "    let dense_dfa = dense::DFA::from_states(vec![state]);",
+          "    let result = DFA::from_dense(&dense_dfa);",
+          "    assert!(result.is_err(), \"Expected an error when attempting to create sparse DFA from dense DFA with too many state transitions.\");",
+          "    assert_eq!(result.unwrap_err(), BuildError::too_many_states(), \"Expected BuildError::too_many_states when exceeding max transitions.\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut states = Vec::new();",
+          "    for i in 0..5 {",
+          "        let mut state = dense::State::new();",
+          "        // Add random transitions for each state",
+          "        for _ in 0..(i + 1) * 10 { // Variable number of transitions",
+          "            state.add_transition(Transition::new());",
+          "        }",
+          "        states.push(state);",
+          "    }",
+          "    let dense_dfa = dense::DFA::from_states(states);",
+          "    let result = DFA::from_dense(&dense_dfa);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err(), \"Expected result to be an error due to too many states.\");",
+          "    assert!(matches!(result, Err(BuildError::too_many_states())), \"Expected BuildError::too_many_states()\");",
+          "    assert_eq!(sparse.len(), 0, \"Expected sparse vector to be empty when construction fails.\");",
+          "    assert!(remap.iter().all(|&id| id == DEAD), \"Expected all state identifiers in remap to be DEAD on error.\");",
+          "    assert!(dfa.states().len() == 5, \"Expected dense DFA to have 5 states before conversion.\");",
+          "    assert!(dfa.states()[0].transitions().len() >= 0, \"First state should have a non-negative number of transitions.\");"
+        ],
+        "code": [
+          "{",
+          "    let mut states = Vec::new();",
+          "    for i in 0..5 {",
+          "        let mut state = dense::State::new();",
+          "        // Add random transitions for each state",
+          "        for _ in 0..(i + 1) * 10 { // Variable number of transitions",
+          "            state.add_transition(Transition::new());",
+          "        }",
+          "        states.push(state);",
+          "    }",
+          "    let dense_dfa = dense::DFA::from_states(states);",
+          "    let result = DFA::from_dense(&dense_dfa);",
+          "    assert!(result.is_err(), \"Expected result to be an error due to too many states.\");",
+          "    assert!(matches!(result, Err(BuildError::too_many_states())), \"Expected BuildError::too_many_states()\");",
+          "    assert_eq!(sparse.len(), 0, \"Expected sparse vector to be empty when construction fails.\");",
+          "    assert!(remap.iter().all(|&id| id == DEAD), \"Expected all state identifiers in remap to be DEAD on error.\");",
+          "    assert!(dfa.states().len() == 5, \"Expected dense DFA to have 5 states before conversion.\");",
+          "    assert!(dfa.states()[0].transitions().len() >= 0, \"First state should have a non-negative number of transitions.\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,119 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared = Box::new(crate::Shared {",
+          "        buf: Box::into_raw(Box::new([1u8; 5])) as *mut u8,",
+          "        cap: 5,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    });",
+          "    let ptr = shared.buf as *const u8;",
+          "    let len = 5;",
+          "    let atom = AtomicPtr::new(shared as *mut _);",
+          "",
+          "    // Calling the function under test",
+          "    let _result = unsafe { promotable_odd_clone(&atom, ptr, len) };",
+          "}"
+        ],
+        "oracle": [
+          "    let shared = Box::new(crate::Shared { buf: Box::into_raw(Box::new([1u8; 5])) as *mut u8, cap: 5, ref_cnt: AtomicUsize::new(1) });",
+          "    let ptr = shared.buf as *const u8;",
+          "    let len = 5;",
+          "    let atom = AtomicPtr::new(shared as *mut _);",
+          "    let _result = unsafe { promotable_odd_clone(&atom, ptr, len) };",
+          "    assert_eq!(_result.len, len);",
+          "    assert_eq!(_result.ptr, ptr);",
+          "    assert!(_result.data.load(Ordering::SeqCst) != shared as *mut _);",
+          "    assert_eq!(_result.vtable, &SHARED_VTABLE);"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::new(crate::Shared {",
+          "        buf: Box::into_raw(Box::new([1u8; 5])) as *mut u8,",
+          "        cap: 5,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    });",
+          "    let ptr = shared.buf as *const u8;",
+          "    let len = 5;",
+          "    let atom = AtomicPtr::new(shared as *mut _);",
+          "",
+          "    // Calling the function under test",
+          "    let _result = unsafe { promotable_odd_clone(&atom, ptr, len) };",
+          "    let shared = Box::new(crate::Shared { buf: Box::into_raw(Box::new([1u8; 5])) as *mut u8, cap: 5, ref_cnt: AtomicUsize::new(1) });",
+          "    let ptr = shared.buf as *const u8;",
+          "    let len = 5;",
+          "    let atom = AtomicPtr::new(shared as *mut _);",
+          "    let _result = unsafe { promotable_odd_clone(&atom, ptr, len) };",
+          "    assert_eq!(_result.len, len);",
+          "    assert_eq!(_result.ptr, ptr);",
+          "    assert!(_result.data.load(Ordering::SeqCst) != shared as *mut _);",
+          "    assert_eq!(_result.vtable, &SHARED_VTABLE);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let shared = Box::new(crate::Shared {",
+          "        buf: Box::into_raw(Box::new([1u8])) as *mut u8,",
+          "        cap: 1,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    });",
+          "    let ptr = shared.buf as *const u8;",
+          "    let len = 1;",
+          "    let atom = AtomicPtr::new(shared as *mut _);",
+          "",
+          "    // Manipulating the AtomicPtr to simulate a scenario where the condition fails",
+          "    atom.store(ptr as *mut _); // This should not be done in a real scenario",
+          "",
+          "    // Calling the function under test",
+          "    let _result = unsafe { promotable_odd_clone(&atom, ptr, len) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(kind, KIND_VEC);",
+          "    assert_ne!(data.load(Ordering::Acquire) as usize & KIND_MASK, KIND_ARC);",
+          "    assert_ne!(data.load(Ordering::Acquire), ptr as *mut ());",
+          "    assert!(len > 0);",
+          "    assert!(len < usize::MAX);"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::new(crate::Shared {",
+          "        buf: Box::into_raw(Box::new([1u8])) as *mut u8,",
+          "        cap: 1,",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "    });",
+          "    let ptr = shared.buf as *const u8;",
+          "    let len = 1;",
+          "    let atom = AtomicPtr::new(shared as *mut _);",
+          "",
+          "    // Manipulating the AtomicPtr to simulate a scenario where the condition fails",
+          "    atom.store(ptr as *mut _); // This should not be done in a real scenario",
+          "",
+          "    // Calling the function under test",
+          "    let _result = unsafe { promotable_odd_clone(&atom, ptr, len) };",
+          "    assert_eq!(kind, KIND_VEC);",
+          "    assert_ne!(data.load(Ordering::Acquire) as usize & KIND_MASK, KIND_ARC);",
+          "    assert_ne!(data.load(Ordering::Acquire), ptr as *mut ());",
+          "    assert!(len > 0);",
+          "    assert!(len < usize::MAX);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

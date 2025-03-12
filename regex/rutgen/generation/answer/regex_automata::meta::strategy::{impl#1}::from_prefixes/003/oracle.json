@@ -1,0 +1,140 @@
+[
+  {
+    "uses": [
+      "use regex_syntax::hir::literal;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use regex_syntax::hir::literal;",
+          "",
+          "    let config = Config::new().match_kind(MatchKind::All);",
+          "    let info = RegexInfo::new(config, &[&literal::Seq::new(vec![\"foo\".into()])]);",
+          "    ",
+          "    let prefixes = literal::Seq::new(vec![literal::Literal::new(\"foo\".into())]).unwrap().set_exact();",
+          "",
+          "    let result = Pre::from_prefixes(&info, &prefixes);",
+          "    let _ = result; // Ignore the result; we expect None",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);"
+        ],
+        "code": [
+          "{",
+          "    use regex_syntax::hir::literal;",
+          "",
+          "    let config = Config::new().match_kind(MatchKind::All);",
+          "    let info = RegexInfo::new(config, &[&literal::Seq::new(vec![\"foo\".into()])]);",
+          "    ",
+          "    let prefixes = literal::Seq::new(vec![literal::Literal::new(\"foo\".into())]).unwrap().set_exact();",
+          "",
+          "    let result = Pre::from_prefixes(&info, &prefixes);",
+          "    let _ = result; // Ignore the result; we expect None",
+          "    assert_eq!(result, None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use regex_syntax::hir::literal;",
+          "",
+          "    let config = Config::new().match_kind(MatchKind::LeftmostFirst); // Should be changed to a non-leftmost kind as a boundary case",
+          "    let info = RegexInfo::new(config, &[&literal::Seq::new(vec![\"bar\".into()])]);",
+          "    ",
+          "    let prefixes = literal::Seq::new(vec![literal::Literal::new(\"bar\".into())]).unwrap().set_exact();",
+          "",
+          "    let result = Pre::from_prefixes(&info, &prefixes);",
+          "    let _ = result; // Ignore the result; we expect None",
+          "}"
+        ],
+        "oracle": [
+          "    let config = Config::new().match_kind(MatchKind::All); // MatchKind is not LeftmostFirst",
+          "    let info = RegexInfo::new(config, &[&literal::Seq::new(vec![\"bar\".into()])]); // pattern_len is 1",
+          "    let prefixes = literal::Seq::new(vec![literal::Literal::new(\"bar\".into())]).unwrap().set_exact(); // ensures prefixes.is_exact() is true",
+          "    let result = Pre::from_prefixes(&info, &prefixes);",
+          "    assert_eq!(result, None); // Expecting None as per test case conditions"
+        ],
+        "code": [
+          "{",
+          "    use regex_syntax::hir::literal;",
+          "",
+          "    let config = Config::new().match_kind(MatchKind::LeftmostFirst); // Should be changed to a non-leftmost kind as a boundary case",
+          "    let info = RegexInfo::new(config, &[&literal::Seq::new(vec![\"bar\".into()])]);",
+          "    ",
+          "    let prefixes = literal::Seq::new(vec![literal::Literal::new(\"bar\".into())]).unwrap().set_exact();",
+          "",
+          "    let result = Pre::from_prefixes(&info, &prefixes);",
+          "    let _ = result; // Ignore the result; we expect None",
+          "    let config = Config::new().match_kind(MatchKind::All); // MatchKind is not LeftmostFirst",
+          "    let info = RegexInfo::new(config, &[&literal::Seq::new(vec![\"bar\".into()])]); // pattern_len is 1",
+          "    let prefixes = literal::Seq::new(vec![literal::Literal::new(\"bar\".into())]).unwrap().set_exact(); // ensures prefixes.is_exact() is true",
+          "    let result = Pre::from_prefixes(&info, &prefixes);",
+          "    assert_eq!(result, None); // Expecting None as per test case conditions",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use regex_syntax::hir::literal;",
+          "",
+          "    let config = Config::new().match_kind(MatchKind::RightmostFirst); // Using a non-leftmost match kind",
+          "    let info = RegexInfo::new(config, &[&literal::Seq::new(vec![\"baz\".into()])]);",
+          "",
+          "    let prefixes = literal::Seq::new(vec![literal::Literal::new(\"baz\".into())]).unwrap().set_exact();",
+          "",
+          "    // Adding an explicit capture to simulate the condition where captures are present",
+          "    info.props()[0].explicit_captures_len_mut().set(1); ",
+          "    ",
+          "    let result = Pre::from_prefixes(&info, &prefixes);",
+          "    let _ = result; // Ignore the result; we expect None",
+          "}"
+        ],
+        "oracle": [
+          "    Pre::from_prefixes(&info, &prefixes); // Executing function with prefixes.is_exact() == true",
+          "    info.pattern_len() == 1; // Precondition should be falsified",
+          "    info.props()[0].explicit_captures_len() == 0; // Precondition should be falsified",
+          "    info.props()[0].look_set().is_empty() == true; // Precondition should be satisfied",
+          "    kind == MatchKind::LeftmostFirst; // Precondition should be falsified",
+          "    assert_eq!(result, None); // Expecting None as return value"
+        ],
+        "code": [
+          "{",
+          "    use regex_syntax::hir::literal;",
+          "",
+          "    let config = Config::new().match_kind(MatchKind::RightmostFirst); // Using a non-leftmost match kind",
+          "    let info = RegexInfo::new(config, &[&literal::Seq::new(vec![\"baz\".into()])]);",
+          "",
+          "    let prefixes = literal::Seq::new(vec![literal::Literal::new(\"baz\".into())]).unwrap().set_exact();",
+          "",
+          "    // Adding an explicit capture to simulate the condition where captures are present",
+          "    info.props()[0].explicit_captures_len_mut().set(1); ",
+          "    ",
+          "    let result = Pre::from_prefixes(&info, &prefixes);",
+          "    let _ = result; // Ignore the result; we expect None",
+          "    Pre::from_prefixes(&info, &prefixes); // Executing function with prefixes.is_exact() == true",
+          "    info.pattern_len() == 1; // Precondition should be falsified",
+          "    info.props()[0].explicit_captures_len() == 0; // Precondition should be falsified",
+          "    info.props()[0].look_set().is_empty() == true; // Precondition should be satisfied",
+          "    kind == MatchKind::LeftmostFirst; // Precondition should be falsified",
+          "    assert_eq!(result, None); // Expecting None as return value",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

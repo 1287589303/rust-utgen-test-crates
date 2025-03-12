@@ -1,0 +1,138 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: vec![1, 2, 3],",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(2),",
+          "    });",
+          "",
+          "    let ptr = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!((*ptr).ref_count.load(Ordering::Relaxed), 1);",
+          "    assert_eq!((*ptr).vec, vec![1, 2, 3]);",
+          "    assert_eq!((*ptr).original_capacity_repr, 0);"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: vec![1, 2, 3],",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(2),",
+          "    });",
+          "",
+          "    let ptr = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr);",
+          "    }",
+          "    assert_eq!((*ptr).ref_count.load(Ordering::Relaxed), 1);",
+          "    assert_eq!((*ptr).vec, vec![1, 2, 3]);",
+          "    assert_eq!((*ptr).original_capacity_repr, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: vec![4, 5, 6],",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(2),",
+          "    });",
+          "",
+          "    let ptr = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(unsafe { (*ptr).ref_count.load(Ordering::Relaxed) }, 1);",
+          "    assert!(unsafe { ptr.is_null() } == false);",
+          "    assert!(unsafe { (*ptr).vec.len() } == 3);",
+          "    assert!(unsafe { (*ptr).original_capacity_repr } == 0);",
+          "    drop(unsafe { Box::from_raw(ptr) });"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: vec![4, 5, 6],",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(2),",
+          "    });",
+          "",
+          "    let ptr = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr);",
+          "    }",
+          "    assert_eq!(unsafe { (*ptr).ref_count.load(Ordering::Relaxed) }, 1);",
+          "    assert!(unsafe { ptr.is_null() } == false);",
+          "    assert!(unsafe { (*ptr).vec.len() } == 3);",
+          "    assert!(unsafe { (*ptr).original_capacity_repr } == 0);",
+          "    drop(unsafe { Box::from_raw(ptr) });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: vec![7, 8, 9],",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(2),",
+          "    });",
+          "",
+          "    let ptr = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    ptr.is_null() == false",
+          "    (*ptr).ref_count.load(Ordering::Acquire) == 1",
+          "    (*ptr).ref_count.fetch_sub(1, Ordering::Release) == 1",
+          "    Box::from_raw(ptr).vec == vec![7, 8, 9]"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: vec![7, 8, 9],",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(2),",
+          "    });",
+          "",
+          "    let ptr = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr);",
+          "    }",
+          "    ptr.is_null() == false",
+          "    (*ptr).ref_count.load(Ordering::Acquire) == 1",
+          "    (*ptr).ref_count.fetch_sub(1, Ordering::Release) == 1",
+          "    Box::from_raw(ptr).vec == vec![7, 8, 9]",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

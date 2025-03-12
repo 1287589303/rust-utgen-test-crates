@@ -1,0 +1,168 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut class = Class::new(vec![]);",
+          "    class.negate();",
+          "}"
+        ],
+        "oracle": [
+          "    class.ranges.is_empty() == false",
+          "    class.ranges[0].start > MIN == false",
+          "    class.ranges[0].start == MIN",
+          "    class.ranges.len() == 1",
+          "    class.ranges[0].end == MAX",
+          "    class.ranges[0].end < MAX == false",
+          "    class.ranges.len() == 2",
+          "    class.ranges[0].end > class.ranges[1].start",
+          "    class.ranges[len - 1].end == MAX"
+        ],
+        "code": [
+          "{",
+          "    let mut class = Class::new(vec![]);",
+          "    class.negate();",
+          "    class.ranges.is_empty() == false",
+          "    class.ranges[0].start > MIN == false",
+          "    class.ranges[0].start == MIN",
+          "    class.ranges.len() == 1",
+          "    class.ranges[0].end == MAX",
+          "    class.ranges[0].end < MAX == false",
+          "    class.ranges.len() == 2",
+          "    class.ranges[0].end > class.ranges[1].start",
+          "    class.ranges[len - 1].end == MAX",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut class = Class::new(vec![ClassRange { start: '\\x00', end: 'a' }]);",
+          "    class.negate();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(class.ranges.len(), 2);",
+          "    assert_eq!(class.ranges[0], ClassRange { start: '\\x00', end: '\\x00' });",
+          "    assert_eq!(class.ranges[1], ClassRange { start: 'b', end: char::MAX });"
+        ],
+        "code": [
+          "{",
+          "    let mut class = Class::new(vec![ClassRange { start: '\\x00', end: 'a' }]);",
+          "    class.negate();",
+          "    assert_eq!(class.ranges.len(), 2);",
+          "    assert_eq!(class.ranges[0], ClassRange { start: '\\x00', end: '\\x00' });",
+          "    assert_eq!(class.ranges[1], ClassRange { start: 'b', end: char::MAX });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut class = Class::new(vec![ClassRange { start: 'a', end: 'b' }]);",
+          "    class.negate();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(class.ranges.len(), 2);",
+          "    assert_eq!(class.ranges[0], ClassRange { start: '\\x00', end: 'a' });",
+          "    assert_eq!(class.ranges[1], ClassRange { start: 'c', end: char::MAX });"
+        ],
+        "code": [
+          "{",
+          "    let mut class = Class::new(vec![ClassRange { start: 'a', end: 'b' }]);",
+          "    class.negate();",
+          "    assert_eq!(class.ranges.len(), 2);",
+          "    assert_eq!(class.ranges[0], ClassRange { start: '\\x00', end: 'a' });",
+          "    assert_eq!(class.ranges[1], ClassRange { start: 'c', end: char::MAX });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut class = Class::new(vec![",
+          "        ClassRange { start: 'a', end: 'c' },",
+          "        ClassRange { start: 'e', end: 'g' },",
+          "    ]);",
+          "    class.negate();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(class.ranges.len(), 2);",
+          "    assert_eq!(class.ranges[0], ClassRange { start: '\\x00', end: 'a' });",
+          "    assert_eq!(class.ranges[1], ClassRange { start: 'd', end: 'ÿ' });"
+        ],
+        "code": [
+          "{",
+          "    let mut class = Class::new(vec![",
+          "        ClassRange { start: 'a', end: 'c' },",
+          "        ClassRange { start: 'e', end: 'g' },",
+          "    ]);",
+          "    class.negate();",
+          "    assert_eq!(class.ranges.len(), 2);",
+          "    assert_eq!(class.ranges[0], ClassRange { start: '\\x00', end: 'a' });",
+          "    assert_eq!(class.ranges[1], ClassRange { start: 'd', end: 'ÿ' });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut class = Class::new(vec![",
+          "        ClassRange { start: '\\x00', end: 'a' },",
+          "        ClassRange { start: 'b', end: char::MAX },",
+          "    ]);",
+          "    class.negate();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(class.ranges.len(), 1);",
+          "    assert_eq!(class.ranges[0].start, '\\x01');",
+          "    assert_eq!(class.ranges[0].end, 'a');",
+          "    assert_eq!(class.ranges[1].start, 'b');",
+          "    assert_eq!(class.ranges[1].end, char::MAX);",
+          "    assert_eq!(class.ranges.len(), 3);",
+          "    assert_eq!(class.ranges[2].start, 'a' + 1);",
+          "    assert_eq!(class.ranges[2].end, char::MAX);"
+        ],
+        "code": [
+          "{",
+          "    let mut class = Class::new(vec![",
+          "        ClassRange { start: '\\x00', end: 'a' },",
+          "        ClassRange { start: 'b', end: char::MAX },",
+          "    ]);",
+          "    class.negate();",
+          "    assert_eq!(class.ranges.len(), 1);",
+          "    assert_eq!(class.ranges[0].start, '\\x01');",
+          "    assert_eq!(class.ranges[0].end, 'a');",
+          "    assert_eq!(class.ranges[1].start, 'b');",
+          "    assert_eq!(class.ranges[1].end, char::MAX);",
+          "    assert_eq!(class.ranges.len(), 3);",
+          "    assert_eq!(class.ranges[2].start, 'a' + 1);",
+          "    assert_eq!(class.ranges[2].end, char::MAX);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,172 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut bytes = Bytes::from_static(b\"hello world\");",
+          "    let result = bytes.split_off(0);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.len(), 0);",
+          "    assert_eq!(bytes.len(), 11);",
+          "    assert_eq!(unsafe { core::slice::from_raw_parts(bytes.ptr, bytes.len()) }, b\"hello world\");",
+          "    assert_eq!(result.ptr, bytes.ptr);",
+          "    assert!(bytes.is_unique());",
+          "    assert!(result.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes = Bytes::from_static(b\"hello world\");",
+          "    let result = bytes.split_off(0);",
+          "    assert_eq!(result.len(), 0);",
+          "    assert_eq!(bytes.len(), 11);",
+          "    assert_eq!(unsafe { core::slice::from_raw_parts(bytes.ptr, bytes.len()) }, b\"hello world\");",
+          "    assert_eq!(result.ptr, bytes.ptr);",
+          "    assert!(bytes.is_unique());",
+          "    assert!(result.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut bytes = Bytes::from_static(b\"hello world\");",
+          "    let result = bytes.split_off(bytes.len());",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(bytes.split_off(bytes.len()), Bytes { .. }));",
+          "    assert_eq!(bytes.len(), 0);",
+          "    assert_eq!(bytes.ptr, NonNull::dangling().as_ptr());",
+          "    assert!(bytes.is_empty());",
+          "    assert!(result.len() == 11);",
+          "    assert!(result.ptr as usize == bytes.ptr as usize + bytes.len());",
+          "    assert_eq!(result.as_slice(), b\"hello world\");"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes = Bytes::from_static(b\"hello world\");",
+          "    let result = bytes.split_off(bytes.len());",
+          "    assert!(matches!(bytes.split_off(bytes.len()), Bytes { .. }));",
+          "    assert_eq!(bytes.len(), 0);",
+          "    assert_eq!(bytes.ptr, NonNull::dangling().as_ptr());",
+          "    assert!(bytes.is_empty());",
+          "    assert!(result.len() == 11);",
+          "    assert!(result.ptr as usize == bytes.ptr as usize + bytes.len());",
+          "    assert_eq!(result.as_slice(), b\"hello world\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut bytes = Bytes::from_static(b\"hello world\");",
+          "    let at = 5;",
+          "    let result = bytes.split_off(at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes.len(), 5);",
+          "    assert_eq!(result.len(), 6);",
+          "    assert_eq!(&bytes[..], b\"hello\");",
+          "    assert_eq!(&result[..], b\" world\");",
+          "    assert!(result.ptr == unsafe { bytes.ptr.add(at) });",
+          "    assert!(result.len() == bytes.len() + result.len());"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes = Bytes::from_static(b\"hello world\");",
+          "    let at = 5;",
+          "    let result = bytes.split_off(at);",
+          "    assert_eq!(bytes.len(), 5);",
+          "    assert_eq!(result.len(), 6);",
+          "    assert_eq!(&bytes[..], b\"hello\");",
+          "    assert_eq!(&result[..], b\" world\");",
+          "    assert!(result.ptr == unsafe { bytes.ptr.add(at) });",
+          "    assert!(result.len() == bytes.len() + result.len());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.split_off(10);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.len() == 0, \"Expected length of result to be 0, found: {}\", result.len());",
+          "    assert_eq!(bytes.len(), 5, \"Expected length of original bytes to be 5, found: {}\", bytes.len());",
+          "    assert_eq!(bytes.as_slice(), b\"hello\", \"Expected original bytes to be 'hello', found: {:?}\", bytes.as_slice());",
+          "    assert!(bytes.ptr == result.ptr, \"Expected pointers to be equal, original bytes pointer: {:p}, result bytes pointer: {:p}\", bytes.ptr, result.ptr);"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.split_off(10);",
+          "    assert!(result.len() == 0, \"Expected length of result to be 0, found: {}\", result.len());",
+          "    assert_eq!(bytes.len(), 5, \"Expected length of original bytes to be 5, found: {}\", bytes.len());",
+          "    assert_eq!(bytes.as_slice(), b\"hello\", \"Expected original bytes to be 'hello', found: {:?}\", bytes.as_slice());",
+          "    assert!(bytes.ptr == result.ptr, \"Expected pointers to be equal, original bytes pointer: {:p}, result bytes pointer: {:p}\", bytes.ptr, result.ptr);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut bytes = Bytes::new();",
+          "    let result = bytes.split_off(0);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes.len(), 0);",
+          "    let result = bytes.split_off(0);",
+          "    assert_eq!(result.len(), 0);",
+          "    assert!(ptr::eq(result.as_ptr(), bytes.as_ptr()));",
+          "    assert!(result.is_empty());",
+          "    assert!(bytes.is_empty());",
+          "    assert!(result.ptr == bytes.ptr);"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes = Bytes::new();",
+          "    let result = bytes.split_off(0);",
+          "    assert_eq!(bytes.len(), 0);",
+          "    let result = bytes.split_off(0);",
+          "    assert_eq!(result.len(), 0);",
+          "    assert!(ptr::eq(result.as_ptr(), bytes.as_ptr()));",
+          "    assert!(result.is_empty());",
+          "    assert!(bytes.is_empty());",
+          "    assert!(result.ptr == bytes.ptr);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

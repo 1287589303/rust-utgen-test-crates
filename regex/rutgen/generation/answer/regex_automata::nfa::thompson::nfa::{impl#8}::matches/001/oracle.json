@@ -1,0 +1,236 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let transition = Transition { start: 10, end: 20, next: StateID(SmallIndex(1)) };",
+          "    let haystack = &[15];  // A non-empty slice of bytes",
+          "    let at = 0;  // Within the bounds of haystack",
+          "    transition.matches(haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(transition.matches(haystack, at), true);  // At position 0, 15 is within the range 10-20",
+          "    assert_eq!(transition.matches(haystack, 1), false);  // At position 1, haystack is out of bounds",
+          "    assert_eq!(transition.matches(&[], 0), false);  // Empty haystack, should return false regardless of 'at'",
+          "    assert_eq!(transition.matches(haystack, 10), false);  // At position 10, out of bounds of haystack",
+          "    assert_eq!(transition.matches(haystack, usize::MAX), false);  // Extremely large index, should return false"
+        ],
+        "code": [
+          "{",
+          "    let transition = Transition { start: 10, end: 20, next: StateID(SmallIndex(1)) };",
+          "    let haystack = &[15];  // A non-empty slice of bytes",
+          "    let at = 0;  // Within the bounds of haystack",
+          "    transition.matches(haystack, at);",
+          "    assert_eq!(transition.matches(haystack, at), true);  // At position 0, 15 is within the range 10-20",
+          "    assert_eq!(transition.matches(haystack, 1), false);  // At position 1, haystack is out of bounds",
+          "    assert_eq!(transition.matches(&[], 0), false);  // Empty haystack, should return false regardless of 'at'",
+          "    assert_eq!(transition.matches(haystack, 10), false);  // At position 10, out of bounds of haystack",
+          "    assert_eq!(transition.matches(haystack, usize::MAX), false);  // Extremely large index, should return false",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let transition = Transition { start: 5, end: 10, next: StateID(SmallIndex(1)) };",
+          "    let haystack = &[5];  // A non-empty slice of bytes",
+          "    let at = 0;  // At the lower boundary (inclusive)",
+          "    transition.matches(haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(transition.matches(haystack, at));",
+          "    at = 0;",
+          "    haystack = &[5];",
+          "    assert!(transition.matches(haystack, at));",
+          "    at = 1;",
+          "    haystack = &[6];",
+          "    assert!(transition.matches(haystack, at));",
+          "    at = 2;",
+          "    haystack = &[10];",
+          "    assert!(!transition.matches(haystack, at));",
+          "    at = 0;",
+          "    haystack = &[4];",
+          "    assert!(!transition.matches(haystack, at));",
+          "    at = 0;",
+          "    haystack = &[];",
+          "    assert!(!transition.matches(haystack, at));",
+          "    at = 1;",
+          "    haystack = &[5, 6, 7, 8, 9];",
+          "    assert!(transition.matches(haystack, at));"
+        ],
+        "code": [
+          "{",
+          "    let transition = Transition { start: 5, end: 10, next: StateID(SmallIndex(1)) };",
+          "    let haystack = &[5];  // A non-empty slice of bytes",
+          "    let at = 0;  // At the lower boundary (inclusive)",
+          "    transition.matches(haystack, at);",
+          "    assert!(transition.matches(haystack, at));",
+          "    at = 0;",
+          "    haystack = &[5];",
+          "    assert!(transition.matches(haystack, at));",
+          "    at = 1;",
+          "    haystack = &[6];",
+          "    assert!(transition.matches(haystack, at));",
+          "    at = 2;",
+          "    haystack = &[10];",
+          "    assert!(!transition.matches(haystack, at));",
+          "    at = 0;",
+          "    haystack = &[4];",
+          "    assert!(!transition.matches(haystack, at));",
+          "    at = 0;",
+          "    haystack = &[];",
+          "    assert!(!transition.matches(haystack, at));",
+          "    at = 1;",
+          "    haystack = &[5, 6, 7, 8, 9];",
+          "    assert!(transition.matches(haystack, at));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let transition = Transition { start: 5, end: 10, next: StateID(SmallIndex(1)) };",
+          "    let haystack = &[10];  // A non-empty slice of bytes",
+          "    let at = 0;  // At the upper boundary (inclusive)",
+          "    transition.matches(haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(transition.matches(haystack, at), false);  // Expect false for haystack[0] (10) not in range 5..=10",
+          "    assert_eq!(transition.matches(haystack, 1), false);  // Expect false for out-of-bounds access at index 1",
+          "    assert_eq!(transition.matches(&[5], 0), true);  // Expect true for haystack[0] (5) in range 5..=10",
+          "    assert_eq!(transition.matches(&[10], 0), true);  // Expect true for haystack[0] (10) in range 5..=10",
+          "    assert_eq!(transition.matches(&[4], 0), false);  // Expect false for haystack[0] (4) not in range 5..=10",
+          "    assert_eq!(transition.matches(&[], 0), false);  // Expect false for empty haystack with index 0",
+          "    assert_eq!(transition.matches(haystack, haystack.len()), false);  // Test out-of-bounds with length of haystack",
+          "    assert_eq!(transition.matches(haystack, usize::MAX), false);  // Test maximum possible index out-of-bounds",
+          "    assert_eq!(transition.matches(haystack, 0), false);  // Recheck lower boundary case with 10 in haystack[0]"
+        ],
+        "code": [
+          "{",
+          "    let transition = Transition { start: 5, end: 10, next: StateID(SmallIndex(1)) };",
+          "    let haystack = &[10];  // A non-empty slice of bytes",
+          "    let at = 0;  // At the upper boundary (inclusive)",
+          "    transition.matches(haystack, at);",
+          "    assert_eq!(transition.matches(haystack, at), false);  // Expect false for haystack[0] (10) not in range 5..=10",
+          "    assert_eq!(transition.matches(haystack, 1), false);  // Expect false for out-of-bounds access at index 1",
+          "    assert_eq!(transition.matches(&[5], 0), true);  // Expect true for haystack[0] (5) in range 5..=10",
+          "    assert_eq!(transition.matches(&[10], 0), true);  // Expect true for haystack[0] (10) in range 5..=10",
+          "    assert_eq!(transition.matches(&[4], 0), false);  // Expect false for haystack[0] (4) not in range 5..=10",
+          "    assert_eq!(transition.matches(&[], 0), false);  // Expect false for empty haystack with index 0",
+          "    assert_eq!(transition.matches(haystack, haystack.len()), false);  // Test out-of-bounds with length of haystack",
+          "    assert_eq!(transition.matches(haystack, usize::MAX), false);  // Test maximum possible index out-of-bounds",
+          "    assert_eq!(transition.matches(haystack, 0), false);  // Recheck lower boundary case with 10 in haystack[0]",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let transition = Transition { start: 20, end: 30, next: StateID(SmallIndex(1)) };",
+          "    let haystack = &[15];  // A non-empty slice of bytes",
+          "    let at = 0;  // At does not fall within the transition range",
+          "    transition.matches(haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(transition.matches(haystack, at), false);  // Test for out of range case below transition start",
+          "    haystack = &[25];  // At falls within the transition range",
+          "    at = 0;",
+          "    assert_eq!(transition.matches(haystack, at), true);  // Test for case at the range",
+          "    haystack = &[30];  // At is at the upper limit of the transition range",
+          "    at = 0;",
+          "    assert_eq!(transition.matches(haystack, at), true);  // Test for case at the boundary",
+          "    haystack = &[31];  // At exceeds the transition range",
+          "    at = 0;",
+          "    assert_eq!(transition.matches(haystack, at), false);  // Test for case above transition end",
+          "    at = 1;  // at is out of bounds",
+          "    assert_eq!(transition.matches(haystack, at), false);  // Test for at >= haystack.len()"
+        ],
+        "code": [
+          "{",
+          "    let transition = Transition { start: 20, end: 30, next: StateID(SmallIndex(1)) };",
+          "    let haystack = &[15];  // A non-empty slice of bytes",
+          "    let at = 0;  // At does not fall within the transition range",
+          "    transition.matches(haystack, at);",
+          "    assert_eq!(transition.matches(haystack, at), false);  // Test for out of range case below transition start",
+          "    haystack = &[25];  // At falls within the transition range",
+          "    at = 0;",
+          "    assert_eq!(transition.matches(haystack, at), true);  // Test for case at the range",
+          "    haystack = &[30];  // At is at the upper limit of the transition range",
+          "    at = 0;",
+          "    assert_eq!(transition.matches(haystack, at), true);  // Test for case at the boundary",
+          "    haystack = &[31];  // At exceeds the transition range",
+          "    at = 0;",
+          "    assert_eq!(transition.matches(haystack, at), false);  // Test for case above transition end",
+          "    at = 1;  // at is out of bounds",
+          "    assert_eq!(transition.matches(haystack, at), false);  // Test for at >= haystack.len()",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let transition = Transition { start: 5, end: 10, next: StateID(SmallIndex(1)) };",
+          "    let haystack = &[8];  // A non-empty slice of bytes",
+          "    let at = 1;  // At exceeds the length of haystack",
+          "    transition.matches(haystack, at);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(transition.matches(haystack, at), false);  // `at` is out of bounds",
+          "    assert_eq!(transition.matches(haystack, 0), true);     // `at` is within bounds and matches the range",
+          "    assert_eq!(transition.matches(haystack, 0), false);    // `at` is within bounds but does not match the range",
+          "    assert_eq!(transition.matches(&[4], 0), false);        // Byte is below start range",
+          "    assert_eq!(transition.matches(&[5], 0), true);         // Byte is at start of range",
+          "    assert_eq!(transition.matches(&[10], 0), true);        // Byte is at end of range",
+          "    assert_eq!(transition.matches(&[11], 0), false);       // Byte is above end range",
+          "    assert_eq!(transition.matches(&[6, 7, 8, 9], 1), true); // Byte within range at valid index",
+          "    assert_eq!(transition.matches(&[6, 11, 12], 0), true);  // Byte within range at the start",
+          "    assert_eq!(transition.matches(&[5, 4], 0), true);       // Byte exactly at start of range",
+          "    assert_eq!(transition.matches(&[5, 10, 11], 2), false); // Byte above end of range at valid index"
+        ],
+        "code": [
+          "{",
+          "    let transition = Transition { start: 5, end: 10, next: StateID(SmallIndex(1)) };",
+          "    let haystack = &[8];  // A non-empty slice of bytes",
+          "    let at = 1;  // At exceeds the length of haystack",
+          "    transition.matches(haystack, at);",
+          "    assert_eq!(transition.matches(haystack, at), false);  // `at` is out of bounds",
+          "    assert_eq!(transition.matches(haystack, 0), true);     // `at` is within bounds and matches the range",
+          "    assert_eq!(transition.matches(haystack, 0), false);    // `at` is within bounds but does not match the range",
+          "    assert_eq!(transition.matches(&[4], 0), false);        // Byte is below start range",
+          "    assert_eq!(transition.matches(&[5], 0), true);         // Byte is at start of range",
+          "    assert_eq!(transition.matches(&[10], 0), true);        // Byte is at end of range",
+          "    assert_eq!(transition.matches(&[11], 0), false);       // Byte is above end range",
+          "    assert_eq!(transition.matches(&[6, 7, 8, 9], 1), true); // Byte within range at valid index",
+          "    assert_eq!(transition.matches(&[6, 11, 12], 0), true);  // Byte within range at the start",
+          "    assert_eq!(transition.matches(&[5, 4], 0), true);       // Byte exactly at start of range",
+          "    assert_eq!(transition.matches(&[5, 10, 11], 2), false); // Byte above end of range at valid index",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

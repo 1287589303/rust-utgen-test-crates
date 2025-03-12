@@ -1,0 +1,132 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct NonZeroSized {",
+          "        data: u32,",
+          "    }",
+          "",
+          "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 42 }))).unwrap();",
+          "    let bucket = Bucket { ptr: non_zero_sized };",
+          "",
+          "    let _ptr = bucket.as_ptr();",
+          "}"
+        ],
+        "oracle": [
+          "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 42 }))).unwrap();",
+          "    let bucket = Bucket { ptr: non_zero_sized };",
+          "    let expected_ptr = bucket.ptr.as_ptr().sub(1);",
+          "    assert_eq!(_ptr, expected_ptr);",
+          "    assert!(!_ptr.is_null());",
+          "    assert_eq!(unsafe { *(bucket.as_ref()) }.data, 42);"
+        ],
+        "code": [
+          "{",
+          "    struct NonZeroSized {",
+          "        data: u32,",
+          "    }",
+          "",
+          "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 42 }))).unwrap();",
+          "    let bucket = Bucket { ptr: non_zero_sized };",
+          "",
+          "    let _ptr = bucket.as_ptr();",
+          "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 42 }))).unwrap();",
+          "    let bucket = Bucket { ptr: non_zero_sized };",
+          "    let expected_ptr = bucket.ptr.as_ptr().sub(1);",
+          "    assert_eq!(_ptr, expected_ptr);",
+          "    assert!(!_ptr.is_null());",
+          "    assert_eq!(unsafe { *(bucket.as_ref()) }.data, 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct NonZeroSized {",
+          "        data: u32,",
+          "    }",
+          "",
+          "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 99 }))).unwrap();",
+          "    let bucket = Bucket { ptr: non_zero_sized };",
+          "",
+          "    let _ptr = unsafe { bucket.next_n(0).as_ptr() };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(_ptr == non_zero_sized.as_ptr().sub(1));"
+        ],
+        "code": [
+          "{",
+          "    struct NonZeroSized {",
+          "        data: u32,",
+          "    }",
+          "",
+          "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 99 }))).unwrap();",
+          "    let bucket = Bucket { ptr: non_zero_sized };",
+          "",
+          "    let _ptr = unsafe { bucket.next_n(0).as_ptr() };",
+          "    assert!(_ptr == non_zero_sized.as_ptr().sub(1));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct NonZeroSized {",
+          "        data: u32,",
+          "    }",
+          "",
+          "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 100 }))).unwrap();",
+          "    let bucket = Bucket { ptr: non_zero_sized };",
+          "",
+          "    let _ptr = bucket.as_ptr();",
+          "    let invalid_address = unsafe { invalid_mut(1) };",
+          "    let _ = unsafe { &mut *invalid_address }; // This simulates a behavior check for invalid_mut",
+          "}"
+        ],
+        "oracle": [
+          "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 100 }))).unwrap();",
+          "    let bucket = Bucket { ptr: non_zero_sized };",
+          "    assert!(bucket.as_ptr() != std::ptr::null_mut());",
+          "    assert_eq!(unsafe { &*bucket.as_ptr() }.data, 100);",
+          "    let invalid_address = unsafe { invalid_mut(1) };",
+          "    assert!(std::panic::catch_unwind(|| { let _ = unsafe { &mut *invalid_address }; }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    struct NonZeroSized {",
+          "        data: u32,",
+          "    }",
+          "",
+          "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 100 }))).unwrap();",
+          "    let bucket = Bucket { ptr: non_zero_sized };",
+          "",
+          "    let _ptr = bucket.as_ptr();",
+          "    let invalid_address = unsafe { invalid_mut(1) };",
+          "    let _ = unsafe { &mut *invalid_address }; // This simulates a behavior check for invalid_mut",
+          "    let non_zero_sized = NonNull::new(Box::into_raw(Box::new(NonZeroSized { data: 100 }))).unwrap();",
+          "    let bucket = Bucket { ptr: non_zero_sized };",
+          "    assert!(bucket.as_ptr() != std::ptr::null_mut());",
+          "    assert_eq!(unsafe { &*bucket.as_ptr() }.data, 100);",
+          "    let invalid_address = unsafe { invalid_mut(1) };",
+          "    assert!(std::panic::catch_unwind(|| { let _ = unsafe { &mut *invalid_address }; }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

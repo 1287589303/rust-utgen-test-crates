@@ -1,0 +1,179 @@
+[
+  {
+    "uses": [
+      "use std::thread;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    ",
+          "    let result = once.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+          "    let result_again = once.get_or_init(|| NonZeroUsize::new(2).unwrap());",
+          "    ",
+          "    // Function calls to verify if the results are the same",
+          "    let _ = (result, result_again);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, result_again);",
+          "    assert!(result.is_non_zero());",
+          "    assert_eq!(once.inner.load(Ordering::Relaxed), 1);",
+          "    assert_eq!(once.get(), Some(result));",
+          "    assert_eq!(once.get_unchecked(), result);"
+        ],
+        "code": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    ",
+          "    let result = once.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+          "    let result_again = once.get_or_init(|| NonZeroUsize::new(2).unwrap());",
+          "    ",
+          "    // Function calls to verify if the results are the same",
+          "    let _ = (result, result_again);",
+          "    assert_eq!(result, result_again);",
+          "    assert!(result.is_non_zero());",
+          "    assert_eq!(once.inner.load(Ordering::Relaxed), 1);",
+          "    assert_eq!(once.get(), Some(result));",
+          "    assert_eq!(once.get_unchecked(), result);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::thread;",
+          "",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let handles: Vec<_> = (0..10)",
+          "        .map(|_| {",
+          "            thread::spawn(|| {",
+          "                once.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+          "            })",
+          "        })",
+          "        .collect();",
+          "",
+          "    for handle in handles {",
+          "        let _ = handle.join();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(once.get().is_none());",
+          "    let result = once.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+          "    assert_eq!(result.get(), 1);",
+          "    assert!(once.get().is_some());",
+          "    let second_result = once.get_or_init(|| NonZeroUsize::new(2).unwrap());",
+          "    assert_eq!(second_result, result);",
+          "    assert_eq!(once.get().unwrap().get(), 1);"
+        ],
+        "code": [
+          "{",
+          "    use std::thread;",
+          "",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let handles: Vec<_> = (0..10)",
+          "        .map(|_| {",
+          "            thread::spawn(|| {",
+          "                once.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+          "            })",
+          "        })",
+          "        .collect();",
+          "",
+          "    for handle in handles {",
+          "        let _ = handle.join();",
+          "    }",
+          "    assert!(once.get().is_none());",
+          "    let result = once.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+          "    assert_eq!(result.get(), 1);",
+          "    assert!(once.get().is_some());",
+          "    let second_result = once.get_or_init(|| NonZeroUsize::new(2).unwrap());",
+          "    assert_eq!(second_result, result);",
+          "    assert_eq!(once.get().unwrap().get(), 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    ",
+          "    let result_first = once.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+          "    let result_second = once.get_or_init(|| NonZeroUsize::new(3).unwrap());",
+          "    ",
+          "    // Function calls to verify if the results are the same",
+          "    let _ = (result_first, result_second);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result_first, result_second);",
+          "    assert!(result_first == NonZeroUsize::new(1).unwrap());",
+          "    assert!(result_second == NonZeroUsize::new(1).unwrap());",
+          "    assert!(once.get().is_some());",
+          "    assert_eq!(once.get().unwrap(), NonZeroUsize::new(1).unwrap());"
+        ],
+        "code": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    ",
+          "    let result_first = once.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+          "    let result_second = once.get_or_init(|| NonZeroUsize::new(3).unwrap());",
+          "    ",
+          "    // Function calls to verify if the results are the same",
+          "    let _ = (result_first, result_second);",
+          "    assert_eq!(result_first, result_second);",
+          "    assert!(result_first == NonZeroUsize::new(1).unwrap());",
+          "    assert!(result_second == NonZeroUsize::new(1).unwrap());",
+          "    assert!(once.get().is_some());",
+          "    assert_eq!(once.get().unwrap(), NonZeroUsize::new(1).unwrap());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    ",
+          "    // This test verifies that we cannot create a NonZeroUsize with a zero value",
+          "    let result = once.get_or_try_init(|| Ok::<NonZeroUsize, ()>(NonZeroUsize::new(0).unwrap_err()));",
+          "    ",
+          "    // Function call just to trigger it",
+          "    let _ = result;",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), ());  // Confirm the error value matches expectations"
+        ],
+        "code": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    ",
+          "    // This test verifies that we cannot create a NonZeroUsize with a zero value",
+          "    let result = once.get_or_try_init(|| Ok::<NonZeroUsize, ()>(NonZeroUsize::new(0).unwrap_err()));",
+          "    ",
+          "    // Function call just to trigger it",
+          "    let _ = result;",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), ());  // Confirm the error value matches expectations",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

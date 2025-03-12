@@ -1,0 +1,139 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    fn create_function() -> i32 {",
+          "        42",
+          "    }",
+          "    ",
+          "    let lazy_value = Lazy::new(create_function);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    assert_eq!(unsafe { lazy_value.data.assume_init() }, core::ptr::null_mut());"
+        ],
+        "code": [
+          "{",
+          "    fn create_function() -> i32 {",
+          "        42",
+          "    }",
+          "    ",
+          "    let lazy_value = Lazy::new(create_function);",
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    assert_eq!(unsafe { lazy_value.data.assume_init() }, core::ptr::null_mut());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_closure = || {",
+          "        String::from(\"Hello, world!\")",
+          "    };",
+          "    ",
+          "    let lazy_value = Lazy::new(create_closure);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    assert_eq!(lazy_value.data.get().as_ptr(), core::ptr::null_mut());",
+          "    assert_eq!(lazy_value.create.get().unwrap()(), String::from(\"Hello, world!\"));"
+        ],
+        "code": [
+          "{",
+          "    let create_closure = || {",
+          "        String::from(\"Hello, world!\")",
+          "    };",
+          "    ",
+          "    let lazy_value = Lazy::new(create_closure);",
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    assert_eq!(lazy_value.data.get().as_ptr(), core::ptr::null_mut());",
+          "    assert_eq!(lazy_value.create.get().unwrap()(), String::from(\"Hello, world!\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_empty_closure = || {",
+          "        0",
+          "    };",
+          "    ",
+          "    let lazy_value = Lazy::new(create_empty_closure);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    assert_eq!(unsafe { lazy_value.data.assume_init() }.as_ptr(), core::ptr::null_mut());"
+        ],
+        "code": [
+          "{",
+          "    let create_empty_closure = || {",
+          "        0",
+          "    };",
+          "    ",
+          "    let lazy_value = Lazy::new(create_empty_closure);",
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.get().is_some());",
+          "    assert_eq!(unsafe { lazy_value.data.assume_init() }.as_ptr(), core::ptr::null_mut());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let create_ref_owned = || {",
+          "        Box::new(10)",
+          "    };",
+          "    ",
+          "    let lazy_value = Lazy::new(create_ref_owned);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.take().is_some());",
+          "    assert_eq!(unsafe { lazy_value.data.assume_init_ref() }, core::ptr::null_mut());",
+          "    assert!(lazy_value.data.get_mut().addr() == core::ptr::null_mut());",
+          "    assert_eq!(lazy_value.create.as_ref().unwrap()(), Some(10));"
+        ],
+        "code": [
+          "{",
+          "    let create_ref_owned = || {",
+          "        Box::new(10)",
+          "    };",
+          "    ",
+          "    let lazy_value = Lazy::new(create_ref_owned);",
+          "    assert_eq!(lazy_value.state.load(Ordering::SeqCst), LAZY_STATE_INIT);",
+          "    assert!(lazy_value.create.take().is_some());",
+          "    assert_eq!(unsafe { lazy_value.data.assume_init_ref() }, core::ptr::null_mut());",
+          "    assert!(lazy_value.data.get_mut().addr() == core::ptr::null_mut());",
+          "    assert_eq!(lazy_value.create.as_ref().unwrap()(), Some(10));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

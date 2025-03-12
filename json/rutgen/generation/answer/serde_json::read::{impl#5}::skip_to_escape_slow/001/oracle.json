@@ -1,0 +1,166 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"Hello \\\"world\\\"!\";",
+          "    let mut reader = SliceRead::new(slice);",
+          "    reader.index = 5; // Start just after \"Hello \"",
+          "    reader.skip_to_escape_slow();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(reader.index, 5); // Index should remain unchanged as escape character is already present.",
+          "    assert_eq!(reader.slice[reader.index], b'\"'); // Current character at index should be the escape character.",
+          "    assert!(is_escape(reader.slice[reader.index], true)); // Ensure the character is recognized as an escape.",
+          "    assert!(reader.index < reader.slice.len()); // Confirm the index is still within bounds."
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"Hello \\\"world\\\"!\";",
+          "    let mut reader = SliceRead::new(slice);",
+          "    reader.index = 5; // Start just after \"Hello \"",
+          "    reader.skip_to_escape_slow();",
+          "    assert_eq!(reader.index, 5); // Index should remain unchanged as escape character is already present.",
+          "    assert_eq!(reader.slice[reader.index], b'\"'); // Current character at index should be the escape character.",
+          "    assert!(is_escape(reader.slice[reader.index], true)); // Ensure the character is recognized as an escape.",
+          "    assert!(reader.index < reader.slice.len()); // Confirm the index is still within bounds.",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"\\\"start\\\"\";",
+          "    let mut reader = SliceRead::new(slice);",
+          "    reader.index = 0; // Start at the beginning",
+          "    reader.skip_to_escape_slow();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(reader.index, 0);",
+          "    assert_eq!(reader.slice[reader.index], b'\"');",
+          "    assert!(is_escape(reader.slice[reader.index], true));",
+          "    assert!(reader.index < reader.slice.len());",
+          "    assert!(reader.index < slice.len());",
+          "    assert!(reader.index == 0 || reader.index == 1);"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"\\\"start\\\"\";",
+          "    let mut reader = SliceRead::new(slice);",
+          "    reader.index = 0; // Start at the beginning",
+          "    reader.skip_to_escape_slow();",
+          "    assert_eq!(reader.index, 0);",
+          "    assert_eq!(reader.slice[reader.index], b'\"');",
+          "    assert!(is_escape(reader.slice[reader.index], true));",
+          "    assert!(reader.index < reader.slice.len());",
+          "    assert!(reader.index < slice.len());",
+          "    assert!(reader.index == 0 || reader.index == 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"Hello\\x01World\"; // Control character \\x01",
+          "    let mut reader = SliceRead::new(slice);",
+          "    reader.index = 5; // Start just after \"Hello\"",
+          "    reader.skip_to_escape_slow();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(reader.index, 5); // Index should remain unchanged since escape condition is satisfied",
+          "    assert!(reader.slice[reader.index] == b'\\x01'); // The current character should be the control character \\x01",
+          "    assert!(reader.index < reader.slice.len()); // Ensure index is still within bounds after operation"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"Hello\\x01World\"; // Control character \\x01",
+          "    let mut reader = SliceRead::new(slice);",
+          "    reader.index = 5; // Start just after \"Hello\"",
+          "    reader.skip_to_escape_slow();",
+          "    assert_eq!(reader.index, 5); // Index should remain unchanged since escape condition is satisfied",
+          "    assert!(reader.slice[reader.index] == b'\\x01'); // The current character should be the control character \\x01",
+          "    assert!(reader.index < reader.slice.len()); // Ensure index is still within bounds after operation",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"Hello \\\\ world!\\\\\";",
+          "    let mut reader = SliceRead::new(slice);",
+          "    reader.index = 5; // Start just after \"Hello \"",
+          "    reader.skip_to_escape_slow();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(reader.index, 5);",
+          "    assert_eq!(reader.slice[reader.index], b'\\\\');",
+          "    assert!(reader.index < reader.slice.len());",
+          "    assert!(is_escape(reader.slice[reader.index], true));"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"Hello \\\\ world!\\\\\";",
+          "    let mut reader = SliceRead::new(slice);",
+          "    reader.index = 5; // Start just after \"Hello \"",
+          "    reader.skip_to_escape_slow();",
+          "    assert_eq!(reader.index, 5);",
+          "    assert_eq!(reader.slice[reader.index], b'\\\\');",
+          "    assert!(reader.index < reader.slice.len());",
+          "    assert!(is_escape(reader.slice[reader.index], true));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: &[u8] = b\"End with \\\\ escape\";",
+          "    let mut reader = SliceRead::new(slice);",
+          "    reader.index = 10; // Start just after \"End with \"",
+          "    reader.skip_to_escape_slow();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(reader.index, 10);",
+          "    assert!(is_escape(reader.slice[reader.index], true));",
+          "    assert!(reader.index < reader.slice.len());",
+          "    assert_eq!(reader.slice[reader.index], b'\\\\');"
+        ],
+        "code": [
+          "{",
+          "    let slice: &[u8] = b\"End with \\\\ escape\";",
+          "    let mut reader = SliceRead::new(slice);",
+          "    reader.index = 10; // Start just after \"End with \"",
+          "    reader.skip_to_escape_slow();",
+          "    assert_eq!(reader.index, 10);",
+          "    assert!(is_escape(reader.slice[reader.index], true));",
+          "    assert!(reader.index < reader.slice.len());",
+          "    assert_eq!(reader.slice[reader.index], b'\\\\');",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

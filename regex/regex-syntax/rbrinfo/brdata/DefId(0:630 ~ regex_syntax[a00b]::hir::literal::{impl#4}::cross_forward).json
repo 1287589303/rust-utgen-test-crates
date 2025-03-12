@@ -1,0 +1,494 @@
+{
+  "name": "regex_syntax::hir::literal::{impl#4}::cross_forward",
+  "mod_info": {
+    "name": "hir::literal",
+    "loc": "regex-syntax/src/hir/mod.rs:42:1:42:17"
+  },
+  "visible": true,
+  "loc": "regex-syntax/src/hir/literal.rs:959:5:984:6",
+  "doc": "/// Modify this sequence to contain the cross product between it and the\n/// sequence given.\n///\n/// The cross product only considers literals in this sequence that are\n/// exact. That is, inexact literals are not extended.\n///\n/// The literals are always drained from `other`, even if none are used.\n/// This permits callers to reuse the sequence allocation elsewhere.\n///\n/// If this sequence is infinite, then this is a no-op, regardless of what\n/// `other` contains (and in this case, the literals are still drained from\n/// `other`). If `other` is infinite and this sequence is finite, then this\n/// is a no-op, unless this sequence contains a zero-length literal. In\n/// which case, the infiniteness of `other` infects this sequence, and this\n/// sequence is itself made infinite.\n///\n/// Like [`Seq::union`], this may attempt to deduplicate literals. See\n/// [`Seq::dedup`] for how deduplication deals with exact and inexact\n/// literals.\n///\n/// # Example\n///\n/// This example shows basic usage and how exact and inexact literals\n/// interact.\n///\n/// ```\n/// use regex_syntax::hir::literal::{Literal, Seq};\n///\n/// let mut seq1 = Seq::from_iter([\n///     Literal::exact(\"foo\"),\n///     Literal::inexact(\"bar\"),\n/// ]);\n/// let mut seq2 = Seq::from_iter([\n///     Literal::inexact(\"quux\"),\n///     Literal::exact(\"baz\"),\n/// ]);\n/// seq1.cross_forward(&mut seq2);\n///\n/// // The literals are pulled out of seq2.\n/// assert_eq!(Some(0), seq2.len());\n///\n/// let expected = Seq::from_iter([\n///     Literal::inexact(\"fooquux\"),\n///     Literal::exact(\"foobaz\"),\n///     Literal::inexact(\"bar\"),\n/// ]);\n/// assert_eq!(expected, seq1);\n/// ```\n///\n/// This example shows the behavior of when `other` is an infinite\n/// sequence.\n///\n/// ```\n/// use regex_syntax::hir::literal::{Literal, Seq};\n///\n/// let mut seq1 = Seq::from_iter([\n///     Literal::exact(\"foo\"),\n///     Literal::inexact(\"bar\"),\n/// ]);\n/// let mut seq2 = Seq::infinite();\n/// seq1.cross_forward(&mut seq2);\n///\n/// // When seq2 is infinite, cross product doesn't add anything, but\n/// // ensures all members of seq1 are inexact.\n/// let expected = Seq::from_iter([\n///     Literal::inexact(\"foo\"),\n///     Literal::inexact(\"bar\"),\n/// ]);\n/// assert_eq!(expected, seq1);\n/// ```\n///\n/// This example is like the one above, but shows what happens when this\n/// sequence contains an empty string. In this case, an infinite `other`\n/// sequence infects this sequence (because the empty string means that\n/// there are no finite prefixes):\n///\n/// ```\n/// use regex_syntax::hir::literal::{Literal, Seq};\n///\n/// let mut seq1 = Seq::from_iter([\n///     Literal::exact(\"foo\"),\n///     Literal::exact(\"\"), // inexact provokes same behavior\n///     Literal::inexact(\"bar\"),\n/// ]);\n/// let mut seq2 = Seq::infinite();\n/// seq1.cross_forward(&mut seq2);\n///\n/// // seq1 is now infinite!\n/// assert!(!seq1.is_finite());\n/// ```\n///\n/// This example shows the behavior of this sequence is infinite.\n///\n/// ```\n/// use regex_syntax::hir::literal::{Literal, Seq};\n///\n/// let mut seq1 = Seq::infinite();\n/// let mut seq2 = Seq::from_iter([\n///     Literal::exact(\"foo\"),\n///     Literal::inexact(\"bar\"),\n/// ]);\n/// seq1.cross_forward(&mut seq2);\n///\n/// // seq1 remains unchanged.\n/// assert!(!seq1.is_finite());\n/// // Even though the literals in seq2 weren't used, it was still drained.\n/// assert_eq!(Some(0), seq2.len());\n/// ```\n",
+  "code": [
+    "pub fn cross_forward(&mut self, other: &mut Seq) {",
+    "    let (lits1, lits2) = match self.cross_preamble(other) {",
+    "        None => return,",
+    "        Some((lits1, lits2)) => (lits1, lits2),",
+    "    };",
+    "    let newcap = lits1.len().saturating_mul(lits2.len());",
+    "    for selflit in mem::replace(lits1, Vec::with_capacity(newcap)) {",
+    "        if !selflit.is_exact() {",
+    "            lits1.push(selflit);",
+    "            continue;",
+    "        }",
+    "        for otherlit in lits2.iter() {",
+    "            let mut newlit = Literal::exact(Vec::with_capacity(",
+    "                selflit.len() + otherlit.len(),",
+    "            ));",
+    "            newlit.extend(&selflit);",
+    "            newlit.extend(&otherlit);",
+    "            if !otherlit.is_exact() {",
+    "                newlit.make_inexact();",
+    "            }",
+    "            lits1.push(newlit);",
+    "        }",
+    "    }",
+    "    lits2.drain(..);",
+    "    self.dedup();",
+    "}"
+  ],
+  "size": {
+    "chain": 6,
+    "contra": 4,
+    "min_set": 5
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.cross_preamble(other) matches Some((lits1, lits2))",
+          "norm": null,
+          "value": "true",
+          "line": 960,
+          "bound": null
+        },
+        {
+          "cond": "selflit in mem::replace(lits1, Vec::with_capacity(newcap))",
+          "norm": null,
+          "value": "true",
+          "line": 965,
+          "bound": null
+        },
+        {
+          "cond": "selflit.is_exact()",
+          "norm": null,
+          "value": "true",
+          "line": 966,
+          "bound": null
+        },
+        {
+          "cond": "otherlit in lits2.iter()",
+          "norm": null,
+          "value": "true",
+          "line": 970,
+          "bound": null
+        },
+        {
+          "cond": "otherlit.is_exact()",
+          "norm": null,
+          "value": "true",
+          "line": 976,
+          "bound": null
+        },
+        {
+          "cond": "otherlit in lits2.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 970,
+          "bound": null
+        },
+        {
+          "cond": "selflit in mem::replace(lits1, Vec::with_capacity(newcap))",
+          "norm": null,
+          "value": "false",
+          "line": 965,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        19,
+        20,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        45,
+        46,
+        26,
+        27,
+        28,
+        30,
+        32,
+        47,
+        48,
+        12,
+        13,
+        14,
+        16,
+        18,
+        49,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.cross_preamble(other) matches Some((lits1, lits2))",
+          "norm": null,
+          "value": "true",
+          "line": 960,
+          "bound": null
+        },
+        {
+          "cond": "selflit in mem::replace(lits1, Vec::with_capacity(newcap))",
+          "norm": null,
+          "value": "true",
+          "line": 965,
+          "bound": null
+        },
+        {
+          "cond": "selflit.is_exact()",
+          "norm": null,
+          "value": "true",
+          "line": 966,
+          "bound": null
+        },
+        {
+          "cond": "otherlit in lits2.iter()",
+          "norm": null,
+          "value": "true",
+          "line": 970,
+          "bound": null
+        },
+        {
+          "cond": "otherlit.is_exact()",
+          "norm": null,
+          "value": "false",
+          "line": 976,
+          "bound": null
+        },
+        {
+          "cond": "otherlit in lits2.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 970,
+          "bound": null
+        },
+        {
+          "cond": "selflit in mem::replace(lits1, Vec::with_capacity(newcap))",
+          "norm": null,
+          "value": "false",
+          "line": 965,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        19,
+        20,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        42,
+        43,
+        44,
+        45,
+        46,
+        26,
+        27,
+        28,
+        30,
+        32,
+        47,
+        48,
+        12,
+        13,
+        14,
+        16,
+        18,
+        49,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.cross_preamble(other) matches Some((lits1, lits2))",
+          "norm": null,
+          "value": "true",
+          "line": 960,
+          "bound": null
+        },
+        {
+          "cond": "selflit in mem::replace(lits1, Vec::with_capacity(newcap))",
+          "norm": null,
+          "value": "true",
+          "line": 965,
+          "bound": null
+        },
+        {
+          "cond": "selflit.is_exact()",
+          "norm": null,
+          "value": "true",
+          "line": 966,
+          "bound": null
+        },
+        {
+          "cond": "otherlit in lits2.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 970,
+          "bound": null
+        },
+        {
+          "cond": "selflit in mem::replace(lits1, Vec::with_capacity(newcap))",
+          "norm": null,
+          "value": "false",
+          "line": 965,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        19,
+        20,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        32,
+        47,
+        48,
+        12,
+        13,
+        14,
+        16,
+        18,
+        49,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.cross_preamble(other) matches Some((lits1, lits2))",
+          "norm": null,
+          "value": "true",
+          "line": 960,
+          "bound": null
+        },
+        {
+          "cond": "selflit in mem::replace(lits1, Vec::with_capacity(newcap))",
+          "norm": null,
+          "value": "true",
+          "line": 965,
+          "bound": null
+        },
+        {
+          "cond": "selflit.is_exact()",
+          "norm": null,
+          "value": "false",
+          "line": 966,
+          "bound": null
+        },
+        {
+          "cond": "selflit in mem::replace(lits1, Vec::with_capacity(newcap))",
+          "norm": null,
+          "value": "false",
+          "line": 965,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        19,
+        21,
+        22,
+        50,
+        51,
+        12,
+        13,
+        14,
+        16,
+        18,
+        49,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.cross_preamble(other) matches Some((lits1, lits2))",
+          "norm": null,
+          "value": "true",
+          "line": 960,
+          "bound": null
+        },
+        {
+          "cond": "selflit in mem::replace(lits1, Vec::with_capacity(newcap))",
+          "norm": null,
+          "value": "false",
+          "line": 965,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        16,
+        18,
+        49,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.cross_preamble(other) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 960,
+          "bound": null
+        },
+        {
+          "cond": "self.cross_preamble(other) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 960,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        57
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

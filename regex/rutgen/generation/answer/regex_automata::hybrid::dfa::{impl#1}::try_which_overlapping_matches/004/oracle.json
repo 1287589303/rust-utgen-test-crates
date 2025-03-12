@@ -1,0 +1,197 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let patterns = &[\"r\\\"\\\\w+\\\"\", \"r\\\"foo\\\"\", \"r\\\"bar\\\"\"]; // Example patterns",
+          "    let dfa = DFA::builder()",
+          "        .configure(DFA::config().match_kind(MatchKind::All))",
+          "        .build_many(patterns).unwrap();",
+          "    let mut cache = dfa.create_cache();",
+          "    ",
+          "    let input = Input::new(b\"foobar\").anchored(Anchored::No).earliest(true);",
+          "    let mut patset = PatternSet::new(dfa.pattern_len());",
+          "    ",
+          "    dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset), Ok(()));",
+          "    assert!(patset.len() > 0);",
+          "    assert!(patset.is_full() == false);",
+          "    assert!(input.get_earliest() == true);",
+          "    assert!(state.get_match().is_some());"
+        ],
+        "code": [
+          "{",
+          "    let patterns = &[\"r\\\"\\\\w+\\\"\", \"r\\\"foo\\\"\", \"r\\\"bar\\\"\"]; // Example patterns",
+          "    let dfa = DFA::builder()",
+          "        .configure(DFA::config().match_kind(MatchKind::All))",
+          "        .build_many(patterns).unwrap();",
+          "    let mut cache = dfa.create_cache();",
+          "    ",
+          "    let input = Input::new(b\"foobar\").anchored(Anchored::No).earliest(true);",
+          "    let mut patset = PatternSet::new(dfa.pattern_len());",
+          "    ",
+          "    dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).unwrap();",
+          "    assert_eq!(dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset), Ok(()));",
+          "    assert!(patset.len() > 0);",
+          "    assert!(patset.is_full() == false);",
+          "    assert!(input.get_earliest() == true);",
+          "    assert!(state.get_match().is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let patterns = &[\"r\\\"\\\\d+\\\"\", \"r\\\"barfoo\\\"\"]; // Another set of patterns",
+          "    let dfa = DFA::builder()",
+          "        .configure(DFA::config().match_kind(MatchKind::All))",
+          "        .build_many(patterns).unwrap();",
+          "    let mut cache = dfa.create_cache();",
+          "",
+          "    let input = Input::new(b\"barfoo\").anchored(Anchored::No).earliest(true);",
+          "    let mut patset = PatternSet::new(dfa.pattern_len());",
+          "",
+          "    dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).is_ok());",
+          "    assert!(state.get_match().is_some());",
+          "    assert!(!patset.is_full());",
+          "    assert!(input.get_earliest());",
+          "    assert_eq!(patset.len(), expected_len);  // expected_len should match the number of patterns expected to match",
+          "    assert!(patset.contains(PatternID(0)));  // Check if a specific pattern ID is present",
+          "    assert!(patset.contains(PatternID(1)));  // Another specific pattern ID check"
+        ],
+        "code": [
+          "{",
+          "    let patterns = &[\"r\\\"\\\\d+\\\"\", \"r\\\"barfoo\\\"\"]; // Another set of patterns",
+          "    let dfa = DFA::builder()",
+          "        .configure(DFA::config().match_kind(MatchKind::All))",
+          "        .build_many(patterns).unwrap();",
+          "    let mut cache = dfa.create_cache();",
+          "",
+          "    let input = Input::new(b\"barfoo\").anchored(Anchored::No).earliest(true);",
+          "    let mut patset = PatternSet::new(dfa.pattern_len());",
+          "",
+          "    dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).unwrap();",
+          "    assert!(dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).is_ok());",
+          "    assert!(state.get_match().is_some());",
+          "    assert!(!patset.is_full());",
+          "    assert!(input.get_earliest());",
+          "    assert_eq!(patset.len(), expected_len);  // expected_len should match the number of patterns expected to match",
+          "    assert!(patset.contains(PatternID(0)));  // Check if a specific pattern ID is present",
+          "    assert!(patset.contains(PatternID(1)));  // Another specific pattern ID check",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let patterns = &[\"r\\\"bar\\\"\", \"r\\\"foo\\\"\"]; // Different patterns",
+          "    let dfa = DFA::builder()",
+          "        .configure(DFA::config().match_kind(MatchKind::All))",
+          "        .build_many(patterns).unwrap();",
+          "    let mut cache = dfa.create_cache();",
+          "",
+          "    let input = Input::new(b\"bar\").anchored(Anchored::No).earliest(true);",
+          "    let mut patset = PatternSet::new(dfa.pattern_len());",
+          "",
+          "    dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(patset.len(), 1);",
+          "    assert!(patset.contains(PatternID(0)));",
+          "    assert!(!patset.is_full());",
+          "    assert!(input.get_earliest());",
+          "    assert!(patset.is_empty() == false);",
+          "    assert!(patset.try_insert(PatternID(1)).unwrap() == false);"
+        ],
+        "code": [
+          "{",
+          "    let patterns = &[\"r\\\"bar\\\"\", \"r\\\"foo\\\"\"]; // Different patterns",
+          "    let dfa = DFA::builder()",
+          "        .configure(DFA::config().match_kind(MatchKind::All))",
+          "        .build_many(patterns).unwrap();",
+          "    let mut cache = dfa.create_cache();",
+          "",
+          "    let input = Input::new(b\"bar\").anchored(Anchored::No).earliest(true);",
+          "    let mut patset = PatternSet::new(dfa.pattern_len());",
+          "",
+          "    dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).unwrap();",
+          "    assert_eq!(patset.len(), 1);",
+          "    assert!(patset.contains(PatternID(0)));",
+          "    assert!(!patset.is_full());",
+          "    assert!(input.get_earliest());",
+          "    assert!(patset.is_empty() == false);",
+          "    assert!(patset.try_insert(PatternID(1)).unwrap() == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let patterns = &[\"r\\\"\\\\pL+\\\"\", \"r\\\"foobar\\\"\", \"r\\\"\\\\w+\\\"\"]; // Additional patterns",
+          "    let dfa = DFA::builder()",
+          "        .configure(DFA::config().match_kind(MatchKind::All))",
+          "        .build_many(patterns).unwrap();",
+          "    let mut cache = dfa.create_cache();",
+          "",
+          "    let input = Input::new(b\"foobar\").anchored(Anchored::No).earliest(true);",
+          "    let mut patset = PatternSet::new(dfa.pattern_len());",
+          "",
+          "    dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).expect(\"Expected result to be Ok(())\");",
+          "    assert_eq!(patset.len(), expected_len); // Check that some patterns were found",
+          "    assert!(patset.contains(PatternID::new(0))); // Check for a specific pattern match",
+          "    assert!(patset.contains(PatternID::new(1))); // Check for another specific pattern match",
+          "    assert!(!patset.is_full()); // Ensure the pattern set still has space",
+          "    assert!(input.get_earliest()); // Verify input has earliest set to true"
+        ],
+        "code": [
+          "{",
+          "    let patterns = &[\"r\\\"\\\\pL+\\\"\", \"r\\\"foobar\\\"\", \"r\\\"\\\\w+\\\"\"]; // Additional patterns",
+          "    let dfa = DFA::builder()",
+          "        .configure(DFA::config().match_kind(MatchKind::All))",
+          "        .build_many(patterns).unwrap();",
+          "    let mut cache = dfa.create_cache();",
+          "",
+          "    let input = Input::new(b\"foobar\").anchored(Anchored::No).earliest(true);",
+          "    let mut patset = PatternSet::new(dfa.pattern_len());",
+          "",
+          "    dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).unwrap();",
+          "    dfa.try_which_overlapping_matches(&mut cache, &input, &mut patset).expect(\"Expected result to be Ok(())\");",
+          "    assert_eq!(patset.len(), expected_len); // Check that some patterns were found",
+          "    assert!(patset.contains(PatternID::new(0))); // Check for a specific pattern match",
+          "    assert!(patset.contains(PatternID::new(1))); // Check for another specific pattern match",
+          "    assert!(!patset.is_full()); // Ensure the pattern set still has space",
+          "    assert!(input.get_earliest()); // Verify input has earliest set to true",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

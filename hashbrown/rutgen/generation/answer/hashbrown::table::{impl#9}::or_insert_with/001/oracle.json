@@ -1,0 +1,169 @@
+[
+  {
+    "uses": [
+      "use hashbrown::DefaultHashBuilder;",
+      "use std::hash::BuildHasher;",
+      "use hashbrown::HashTable;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::{HashTable, DefaultHashBuilder};",
+          "    use std::hash::BuildHasher;",
+          "",
+          "    let mut table: HashTable<String> = HashTable::new();",
+          "    let hasher = DefaultHashBuilder::default();",
+          "    let hasher_fn = |val: &_| hasher.hash_one(val);",
+          "",
+          "    let entry = table.entry(hasher_fn(\"not_in_table\"), |x| x == \"not_in_table\", hasher_fn);",
+          "    entry.or_insert_with(|| \"default_value\".to_string());",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(table.find(hasher_fn(\"not_in_table\"), |x| x == \"not_in_table\").is_some());",
+          "    assert_eq!(table.find(hasher_fn(\"not_in_table\"), |x| x == \"not_in_table\").unwrap(), \"default_value\");",
+          "    assert!(table.find(hasher_fn(\"nonexistent_key\"), |x| x == \"nonexistent_key\").is_none());",
+          "    assert!(matches!(entry, Entry::Vacant(_)));",
+          "    assert!(matches!(table.entry(hasher_fn(\"not_in_table\"), |x| x == \"not_in_table\", hasher_fn), Entry::Occupied(_)));"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::{HashTable, DefaultHashBuilder};",
+          "    use std::hash::BuildHasher;",
+          "",
+          "    let mut table: HashTable<String> = HashTable::new();",
+          "    let hasher = DefaultHashBuilder::default();",
+          "    let hasher_fn = |val: &_| hasher.hash_one(val);",
+          "",
+          "    let entry = table.entry(hasher_fn(\"not_in_table\"), |x| x == \"not_in_table\", hasher_fn);",
+          "    entry.or_insert_with(|| \"default_value\".to_string());",
+          "    assert!(table.find(hasher_fn(\"not_in_table\"), |x| x == \"not_in_table\").is_some());",
+          "    assert_eq!(table.find(hasher_fn(\"not_in_table\"), |x| x == \"not_in_table\").unwrap(), \"default_value\");",
+          "    assert!(table.find(hasher_fn(\"nonexistent_key\"), |x| x == \"nonexistent_key\").is_none());",
+          "    assert!(matches!(entry, Entry::Vacant(_)));",
+          "    assert!(matches!(table.entry(hasher_fn(\"not_in_table\"), |x| x == \"not_in_table\", hasher_fn), Entry::Occupied(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::{HashTable, DefaultHashBuilder};",
+          "    use std::hash::BuildHasher;",
+          "",
+          "    let mut table: HashTable<String> = HashTable::new();",
+          "    let hasher = DefaultHashBuilder::default();",
+          "    let hasher_fn = |val: &_| hasher.hash_one(val);",
+          "",
+          "    let entry = table.entry(hasher_fn(\"missing_key\"), |x| x == \"missing_key\", hasher_fn);",
+          "    entry.or_insert_with(|| \"fallback_value\".to_string());",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(table.find(hasher_fn(\"missing_key\"), |x| x == \"missing_key\").is_some());",
+          "    assert_eq!(table.find(hasher_fn(\"missing_key\"), |x| x == \"missing_key\").unwrap(), \"fallback_value\");",
+          "    assert!(table.find(hasher_fn(\"another_key\"), |x| x == \"another_key\").is_none());"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::{HashTable, DefaultHashBuilder};",
+          "    use std::hash::BuildHasher;",
+          "",
+          "    let mut table: HashTable<String> = HashTable::new();",
+          "    let hasher = DefaultHashBuilder::default();",
+          "    let hasher_fn = |val: &_| hasher.hash_one(val);",
+          "",
+          "    let entry = table.entry(hasher_fn(\"missing_key\"), |x| x == \"missing_key\", hasher_fn);",
+          "    entry.or_insert_with(|| \"fallback_value\".to_string());",
+          "    assert!(table.find(hasher_fn(\"missing_key\"), |x| x == \"missing_key\").is_some());",
+          "    assert_eq!(table.find(hasher_fn(\"missing_key\"), |x| x == \"missing_key\").unwrap(), \"fallback_value\");",
+          "    assert!(table.find(hasher_fn(\"another_key\"), |x| x == \"another_key\").is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::{HashTable, DefaultHashBuilder};",
+          "    use std::hash::BuildHasher;",
+          "",
+          "    let mut table: HashTable<String> = HashTable::new();",
+          "    let hasher = DefaultHashBuilder::default();",
+          "    let hasher_fn = |val: &_| hasher.hash_one(val);",
+          "",
+          "    let entry = table.entry(hasher_fn(\"boundary_key\"), |x| x == \"boundary_key\", hasher_fn);",
+          "    entry.or_insert_with(|| \"\".to_string()); // Boundary case with empty string",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table.find(hasher_fn(&\"boundary_key\"), |x| x == \"boundary_key\").is_some(), true);",
+          "    assert_eq!(table.find(hasher_fn(&\"\"), |x| x == \"\").is_some(), false);"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::{HashTable, DefaultHashBuilder};",
+          "    use std::hash::BuildHasher;",
+          "",
+          "    let mut table: HashTable<String> = HashTable::new();",
+          "    let hasher = DefaultHashBuilder::default();",
+          "    let hasher_fn = |val: &_| hasher.hash_one(val);",
+          "",
+          "    let entry = table.entry(hasher_fn(\"boundary_key\"), |x| x == \"boundary_key\", hasher_fn);",
+          "    entry.or_insert_with(|| \"\".to_string()); // Boundary case with empty string",
+          "    assert_eq!(table.find(hasher_fn(&\"boundary_key\"), |x| x == \"boundary_key\").is_some(), true);",
+          "    assert_eq!(table.find(hasher_fn(&\"\"), |x| x == \"\").is_some(), false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::{HashTable, DefaultHashBuilder};",
+          "    use std::hash::BuildHasher;",
+          "",
+          "    let mut table: HashTable<i32> = HashTable::new();",
+          "    let hasher = DefaultHashBuilder::default();",
+          "    let hasher_fn = |val: &_| hasher.hash_one(val);",
+          "",
+          "    let entry = table.entry(hasher_fn(99), |x| *x == 99, hasher_fn);",
+          "    entry.or_insert_with(|| 42); // Using a different type, i32",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(table.find(hasher_fn(&99), |x| *x == 99).is_some());",
+          "    assert_eq!(table.find(hasher_fn(&99), |x| *x == 99).unwrap(), &42);"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::{HashTable, DefaultHashBuilder};",
+          "    use std::hash::BuildHasher;",
+          "",
+          "    let mut table: HashTable<i32> = HashTable::new();",
+          "    let hasher = DefaultHashBuilder::default();",
+          "    let hasher_fn = |val: &_| hasher.hash_one(val);",
+          "",
+          "    let entry = table.entry(hasher_fn(99), |x| *x == 99, hasher_fn);",
+          "    entry.or_insert_with(|| 42); // Using a different type, i32",
+          "    assert!(table.find(hasher_fn(&99), |x| *x == 99).is_some());",
+          "    assert_eq!(table.find(hasher_fn(&99), |x| *x == 99).unwrap(), &42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,221 @@
+[
+  {
+    "uses": [
+      "use std::cell::Cell;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::cell::Cell;",
+          "",
+          "    struct TestFn;",
+          "",
+          "    impl FnOnce<()> for TestFn {",
+          "        type Output = i32;",
+          "",
+          "        extern \"rust-call\" fn call_once(self, _: ()) -> Self::Output {",
+          "            42",
+          "        }",
+          "    }",
+          "",
+          "    let mut lazy = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(Some(TestFn)),",
+          "    };",
+          "",
+          "    let value = lazy.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut lazy = Lazy {",
+          "    cell: OnceCell::new(),",
+          "    init: Cell::new(Some(TestFn)),",
+          "    };",
+          "    assert!(lazy.cell.get_mut().is_none());",
+          "    let value = lazy.deref_mut();",
+          "    assert_eq!(*value, 42);"
+        ],
+        "code": [
+          "{",
+          "    use std::cell::Cell;",
+          "",
+          "    struct TestFn;",
+          "",
+          "    impl FnOnce<()> for TestFn {",
+          "        type Output = i32;",
+          "",
+          "        extern \"rust-call\" fn call_once(self, _: ()) -> Self::Output {",
+          "            42",
+          "        }",
+          "    }",
+          "",
+          "    let mut lazy = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(Some(TestFn)),",
+          "    };",
+          "",
+          "    let value = lazy.deref_mut();",
+          "    let mut lazy = Lazy {",
+          "    cell: OnceCell::new(),",
+          "    init: Cell::new(Some(TestFn)),",
+          "    };",
+          "    assert!(lazy.cell.get_mut().is_none());",
+          "    let value = lazy.deref_mut();",
+          "    assert_eq!(*value, 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestFn;",
+          "",
+          "    impl FnOnce<()> for TestFn {",
+          "        type Output = i32;",
+          "",
+          "        extern \"rust-call\" fn call_once(self, _: ()) -> Self::Output {",
+          "            42",
+          "        }",
+          "    }",
+          "",
+          "    let mut lazy = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(Some(TestFn)),",
+          "    };",
+          "",
+          "    let value = lazy.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut lazy = Lazy { cell: OnceCell::new(), init: Cell::new(Some(TestFn)) };",
+          "    assert!(lazy.cell.get_mut().is_none());",
+          "    let value = lazy.deref_mut();",
+          "    assert_eq!(*value, 42);",
+          "    assert!(lazy.cell.get_mut().is_some());"
+        ],
+        "code": [
+          "{",
+          "    struct TestFn;",
+          "",
+          "    impl FnOnce<()> for TestFn {",
+          "        type Output = i32;",
+          "",
+          "        extern \"rust-call\" fn call_once(self, _: ()) -> Self::Output {",
+          "            42",
+          "        }",
+          "    }",
+          "",
+          "    let mut lazy = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(Some(TestFn)),",
+          "    };",
+          "",
+          "    let value = lazy.deref_mut();",
+          "    let mut lazy = Lazy { cell: OnceCell::new(), init: Cell::new(Some(TestFn)) };",
+          "    assert!(lazy.cell.get_mut().is_none());",
+          "    let value = lazy.deref_mut();",
+          "    assert_eq!(*value, 42);",
+          "    assert!(lazy.cell.get_mut().is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut lazy = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(None),",
+          "    };",
+          "",
+          "    let value = lazy.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy.cell.get_mut(), None);",
+          "    assert_eq!(lazy.init.get_mut(), None);",
+          "    let result = std::panic::catch_unwind(|| lazy.deref_mut());",
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut lazy = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(None),",
+          "    };",
+          "",
+          "    let value = lazy.deref_mut();",
+          "    assert_eq!(lazy.cell.get_mut(), None);",
+          "    assert_eq!(lazy.init.get_mut(), None);",
+          "    let result = std::panic::catch_unwind(|| lazy.deref_mut());",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut lazy = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(Some(|| 100)),",
+          "    };",
+          "",
+          "    let value = lazy.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut lazy = Lazy { cell: OnceCell::new(), init: Cell::new(Some(|| 100)) };",
+          "    let value = lazy.deref_mut();",
+          "    assert_eq!(*value, 100);",
+          "    assert!(lazy.cell.get_mut().is_some());",
+          "    assert!(lazy.init.get_mut().is_none());",
+          "    let value_again = lazy.deref_mut();",
+          "    assert_eq!(value, value_again);",
+          "    assert!(lazy.cell.get_mut().is_some());",
+          "    assert!(lazy.init.get_mut().is_none());",
+          "    lazy.init.set(Some(|| 200));",
+          "    let panic_result = std::panic::catch_unwind(|| lazy.deref_mut());",
+          "    assert!(panic_result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut lazy = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(Some(|| 100)),",
+          "    };",
+          "",
+          "    let value = lazy.deref_mut();",
+          "    let mut lazy = Lazy { cell: OnceCell::new(), init: Cell::new(Some(|| 100)) };",
+          "    let value = lazy.deref_mut();",
+          "    assert_eq!(*value, 100);",
+          "    assert!(lazy.cell.get_mut().is_some());",
+          "    assert!(lazy.init.get_mut().is_none());",
+          "    let value_again = lazy.deref_mut();",
+          "    assert_eq!(value, value_again);",
+          "    assert!(lazy.cell.get_mut().is_some());",
+          "    assert!(lazy.init.get_mut().is_none());",
+          "    lazy.init.set(Some(|| 200));",
+          "    let panic_result = std::panic::catch_unwind(|| lazy.deref_mut());",
+          "    assert!(panic_result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

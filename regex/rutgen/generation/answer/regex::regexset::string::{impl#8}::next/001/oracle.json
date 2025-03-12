@@ -1,0 +1,212 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let pattern_id = PatternID::new(0); // single valid PatternID",
+          "    let pattern_set = PatternSet::empty().add(pattern_id); // creating a PatternSet with one PatternID",
+          "    let iter = SetMatchesIter(pattern_set.iter()); ",
+          "    let result = iter.next();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Some(0));",
+          "    assert_eq!(iter.size_hint(), (0, Some(1)));",
+          "    let pattern_id_invalid = PatternID::new(1);",
+          "    let pattern_set_invalid = PatternSet::empty();",
+          "    let iter_invalid = SetMatchesIter(pattern_set_invalid.iter());",
+          "    let result_invalid = iter_invalid.next();",
+          "    assert_eq!(result_invalid, None);"
+        ],
+        "code": [
+          "{",
+          "    let pattern_id = PatternID::new(0); // single valid PatternID",
+          "    let pattern_set = PatternSet::empty().add(pattern_id); // creating a PatternSet with one PatternID",
+          "    let iter = SetMatchesIter(pattern_set.iter()); ",
+          "    let result = iter.next();",
+          "    assert_eq!(result, Some(0));",
+          "    assert_eq!(iter.size_hint(), (0, Some(1)));",
+          "    let pattern_id_invalid = PatternID::new(1);",
+          "    let pattern_set_invalid = PatternSet::empty();",
+          "    let iter_invalid = SetMatchesIter(pattern_set_invalid.iter());",
+          "    let result_invalid = iter_invalid.next();",
+          "    assert_eq!(result_invalid, None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let pattern_ids = vec![PatternID::new(0), PatternID::new(1), PatternID::new(2)]; // multiple valid PatternIDs",
+          "    let mut pattern_set = PatternSet::empty();",
+          "    for id in pattern_ids {",
+          "        pattern_set = pattern_set.add(id);",
+          "    }",
+          "    let mut iter = SetMatchesIter(pattern_set.iter());",
+          "    ",
+          "    while let Some(result) = iter.next() {",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(pattern_set.len() > 0);",
+          "    assert_eq!(iter.size_hint().0, pattern_set.len());",
+          "    assert!(iter.next().is_some());",
+          "    assert!(iter.next().is_some() || (pattern_set.len() == 1));",
+          "    assert!(iter.next().is_none() || (iter.size_hint().0 < pattern_set.len()));",
+          "    assert_eq!(iter.next(), Some(0) | Some(1) | Some(2));",
+          "    assert!(iter.next() != None || pattern_set.iter().count() == 0);"
+        ],
+        "code": [
+          "{",
+          "    let pattern_ids = vec![PatternID::new(0), PatternID::new(1), PatternID::new(2)]; // multiple valid PatternIDs",
+          "    let mut pattern_set = PatternSet::empty();",
+          "    for id in pattern_ids {",
+          "        pattern_set = pattern_set.add(id);",
+          "    }",
+          "    let mut iter = SetMatchesIter(pattern_set.iter());",
+          "    ",
+          "    while let Some(result) = iter.next() {",
+          "    }",
+          "    assert!(pattern_set.len() > 0);",
+          "    assert_eq!(iter.size_hint().0, pattern_set.len());",
+          "    assert!(iter.next().is_some());",
+          "    assert!(iter.next().is_some() || (pattern_set.len() == 1));",
+          "    assert!(iter.next().is_none() || (iter.size_hint().0 < pattern_set.len()));",
+          "    assert_eq!(iter.next(), Some(0) | Some(1) | Some(2));",
+          "    assert!(iter.next() != None || pattern_set.iter().count() == 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let pattern_set = PatternSet::empty(); // empty PatternSet",
+          "    let iter = SetMatchesIter(pattern_set.iter());",
+          "    let result = iter.next(); // should be None",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_none());"
+        ],
+        "code": [
+          "{",
+          "    let pattern_set = PatternSet::empty(); // empty PatternSet",
+          "    let iter = SetMatchesIter(pattern_set.iter());",
+          "    let result = iter.next(); // should be None",
+          "    assert!(result.is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let pattern_set_large = (0..max_supported_patterns)",
+          "        .map(PatternID::new)",
+          "        .fold(PatternSet::empty(), |set, pid| set.add(pid));",
+          "    let mut iter_large = SetMatchesIter(pattern_set_large.iter());",
+          "    ",
+          "    while let Some(result) = iter_large.next() {",
+          "    }",
+          "    ",
+          "    let pattern_set_single = PatternSet::empty().add(PatternID::new(0));",
+          "    let mut iter_single = SetMatchesIter(pattern_set_single.iter());",
+          "    let single_result = iter_single.next(); // should be Some(0)",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(iter_single.next(), Some(0));",
+          "    assert!(iter_large.next().is_none());",
+          "    assert_eq!(iter_single.size_hint(), (1, Some(1)));",
+          "    assert_eq!(iter_large.size_hint(), (0, Some(0)));",
+          "    assert_eq!(SetMatchesIter(PatternSet::empty().iter()).next(), None);",
+          "    assert_eq!(SetMatchesIter(PatternSet::empty().add(PatternID::new(0)).iter()).next(), Some(0));"
+        ],
+        "code": [
+          "{",
+          "    let pattern_set_large = (0..max_supported_patterns)",
+          "        .map(PatternID::new)",
+          "        .fold(PatternSet::empty(), |set, pid| set.add(pid));",
+          "    let mut iter_large = SetMatchesIter(pattern_set_large.iter());",
+          "    ",
+          "    while let Some(result) = iter_large.next() {",
+          "    }",
+          "    ",
+          "    let pattern_set_single = PatternSet::empty().add(PatternID::new(0));",
+          "    let mut iter_single = SetMatchesIter(pattern_set_single.iter());",
+          "    let single_result = iter_single.next(); // should be Some(0)",
+          "    assert_eq!(iter_single.next(), Some(0));",
+          "    assert!(iter_large.next().is_none());",
+          "    assert_eq!(iter_single.size_hint(), (1, Some(1)));",
+          "    assert_eq!(iter_large.size_hint(), (0, Some(0)));",
+          "    assert_eq!(SetMatchesIter(PatternSet::empty().iter()).next(), None);",
+          "    assert_eq!(SetMatchesIter(PatternSet::empty().add(PatternID::new(0)).iter()).next(), Some(0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let pattern_ids = vec![PatternID::new(0), PatternID::new(1), PatternID::new(2)];",
+          "    let mut pattern_set = PatternSet::empty();",
+          "    for id in pattern_ids {",
+          "        pattern_set = pattern_set.add(id);",
+          "    }",
+          "    ",
+          "    let mut iter = SetMatchesIter(pattern_set.iter());",
+          "    ",
+          "    let first_result = iter.next(); // Some(0)",
+          "    let second_result = iter.next(); // Some(1)",
+          "    let third_result = iter.next(); // Some(2)",
+          "    let fourth_result = iter.next(); // None",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(first_result, Some(0));",
+          "    assert_eq!(second_result, Some(1));",
+          "    assert_eq!(third_result, Some(2));",
+          "    assert_eq!(fourth_result, None);"
+        ],
+        "code": [
+          "{",
+          "    let pattern_ids = vec![PatternID::new(0), PatternID::new(1), PatternID::new(2)];",
+          "    let mut pattern_set = PatternSet::empty();",
+          "    for id in pattern_ids {",
+          "        pattern_set = pattern_set.add(id);",
+          "    }",
+          "    ",
+          "    let mut iter = SetMatchesIter(pattern_set.iter());",
+          "    ",
+          "    let first_result = iter.next(); // Some(0)",
+          "    let second_result = iter.next(); // Some(1)",
+          "    let third_result = iter.next(); // Some(2)",
+          "    let fourth_result = iter.next(); // None",
+          "    assert_eq!(first_result, Some(0));",
+          "    assert_eq!(second_result, Some(1));",
+          "    assert_eq!(third_result, Some(2));",
+          "    assert_eq!(fourth_result, None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

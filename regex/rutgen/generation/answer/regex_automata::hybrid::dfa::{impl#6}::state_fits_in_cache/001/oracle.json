@@ -1,0 +1,228 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let dfa = DFA { cache_capacity: 0, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(lazy_ref.state_fits_in_cache(&State::dead()));",
+          "    let dfa = DFA { cache_capacity: 1, /* other fields */ };",
+          "    let state = State::dead();",
+          "    assert!(!lazy_ref.state_fits_in_cache(&state));",
+          "    let dfa = DFA { cache_capacity: 100, /* other fields */ };",
+          "    let state = State::dead();",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "    let dfa = DFA { cache_capacity: 0, /* other fields */ };",
+          "    let state = State::memory_usage();",
+          "    assert!(!lazy_ref.state_fits_in_cache(&state));",
+          "    let dfa = DFA { cache_capacity: 10, /* other fields */ };",
+          "    let state = State::memory_usage();",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));"
+        ],
+        "code": [
+          "{",
+          "    let dfa = DFA { cache_capacity: 0, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "    assert!(lazy_ref.state_fits_in_cache(&State::dead()));",
+          "    let dfa = DFA { cache_capacity: 1, /* other fields */ };",
+          "    let state = State::dead();",
+          "    assert!(!lazy_ref.state_fits_in_cache(&state));",
+          "    let dfa = DFA { cache_capacity: 100, /* other fields */ };",
+          "    let state = State::dead();",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "    let dfa = DFA { cache_capacity: 0, /* other fields */ };",
+          "    let state = State::memory_usage();",
+          "    assert!(!lazy_ref.state_fits_in_cache(&state));",
+          "    let dfa = DFA { cache_capacity: 10, /* other fields */ };",
+          "    let state = State::memory_usage();",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_memory_usage = 10;",
+          "    let dfa = DFA { cache_capacity: state_memory_usage, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    cache.memory_usage = state_memory_usage; // Supposing we can set this for the test",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(lazy_ref.state_fits_in_cache(&state)); // Test with a state that should fit in cache",
+          "    assert!(!lazy_ref.state_fits_in_cache(&State::dead())); // Test with a state that should not fit in cache",
+          "    let state_memory_usage = dfa.cache_capacity - cache.memory_usage();",
+          "    let state = State::with_memory_usage(state_memory_usage);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state)); // Check boundary condition when exactly fitting in cache",
+          "    let large_state = State::with_memory_usage(state_memory_usage + 1);",
+          "    assert!(!lazy_ref.state_fits_in_cache(&large_state)); // Check condition when slightly exceeding cache capacity"
+        ],
+        "code": [
+          "{",
+          "    let state_memory_usage = 10;",
+          "    let dfa = DFA { cache_capacity: state_memory_usage, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    cache.memory_usage = state_memory_usage; // Supposing we can set this for the test",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "    assert!(lazy_ref.state_fits_in_cache(&state)); // Test with a state that should fit in cache",
+          "    assert!(!lazy_ref.state_fits_in_cache(&State::dead())); // Test with a state that should not fit in cache",
+          "    let state_memory_usage = dfa.cache_capacity - cache.memory_usage();",
+          "    let state = State::with_memory_usage(state_memory_usage);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state)); // Check boundary condition when exactly fitting in cache",
+          "    let large_state = State::with_memory_usage(state_memory_usage + 1);",
+          "    assert!(!lazy_ref.state_fits_in_cache(&large_state)); // Check condition when slightly exceeding cache capacity",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_memory_usage = 20;",
+          "    let memory_usage_for_one_more_state = 15;",
+          "    let dfa = DFA { cache_capacity: 50, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    cache.memory_usage = state_memory_usage; // Supposing we can set this for the test",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(lazy_ref.memory_usage_for_one_more_state(state_memory_usage) <= dfa.cache_capacity - cache.memory_usage());",
+          "    assert_eq!(cache.memory_usage(), state_memory_usage);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "    assert!(lazy_ref.memory_usage_for_one_more_state(state.memory_usage()) <= dfa.cache_capacity);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));"
+        ],
+        "code": [
+          "{",
+          "    let state_memory_usage = 20;",
+          "    let memory_usage_for_one_more_state = 15;",
+          "    let dfa = DFA { cache_capacity: 50, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    cache.memory_usage = state_memory_usage; // Supposing we can set this for the test",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "    assert!(lazy_ref.memory_usage_for_one_more_state(state_memory_usage) <= dfa.cache_capacity - cache.memory_usage());",
+          "    assert_eq!(cache.memory_usage(), state_memory_usage);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "    assert!(lazy_ref.memory_usage_for_one_more_state(state.memory_usage()) <= dfa.cache_capacity);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_memory_usage = 30;",
+          "    let memory_usage_for_one_more_state = 25;",
+          "    let dfa = DFA { cache_capacity: 50, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    cache.memory_usage = state_memory_usage; // Supposing we can set this for the test",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(!lazy_ref.state_fits_in_cache(&state));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(lazy_ref.state_fits_in_cache(&state)); // case where needed <= cache_capacity",
+          "    assert!(!lazy_ref.state_fits_in_cache(&state)); // case where needed > cache_capacity",
+          "    assert_eq!(cache.memory_usage(), state_memory_usage); // check initial memory usage",
+          "    assert_eq!(lazy_ref.memory_usage_for_one_more_state(state.memory_usage()), memory_usage_for_one_more_state); // validate memory usage calculation",
+          "    assert!(dfa.cache_capacity >= (state_memory_usage + memory_usage_for_one_more_state)); // validate dfa capacity check"
+        ],
+        "code": [
+          "{",
+          "    let state_memory_usage = 30;",
+          "    let memory_usage_for_one_more_state = 25;",
+          "    let dfa = DFA { cache_capacity: 50, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    cache.memory_usage = state_memory_usage; // Supposing we can set this for the test",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(!lazy_ref.state_fits_in_cache(&state));",
+          "    assert!(lazy_ref.state_fits_in_cache(&state)); // case where needed <= cache_capacity",
+          "    assert!(!lazy_ref.state_fits_in_cache(&state)); // case where needed > cache_capacity",
+          "    assert_eq!(cache.memory_usage(), state_memory_usage); // check initial memory usage",
+          "    assert_eq!(lazy_ref.memory_usage_for_one_more_state(state.memory_usage()), memory_usage_for_one_more_state); // validate memory usage calculation",
+          "    assert!(dfa.cache_capacity >= (state_memory_usage + memory_usage_for_one_more_state)); // validate dfa capacity check",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_memory_usage = 100_000_000;",
+          "    let dfa = DFA { cache_capacity: 200_000_000, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    cache.memory_usage = 150_000_000; // Supposing we can set this for the test",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "}"
+        ],
+        "oracle": [
+          "    let state_memory_usage = 100_000_000;",
+          "    let dfa = DFA { cache_capacity: 200_000_000, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    cache.memory_usage = 150_000_000; // Supposing we can set this for the test",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));"
+        ],
+        "code": [
+          "{",
+          "    let state_memory_usage = 100_000_000;",
+          "    let dfa = DFA { cache_capacity: 200_000_000, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    cache.memory_usage = 150_000_000; // Supposing we can set this for the test",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "    let state_memory_usage = 100_000_000;",
+          "    let dfa = DFA { cache_capacity: 200_000_000, /* other fields */ };",
+          "    let state = State::dead();",
+          "    let cache = Cache::new(&dfa);",
+          "    cache.memory_usage = 150_000_000; // Supposing we can set this for the test",
+          "    let lazy_ref = LazyRef::new(&dfa, &cache);",
+          "    assert!(lazy_ref.state_fits_in_cache(&state));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,184 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(2..2);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.len(), 0);",
+          "    assert_eq!(result.ptr, bytes.ptr.add(2));",
+          "    assert!(result.is_empty());",
+          "    assert!(matches!(result.ptr, _));",
+          "    assert!(result.data.load(Ordering::Relaxed).is_null());",
+          "    assert!(result.len() == 0);",
+          "    assert!(bytes.len() == 5);"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(2..2);",
+          "    assert_eq!(result.len(), 0);",
+          "    assert_eq!(result.ptr, bytes.ptr.add(2));",
+          "    assert!(result.is_empty());",
+          "    assert!(matches!(result.ptr, _));",
+          "    assert!(result.data.load(Ordering::Relaxed).is_null());",
+          "    assert!(result.len() == 0);",
+          "    assert!(bytes.len() == 5);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(2..3);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(2..3);",
+          "    assert_eq!(result.len(), 1);",
+          "    assert_eq!(&result[..], b\"l\");",
+          "    let result_empty = bytes.slice(2..2);",
+          "    assert!(result_empty.len() == 0);",
+          "    let result_overflow = bytes.slice(5..2); // begin > end",
+          "    panic::set_hook(Box::new(|_| {",
+          "    // Expect panic due to assert in slice function",
+          "    }));",
+          "    let result_panic = bytes.slice(5..2);",
+          "    panic::take_hook(); // Restore the panic hook",
+          "    let result_out_of_bounds = bytes.slice(6..10);",
+          "    panic::set_hook(Box::new(|_| {",
+          "    // Expect panic due to assert in slice function",
+          "    }));",
+          "    let result_outbound_panic = bytes.slice(6..10);",
+          "    panic::take_hook(); // Restore the panic hook"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(2..3);",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(2..3);",
+          "    assert_eq!(result.len(), 1);",
+          "    assert_eq!(&result[..], b\"l\");",
+          "    let result_empty = bytes.slice(2..2);",
+          "    assert!(result_empty.len() == 0);",
+          "    let result_overflow = bytes.slice(5..2); // begin > end",
+          "    panic::set_hook(Box::new(|_| {",
+          "    // Expect panic due to assert in slice function",
+          "    }));",
+          "    let result_panic = bytes.slice(5..2);",
+          "    panic::take_hook(); // Restore the panic hook",
+          "    let result_out_of_bounds = bytes.slice(6..10);",
+          "    panic::set_hook(Box::new(|_| {",
+          "    // Expect panic due to assert in slice function",
+          "    }));",
+          "    let result_outbound_panic = bytes.slice(6..10);",
+          "    panic::take_hook(); // Restore the panic hook",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(3..1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_empty(), \"Expected an empty Bytes result when slicing with invalid range.\");",
+          "    assert_eq!(result.len(), 0, \"Expected length of 0 for sliced Bytes.\");",
+          "    assert_eq!(result.ptr, NonNull::dangling().as_ptr(), \"Expected a dangling pointer for the result of the invalid slice.\");"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(3..1);",
+          "    assert!(result.is_empty(), \"Expected an empty Bytes result when slicing with invalid range.\");",
+          "    assert_eq!(result.len(), 0, \"Expected length of 0 for sliced Bytes.\");",
+          "    assert_eq!(result.ptr, NonNull::dangling().as_ptr(), \"Expected a dangling pointer for the result of the invalid slice.\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(1..1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_empty(), \"Expected result to be empty when slicing with the same start and end\");",
+          "    assert_eq!(result.len(), 0, \"Expected length of result to be 0\");",
+          "    assert_eq!(result.ptr, bytes.ptr.add(1), \"Expected ptr of result to point to the second byte\");",
+          "    assert!(std::ptr::eq(result.data.load(Ordering::SeqCst), bytes.data.load(Ordering::SeqCst)), \"Expected data to be the same\");",
+          "    assert!(result.vtable == bytes.vtable, \"Expected vtable of result to match vtable of original bytes\");",
+          "    assert!(result.is_unique(), \"Expected the result to be unique\");",
+          "    assert!(std::panic::catch_unwind(|| bytes.slice(2..1)).is_err(), \"Expected panic when begin > end\");",
+          "    assert!(std::panic::catch_unwind(|| bytes.slice(5..10)).is_err(), \"Expected panic when end is out of bounds\");",
+          "    assert!(std::panic::catch_unwind(|| bytes.slice(0..6)).is_err(), \"Expected panic when start is out of bounds\");"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(1..1);",
+          "    assert!(result.is_empty(), \"Expected result to be empty when slicing with the same start and end\");",
+          "    assert_eq!(result.len(), 0, \"Expected length of result to be 0\");",
+          "    assert_eq!(result.ptr, bytes.ptr.add(1), \"Expected ptr of result to point to the second byte\");",
+          "    assert!(std::ptr::eq(result.data.load(Ordering::SeqCst), bytes.data.load(Ordering::SeqCst)), \"Expected data to be the same\");",
+          "    assert!(result.vtable == bytes.vtable, \"Expected vtable of result to match vtable of original bytes\");",
+          "    assert!(result.is_unique(), \"Expected the result to be unique\");",
+          "    assert!(std::panic::catch_unwind(|| bytes.slice(2..1)).is_err(), \"Expected panic when begin > end\");",
+          "    assert!(std::panic::catch_unwind(|| bytes.slice(5..10)).is_err(), \"Expected panic when end is out of bounds\");",
+          "    assert!(std::panic::catch_unwind(|| bytes.slice(0..6)).is_err(), \"Expected panic when start is out of bounds\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(5..2);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_empty(), \"Expected result to be empty; got {:?}\", result);",
+          "    assert_eq!(result.len(), 0, \"Expected length of result to be 0; got {:?}\", result.len());",
+          "    assert_eq!(result.ptr, bytes.ptr.wrapping_add(5), \"Expected pointer of result to be adjusted beyond original; got {:?}\", result.ptr);"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes::from_static(b\"hello\");",
+          "    let result = bytes.slice(5..2);",
+          "    assert!(result.is_empty(), \"Expected result to be empty; got {:?}\", result);",
+          "    assert_eq!(result.len(), 0, \"Expected length of result to be 0; got {:?}\", result.len());",
+          "    assert_eq!(result.ptr, bytes.ptr.wrapping_add(5), \"Expected pointer of result to be adjusted beyond original; got {:?}\", result.ptr);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

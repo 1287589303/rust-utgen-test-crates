@@ -1,0 +1,85 @@
+{
+  "name": "regex_automata::meta::regex::{impl#1}::is_match",
+  "mod_info": {
+    "name": "meta::regex",
+    "loc": "regex-automata/src/meta/mod.rs:57:1:57:11"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/meta/regex.rs:530:5:540:6",
+  "doc": "/// Returns true if and only if this regex matches the given haystack.\n///\n/// This routine may short circuit if it knows that scanning future input\n/// will never lead to a different result. (Consider how this might make\n/// a difference given the regex `a+` on the haystack `aaaaaaaaaaaaaaa`.\n/// This routine _may_ stop after it sees the first `a`, but routines like\n/// `find` need to continue searching because `+` is greedy by default.)\n///\n/// # Example\n///\n/// ```\n/// use regex_automata::meta::Regex;\n///\n/// let re = Regex::new(\"foo[0-9]+bar\")?;\n///\n/// assert!(re.is_match(\"foo12345bar\"));\n/// assert!(!re.is_match(\"foobar\"));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// # Example: consistency with search APIs\n///\n/// `is_match` is guaranteed to return `true` whenever `find` returns a\n/// match. This includes searches that are executed entirely within a\n/// codepoint:\n///\n/// ```\n/// use regex_automata::{meta::Regex, Input};\n///\n/// let re = Regex::new(\"a*\")?;\n///\n/// // This doesn't match because the default configuration bans empty\n/// // matches from splitting a codepoint.\n/// assert!(!re.is_match(Input::new(\"☃\").span(1..2)));\n/// assert_eq!(None, re.find(Input::new(\"☃\").span(1..2)));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// Notice that when UTF-8 mode is disabled, then the above reports a\n/// match because the restriction against zero-width matches that split a\n/// codepoint has been lifted:\n///\n/// ```\n/// use regex_automata::{meta::Regex, Input, Match};\n///\n/// let re = Regex::builder()\n///     .configure(Regex::config().utf8_empty(false))\n///     .build(\"a*\")?;\n///\n/// assert!(re.is_match(Input::new(\"☃\").span(1..2)));\n/// assert_eq!(\n///     Some(Match::must(0, 1..1)),\n///     re.find(Input::new(\"☃\").span(1..2)),\n/// );\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// A similar idea applies when using line anchors with CRLF mode enabled,\n/// which prevents them from matching between a `\\r` and a `\\n`.\n///\n/// ```\n/// use regex_automata::{meta::Regex, Input, Match};\n///\n/// let re = Regex::new(r\"(?Rm:$)\")?;\n/// assert!(!re.is_match(Input::new(\"\\r\\n\").span(1..1)));\n/// // A regular line anchor, which only considers \\n as a\n/// // line terminator, will match.\n/// let re = Regex::new(r\"(?m:$)\")?;\n/// assert!(re.is_match(Input::new(\"\\r\\n\").span(1..1)));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn is_match<'h, I: Into<Input<'h>>>(&self, input: I) -> bool {",
+    "    let input = input.into().earliest(true);",
+    "    if self.imp.info.is_impossible(&input) {",
+    "        return false;",
+    "    }",
+    "    let mut guard = self.pool.get();",
+    "    let result = self.imp.strat.is_match(&mut guard, &input);",
+    "    // See 'Regex::search' for why we put the guard back explicitly.",
+    "    PoolGuard::put(guard);",
+    "    result",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.imp.info.is_impossible(&input)",
+          "norm": null,
+          "value": "true",
+          "line": 532,
+          "bound": null
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        14
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.imp.info.is_impossible(&input)",
+          "norm": null,
+          "value": "false",
+          "line": 532,
+          "bound": null
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

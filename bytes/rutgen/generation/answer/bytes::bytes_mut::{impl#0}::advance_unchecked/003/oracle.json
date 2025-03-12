@@ -1,0 +1,122 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+          "    unsafe { bytes_mut.advance_unchecked(0) };",
+          "}"
+        ],
+        "oracle": [
+          "    unsafe { bytes_mut.advance_unchecked(10) }; // count == self.cap",
+          "    unsafe { bytes_mut.advance_unchecked(u32::MAX as usize) }; // count > self.cap, should trigger a panic",
+          "    unsafe { bytes_mut.advance_unchecked(5) }; // valid advance with count < self.cap and appropriate state",
+          "    unsafe { bytes_mut.advance_unchecked(134_217_728) }; // ensure we reach the case where promote_to_shared is triggered on 32-bit systems"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+          "    unsafe { bytes_mut.advance_unchecked(0) };",
+          "    unsafe { bytes_mut.advance_unchecked(10) }; // count == self.cap",
+          "    unsafe { bytes_mut.advance_unchecked(u32::MAX as usize) }; // count > self.cap, should trigger a panic",
+          "    unsafe { bytes_mut.advance_unchecked(5) }; // valid advance with count < self.cap and appropriate state",
+          "    unsafe { bytes_mut.advance_unchecked(134_217_728) }; // ensure we reach the case where promote_to_shared is triggered on 32-bit systems",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+          "    unsafe { bytes_mut.resize(10, 0) };",
+          "    let cap = bytes_mut.capacity();",
+          "    unsafe { bytes_mut.advance_unchecked(cap) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_mut.len(), 0);",
+          "    assert_eq!(bytes_mut.cap, 0);",
+          "    assert!(bytes_mut.is_empty());",
+          "    assert!(unsafe { bytes_mut.ptr.as_ptr() } != std::ptr::null_mut());"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+          "    unsafe { bytes_mut.resize(10, 0) };",
+          "    let cap = bytes_mut.capacity();",
+          "    unsafe { bytes_mut.advance_unchecked(cap) };",
+          "    assert_eq!(bytes_mut.len(), 0);",
+          "    assert_eq!(bytes_mut.cap, 0);",
+          "    assert!(bytes_mut.is_empty());",
+          "    assert!(unsafe { bytes_mut.ptr.as_ptr() } != std::ptr::null_mut());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+          "    let cap = bytes_mut.capacity();",
+          "    unsafe { bytes_mut.resize(cap, 0) };",
+          "",
+          "    let kind = bytes_mut.kind(); // ensure it's KIND_VEC",
+          "    assert_eq!(kind, KIND_VEC);",
+          "",
+          "    let max_vec_pos = MAX_VEC_POS + 1;",
+          "    unsafe {",
+          "        bytes_mut.set_vec_pos(max_vec_pos);",
+          "        bytes_mut.advance_unchecked(1);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes_mut.len(), 0);",
+          "    assert!(bytes_mut.cap < bytes_mut.capacity());",
+          "    assert_eq!(bytes_mut.kind(), KIND_VEC);",
+          "    assert_eq!(bytes_mut.ptr.as_ptr(), bytes_mut.ptr.as_ptr().add(1));",
+          "    assert!(bytes_mut.cap == 9);",
+          "    assert!(bytes_mut.len == 0);",
+          "    assert!(bytes_mut.data as usize & KIND_MASK == KIND_ARC);",
+          "    assert!(unsafe { bytes_mut.get_vec_pos() > MAX_VEC_POS });"
+        ],
+        "code": [
+          "{",
+          "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+          "    let cap = bytes_mut.capacity();",
+          "    unsafe { bytes_mut.resize(cap, 0) };",
+          "",
+          "    let kind = bytes_mut.kind(); // ensure it's KIND_VEC",
+          "    assert_eq!(kind, KIND_VEC);",
+          "",
+          "    let max_vec_pos = MAX_VEC_POS + 1;",
+          "    unsafe {",
+          "        bytes_mut.set_vec_pos(max_vec_pos);",
+          "        bytes_mut.advance_unchecked(1);",
+          "    }",
+          "    assert_eq!(bytes_mut.len(), 0);",
+          "    assert!(bytes_mut.cap < bytes_mut.capacity());",
+          "    assert_eq!(bytes_mut.kind(), KIND_VEC);",
+          "    assert_eq!(bytes_mut.ptr.as_ptr(), bytes_mut.ptr.as_ptr().add(1));",
+          "    assert!(bytes_mut.cap == 9);",
+          "    assert!(bytes_mut.len == 0);",
+          "    assert!(bytes_mut.data as usize & KIND_MASK == KIND_ARC);",
+          "    assert!(unsafe { bytes_mut.get_vec_pos() > MAX_VEC_POS });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

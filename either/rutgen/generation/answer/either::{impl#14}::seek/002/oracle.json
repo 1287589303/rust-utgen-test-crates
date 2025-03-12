@@ -1,0 +1,185 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct LeftSeekable;",
+          "    impl Seek for LeftSeekable {",
+          "        fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {",
+          "            Ok(0)",
+          "        }",
+          "    }",
+          "    ",
+          "    let mut either = Either::Left(LeftSeekable);",
+          "    let pos = SeekFrom::Start(0);",
+          "    let _ = either.seek(pos);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(either.seek(pos).unwrap(), 0);",
+          "    assert!(either.seek(SeekFrom::End(0)).is_ok());",
+          "    assert!(either.seek(SeekFrom::Current(0)).is_ok());",
+          "    assert_eq!(either.seek(SeekFrom::Start(10)).unwrap(), 0);",
+          "    assert!(either.seek(SeekFrom::Start(10)).is_ok());",
+          "    assert_eq!(either.seek(SeekFrom::Start(0)).unwrap(), 0);"
+        ],
+        "code": [
+          "{",
+          "    struct LeftSeekable;",
+          "    impl Seek for LeftSeekable {",
+          "        fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {",
+          "            Ok(0)",
+          "        }",
+          "    }",
+          "    ",
+          "    let mut either = Either::Left(LeftSeekable);",
+          "    let pos = SeekFrom::Start(0);",
+          "    let _ = either.seek(pos);",
+          "    assert_eq!(either.seek(pos).unwrap(), 0);",
+          "    assert!(either.seek(SeekFrom::End(0)).is_ok());",
+          "    assert!(either.seek(SeekFrom::Current(0)).is_ok());",
+          "    assert_eq!(either.seek(SeekFrom::Start(10)).unwrap(), 0);",
+          "    assert!(either.seek(SeekFrom::Start(10)).is_ok());",
+          "    assert_eq!(either.seek(SeekFrom::Start(0)).unwrap(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct LeftSeekable;",
+          "    impl Seek for LeftSeekable {",
+          "        fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {",
+          "            Ok(100)",
+          "        }",
+          "    }",
+          "    ",
+          "    let mut either = Either::Left(LeftSeekable);",
+          "    let pos = SeekFrom::End(0);",
+          "    let _ = either.seek(pos);",
+          "}"
+        ],
+        "oracle": [
+          "    let mut either = Either::Left(LeftSeekable);",
+          "    let pos = SeekFrom::End(0);",
+          "    let result = either.seek(pos);",
+          "    assert_eq!(result, Ok(100));",
+          "    assert!(matches!(either, Either::Left(_)));"
+        ],
+        "code": [
+          "{",
+          "    struct LeftSeekable;",
+          "    impl Seek for LeftSeekable {",
+          "        fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {",
+          "            Ok(100)",
+          "        }",
+          "    }",
+          "    ",
+          "    let mut either = Either::Left(LeftSeekable);",
+          "    let pos = SeekFrom::End(0);",
+          "    let _ = either.seek(pos);",
+          "    let mut either = Either::Left(LeftSeekable);",
+          "    let pos = SeekFrom::End(0);",
+          "    let result = either.seek(pos);",
+          "    assert_eq!(result, Ok(100));",
+          "    assert!(matches!(either, Either::Left(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct LeftSeekable;",
+          "    impl Seek for LeftSeekable {",
+          "        fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {",
+          "            Ok(50)",
+          "        }",
+          "    }",
+          "    ",
+          "    let mut either = Either::Left(LeftSeekable);",
+          "    let pos = SeekFrom::Current(0);",
+          "    let _ = either.seek(pos);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(either.seek(pos).unwrap(), 50);"
+        ],
+        "code": [
+          "{",
+          "    struct LeftSeekable;",
+          "    impl Seek for LeftSeekable {",
+          "        fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {",
+          "            Ok(50)",
+          "        }",
+          "    }",
+          "    ",
+          "    let mut either = Either::Left(LeftSeekable);",
+          "    let pos = SeekFrom::Current(0);",
+          "    let _ = either.seek(pos);",
+          "    assert_eq!(either.seek(pos).unwrap(), 50);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct LeftFailingSeekable;",
+          "    impl Seek for LeftFailingSeekable {",
+          "        fn seek(&mut self, _: SeekFrom) -> io::Result<u64> {",
+          "            Err(io::Error::new(io::ErrorKind::Other, \"seek failed\"))",
+          "        }",
+          "    }",
+          "",
+          "    let mut either = Either::Left(LeftFailingSeekable);",
+          "    let pos = SeekFrom::Start(0);",
+          "    let _ = either.seek(pos).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(either, Either::Left(_)));",
+          "    let result = either.seek(pos);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind(), io::ErrorKind::Other);",
+          "    assert_eq!(result.err().unwrap().to_string(), \"seek failed\");"
+        ],
+        "code": [
+          "{",
+          "    struct LeftFailingSeekable;",
+          "    impl Seek for LeftFailingSeekable {",
+          "        fn seek(&mut self, _: SeekFrom) -> io::Result<u64> {",
+          "            Err(io::Error::new(io::ErrorKind::Other, \"seek failed\"))",
+          "        }",
+          "    }",
+          "",
+          "    let mut either = Either::Left(LeftFailingSeekable);",
+          "    let pos = SeekFrom::Start(0);",
+          "    let _ = either.seek(pos).unwrap();",
+          "    assert!(matches!(either, Either::Left(_)));",
+          "    let result = either.seek(pos);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind(), io::ErrorKind::Other);",
+          "    assert_eq!(result.err().unwrap().to_string(), \"seek failed\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

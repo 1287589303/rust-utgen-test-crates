@@ -1,0 +1,152 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut index_map: IndexMapCore<i32, String> = IndexMapCore::new();",
+          "    let hash = HashValue(123);",
+          "    let key = 1;",
+          "    let value = \"value_1\".to_string();",
+          "    index_map.replace_full(hash, key, value);",
+          "}"
+        ],
+        "oracle": [
+          "    let mut index_map: IndexMapCore<i32, String> = IndexMapCore::new();",
+          "    let hash = HashValue(123);",
+          "    let key = 1;",
+          "    let value = \"value_1\".to_string();",
+          "    let (index, old_entry) = index_map.replace_full(hash, key, value);",
+          "    assert_eq!(index, 0);",
+          "    assert!(old_entry.is_none());",
+          "    assert_eq!(index_map.len(), 1);",
+          "    assert_eq!(index_map.entries[0].key, key);",
+          "    assert_eq!(index_map.entries[0].value, value);"
+        ],
+        "code": [
+          "{",
+          "    let mut index_map: IndexMapCore<i32, String> = IndexMapCore::new();",
+          "    let hash = HashValue(123);",
+          "    let key = 1;",
+          "    let value = \"value_1\".to_string();",
+          "    index_map.replace_full(hash, key, value);",
+          "    let mut index_map: IndexMapCore<i32, String> = IndexMapCore::new();",
+          "    let hash = HashValue(123);",
+          "    let key = 1;",
+          "    let value = \"value_1\".to_string();",
+          "    let (index, old_entry) = index_map.replace_full(hash, key, value);",
+          "    assert_eq!(index, 0);",
+          "    assert!(old_entry.is_none());",
+          "    assert_eq!(index_map.len(), 1);",
+          "    assert_eq!(index_map.entries[0].key, key);",
+          "    assert_eq!(index_map.entries[0].value, value);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut index_map: IndexMapCore<i32, String> = IndexMapCore::new();",
+          "    let hash_existing = HashValue(456);",
+          "    let key_existing = 2;",
+          "    let value_existing = \"value_2\".to_string();",
+          "    index_map.replace_full(hash_existing, key_existing, value_existing);",
+          "    ",
+          "    let hash_new = HashValue(123);",
+          "    let key_new = 3; // distinct from key_existing",
+          "    let value_new = \"value_3\".to_string();",
+          "    index_map.replace_full(hash_new, key_new, value_new);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(index_map.len(), 2);",
+          "    assert_eq!(index_map.entries[0].key, 2);",
+          "    assert_eq!(index_map.entries[0].value, \"value_2\");",
+          "    assert_eq!(index_map.entries[1].key, 3);",
+          "    assert_eq!(index_map.entries[1].value, \"value_3\");",
+          "    assert_eq!(index_map.indices.len(), 2);",
+          "    assert_eq!(index_map.indices.entry(hash_existing.get(), equivalent(&key_existing, &index_map.entries)).is_vacant(), true);",
+          "    assert_eq!(index_map.indices.entry(hash_new.get(), equivalent(&key_new, &index_map.entries)).is_vacant(), false);"
+        ],
+        "code": [
+          "{",
+          "    let mut index_map: IndexMapCore<i32, String> = IndexMapCore::new();",
+          "    let hash_existing = HashValue(456);",
+          "    let key_existing = 2;",
+          "    let value_existing = \"value_2\".to_string();",
+          "    index_map.replace_full(hash_existing, key_existing, value_existing);",
+          "    ",
+          "    let hash_new = HashValue(123);",
+          "    let key_new = 3; // distinct from key_existing",
+          "    let value_new = \"value_3\".to_string();",
+          "    index_map.replace_full(hash_new, key_new, value_new);",
+          "    assert_eq!(index_map.len(), 2);",
+          "    assert_eq!(index_map.entries[0].key, 2);",
+          "    assert_eq!(index_map.entries[0].value, \"value_2\");",
+          "    assert_eq!(index_map.entries[1].key, 3);",
+          "    assert_eq!(index_map.entries[1].value, \"value_3\");",
+          "    assert_eq!(index_map.indices.len(), 2);",
+          "    assert_eq!(index_map.indices.entry(hash_existing.get(), equivalent(&key_existing, &index_map.entries)).is_vacant(), true);",
+          "    assert_eq!(index_map.indices.entry(hash_new.get(), equivalent(&key_new, &index_map.entries)).is_vacant(), false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut index_map: IndexMapCore<i32, String> = IndexMapCore::with_capacity(IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY);",
+          "    for i in 0..IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY {",
+          "        let hash = HashValue(i as usize);",
+          "        let key = i as i32;",
+          "        let value = format!(\"value_{}\", i);",
+          "        index_map.replace_full(hash, key, value);",
+          "    }",
+          "    ",
+          "    let hash_overflow = HashValue(IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY);",
+          "    let key_overflow = IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY as i32; // distinct",
+          "    let value_overflow = \"overflow_value\".to_string();",
+          "    index_map.replace_full(hash_overflow, key_overflow, value_overflow);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(index_map.len(), IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY + 1);",
+          "    assert!(index_map.indices.len() <= IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY);",
+          "    assert!(index_map.entries.len() <= IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY);",
+          "    assert!(index_map.replace_full(hash_overflow, key_overflow, value_overflow).1.is_none());"
+        ],
+        "code": [
+          "{",
+          "    let mut index_map: IndexMapCore<i32, String> = IndexMapCore::with_capacity(IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY);",
+          "    for i in 0..IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY {",
+          "        let hash = HashValue(i as usize);",
+          "        let key = i as i32;",
+          "        let value = format!(\"value_{}\", i);",
+          "        index_map.replace_full(hash, key, value);",
+          "    }",
+          "    ",
+          "    let hash_overflow = HashValue(IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY);",
+          "    let key_overflow = IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY as i32; // distinct",
+          "    let value_overflow = \"overflow_value\".to_string();",
+          "    index_map.replace_full(hash_overflow, key_overflow, value_overflow);",
+          "    assert_eq!(index_map.len(), IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY + 1);",
+          "    assert!(index_map.indices.len() <= IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY);",
+          "    assert!(index_map.entries.len() <= IndexMapCore::<i32, String>::MAX_ENTRIES_CAPACITY);",
+          "    assert!(index_map.replace_full(hash_overflow, key_overflow, value_overflow).1.is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

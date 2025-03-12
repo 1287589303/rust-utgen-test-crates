@@ -1,0 +1,90 @@
+[
+  {
+    "uses": [
+      "use core::sync::atomic::AtomicPtr;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use core::sync::atomic::AtomicPtr;",
+          "    ",
+          "    struct OwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "    ",
+          "    unsafe {",
+          "        let owned_lifetime = OwnedLifetime {",
+          "            ref_cnt: AtomicUsize::new(usize::MAX >> 1 + 1),",
+          "            drop: std::ptr::drop_in_place,",
+          "        };",
+          "",
+          "        let layout = std::alloc::Layout::new::<OwnedLifetime>();",
+          "        let ptr = std::alloc::alloc(layout);",
+          "        ptr::write(ptr as *mut OwnedLifetime, owned_lifetime);",
+          "        let atomic_ptr = AtomicPtr::new(ptr);",
+          "",
+          "        let data: &AtomicPtr<()> = &atomic_ptr;",
+          "        let test_ptr: *const u8 = &0u8;",
+          "        let len: usize = 1;",
+          "",
+          "        let _ = owned_clone(data, test_ptr, len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(data.load(Ordering::Relaxed), atomic_ptr.load(Ordering::Relaxed));",
+          "    assert_eq!(ref_cnt.load(Ordering::Relaxed), usize::MAX >> 1 + 1);",
+          "    assert_eq!(old_cnt, usize::MAX >> 1 + 1);",
+          "    assert!(data.load(Ordering::Relaxed) as *mut OwnedLifetime).is_not_null();",
+          "    assert!(owned_clone(data, test_ptr, len).ptr.is_some());",
+          "    assert_eq!(owned_clone(data, test_ptr, len).len, len);",
+          "    assert_eq!(owned_clone(data, test_ptr, len).data.load(Ordering::Relaxed), atomic_ptr.load(Ordering::Relaxed));",
+          "    assert_eq!(owned_clone(data, test_ptr, len).vtable, &OWNED_VTABLE);"
+        ],
+        "code": [
+          "{",
+          "    use core::sync::atomic::AtomicPtr;",
+          "    ",
+          "    struct OwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "    ",
+          "    unsafe {",
+          "        let owned_lifetime = OwnedLifetime {",
+          "            ref_cnt: AtomicUsize::new(usize::MAX >> 1 + 1),",
+          "            drop: std::ptr::drop_in_place,",
+          "        };",
+          "",
+          "        let layout = std::alloc::Layout::new::<OwnedLifetime>();",
+          "        let ptr = std::alloc::alloc(layout);",
+          "        ptr::write(ptr as *mut OwnedLifetime, owned_lifetime);",
+          "        let atomic_ptr = AtomicPtr::new(ptr);",
+          "",
+          "        let data: &AtomicPtr<()> = &atomic_ptr;",
+          "        let test_ptr: *const u8 = &0u8;",
+          "        let len: usize = 1;",
+          "",
+          "        let _ = owned_clone(data, test_ptr, len);",
+          "    }",
+          "    assert_eq!(data.load(Ordering::Relaxed), atomic_ptr.load(Ordering::Relaxed));",
+          "    assert_eq!(ref_cnt.load(Ordering::Relaxed), usize::MAX >> 1 + 1);",
+          "    assert_eq!(old_cnt, usize::MAX >> 1 + 1);",
+          "    assert!(data.load(Ordering::Relaxed) as *mut OwnedLifetime).is_not_null();",
+          "    assert!(owned_clone(data, test_ptr, len).ptr.is_some());",
+          "    assert_eq!(owned_clone(data, test_ptr, len).len, len);",
+          "    assert_eq!(owned_clone(data, test_ptr, len).data.load(Ordering::Relaxed), atomic_ptr.load(Ordering::Relaxed));",
+          "    assert_eq!(owned_clone(data, test_ptr, len).vtable, &OWNED_VTABLE);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

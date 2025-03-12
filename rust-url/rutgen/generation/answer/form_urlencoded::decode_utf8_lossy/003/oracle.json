@@ -1,0 +1,220 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: Vec<u8> = vec![0xC0, 0xAF]; // Invalid sequence at the boundary",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result, Cow::Owned(String::from_utf8_lossy(&bytes)));",
+          "    assert!(_result.is_owned());",
+          "    assert_ne!(_result.as_bytes(), bytes.as_slice());",
+          "    assert!(std::str::from_utf8(_result.as_bytes()).is_err());",
+          "    assert!(matches!(_result, Cow::Owned(_)));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: Vec<u8> = vec![0xC0, 0xAF]; // Invalid sequence at the boundary",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "    assert_eq!(_result, Cow::Owned(String::from_utf8_lossy(&bytes)));",
+          "    assert!(_result.is_owned());",
+          "    assert_ne!(_result.as_bytes(), bytes.as_slice());",
+          "    assert!(std::str::from_utf8(_result.as_bytes()).is_err());",
+          "    assert!(matches!(_result, Cow::Owned(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: Vec<u8> = vec![0xC3, 0x28]; // Invalid sequence at the boundary",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result, Cow::Owned(String::from(\"\\u{FFFD}\")));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: Vec<u8> = vec![0xC3, 0x28]; // Invalid sequence at the boundary",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "    assert_eq!(_result, Cow::Owned(String::from(\"\\u{FFFD}\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: Vec<u8> = vec![0xE2, 0x9C, 0x94, 0xC3, 0x28]; // Valid UTF-8 followed by an invalid byte",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes: Vec<u8> = vec![0xE2, 0x9C, 0x94, 0xC3, 0x28]; // Valid UTF-8 followed by an invalid byte",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(result.is_owned());",
+          "    assert_eq!(result, Cow::Owned(String::from(\"✓(\")));",
+          "    let raw_utf8: *const [u8] = result.as_bytes();",
+          "    assert!(raw_utf8 != &*bytes as *const [u8]);"
+        ],
+        "code": [
+          "{",
+          "    let bytes: Vec<u8> = vec![0xE2, 0x9C, 0x94, 0xC3, 0x28]; // Valid UTF-8 followed by an invalid byte",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "    let bytes: Vec<u8> = vec![0xE2, 0x9C, 0x94, 0xC3, 0x28]; // Valid UTF-8 followed by an invalid byte",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(result.is_owned());",
+          "    assert_eq!(result, Cow::Owned(String::from(\"✓(\")));",
+          "    let raw_utf8: *const [u8] = result.as_bytes();",
+          "    assert!(raw_utf8 != &*bytes as *const [u8]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: Vec<u8> = vec![]; // Edge case: empty bytes",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes: Vec<u8> = vec![0xFF]; // Invalid UTF-8 byte",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0xC3, 0x28]; // Invalid combination of UTF-8 bytes",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0xE2, 0x82, 0xAC]; // Valid UTF-8 (EURO SIGN)",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert_eq!(result, Cow::Owned(\"€\".to_string()));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0xE2, 0x28]; // Invalid UTF-8 sequence",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0x61, 0x62, 0x63]; // Valid UTF-8 (abc)",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert_eq!(result, Cow::Owned(\"abc\".to_string()));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0xC3, 0xA9]; // Valid UTF-8 (é)",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert_eq!(result, Cow::Owned(\"é\".to_string()));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0xFE, 0xFF]; // Invalid UTF-8 - two-byte sequence",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: Vec<u8> = vec![]; // Edge case: empty bytes",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "    let bytes: Vec<u8> = vec![0xFF]; // Invalid UTF-8 byte",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0xC3, 0x28]; // Invalid combination of UTF-8 bytes",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0xE2, 0x82, 0xAC]; // Valid UTF-8 (EURO SIGN)",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert_eq!(result, Cow::Owned(\"€\".to_string()));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0xE2, 0x28]; // Invalid UTF-8 sequence",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0x61, 0x62, 0x63]; // Valid UTF-8 (abc)",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert_eq!(result, Cow::Owned(\"abc\".to_string()));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0xC3, 0xA9]; // Valid UTF-8 (é)",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert_eq!(result, Cow::Owned(\"é\".to_string()));",
+          "    ",
+          "    let bytes: Vec<u8> = vec![0xFE, 0xFF]; // Invalid UTF-8 - two-byte sequence",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(matches!(result, Cow::Owned(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: Vec<u8> = vec![0xC2, 0xA9, 0xC0, 0xAF]; // Valid followed by invalid",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes: Vec<u8> = vec![0xC2, 0xA9, 0xC0, 0xAF];",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(result.is_owned());",
+          "    assert_ne!(result.as_bytes().as_ptr(), bytes.as_ptr());",
+          "    assert_eq!(result, String::from_utf8_lossy(&bytes));"
+        ],
+        "code": [
+          "{",
+          "    let bytes: Vec<u8> = vec![0xC2, 0xA9, 0xC0, 0xAF]; // Valid followed by invalid",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let _result = decode_utf8_lossy(input);",
+          "    let bytes: Vec<u8> = vec![0xC2, 0xA9, 0xC0, 0xAF];",
+          "    let input: Cow<'_, [u8]> = Cow::Owned(bytes);",
+          "    let result = decode_utf8_lossy(input);",
+          "    assert!(result.is_owned());",
+          "    assert_ne!(result.as_bytes().as_ptr(), bytes.as_ptr());",
+          "    assert_eq!(result, String::from_utf8_lossy(&bytes));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

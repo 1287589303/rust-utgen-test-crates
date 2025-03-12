@@ -1,0 +1,34 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#8}::minimum_cache_clear_count",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:3665:5:3668:6",
+  "doc": "/// Configure a lazy DFA search to quit after a certain number of cache\n/// clearings.\n///\n/// When a minimum is set, then a lazy DFA search will *possibly* \"give\n/// up\" after the minimum number of cache clearings has occurred. This is\n/// typically useful in scenarios where callers want to detect whether the\n/// lazy DFA search is \"efficient\" or not. If the cache is cleared too many\n/// times, this is a good indicator that it is not efficient, and thus, the\n/// caller may wish to use some other regex engine.\n///\n/// Note that the number of times a cache is cleared is a property of\n/// the cache itself. Thus, if a cache is used in a subsequent search\n/// with a similarly configured lazy DFA, then it could cause the\n/// search to \"give up\" if the cache needed to be cleared, depending\n/// on its internal count and configured minimum. The cache clear\n/// count can only be reset to `0` via [`DFA::reset_cache`] (or\n/// [`Regex::reset_cache`](crate::hybrid::regex::Regex::reset_cache) if\n/// you're using the `Regex` API).\n///\n/// By default, no minimum is configured. Thus, a lazy DFA search will\n/// never give up due to cache clearings. If you do set this option, you\n/// might consider also setting [`Config::minimum_bytes_per_state`] in\n/// order for the lazy DFA to take efficiency into account before giving\n/// up.\n///\n/// # Example\n///\n/// This example uses a somewhat pathological configuration to demonstrate\n/// the _possible_ behavior of cache clearing and how it might result\n/// in a search that returns an error.\n///\n/// It is important to note that the precise mechanics of how and when\n/// a cache gets cleared is an implementation detail.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{hybrid::dfa::DFA, Input, MatchError, MatchErrorKind};\n///\n/// // This is a carefully chosen regex. The idea is to pick one\n/// // that requires some decent number of states (hence the bounded\n/// // repetition). But we specifically choose to create a class with an\n/// // ASCII letter and a non-ASCII letter so that we can check that no new\n/// // states are created once the cache is full. Namely, if we fill up the\n/// // cache on a haystack of 'a's, then in order to match one 'β', a new\n/// // state will need to be created since a 'β' is encoded with multiple\n/// // bytes. Since there's no room for this state, the search should quit\n/// // at the very first position.\n/// let pattern = r\"[aβ]{100}\";\n/// let dfa = DFA::builder()\n///     .configure(\n///         // Configure it so that we have the minimum cache capacity\n///         // possible. And that if any clearings occur, the search quits.\n///         DFA::config()\n///             .skip_cache_capacity_check(true)\n///             .cache_capacity(0)\n///             .minimum_cache_clear_count(Some(0)),\n///     )\n///     .build(pattern)?;\n/// let mut cache = dfa.create_cache();\n///\n/// // Our search will give up before reaching the end!\n/// let haystack = \"a\".repeat(101).into_bytes();\n/// let result = dfa.try_search_fwd(&mut cache, &Input::new(&haystack));\n/// assert!(matches!(\n///     *result.unwrap_err().kind(),\n///     MatchErrorKind::GaveUp { .. },\n/// ));\n///\n/// // Now that we know the cache is full, if we search a haystack that we\n/// // know will require creating at least one new state, it should not\n/// // be able to make much progress.\n/// let haystack = \"β\".repeat(101).into_bytes();\n/// let result = dfa.try_search_fwd(&mut cache, &Input::new(&haystack));\n/// assert!(matches!(\n///     *result.unwrap_err().kind(),\n///     MatchErrorKind::GaveUp { .. },\n/// ));\n///\n/// // If we reset the cache, then we should be able to create more states\n/// // and make more progress with searching for betas.\n/// cache.reset(&dfa);\n/// let haystack = \"β\".repeat(101).into_bytes();\n/// let result = dfa.try_search_fwd(&mut cache, &Input::new(&haystack));\n/// assert!(matches!(\n///     *result.unwrap_err().kind(),\n///     MatchErrorKind::GaveUp { .. },\n/// ));\n///\n/// // ... switching back to ASCII still makes progress since it just needs\n/// // to set transitions on existing states!\n/// let haystack = \"a\".repeat(101).into_bytes();\n/// let result = dfa.try_search_fwd(&mut cache, &Input::new(&haystack));\n/// assert!(matches!(\n///     *result.unwrap_err().kind(),\n///     MatchErrorKind::GaveUp { .. },\n/// ));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn minimum_cache_clear_count(mut self, min: Option<usize>) -> Config {",
+    "    self.minimum_cache_clear_count = Some(min);",
+    "    self",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": "self",
+      "path": [
+        0,
+        1
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

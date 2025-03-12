@@ -1,0 +1,426 @@
+{
+  "name": "regex_automata::meta::strategy::{impl#4}::search_slots",
+  "mod_info": {
+    "name": "meta::strategy",
+    "loc": "regex-automata/src/meta/mod.rs:61:1:61:14"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/meta/strategy.rs:796:5:858:6",
+  "doc": "",
+  "code": [
+    "fn search_slots(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    "    slots: &mut [Option<NonMaxUsize>],",
+    ") -> Option<PatternID> {",
+    "    // Even if the regex has explicit capture groups, if the caller didn't",
+    "    // provide any explicit slots, then it doesn't make sense to try and do",
+    "    // extra work to get offsets for those slots. Ideally the caller should",
+    "    // realize this and not call this routine in the first place, but alas,",
+    "    // we try to save the caller from themselves if they do.",
+    "    if !self.is_capture_search_needed(slots.len()) {",
+    "        trace!(\"asked for slots unnecessarily, trying fast path\");",
+    "        let m = self.search(cache, input)?;",
+    "        copy_match_to_slots(m, slots);",
+    "        return Some(m.pattern());",
+    "    }",
+    "    // If the onepass DFA is available for this search (which only happens",
+    "    // when it's anchored), then skip running a fallible DFA. The onepass",
+    "    // DFA isn't as fast as a full or lazy DFA, but it is typically quite",
+    "    // a bit faster than the backtracker or the PikeVM. So it isn't as",
+    "    // advantageous to try and do a full/lazy DFA scan first.",
+    "    //",
+    "    // We still theorize that it's better to do a full/lazy DFA scan, even",
+    "    // when it's anchored, because it's usually much faster and permits us",
+    "    // to say \"no match\" much more quickly. This does hurt the case of,",
+    "    // say, parsing each line in a log file into capture groups, because",
+    "    // in that case, the line always matches. So the lazy DFA scan is",
+    "    // usually just wasted work. But, the lazy DFA is usually quite fast",
+    "    // and doesn't cost too much here.",
+    "    if self.onepass.get(&input).is_some() {",
+    "        return self.search_slots_nofail(cache, &input, slots);",
+    "    }",
+    "    let m = match self.try_search_mayfail(cache, input) {",
+    "        Some(Ok(Some(m))) => m,",
+    "        Some(Ok(None)) => return None,",
+    "        Some(Err(_err)) => {",
+    "            trace!(\"fast capture search failed: {}\", _err);",
+    "            return self.search_slots_nofail(cache, input, slots);",
+    "        }",
+    "        None => {",
+    "            return self.search_slots_nofail(cache, input, slots);",
+    "        }",
+    "    };",
+    "    // At this point, now that we've found the bounds of the",
+    "    // match, we need to re-run something that can resolve",
+    "    // capturing groups. But we only need to run on it on the",
+    "    // match bounds and not the entire haystack.",
+    "    trace!(",
+    "        \"match found at {}..{} in capture search, \\",
+    "\t using another engine to find captures\",",
+    "        m.start(),",
+    "        m.end(),",
+    "    );",
+    "    let input = input",
+    "        .clone()",
+    "        .span(m.start()..m.end())",
+    "        .anchored(Anchored::Pattern(m.pattern()));",
+    "    Some(",
+    "        self.search_slots_nofail(cache, &input, slots)",
+    "            .expect(\"should find a match\"),",
+    "    )",
+    "}"
+  ],
+  "size": {
+    "chain": 7,
+    "contra": 0,
+    "min_set": 6
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.is_capture_search_needed(slots.len())",
+          "norm": null,
+          "value": "true",
+          "line": 807,
+          "bound": null
+        },
+        {
+          "cond": "self.onepass.get(&input).is_some()",
+          "norm": null,
+          "value": "true",
+          "line": 826,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        14,
+        15,
+        16,
+        17,
+        42
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.is_capture_search_needed(slots.len())",
+          "norm": null,
+          "value": "true",
+          "line": 807,
+          "bound": null
+        },
+        {
+          "cond": "self.onepass.get(&input).is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 826,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches Some(Err(_err)) or Some(Ok(Some(m))) or Some(Ok(None))",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches Some(Err(_err)) or Some(Ok(Some(m))) or Some(Ok(None))",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches Some(Err(_err))",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        14,
+        15,
+        18,
+        19,
+        21,
+        25,
+        29,
+        30,
+        40,
+        42
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.is_capture_search_needed(slots.len())",
+          "norm": null,
+          "value": "true",
+          "line": 807,
+          "bound": null
+        },
+        {
+          "cond": "self.onepass.get(&input).is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 826,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches Some(Err(_err)) or Some(Ok(Some(m))) or Some(Ok(None))",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches Some(Err(_err)) or Some(Ok(Some(m))) or Some(Ok(None))",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches Some(Ok(Some(m)))",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        }
+      ],
+      "ret": "Some(\n            self.search_slots_nofail(cache, &input, slots)\n                .expect(\"should find a match\"),\n        )",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        14,
+        15,
+        18,
+        19,
+        21,
+        22,
+        23,
+        27,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.is_capture_search_needed(slots.len())",
+          "norm": null,
+          "value": "true",
+          "line": 807,
+          "bound": null
+        },
+        {
+          "cond": "self.onepass.get(&input).is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 826,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches Some(Err(_err)) or Some(Ok(Some(m))) or Some(Ok(None))",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches Some(Ok(None))",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        14,
+        15,
+        18,
+        19,
+        21,
+        22,
+        24,
+        28,
+        40,
+        42
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.is_capture_search_needed(slots.len())",
+          "norm": null,
+          "value": "true",
+          "line": 807,
+          "bound": null
+        },
+        {
+          "cond": "self.onepass.get(&input).is_some()",
+          "norm": null,
+          "value": "false",
+          "line": 826,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_mayfail(cache, input) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 829,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        14,
+        15,
+        18,
+        19,
+        26,
+        31,
+        40,
+        42
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.is_capture_search_needed(slots.len())",
+          "norm": null,
+          "value": "false",
+          "line": 807,
+          "bound": null
+        },
+        {
+          "cond": "self.search(cache, input)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 809,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        8,
+        10,
+        11,
+        41,
+        42
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.is_capture_search_needed(slots.len())",
+          "norm": null,
+          "value": "false",
+          "line": 807,
+          "bound": null
+        },
+        {
+          "cond": "self.search(cache, input)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 809,
+          "bound": null
+        }
+      ],
+      "ret": "Some(m.pattern())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        41,
+        42
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

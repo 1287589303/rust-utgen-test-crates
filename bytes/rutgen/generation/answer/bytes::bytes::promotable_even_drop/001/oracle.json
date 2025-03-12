@@ -1,0 +1,189 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut data = AtomicPtr::new(std::ptr::null_mut());",
+          "    let ptr = std::ptr::null();",
+          "    let len = 0usize;",
+          "",
+          "    unsafe {",
+          "        promotable_even_drop(&mut data, ptr, len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(data.load(Ordering::SeqCst), std::ptr::null_mut());",
+          "    assert_eq!(ptr, std::ptr::null());",
+          "    assert_eq!(len, 0usize);",
+          "    assert_eq!(data.load(Ordering::SeqCst).cast::<usize>() & KIND_MASK, KIND_MASK);",
+          "    assert!(std::ptr::is_null(data.load(Ordering::SeqCst)));"
+        ],
+        "code": [
+          "{",
+          "    let mut data = AtomicPtr::new(std::ptr::null_mut());",
+          "    let ptr = std::ptr::null();",
+          "    let len = 0usize;",
+          "",
+          "    unsafe {",
+          "        promotable_even_drop(&mut data, ptr, len);",
+          "    }",
+          "    assert_eq!(data.load(Ordering::SeqCst), std::ptr::null_mut());",
+          "    assert_eq!(ptr, std::ptr::null());",
+          "    assert_eq!(len, 0usize);",
+          "    assert_eq!(data.load(Ordering::SeqCst).cast::<usize>() & KIND_MASK, KIND_MASK);",
+          "    assert!(std::ptr::is_null(data.load(Ordering::SeqCst)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut data = AtomicPtr::new(Box::into_raw(Box::new(1u8))); // Simulating a pointer",
+          "    let ptr = std::ptr::null();",
+          "    let len = 0usize;",
+          "",
+          "    unsafe {",
+          "        promotable_even_drop(&mut data, ptr, len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(data.load(Ordering::SeqCst), std::ptr::null());",
+          "    assert_eq!(len, 0usize);",
+          "    assert!(data.is_null());",
+          "    assert!(data.load(Ordering::SeqCst).is_null());",
+          "    assert!(!data.load(Ordering::SeqCst).is_null());",
+          "    let shared = data.load(Ordering::SeqCst);",
+          "    assert!(shared == Box::into_raw(Box::new(1u8)));",
+          "    assert_eq!(shared as usize & KIND_MASK, KIND_VEC);",
+          "    assert!(ptr_eq(shared, ptr));",
+          "    assert!(data.load(Ordering::SeqCst).is_null());",
+          "    assert_eq!(data.load(Ordering::SeqCst) as usize & KIND_MASK, 0b0);"
+        ],
+        "code": [
+          "{",
+          "    let mut data = AtomicPtr::new(Box::into_raw(Box::new(1u8))); // Simulating a pointer",
+          "    let ptr = std::ptr::null();",
+          "    let len = 0usize;",
+          "",
+          "    unsafe {",
+          "        promotable_even_drop(&mut data, ptr, len);",
+          "    }",
+          "    assert_eq!(data.load(Ordering::SeqCst), std::ptr::null());",
+          "    assert_eq!(len, 0usize);",
+          "    assert!(data.is_null());",
+          "    assert!(data.load(Ordering::SeqCst).is_null());",
+          "    assert!(!data.load(Ordering::SeqCst).is_null());",
+          "    let shared = data.load(Ordering::SeqCst);",
+          "    assert!(shared == Box::into_raw(Box::new(1u8)));",
+          "    assert_eq!(shared as usize & KIND_MASK, KIND_VEC);",
+          "    assert!(ptr_eq(shared, ptr));",
+          "    assert!(data.load(Ordering::SeqCst).is_null());",
+          "    assert_eq!(data.load(Ordering::SeqCst) as usize & KIND_MASK, 0b0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut data = AtomicPtr::new(Box::into_raw(Box::new(1u8))); // Simulating a pointer",
+          "    let ptr = Box::into_raw(Box::new(42u8)); // Non-null pointer",
+          "    let len = 1usize;",
+          "",
+          "    unsafe {",
+          "        promotable_even_drop(&mut data, ptr, len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(data.load(Ordering::SeqCst).is_null());",
+          "    assert_eq!(unsafe { *ptr }, 42u8);",
+          "    assert_eq!(len, 1usize);",
+          "    assert_eq!(len, mem::size_of::<u8>());",
+          "    assert_eq!(data.load(Ordering::SeqCst) as usize & KIND_MASK, KIND_VEC);",
+          "    assert!(data.load(Ordering::SeqCst) as usize & KIND_ARC == 0);",
+          "    assert!(data.load(Ordering::SeqCst) != ptr);",
+          "    assert!(ptr != std::ptr::null());",
+          "    assert!(unsafe { ptr.is_null() } == false);",
+          "    assert!(unsafe { release_shared(shared.cast()) }.is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let mut data = AtomicPtr::new(Box::into_raw(Box::new(1u8))); // Simulating a pointer",
+          "    let ptr = Box::into_raw(Box::new(42u8)); // Non-null pointer",
+          "    let len = 1usize;",
+          "",
+          "    unsafe {",
+          "        promotable_even_drop(&mut data, ptr, len);",
+          "    }",
+          "    assert!(data.load(Ordering::SeqCst).is_null());",
+          "    assert_eq!(unsafe { *ptr }, 42u8);",
+          "    assert_eq!(len, 1usize);",
+          "    assert_eq!(len, mem::size_of::<u8>());",
+          "    assert_eq!(data.load(Ordering::SeqCst) as usize & KIND_MASK, KIND_VEC);",
+          "    assert!(data.load(Ordering::SeqCst) as usize & KIND_ARC == 0);",
+          "    assert!(data.load(Ordering::SeqCst) != ptr);",
+          "    assert!(ptr != std::ptr::null());",
+          "    assert!(unsafe { ptr.is_null() } == false);",
+          "    assert!(unsafe { release_shared(shared.cast()) }.is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut data = AtomicPtr::new(Box::into_raw(Box::new(1u8))); // Simulating a pointer",
+          "    let ptr = Box::into_raw(Box::new([0; 1024])); // Non-null pointer with large length",
+          "    let len = 1024usize;",
+          "",
+          "    unsafe {",
+          "        promotable_even_drop(&mut data, ptr, len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(data.load(Ordering::SeqCst), ptr);",
+          "    assert!(data.load(Ordering::SeqCst).is_null());",
+          "    assert!(ptr.is_null());",
+          "    assert_eq!(len, 1024);",
+          "    assert!(Box::from_raw(data.load(Ordering::SeqCst)).is_empty());",
+          "    assert!(Box::from_raw(ptr).is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let mut data = AtomicPtr::new(Box::into_raw(Box::new(1u8))); // Simulating a pointer",
+          "    let ptr = Box::into_raw(Box::new([0; 1024])); // Non-null pointer with large length",
+          "    let len = 1024usize;",
+          "",
+          "    unsafe {",
+          "        promotable_even_drop(&mut data, ptr, len);",
+          "    }",
+          "    assert_eq!(data.load(Ordering::SeqCst), ptr);",
+          "    assert!(data.load(Ordering::SeqCst).is_null());",
+          "    assert!(ptr.is_null());",
+          "    assert_eq!(len, 1024);",
+          "    assert!(Box::from_raw(data.load(Ordering::SeqCst)).is_empty());",
+          "    assert!(Box::from_raw(ptr).is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

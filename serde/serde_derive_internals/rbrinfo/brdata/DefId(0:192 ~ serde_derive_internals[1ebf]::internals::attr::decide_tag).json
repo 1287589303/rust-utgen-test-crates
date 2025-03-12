@@ -1,0 +1,780 @@
+{
+  "name": "serde_derive_internals::internals::attr::decide_tag",
+  "mod_info": {
+    "name": "internals::attr",
+    "loc": "serde_derive_internals/src/mod.rs:2:1:2:14"
+  },
+  "visible": false,
+  "loc": "serde_derive_internals/src/attr.rs:628:1:687:2",
+  "doc": "",
+  "code": [
+    "fn decide_tag(",
+    "    cx: &Ctxt,",
+    "    item: &syn::DeriveInput,",
+    "    untagged: BoolAttr,",
+    "    internal_tag: Attr<String>,",
+    "    content: Attr<String>,",
+    ") -> TagType {",
+    "    match (",
+    "        untagged.0.get_with_tokens(),",
+    "        internal_tag.get_with_tokens(),",
+    "        content.get_with_tokens(),",
+    "    ) {",
+    "        (None, None, None) => TagType::External,",
+    "        (Some(_), None, None) => TagType::None,",
+    "        (None, Some((_, tag)), None) => {",
+    "            // Check that there are no tuple variants.",
+    "            if let syn::Data::Enum(data) = &item.data {",
+    "                for variant in &data.variants {",
+    "                    match &variant.fields {",
+    "                        syn::Fields::Named(_) | syn::Fields::Unit => {}",
+    "                        syn::Fields::Unnamed(fields) => {",
+    "                            if fields.unnamed.len() != 1 {",
+    "                                let msg =",
+    "                                    \"#[serde(tag = \\\"...\\\")] cannot be used with tuple variants\";",
+    "                                cx.error_spanned_by(variant, msg);",
+    "                                break;",
+    "                            }",
+    "                        }",
+    "                    }",
+    "                }",
+    "            }",
+    "            TagType::Internal { tag }",
+    "        }",
+    "        (Some((untagged_tokens, ())), Some((tag_tokens, _)), None) => {",
+    "            let msg = \"enum cannot be both untagged and internally tagged\";",
+    "            cx.error_spanned_by(untagged_tokens, msg);",
+    "            cx.error_spanned_by(tag_tokens, msg);",
+    "            TagType::External // doesn't matter, will error",
+    "        }",
+    "        (None, None, Some((content_tokens, _))) => {",
+    "            let msg = \"#[serde(tag = \\\"...\\\", content = \\\"...\\\")] must be used together\";",
+    "            cx.error_spanned_by(content_tokens, msg);",
+    "            TagType::External",
+    "        }",
+    "        (Some((untagged_tokens, ())), None, Some((content_tokens, _))) => {",
+    "            let msg = \"untagged enum cannot have #[serde(content = \\\"...\\\")]\";",
+    "            cx.error_spanned_by(untagged_tokens, msg);",
+    "            cx.error_spanned_by(content_tokens, msg);",
+    "            TagType::External",
+    "        }",
+    "        (None, Some((_, tag)), Some((_, content))) => TagType::Adjacent { tag, content },",
+    "        (Some((untagged_tokens, ())), Some((tag_tokens, _)), Some((content_tokens, _))) => {",
+    "            let msg = \"untagged enum cannot have #[serde(tag = \\\"...\\\", content = \\\"...\\\")]\";",
+    "            cx.error_spanned_by(untagged_tokens, msg);",
+    "            cx.error_spanned_by(tag_tokens, msg);",
+    "            cx.error_spanned_by(content_tokens, msg);",
+    "            TagType::External",
+    "        }",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 13,
+    "contra": 3,
+    "min_set": 12
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (Some((untagged_tokens, ())), Some((tag_tokens, _)), Some((content_tokens, _)))",
+          "norm": null,
+          "value": "true",
+          "line": 679,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::External",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        15,
+        19,
+        21,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (Some((untagged_tokens, ())), Some((tag_tokens, _)), None)",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::External",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        15,
+        19,
+        20,
+        51,
+        52,
+        53,
+        54,
+        55,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (Some((untagged_tokens, ())), None, Some((content_tokens, _)))",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::External",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        15,
+        16,
+        18,
+        59,
+        60,
+        61,
+        62,
+        63,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (Some(_), None, None)",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        15,
+        16,
+        17,
+        23,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (None, Some((_, tag)), Some((_, content)))",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::Adjacent { tag, content }",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12,
+        14,
+        64,
+        65,
+        66,
+        67,
+        68,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (None, Some((_, tag)), None)",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        },
+        {
+          "cond": "let syn::Data::Enum(data) = &item.data",
+          "norm": null,
+          "value": "true",
+          "line": 644,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::Internal { tag }",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12,
+        13,
+        24,
+        47,
+        48,
+        49,
+        50,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (None, Some((_, tag)), None)",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        },
+        {
+          "cond": "let syn::Data::Enum(data) = &item.data",
+          "norm": null,
+          "value": "true",
+          "line": 644,
+          "bound": null
+        },
+        {
+          "cond": "variant in &data.variants",
+          "norm": null,
+          "value": "true",
+          "line": 645,
+          "bound": null
+        },
+        {
+          "cond": "&variant.fields matches syn::Fields::Unit",
+          "norm": null,
+          "value": "true",
+          "line": 646,
+          "bound": null
+        },
+        {
+          "cond": "&variant.fields matches syn::Fields::Named(_) or syn::Fields::Unit",
+          "norm": null,
+          "value": "true",
+          "line": 646,
+          "bound": null
+        },
+        {
+          "cond": "variant in &data.variants",
+          "norm": null,
+          "value": "false",
+          "line": 645,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::Internal { tag }",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12,
+        13,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        33,
+        37,
+        38,
+        43,
+        28,
+        29,
+        30,
+        32,
+        34,
+        44,
+        45,
+        46,
+        48,
+        49,
+        50,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (None, Some((_, tag)), None)",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        },
+        {
+          "cond": "let syn::Data::Enum(data) = &item.data",
+          "norm": null,
+          "value": "true",
+          "line": 644,
+          "bound": null
+        },
+        {
+          "cond": "variant in &data.variants",
+          "norm": null,
+          "value": "true",
+          "line": 645,
+          "bound": null
+        },
+        {
+          "cond": "&variant.fields matches syn::Fields::Unnamed(fields)",
+          "norm": null,
+          "value": "true",
+          "line": 646,
+          "bound": null
+        },
+        {
+          "cond": "fields.unnamed.len() != 1",
+          "norm": "1 != fields.unnamed.len()",
+          "value": "true",
+          "line": 649,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::Internal { tag }",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12,
+        13,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        33,
+        36,
+        39,
+        40,
+        41,
+        44,
+        45,
+        46,
+        48,
+        49,
+        50,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (None, Some((_, tag)), None)",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        },
+        {
+          "cond": "let syn::Data::Enum(data) = &item.data",
+          "norm": null,
+          "value": "true",
+          "line": 644,
+          "bound": null
+        },
+        {
+          "cond": "variant in &data.variants",
+          "norm": null,
+          "value": "true",
+          "line": 645,
+          "bound": null
+        },
+        {
+          "cond": "&variant.fields matches syn::Fields::Unnamed(fields)",
+          "norm": null,
+          "value": "true",
+          "line": 646,
+          "bound": null
+        },
+        {
+          "cond": "fields.unnamed.len() != 1",
+          "norm": "1 != fields.unnamed.len()",
+          "value": "false",
+          "line": 649,
+          "bound": null
+        },
+        {
+          "cond": "variant in &data.variants",
+          "norm": null,
+          "value": "false",
+          "line": 645,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::Internal { tag }",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12,
+        13,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        33,
+        36,
+        39,
+        42,
+        43,
+        28,
+        29,
+        30,
+        32,
+        34,
+        44,
+        45,
+        46,
+        48,
+        49,
+        50,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (None, Some((_, tag)), None)",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        },
+        {
+          "cond": "let syn::Data::Enum(data) = &item.data",
+          "norm": null,
+          "value": "true",
+          "line": 644,
+          "bound": null
+        },
+        {
+          "cond": "variant in &data.variants",
+          "norm": null,
+          "value": "true",
+          "line": 645,
+          "bound": null
+        },
+        {
+          "cond": "&variant.fields matches syn::Fields::Named(_)",
+          "norm": null,
+          "value": "true",
+          "line": 646,
+          "bound": null
+        },
+        {
+          "cond": "&variant.fields matches syn::Fields::Named(_) or syn::Fields::Unit",
+          "norm": null,
+          "value": "true",
+          "line": 646,
+          "bound": null
+        },
+        {
+          "cond": "variant in &data.variants",
+          "norm": null,
+          "value": "false",
+          "line": 645,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::Internal { tag }",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12,
+        13,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        33,
+        37,
+        38,
+        43,
+        28,
+        29,
+        30,
+        32,
+        34,
+        44,
+        45,
+        46,
+        48,
+        49,
+        50,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (None, Some((_, tag)), None)",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        },
+        {
+          "cond": "let syn::Data::Enum(data) = &item.data",
+          "norm": null,
+          "value": "true",
+          "line": 644,
+          "bound": null
+        },
+        {
+          "cond": "variant in &data.variants",
+          "norm": null,
+          "value": "false",
+          "line": 645,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::Internal { tag }",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        12,
+        13,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        32,
+        34,
+        44,
+        45,
+        46,
+        48,
+        49,
+        50,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (None, None, Some((content_tokens, _)))",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::External",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        11,
+        56,
+        57,
+        58,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "(\n        untagged.0.get_with_tokens(),\n        internal_tag.get_with_tokens(),\n        content.get_with_tokens(),\n    ) matches (None, None, None)",
+          "norm": null,
+          "value": "true",
+          "line": 635,
+          "bound": null
+        }
+      ],
+      "ret": "TagType::External",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10,
+        22,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let alternates: Box<[StateID]> = Box::new([]);",
+          "    let state = State::Union { alternates };",
+          "    let _ = format!(\"{:?}\", state);",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"union({})\", \"\")",
+          "    write!(f, \"FAIL\")",
+          "    write!(f, \"MATCH({:?})\", 0)",
+          "    write!(f, \"sparse({})\", \"\")",
+          "    write!(f, \"dense({})\", \"\")",
+          "    write!(f, \"{:?} => {:?}\", 0, 0)",
+          "    write!(f, \"binary-union({}, {})\", 0, 0)",
+          "    write!(f, \"capture(pid={:?}, group={:?}, slot={:?}) => {:?}\", 0, 0, 0, 0)"
+        ],
+        "code": [
+          "{",
+          "    let alternates: Box<[StateID]> = Box::new([]);",
+          "    let state = State::Union { alternates };",
+          "    let _ = format!(\"{:?}\", state);",
+          "    write!(f, \"union({})\", \"\")",
+          "    write!(f, \"FAIL\")",
+          "    write!(f, \"MATCH({:?})\", 0)",
+          "    write!(f, \"sparse({})\", \"\")",
+          "    write!(f, \"dense({})\", \"\")",
+          "    write!(f, \"{:?} => {:?}\", 0, 0)",
+          "    write!(f, \"binary-union({}, {})\", 0, 0)",
+          "    write!(f, \"capture(pid={:?}, group={:?}, slot={:?}) => {:?}\", 0, 0, 0, 0)",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let single_alternate = StateID(SmallIndex::new_unchecked(1));",
+          "    let alternates: Box<[StateID]> = Box::new([single_alternate]);",
+          "    let state = State::Union { alternates };",
+          "    let _ = format!(\"{:?}\", state);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(format!(\"{:?}\", state), \"union(1)\");",
+          "    assert!(matches!(state, State::Union { .. }));"
+        ],
+        "code": [
+          "{",
+          "    let single_alternate = StateID(SmallIndex::new_unchecked(1));",
+          "    let alternates: Box<[StateID]> = Box::new([single_alternate]);",
+          "    let state = State::Union { alternates };",
+          "    let _ = format!(\"{:?}\", state);",
+          "    assert_eq!(format!(\"{:?}\", state), \"union(1)\");",
+          "    assert!(matches!(state, State::Union { .. }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let alt1 = StateID(SmallIndex::new_unchecked(1));",
+          "    let alt2 = StateID(SmallIndex::new_unchecked(2));",
+          "    let alternates: Box<[StateID]> = Box::new([alt1, alt2]);",
+          "    let state = State::Union { alternates };",
+          "    let _ = format!(\"{:?}\", state);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(format!(\"{:?}\", State::Union { alternates: Box::new([StateID(SmallIndex::new_unchecked(1)), StateID(SmallIndex::new_unchecked(2))]) }), \"union(1, 2)\");",
+          "    assert!(format!(\"{:?}\", State::Union { alternates: Box::new([StateID(SmallIndex::new_unchecked(3)), StateID(SmallIndex::new_unchecked(4))]) }).contains(\"union\"));",
+          "    assert!(format!(\"{:?}\", State::Union { alternates: Box::new([StateID(SmallIndex::new_unchecked(1)), StateID(SmallIndex::new_unchecked(2))]) }).len() > 0);"
+        ],
+        "code": [
+          "{",
+          "    let alt1 = StateID(SmallIndex::new_unchecked(1));",
+          "    let alt2 = StateID(SmallIndex::new_unchecked(2));",
+          "    let alternates: Box<[StateID]> = Box::new([alt1, alt2]);",
+          "    let state = State::Union { alternates };",
+          "    let _ = format!(\"{:?}\", state);",
+          "    assert_eq!(format!(\"{:?}\", State::Union { alternates: Box::new([StateID(SmallIndex::new_unchecked(1)), StateID(SmallIndex::new_unchecked(2))]) }), \"union(1, 2)\");",
+          "    assert!(format!(\"{:?}\", State::Union { alternates: Box::new([StateID(SmallIndex::new_unchecked(3)), StateID(SmallIndex::new_unchecked(4))]) }).contains(\"union\"));",
+          "    assert!(format!(\"{:?}\", State::Union { alternates: Box::new([StateID(SmallIndex::new_unchecked(1)), StateID(SmallIndex::new_unchecked(2))]) }).len() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut alternates_vec: Vec<StateID> = Vec::new();",
+          "    for i in 0..SmallIndex::LIMIT {",
+          "        alternates_vec.push(StateID(SmallIndex::new_unchecked(i)));",
+          "    }",
+          "    let alternates: Box<[StateID]> = alternates_vec.into_boxed_slice();",
+          "    let state = State::Union { alternates };",
+          "    let _ = format!(\"{:?}\", state);",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"union({})\", alts)",
+          "    let alts = alternates.iter().map(|id| format!(\"{:?}\", id.as_usize())).collect::<Vec<String>>().join(\", \");",
+          "    alternates_vec.push(StateID(SmallIndex::new_unchecked(i)));",
+          "    let state = State::Union { alternates };",
+          "    format!(\"{:?}\", state);",
+          "    *state = State::Union { alternates };",
+          "    let mut alternates_vec: Vec<StateID> = Vec::new();",
+          "    for i in 0..SmallIndex::LIMIT {",
+          "    alternates_vec.push(StateID(SmallIndex::new_unchecked(i)));",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let mut alternates_vec: Vec<StateID> = Vec::new();",
+          "    for i in 0..SmallIndex::LIMIT {",
+          "        alternates_vec.push(StateID(SmallIndex::new_unchecked(i)));",
+          "    }",
+          "    let alternates: Box<[StateID]> = alternates_vec.into_boxed_slice();",
+          "    let state = State::Union { alternates };",
+          "    let _ = format!(\"{:?}\", state);",
+          "    write!(f, \"union({})\", alts)",
+          "    let alts = alternates.iter().map(|id| format!(\"{:?}\", id.as_usize())).collect::<Vec<String>>().join(\", \");",
+          "    alternates_vec.push(StateID(SmallIndex::new_unchecked(i)));",
+          "    let state = State::Union { alternates };",
+          "    format!(\"{:?}\", state);",
+          "    *state = State::Union { alternates };",
+          "    let mut alternates_vec: Vec<StateID> = Vec::new();",
+          "    for i in 0..SmallIndex::LIMIT {",
+          "    alternates_vec.push(StateID(SmallIndex::new_unchecked(i)));",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

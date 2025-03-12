@@ -1,0 +1,207 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: [u8; 256] = [",
+          "        0, 1, 2, 3, 4, 5, // Valid Start mappings",
+          "        0, 1, 2, 3, 4, 5, // Invalid values still result in valid mapping",
+          "        0, 1, 2, 3, 4, 5, // Repeating pattern",
+          "        0, 1, 2, 3, 4, 5, // Up to 256 values",
+          "        // Fill the rest with valid mappings",
+          "    ];",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(StartByteMap::from_bytes(&[0; 256]), Ok((StartByteMap { map: [Start::NonWordByte; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[1; 256]), Ok((StartByteMap { map: [Start::WordByte; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[2; 256]), Ok((StartByteMap { map: [Start::Text; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[3; 256]), Ok((StartByteMap { map: [Start::LineLF; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[4; 256]), Ok((StartByteMap { map: [Start::LineCR; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[5; 256]), Ok((StartByteMap { map: [Start::CustomLineTerminator; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3]), Ok((StartByteMap { map: [Start::NonWordByte, Start::WordByte, Start::Text, Start::LineLF, Start::LineCR, Start::CustomLineTerminator, Start::NonWordByte, Start::WordByte, Start::Text, Start::LineLF, Start::LineCR, Start::CustomLineTerminator, Start::NonWordByte, Start::WordByte, Start::Text, Start::LineLF] }, 256)));",
+          "    assert!(StartByteMap::from_bytes(&[0; 255]).is_err());",
+          "    assert!(StartByteMap::from_bytes(&[6; 256]).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let slice: [u8; 256] = [",
+          "        0, 1, 2, 3, 4, 5, // Valid Start mappings",
+          "        0, 1, 2, 3, 4, 5, // Invalid values still result in valid mapping",
+          "        0, 1, 2, 3, 4, 5, // Repeating pattern",
+          "        0, 1, 2, 3, 4, 5, // Up to 256 values",
+          "        // Fill the rest with valid mappings",
+          "    ];",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "    assert_eq!(StartByteMap::from_bytes(&[0; 256]), Ok((StartByteMap { map: [Start::NonWordByte; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[1; 256]), Ok((StartByteMap { map: [Start::WordByte; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[2; 256]), Ok((StartByteMap { map: [Start::Text; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[3; 256]), Ok((StartByteMap { map: [Start::LineLF; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[4; 256]), Ok((StartByteMap { map: [Start::LineCR; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[5; 256]), Ok((StartByteMap { map: [Start::CustomLineTerminator; 256] }, 256)));",
+          "    assert_eq!(StartByteMap::from_bytes(&[0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3]), Ok((StartByteMap { map: [Start::NonWordByte, Start::WordByte, Start::Text, Start::LineLF, Start::LineCR, Start::CustomLineTerminator, Start::NonWordByte, Start::WordByte, Start::Text, Start::LineLF, Start::LineCR, Start::CustomLineTerminator, Start::NonWordByte, Start::WordByte, Start::Text, Start::LineLF] }, 256)));",
+          "    assert!(StartByteMap::from_bytes(&[0; 255]).is_err());",
+          "    assert!(StartByteMap::from_bytes(&[6; 256]).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut slice: [u8; 256] = [0; 256];",
+          "    for i in 0..256 {",
+          "        slice[i] = (i % 6) as u8; // Valid Start mappings within range",
+          "    }",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let (map, bytes_read) = result.unwrap();",
+          "    assert_eq!(bytes_read, 256);",
+          "    for i in 0..256 {",
+          "    assert_eq!(map.map[i], Start::from_usize(i % 6).unwrap());",
+          "    }",
+          "    let invalid_slice: [u8; 256] = [6; 256];",
+          "    let result_invalid = StartByteMap::from_bytes(&invalid_slice);",
+          "    assert!(result_invalid.is_err());",
+          "    assert_eq!(result_invalid.unwrap_err().0, \"found invalid starting configuration\");",
+          "    let short_slice: [u8; 255] = [0; 255];",
+          "    let result_short = StartByteMap::from_bytes(&short_slice);",
+          "    assert!(result_short.is_err());",
+          "    assert_eq!(result_short.unwrap_err().0, \"start byte map\");",
+          "    let empty_slice: [u8; 0] = [];",
+          "    let result_empty = StartByteMap::from_bytes(&empty_slice);",
+          "    assert!(result_empty.is_err());",
+          "    assert_eq!(result_empty.unwrap_err().0, \"start byte map\");"
+        ],
+        "code": [
+          "{",
+          "    let mut slice: [u8; 256] = [0; 256];",
+          "    for i in 0..256 {",
+          "        slice[i] = (i % 6) as u8; // Valid Start mappings within range",
+          "    }",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "    assert!(result.is_ok());",
+          "    let (map, bytes_read) = result.unwrap();",
+          "    assert_eq!(bytes_read, 256);",
+          "    for i in 0..256 {",
+          "    assert_eq!(map.map[i], Start::from_usize(i % 6).unwrap());",
+          "    }",
+          "    let invalid_slice: [u8; 256] = [6; 256];",
+          "    let result_invalid = StartByteMap::from_bytes(&invalid_slice);",
+          "    assert!(result_invalid.is_err());",
+          "    assert_eq!(result_invalid.unwrap_err().0, \"found invalid starting configuration\");",
+          "    let short_slice: [u8; 255] = [0; 255];",
+          "    let result_short = StartByteMap::from_bytes(&short_slice);",
+          "    assert!(result_short.is_err());",
+          "    assert_eq!(result_short.unwrap_err().0, \"start byte map\");",
+          "    let empty_slice: [u8; 0] = [];",
+          "    let result_empty = StartByteMap::from_bytes(&empty_slice);",
+          "    assert!(result_empty.is_err());",
+          "    assert_eq!(result_empty.unwrap_err().0, \"start byte map\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    // Creating a slice that is too small",
+          "    let slice: [u8; 255] = [0; 255];",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: [u8; 256] = [0; 256];",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "    assert_eq!(result, Ok((StartByteMap { map: [Start::NonWordByte; 256] }, 256)));",
+          "    let slice: [u8; 256] = [0, 1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "    assert_eq!(result, Ok((StartByteMap { map: [Start::NonWordByte, Start::WordByte, Start::Text, Start::LineLF, Start::LineCR, Start::CustomLineTerminator, Start::NonWordByte, Start::NonWordByte, Start::NonWordByte, Start::NonWordByte, Start::NonWordByte, Start::NonWordByte, Start::NonWordByte, Start::Non"
+        ],
+        "code": [
+          "{",
+          "    // Creating a slice that is too small",
+          "    let slice: [u8; 255] = [0; 255];",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "    let slice: [u8; 256] = [0; 256];",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "    assert_eq!(result, Ok((StartByteMap { map: [Start::NonWordByte; 256] }, 256)));",
+          "    let slice: [u8; 256] = [0, 1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "    assert_eq!(result, Ok((StartByteMap { map: [Start::NonWordByte, Start::WordByte, Start::Text, Start::LineLF, Start::LineCR, Start::CustomLineTerminator, Start::NonWordByte, Start::NonWordByte, Start::NonWordByte, Start::NonWordByte, Start::NonWordByte, Start::NonWordByte, Start::NonWordByte, Start::Non",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut slice: [u8; 256] = [0; 256];",
+          "    slice[10] = 6; // invalid mapping",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: [u8; 256] = [0; 256];",
+          "    slice[10] = 6;",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, \"found invalid starting configuration\");",
+          "    let valid_slice: [u8; 256] = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, /* ... fill remaining with valid values ... */ ];",
+          "    let result = StartByteMap::from_bytes(&valid_slice);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().1, 256);",
+          "    let result = StartByteMap::from_bytes(&[]);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, \"buffer too small\");",
+          "    let result = StartByteMap::from_bytes(&[0; 255]);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, \"buffer too small\");"
+        ],
+        "code": [
+          "{",
+          "    let mut slice: [u8; 256] = [0; 256];",
+          "    slice[10] = 6; // invalid mapping",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "    let slice: [u8; 256] = [0; 256];",
+          "    slice[10] = 6;",
+          "    let result = StartByteMap::from_bytes(&slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, \"found invalid starting configuration\");",
+          "    let valid_slice: [u8; 256] = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, /* ... fill remaining with valid values ... */ ];",
+          "    let result = StartByteMap::from_bytes(&valid_slice);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().1, 256);",
+          "    let result = StartByteMap::from_bytes(&[]);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, \"buffer too small\");",
+          "    let result = StartByteMap::from_bytes(&[0; 255]);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, \"buffer too small\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

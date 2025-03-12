@@ -1,0 +1,166 @@
+{
+  "name": "ryu::f2s_intrinsics::mul_shift_32",
+  "mod_info": {
+    "name": "f2s_intrinsics",
+    "loc": "src/lib.rs:116:1:116:20"
+  },
+  "visible": false,
+  "loc": "src/f2s_intrinsics.rs:58:1:72:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: shift > 32 at line 59 is true\n",
+        "precondition: shifted_sum <= u32::max_value() as u64 at line 70 is true, with bound shifted_sum == u32::max_value() as u64\n",
+        "expected return value/type: shifted_sum as u32\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let m: u32 = 1;",
+                "    let factor: u64 = 0xFFFFFFFFFFFFFFFF; // maximum factor (as u64)",
+                "    let shift: i32 = 64; // shift > 32",
+                "",
+                "    let result = mul_shift_32(m, factor, shift);",
+                "    assert_eq!(result, u32::max_value()); // shifted_sum should equal u32::max_value()",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let m: u32 = 0xFFFFFFFF; // maximum value for u32",
+                "    let factor: u64 = 2; // small factor",
+                "    let shift: i32 = 33; // shift just above 32",
+                "",
+                "    let result = mul_shift_32(m, factor, shift);",
+                "    assert_eq!(result, 0xFFFFFFFF - 1); // shifted_sum should be valid and within range",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: shift > 32 at line 59 is true\n",
+        "precondition: shifted_sum <= u32::max_value() as u64 at line 70 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let m: u32 = 1;",
+                "    let factor: u64 = u64::MAX; // This factor will maximize the product",
+                "    let shift: i32 = 64; // A shift that’s greater than 32",
+                "",
+                "    let result = mul_shift_32(m, factor, shift);",
+                "    ",
+                "    assert!(result <= u32::MAX); // The shifted result should be valid as per the precondition",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let m: u32 = u32::MAX; // Using the maximum value for m to ensure a large product",
+                "    let factor: u64 = u64::MAX; // Maximum factor",
+                "    let shift: i32 = 33; // Just above 32 for valid shift condition",
+                "",
+                "    let _ = mul_shift_32(m, factor, shift); // This should panic due to exceeding u32 max value",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: shift > 32 at line 59 is false, with bound shift == 32\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let m: u32 = 1;",
+                "    let factor: u64 = 1;",
+                "    let shift: i32 = 32; // This should trigger the panic due to the debug_assert",
+                "    let _result = mul_shift_32(m, factor, shift);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let m: u32 = u32::MAX; // Boundary test with maximum valid m",
+                "    let factor: u64 = 1;",
+                "    let shift: i32 = 32; // This should trigger the panic due to the debug_assert",
+                "    let _result = mul_shift_32(m, factor, shift);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

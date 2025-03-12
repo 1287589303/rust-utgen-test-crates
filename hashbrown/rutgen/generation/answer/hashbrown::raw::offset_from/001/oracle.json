@@ -1,0 +1,277 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let arr = [10, 20, 30, 40];",
+          "    let to = &arr[3] as *const i32;",
+          "    let from = &arr[0] as *const i32;",
+          "    let result = unsafe { offset_from(to, from) };",
+          "}"
+        ],
+        "oracle": [
+          "    let arr = [10, 20, 30, 40];",
+          "    let to = &arr[3] as *const i32;",
+          "    let from = &arr[0] as *const i32;",
+          "    let result = unsafe { offset_from(to, from) };",
+          "    assert_eq!(result, 3);",
+          "    ",
+          "    let arr_two = [1, 2, 3, 4, 5];",
+          "    let to_two = &arr_two[1] as *const i32;",
+          "    let from_two = &arr_two[1] as *const i32;",
+          "    let result_two = unsafe { offset_from(to_two, from_two) };",
+          "    assert_eq!(result_two, 0);",
+          "    ",
+          "    let arr_three: [i32; 0] = [];",
+          "    let to_three = arr_three.as_ptr();",
+          "    let from_three = arr_three.as_ptr();",
+          "    let result_three = unsafe { offset_from(to_three, from_three) };",
+          "    assert_eq!(result_three, 0);",
+          "    ",
+          "    let arr_four = [100, 200];",
+          "    let to_four = &arr_four[0] as *const i32;",
+          "    let from_four = &arr_four[1] as *const i32;",
+          "    let result_four = unsafe { offset_from(to_four, from_four) };",
+          "    assert_eq!(result_four, usize::MAX);"
+        ],
+        "code": [
+          "{",
+          "    let arr = [10, 20, 30, 40];",
+          "    let to = &arr[3] as *const i32;",
+          "    let from = &arr[0] as *const i32;",
+          "    let result = unsafe { offset_from(to, from) };",
+          "    let arr = [10, 20, 30, 40];",
+          "    let to = &arr[3] as *const i32;",
+          "    let from = &arr[0] as *const i32;",
+          "    let result = unsafe { offset_from(to, from) };",
+          "    assert_eq!(result, 3);",
+          "    ",
+          "    let arr_two = [1, 2, 3, 4, 5];",
+          "    let to_two = &arr_two[1] as *const i32;",
+          "    let from_two = &arr_two[1] as *const i32;",
+          "    let result_two = unsafe { offset_from(to_two, from_two) };",
+          "    assert_eq!(result_two, 0);",
+          "    ",
+          "    let arr_three: [i32; 0] = [];",
+          "    let to_three = arr_three.as_ptr();",
+          "    let from_three = arr_three.as_ptr();",
+          "    let result_three = unsafe { offset_from(to_three, from_three) };",
+          "    assert_eq!(result_three, 0);",
+          "    ",
+          "    let arr_four = [100, 200];",
+          "    let to_four = &arr_four[0] as *const i32;",
+          "    let from_four = &arr_four[1] as *const i32;",
+          "    let result_four = unsafe { offset_from(to_four, from_four) };",
+          "    assert_eq!(result_four, usize::MAX);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "    let arr = [TestStruct { value: 1 }, TestStruct { value: 2 }];",
+          "    let to = &arr[1] as *const TestStruct;",
+          "    let from = &arr[0] as *const TestStruct;",
+          "    let result = unsafe { offset_from(to, from) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 1);"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "    let arr = [TestStruct { value: 1 }, TestStruct { value: 2 }];",
+          "    let to = &arr[1] as *const TestStruct;",
+          "    let from = &arr[0] as *const TestStruct;",
+          "    let result = unsafe { offset_from(to, from) };",
+          "    assert_eq!(result, 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let arr = [100, 200, 300];",
+          "    let to = &arr[1] as *const i32;",
+          "    let from = &arr[1] as *const i32; // should not be the same pointer",
+          "    let result = unsafe { offset_from(to, from.add(1)) }; // to is at or after from",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 1); // offset of 'to' from 'from' when 'to' is 1 index ahead",
+          "    assert!(result <= usize::MAX); // ensure result does not exceed maximum usize size",
+          "    assert!(result >= 0); // ensure result is non-negative",
+          "    assert_eq!(unsafe { offset_from(to.add(1), from) }, 0); // when 'to' is 1 index ahead of 'from'",
+          "    assert_eq!(unsafe { offset_from(from, to) }, usize::MAX); // should not check for underflow if 'from' is before 'to'",
+          "    assert!(std::ptr::eq(to, from.add(1))); // to and from should not be the same pointer",
+          "    assert_ne!(unsafe { offset_from(from.add(2), to) }, 0); // ensure non-zero offset for different pointers",
+          "    assert_eq!(unsafe { offset_from(to.add(2), from) }, 2); // offset of 'to' from 'from' for two indices ahead"
+        ],
+        "code": [
+          "{",
+          "    let arr = [100, 200, 300];",
+          "    let to = &arr[1] as *const i32;",
+          "    let from = &arr[1] as *const i32; // should not be the same pointer",
+          "    let result = unsafe { offset_from(to, from.add(1)) }; // to is at or after from",
+          "    assert_eq!(result, 1); // offset of 'to' from 'from' when 'to' is 1 index ahead",
+          "    assert!(result <= usize::MAX); // ensure result does not exceed maximum usize size",
+          "    assert!(result >= 0); // ensure result is non-negative",
+          "    assert_eq!(unsafe { offset_from(to.add(1), from) }, 0); // when 'to' is 1 index ahead of 'from'",
+          "    assert_eq!(unsafe { offset_from(from, to) }, usize::MAX); // should not check for underflow if 'from' is before 'to'",
+          "    assert!(std::ptr::eq(to, from.add(1))); // to and from should not be the same pointer",
+          "    assert_ne!(unsafe { offset_from(from.add(2), to) }, 0); // ensure non-zero offset for different pointers",
+          "    assert_eq!(unsafe { offset_from(to.add(2), from) }, 2); // offset of 'to' from 'from' for two indices ahead",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let arr = [1, 2, 3];",
+          "    let to = arr.as_ptr().wrapping_add(3); // past the end (invalid case)",
+          "    let from = arr.as_ptr();",
+          "    let result = unsafe { offset_from(to, from) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 3); // valid case: pointer to past the end of array should return the length as usize",
+          "    assert!(result > 0); // ensure positive offset when `to` is greater than `from`",
+          "    assert!(result < usize::MAX); // ensure result is within reasonable bounds for usize",
+          "    assert_eq!(result, unsafe { offset_from(arr.as_ptr().wrapping_add(1), from) } + 1); // ensure relative pointer arithmetic is correct",
+          "    assert_eq!(result, unsafe { offset_from(arr.as_ptr().wrapping_add(2), from) } + 2); // validate offset increment with valid pointer movements"
+        ],
+        "code": [
+          "{",
+          "    let arr = [1, 2, 3];",
+          "    let to = arr.as_ptr().wrapping_add(3); // past the end (invalid case)",
+          "    let from = arr.as_ptr();",
+          "    let result = unsafe { offset_from(to, from) };",
+          "    assert_eq!(result, 3); // valid case: pointer to past the end of array should return the length as usize",
+          "    assert!(result > 0); // ensure positive offset when `to` is greater than `from`",
+          "    assert!(result < usize::MAX); // ensure result is within reasonable bounds for usize",
+          "    assert_eq!(result, unsafe { offset_from(arr.as_ptr().wrapping_add(1), from) } + 1); // ensure relative pointer arithmetic is correct",
+          "    assert_eq!(result, unsafe { offset_from(arr.as_ptr().wrapping_add(2), from) } + 2); // validate offset increment with valid pointer movements",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = 42;",
+          "    let single_elem_arr = [value];",
+          "    let to = &single_elem_arr[0] as *const i32;",
+          "    let from = &single_elem_arr[0] as *const i32; // adjust to ensure they're distinct",
+          "    let result = unsafe { offset_from(to, from) }; ",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 0);",
+          "    let from_distinct = &single_elem_arr[0] as *const i32;",
+          "    let to_distinct = &value as *const i32;",
+          "    let result_distinct = unsafe { offset_from(to_distinct, from_distinct) };",
+          "    assert_eq!(result_distinct, 1);",
+          "    let empty_arr: [i32; 0] = [];",
+          "    let empty_to = empty_arr.as_ptr();",
+          "    let empty_from = empty_arr.as_ptr();",
+          "    let result_empty = unsafe { offset_from(empty_to, empty_from) };",
+          "    assert_eq!(result_empty, 0);",
+          "    let separate_elems_arr = [1, 2];",
+          "    let to_separate = &separate_elems_arr[1] as *const i32;",
+          "    let from_separate = &separate_elems_arr[0] as *const i32;",
+          "    let result_separate = unsafe { offset_from(to_separate, from_separate) };",
+          "    assert_eq!(result_separate, 1);",
+          "    let to_null = std::ptr::null();",
+          "    let result_null = unsafe { offset_from(to_null, from) };",
+          "    assert_eq!(result_null, usize::MAX);"
+        ],
+        "code": [
+          "{",
+          "    let value = 42;",
+          "    let single_elem_arr = [value];",
+          "    let to = &single_elem_arr[0] as *const i32;",
+          "    let from = &single_elem_arr[0] as *const i32; // adjust to ensure they're distinct",
+          "    let result = unsafe { offset_from(to, from) }; ",
+          "    assert_eq!(result, 0);",
+          "    let from_distinct = &single_elem_arr[0] as *const i32;",
+          "    let to_distinct = &value as *const i32;",
+          "    let result_distinct = unsafe { offset_from(to_distinct, from_distinct) };",
+          "    assert_eq!(result_distinct, 1);",
+          "    let empty_arr: [i32; 0] = [];",
+          "    let empty_to = empty_arr.as_ptr();",
+          "    let empty_from = empty_arr.as_ptr();",
+          "    let result_empty = unsafe { offset_from(empty_to, empty_from) };",
+          "    assert_eq!(result_empty, 0);",
+          "    let separate_elems_arr = [1, 2];",
+          "    let to_separate = &separate_elems_arr[1] as *const i32;",
+          "    let from_separate = &separate_elems_arr[0] as *const i32;",
+          "    let result_separate = unsafe { offset_from(to_separate, from_separate) };",
+          "    assert_eq!(result_separate, 1);",
+          "    let to_null = std::ptr::null();",
+          "    let result_null = unsafe { offset_from(to_null, from) };",
+          "    assert_eq!(result_null, usize::MAX);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let arr: [i32; 0] = [];",
+          "    let to = arr.as_ptr();",
+          "    let from = arr.as_ptr(); // same pointer, should panic ",
+          "    let result = unsafe { offset_from(to, from) };",
+          "}"
+        ],
+        "oracle": [
+          "    let arr: [i32; 0] = [];",
+          "    let to = arr.as_ptr();",
+          "    let from = arr.as_ptr();",
+          "    let result = unsafe { offset_from(to, from) };",
+          "    assert_eq!(result, 0);"
+        ],
+        "code": [
+          "{",
+          "    let arr: [i32; 0] = [];",
+          "    let to = arr.as_ptr();",
+          "    let from = arr.as_ptr(); // same pointer, should panic ",
+          "    let result = unsafe { offset_from(to, from) };",
+          "    let arr: [i32; 0] = [];",
+          "    let to = arr.as_ptr();",
+          "    let from = arr.as_ptr();",
+          "    let result = unsafe { offset_from(to, from) };",
+          "    assert_eq!(result, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

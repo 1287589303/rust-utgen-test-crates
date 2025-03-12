@@ -1,0 +1,286 @@
+{
+  "name": "bytes::bytes_mut::{impl#0}::shallow_clone",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1058:5:1066:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: self.kind() == KIND_ARC at line 1059 is true\n"
+      ],
+      "input_infer": "self must be a mutable reference to a BytesMut instance where kind() returns KIND_ARC, ref_count is at least 1, and data is a valid pointer with appropriate size to hold Shared, while ensuring it does not point to a null or invalid memory address.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes_mut = BytesMut::with_capacity(10);",
+                "    let data_ptr = NonNull::new(&mut bytes_mut as *mut _ as *mut u8).unwrap();",
+                "    let shared = Shared {",
+                "        buf: data_ptr.as_ptr(),",
+                "        cap: 10,",
+                "        ref_cnt: AtomicUsize::new(1),",
+                "    };",
+                "    ",
+                "    unsafe {",
+                "        bytes_mut.data = &shared as *const _ as *mut Shared;",
+                "        let _clone = bytes_mut.shallow_clone();",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes_mut.len(), 0);",
+                "    assert_eq!(bytes_mut.capacity(), 10);",
+                "    assert_eq!((*bytes_mut.data).ref_count.load(Ordering::Relaxed), 2);",
+                "    assert_ne!(bytes_mut.data, _clone.data);",
+                "    assert_eq!((*_clone.data).ref_count.load(Ordering::Relaxed), 2);",
+                "    assert_eq!(_clone.len(), 0);",
+                "    assert_eq!(_clone.capacity(), 10);",
+                "    assert_eq!(bytes_mut.kind(), KIND_ARC);",
+                "    assert_eq!(_clone.kind(), KIND_ARC);"
+              ],
+              "code": [
+                "{",
+                "  let mut bytes_mut = BytesMut::with_capacity(10);",
+                "  let data_ptr = NonNull::new(&mut bytes_mut as *mut _ as *mut u8).unwrap();",
+                " let shared = Shared {  ",
+                "     buf: data_ptr.as_ptr(),  ",
+                "     original_capacity_repr: 10,  ",
+                "     ref_count: AtomicUsize::new(1),  ",
+                " };  ",
+                " ",
+                " let _clone; // Move declaration outside of unsafe block  ",
+                " unsafe {  ",
+                "     bytes_mut.data = &shared as *const _ as *mut Shared;  ",
+                "     _clone = bytes_mut.shallow_clone(); // Correctly assign _clone  ",
+                " }  ",
+                " assert_eq!(bytes_mut.len(), 0);  ",
+                " assert_eq!(bytes_mut.capacity(), 10);  ",
+                " assert_eq!((*bytes_mut.data).ref_count.load(Ordering::Relaxed), 2);  ",
+                "  assert_ne!(bytes_mut.data, _clone.data);",
+                "  assert_eq!((*_clone.data).ref_count.load(Ordering::Relaxed), 2);",
+                "  assert_eq!(_clone.len(), 0);",
+                "  assert_eq!(_clone.capacity(), 10);",
+                "  assert_eq!(bytes_mut.kind(), KIND_ARC);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes_mut = BytesMut::with_capacity(20);",
+                "    let data_ptr = NonNull::new(&mut bytes_mut as *mut _ as *mut u8).unwrap();",
+                "    let shared = Shared {",
+                "        buf: data_ptr.as_ptr(),",
+                "        cap: 20,",
+                "        ref_cnt: AtomicUsize::new(2),",
+                "    };",
+                "",
+                "    unsafe {",
+                "        bytes_mut.data = &shared as *const _ as *mut Shared;",
+                "        let _clone = bytes_mut.shallow_clone();",
+                "    }",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes_mut.len(), 0);",
+                "    assert_eq!(unsafe { &*(bytes_mut.data) }.ref_cnt.load(Ordering::Relaxed), 3);",
+                "    assert_ne!(bytes_mut.data, _clone.data);",
+                "    assert_eq!(bytes_mut.kind(), KIND_ARC);",
+                "    assert_eq!(unsafe { (&*(bytes_mut.data)).vec.len() }, 0);",
+                "    assert!(bytes_mut.cap >= _clone.len());",
+                "    assert!(bytes_mut.data as usize & KIND_MASK == KIND_ARC);",
+                "    assert!(unsafe { &*(bytes_mut.data) }.buf == unsafe { &*(bytes_mut.data) }.buf);"
+              ],
+              "code": [
+                "{",
+                "    let mut bytes_mut = BytesMut::with_capacity(20);",
+                "    let data_ptr = NonNull::new(&mut bytes_mut as *mut _ as *mut u8).unwrap();",
+                "    let shared = Shared {",
+                "       vec: data_ptr.as_ptr(),",
+                "       original_capacity_repr: 20,",
+                "       ref_count: AtomicUsize::new(2),",
+                "   };",
+                "",
+                "   unsafe {",
+                "       bytes_mut.data = &shared as *const _ as *mut Shared;",
+                "       let _clone = bytes_mut.shallow_clone();",
+                "   }",
+                "   assert_eq!(bytes_mut.len(), 0);",
+                "   assert_eq!(unsafe { &*(bytes_mut.data) }.ref_count.load(Ordering::Relaxed), 3);",
+                "  let _clone = bytes_mut.shallow_clone();  ",
+                "   assert_eq!(bytes_mut.kind(), KIND_ARC);",
+                "   assert_eq!(unsafe { (&*(bytes_mut.data)).vec.len() }, 0);",
+                "   assert!(bytes_mut.cap >= _clone.len());",
+                "   assert!(bytes_mut.data as usize & KIND_MASK == KIND_ARC);",
+                "   assert!(unsafe { &*(bytes_mut.data) }.vec == unsafe { &*(bytes_mut.data) }.vec);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: self.kind() == KIND_ARC at line 1059 is false\n"
+      ],
+      "input_infer": "self.kind() == KIND_VEC and self.data is a valid non-null pointer with at least 2 bytes allocated\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes_mut = unsafe {",
+                "        let mut buf = BytesMut::with_capacity(2);",
+                "        bytes_mut.set_len(2);",
+                "        bytes_mut",
+                "    };",
+                "    let _ = unsafe { bytes_mut.shallow_clone() };",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes_mut.len(), 2);",
+                "    assert!(bytes_mut.capacity() >= 2);",
+                "    assert!(bytes_mut.kind() != KIND_ARC);",
+                "    assert!(bytes_mut.data.is_not_null());",
+                "    assert_eq!(unsafe { bytes_mut.get_vec_pos() }, 0);",
+                "    assert_eq!(unsafe { (*bytes_mut.data).ref_count.load(Ordering::Relaxed) }, 1);"
+              ],
+              "code": [
+                "{",
+                "   let mut bytes_mut = unsafe {  ",
+                "       let mut bytes_mut = BytesMut::with_capacity(2);  ",
+                "       bytes_mut.set_len(2);  ",
+                "        bytes_mut",
+                "    };",
+                "    let _ = unsafe { bytes_mut.shallow_clone() };",
+                "    assert_eq!(bytes_mut.len(), 2);",
+                "    assert!(bytes_mut.capacity() >= 2);",
+                "    assert!(bytes_mut.kind() != KIND_ARC);",
+                "  assert!(!(bytes_mut.data.is_null()));  ",
+                "  assert_eq!(unsafe { bytes_mut.get_vec_pos() }, 0);  ",
+                "  assert_eq!(unsafe { (*bytes_mut.data).ref_count.load(Ordering::Relaxed) }, 1);  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes_mut = unsafe {",
+                "        let mut buf = BytesMut::with_capacity(10);",
+                "        bytes_mut.set_len(10);",
+                "        bytes_mut",
+                "    };",
+                "    let _ = unsafe { bytes_mut.shallow_clone() };",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(bytes_mut.kind() != KIND_ARC);",
+                "    let original_ptr = bytes_mut.ptr;",
+                "    let original_len = bytes_mut.len();",
+                "    let original_cap = bytes_mut.cap;",
+                "    let shallow_clone = unsafe { bytes_mut.shallow_clone() };",
+                "    assert_eq!(shallow_clone.len(), original_len);",
+                "    assert_eq!(shallow_clone.cap, original_cap);",
+                "    assert!(shallow_clone.ptr != original_ptr);",
+                "    assert!(shallow_clone.kind() == KIND_ARC);"
+              ],
+              "code": [
+                "{",
+                "  let mut bytes_mut = {  ",
+                "      let mut buf = BytesMut::with_capacity(10);  ",
+                "      buf.extend_from_slice(&[0u8; 10]);  ",
+                "      buf  ",
+                "   };  ",
+                "    let _ = unsafe { bytes_mut.shallow_clone() };",
+                "    assert!(bytes_mut.kind() != KIND_ARC);",
+                "    let original_ptr = bytes_mut.ptr;",
+                "    let original_len = bytes_mut.len();",
+                "    let original_cap = bytes_mut.cap;",
+                "    let shallow_clone = unsafe { bytes_mut.shallow_clone() };",
+                "    assert_eq!(shallow_clone.len(), original_len);",
+                "    assert_eq!(shallow_clone.cap, original_cap);",
+                "    assert!(shallow_clone.ptr != original_ptr);",
+                "    assert!(shallow_clone.kind() == KIND_ARC);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes_mut = unsafe {",
+                "        let mut buf = BytesMut::with_capacity(17);",
+                "        bytes_mut.set_len(17);",
+                "        bytes_mut",
+                "    };",
+                "    let _ = unsafe { bytes_mut.shallow_clone() };",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes_mut.kind(), KIND_VEC);",
+                "    assert!(bytes_mut.len() == 17);",
+                "    assert!(bytes_mut.capacity() >= 17);",
+                "    assert!(bytes_mut.spare_capacity_mut().len() > 0);",
+                "    assert!(unsafe { bytes_mut.get_vec_pos() } >= 5);",
+                "    let cloned_bytes = unsafe { bytes_mut.shallow_clone() };",
+                "    assert_eq!(cloned_bytes.len(), bytes_mut.len());",
+                "    assert_ne!(bytes_mut as *mut _, cloned_bytes as *mut _);",
+                "    assert!(unsafe { cloned_bytes.kind() == KIND_VEC });",
+                "    assert!(unsafe { clone.inner.capacity() } >= bytes_mut.capacity());"
+              ],
+              "code": [
+                "{",
+                "   let mut bytes_mut = unsafe {",
+                "       let mut buf = BytesMut::with_capacity(17);",
+                "       buf.set_len(17);",
+                "        bytes_mut",
+                "    };",
+                "    let _ = unsafe { bytes_mut.shallow_clone() };",
+                "    assert_eq!(bytes_mut.kind(), KIND_VEC);",
+                "    assert!(bytes_mut.len() == 17);",
+                "    assert!(bytes_mut.capacity() >= 17);",
+                "    assert!(bytes_mut.spare_capacity_mut().len() > 0);",
+                "    assert!(unsafe { bytes_mut.get_vec_pos() } >= 5);",
+                "    let cloned_bytes = unsafe { bytes_mut.shallow_clone() };",
+                "    assert_eq!(cloned_bytes.len(), bytes_mut.len());",
+                "    assert_ne!(bytes_mut as *mut _, cloned_bytes as *mut _);",
+                "    assert!(unsafe { cloned_bytes.kind() == KIND_VEC });",
+                "   assert!(unsafe { cloned_bytes.inner.capacity() } >= bytes_mut.capacity());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

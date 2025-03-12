@@ -1,0 +1,155 @@
+use alloc::vec::Vec;
+use crate::{
+    meta::{
+        error::{BuildError, RetryError, RetryFailError},
+        regex::RegexInfo,
+    },
+    nfa::thompson::{pikevm, NFA},
+    util::{prefilter::Prefilter, primitives::NonMaxUsize},
+    HalfMatch, Input, Match, MatchKind, PatternID, PatternSet,
+};
+#[cfg(feature = "dfa-build")]
+use crate::dfa;
+#[cfg(feature = "dfa-onepass")]
+use crate::dfa::onepass;
+#[cfg(feature = "hybrid")]
+use crate::hybrid;
+#[cfg(feature = "nfa-backtrack")]
+use crate::nfa::thompson::backtrack;
+#[derive(Debug)]
+pub(crate) struct DFAEngine(
+    #[cfg(feature = "dfa-build")]
+    dfa::regex::Regex,
+    #[cfg(not(feature = "dfa-build"))]
+    (),
+);
+#[derive(Clone)]
+pub struct Input<'h> {
+    haystack: &'h [u8],
+    span: Span,
+    anchored: Anchored,
+    earliest: bool,
+}
+#[derive(Debug)]
+pub struct Regex {
+    /// The forward lazy DFA. This can only find the end of a match.
+    forward: DFA,
+    /// The reverse lazy DFA. This can only find the start of a match.
+    ///
+    /// This is built with 'all' match semantics (instead of leftmost-first)
+    /// so that it always finds the longest possible match (which corresponds
+    /// to the leftmost starting position). It is also compiled as an anchored
+    /// matcher and has 'starts_for_each_pattern' enabled. Including starting
+    /// states for each pattern is necessary to ensure that we only look for
+    /// matches of a pattern that matched in the forward direction. Otherwise,
+    /// we might wind up finding the "leftmost" starting position of a totally
+    /// different pattern!
+    reverse: DFA,
+}
+#[cfg(feature = "alloc")]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PatternSet {
+    /// The number of patterns set to 'true' in this set.
+    len: usize,
+    /// A map from PatternID to boolean of whether a pattern matches or not.
+    ///
+    /// This should probably be a bitset, but it's probably unlikely to matter
+    /// much in practice.
+    ///
+    /// The main downside of this representation (and similarly for a bitset)
+    /// is that iteration scales with the capacity of the set instead of
+    /// the length of the set. This doesn't seem likely to be a problem in
+    /// practice.
+    ///
+    /// Another alternative is to just use a 'SparseSet' for this. It does use
+    /// more memory (quite a bit more), but that seems fine I think compared
+    /// to the memory being used by the regex engine. The real hiccup with
+    /// it is that it yields pattern IDs in the order they were inserted.
+    /// Which is actually kind of nice, but at the time of writing, pattern
+    /// IDs are yielded in ascending order in the regex crate RegexSet API.
+    /// If we did change to 'SparseSet', we could provide an additional
+    /// 'iter_match_order' iterator, but keep the ascending order one for
+    /// compatibility.
+    which: alloc::boxed::Box<[bool]>,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MatchError(
+    #[cfg(feature = "alloc")]
+    alloc::boxed::Box<MatchErrorKind>,
+    #[cfg(not(feature = "alloc"))]
+    MatchErrorKind,
+);
+#[derive(Debug)]
+pub(crate) struct RetryFailError {
+    offset: usize,
+}
+#[derive(Debug)]
+pub struct Regex {
+    /// The actual regex implementation.
+    imp: Arc<RegexI>,
+    /// A thread safe pool of caches.
+    ///
+    /// For the higher level search APIs, a `Cache` is automatically plucked
+    /// from this pool before running a search. The lower level `with` methods
+    /// permit the caller to provide their own cache, thereby bypassing
+    /// accesses to this pool.
+    ///
+    /// Note that we put this outside the `Arc` so that cloning a `Regex`
+    /// results in creating a fresh `CachePool`. This in turn permits callers
+    /// to clone regexes into separate threads where each such regex gets
+    /// the pool's "thread owner" optimization. Otherwise, if one shares the
+    /// `Regex` directly, then the pool will go through a slower mutex path for
+    /// all threads except for the "owner."
+    pool: CachePool,
+}
+impl DFAEngine {
+    pub(crate) fn new(
+        info: &RegexInfo,
+        pre: Option<Prefilter>,
+        nfa: &NFA,
+        nfarev: &NFA,
+    ) -> Option<DFAEngine> {}
+    #[cfg_attr(feature = "perf-inline", inline(always))]
+    pub(crate) fn try_search(
+        &self,
+        input: &Input<'_>,
+    ) -> Result<Option<Match>, RetryFailError> {}
+    #[cfg_attr(feature = "perf-inline", inline(always))]
+    pub(crate) fn try_search_half_fwd(
+        &self,
+        input: &Input<'_>,
+    ) -> Result<Option<HalfMatch>, RetryFailError> {}
+    #[cfg_attr(feature = "perf-inline", inline(always))]
+    pub(crate) fn try_search_half_fwd_stopat(
+        &self,
+        input: &Input<'_>,
+    ) -> Result<Result<HalfMatch, usize>, RetryFailError> {}
+    #[cfg_attr(feature = "perf-inline", inline(always))]
+    pub(crate) fn try_search_half_rev(
+        &self,
+        input: &Input<'_>,
+    ) -> Result<Option<HalfMatch>, RetryFailError> {}
+    #[cfg_attr(feature = "perf-inline", inline(always))]
+    pub(crate) fn try_search_half_rev_limited(
+        &self,
+        input: &Input<'_>,
+        min_start: usize,
+    ) -> Result<Option<HalfMatch>, RetryError> {}
+    #[inline]
+    pub(crate) fn try_which_overlapping_matches(
+        &self,
+        input: &Input<'_>,
+        patset: &mut PatternSet,
+    ) -> Result<(), RetryFailError> {
+        #[cfg(feature = "dfa-build")]
+        {
+            use crate::dfa::Automaton;
+            self.0
+                .forward()
+                .try_which_overlapping_matches(input, patset)
+                .map_err(|e| e.into())
+        }
+        #[cfg(not(feature = "dfa-build"))] { unreachable!() }
+    }
+    pub(crate) fn memory_usage(&self) -> usize {}
+}

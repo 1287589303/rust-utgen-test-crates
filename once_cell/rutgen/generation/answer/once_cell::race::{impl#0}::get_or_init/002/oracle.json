@@ -1,0 +1,180 @@
+[
+  {
+    "uses": [
+      "use std::thread;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let value = once.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+          "    let result = once.get();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(once.get_or_init(|| NonZeroUsize::new(1).unwrap()), NonZeroUsize::new(1).unwrap());",
+          "    assert!(once.get().is_some());",
+          "    assert_eq!(once.get().unwrap(), NonZeroUsize::new(1).unwrap());"
+        ],
+        "code": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let value = once.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+          "    let result = once.get();",
+          "    assert_eq!(once.get_or_init(|| NonZeroUsize::new(1).unwrap()), NonZeroUsize::new(1).unwrap());",
+          "    assert!(once.get().is_some());",
+          "    assert_eq!(once.get().unwrap(), NonZeroUsize::new(1).unwrap());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let value = once.get_or_init(|| NonZeroUsize::new(100).unwrap());",
+          "    let result = once.get();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Some(NonZeroUsize::new(100).unwrap()));",
+          "    assert!(once.get_or_try_init(|| Ok::<NonZeroUsize, Void>(NonZeroUsize::new(100).unwrap())).is_ok());",
+          "    assert!(once.get().is_some());",
+          "    assert_ne!(once.get_unchecked(), NonZeroUsize::new(0).unwrap());",
+          "    assert_eq!(once.get().unwrap().get(), 100);"
+        ],
+        "code": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let value = once.get_or_init(|| NonZeroUsize::new(100).unwrap());",
+          "    let result = once.get();",
+          "    assert_eq!(result, Some(NonZeroUsize::new(100).unwrap()));",
+          "    assert!(once.get_or_try_init(|| Ok::<NonZeroUsize, Void>(NonZeroUsize::new(100).unwrap())).is_ok());",
+          "    assert!(once.get().is_some());",
+          "    assert_ne!(once.get_unchecked(), NonZeroUsize::new(0).unwrap());",
+          "    assert_eq!(once.get().unwrap().get(), 100);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::thread;",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let handles: Vec<_> = (0..10)",
+          "        .map(|_| {",
+          "            thread::spawn({",
+          "                let once = &once;",
+          "                move || once.get_or_init(|| NonZeroUsize::new(2).unwrap())",
+          "            })",
+          "        })",
+          "        .collect();",
+          "",
+          "    for handle in handles {",
+          "        let _ = handle.join();",
+          "    }",
+          "",
+          "    let result = once.get();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap().get(), 2);",
+          "    assert_eq!(once.inner.load(Ordering::Acquire), 2);"
+        ],
+        "code": [
+          "{",
+          "    use std::thread;",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let handles: Vec<_> = (0..10)",
+          "        .map(|_| {",
+          "            thread::spawn({",
+          "                let once = &once;",
+          "                move || once.get_or_init(|| NonZeroUsize::new(2).unwrap())",
+          "            })",
+          "        })",
+          "        .collect();",
+          "",
+          "    for handle in handles {",
+          "        let _ = handle.join();",
+          "    }",
+          "",
+          "    let result = once.get();",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap().get(), 2);",
+          "    assert_eq!(once.inner.load(Ordering::Acquire), 2);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let value = once.get_or_init(|| NonZeroUsize::new(3).unwrap());",
+          "    let value_again = once.get_or_init(|| NonZeroUsize::new(4).unwrap());",
+          "    let result = once.get();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value, NonZeroUsize::new(3).unwrap());",
+          "    assert_eq!(value_again, value);",
+          "    assert!(once.get().is_some());",
+          "    assert_eq!(once.get().unwrap(), NonZeroUsize::new(3).unwrap());"
+        ],
+        "code": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let value = once.get_or_init(|| NonZeroUsize::new(3).unwrap());",
+          "    let value_again = once.get_or_init(|| NonZeroUsize::new(4).unwrap());",
+          "    let result = once.get();",
+          "    assert_eq!(value, NonZeroUsize::new(3).unwrap());",
+          "    assert_eq!(value_again, value);",
+          "    assert!(once.get().is_some());",
+          "    assert_eq!(once.get().unwrap(), NonZeroUsize::new(3).unwrap());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let value = once.get_or_init(|| NonZeroUsize::new(5).unwrap());",
+          "    let result = once.get();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value, NonZeroUsize::new(5).unwrap());",
+          "    assert!(once.get().is_some());",
+          "    assert_eq!(once.get().unwrap(), NonZeroUsize::new(5).unwrap());"
+        ],
+        "code": [
+          "{",
+          "    let once = OnceNonZeroUsize::new();",
+          "    let value = once.get_or_init(|| NonZeroUsize::new(5).unwrap());",
+          "    let result = once.get();",
+          "    assert_eq!(value, NonZeroUsize::new(5).unwrap());",
+          "    assert!(once.get().is_some());",
+          "    assert_eq!(once.get().unwrap(), NonZeroUsize::new(5).unwrap());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,173 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let table: RawTable<u64> = RawTable::new_in(Global);",
+          "    let iter = RawIter { iter: RawIterRange::new(), items: 0 };",
+          "    unsafe {",
+          "        table.drain_iter_from(iter);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(panic::catch_unwind(|| {",
+          "    let table: RawTable<u64> = RawTable::new_in(Global);",
+          "    let iter = RawIter { iter: RawIterRange::new(), items: 0 };",
+          "    unsafe {",
+          "    table.drain_iter_from(iter);",
+          "    }",
+          "    }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let table: RawTable<u64> = RawTable::new_in(Global);",
+          "    let iter = RawIter { iter: RawIterRange::new(), items: 0 };",
+          "    unsafe {",
+          "        table.drain_iter_from(iter);",
+          "    }",
+          "    assert!(panic::catch_unwind(|| {",
+          "    let table: RawTable<u64> = RawTable::new_in(Global);",
+          "    let iter = RawIter { iter: RawIterRange::new(), items: 0 };",
+          "    unsafe {",
+          "    table.drain_iter_from(iter);",
+          "    }",
+          "    }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+          "    let iter = RawIter { iter: RawIterRange::new(), items: 6 }; // items greater than table",
+          "    unsafe {",
+          "        table.drain_iter_from(iter);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(unsafe { table.len() }, 5);",
+          "    assert!(unsafe { table.is_empty() } == false);",
+          "    assert!(unsafe { table.capacity() } >= 5);",
+          "    assert!(unsafe { table.iter().items } == 6);",
+          "    assert!(unsafe { table.drain_iter_from(iter).len() } == 0);",
+          "    assert!(unsafe { table.table.items } == 0);"
+        ],
+        "code": [
+          "{",
+          "    let table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+          "    let iter = RawIter { iter: RawIterRange::new(), items: 6 }; // items greater than table",
+          "    unsafe {",
+          "        table.drain_iter_from(iter);",
+          "    }",
+          "    assert_eq!(unsafe { table.len() }, 5);",
+          "    assert!(unsafe { table.is_empty() } == false);",
+          "    assert!(unsafe { table.capacity() } >= 5);",
+          "    assert!(unsafe { table.iter().items } == 6);",
+          "    assert!(unsafe { table.drain_iter_from(iter).len() } == 0);",
+          "    assert!(unsafe { table.table.items } == 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+          "    unsafe {",
+          "        table.insert(1, 10, |x| *x);",
+          "        table.insert(2, 20, |x| *x);",
+          "        let iter = table.iter(); // getting a valid iterator",
+          "        table.drain_iter_from(iter); // should not panic",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(table.len() == 2);",
+          "    assert!(table.is_empty() == false);",
+          "    assert!(table.capacity() >= 5);",
+          "    assert!(table.buckets() > 0);",
+          "    assert!(unsafe { table.iter().len() == 0 });",
+          "    assert_eq!(unsafe { table.capacity() }, 5);",
+          "    assert!(unsafe { table.is_bucket_full(0) == false });",
+          "    assert!(unsafe { table.is_bucket_full(1) == false });",
+          "    assert!(unsafe { table.is_bucket_full(2) == false });"
+        ],
+        "code": [
+          "{",
+          "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+          "    unsafe {",
+          "        table.insert(1, 10, |x| *x);",
+          "        table.insert(2, 20, |x| *x);",
+          "        let iter = table.iter(); // getting a valid iterator",
+          "        table.drain_iter_from(iter); // should not panic",
+          "    }",
+          "    assert!(table.len() == 2);",
+          "    assert!(table.is_empty() == false);",
+          "    assert!(table.capacity() >= 5);",
+          "    assert!(table.buckets() > 0);",
+          "    assert!(unsafe { table.iter().len() == 0 });",
+          "    assert_eq!(unsafe { table.capacity() }, 5);",
+          "    assert!(unsafe { table.is_bucket_full(0) == false });",
+          "    assert!(unsafe { table.is_bucket_full(1) == false });",
+          "    assert!(unsafe { table.is_bucket_full(2) == false });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+          "    let iter = RawIter { iter: RawIterRange::new(), items: 1 }; // items greater than actual elements",
+          "    unsafe {",
+          "        table.drain_iter_from(iter); // should not panic as this is a valid call",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+          "    let iter = RawIter { iter: RawIterRange::new(), items: 1 };",
+          "    unsafe {",
+          "    assert!(std::panic::catch_unwind(|| table.drain_iter_from(iter)).is_ok()); // should not panic",
+          "    assert_eq!(table.len(), 0); // table should be empty after drain",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+          "    let iter = RawIter { iter: RawIterRange::new(), items: 1 }; // items greater than actual elements",
+          "    unsafe {",
+          "        table.drain_iter_from(iter); // should not panic as this is a valid call",
+          "    }",
+          "    let mut table: RawTable<u64> = RawTable::with_capacity_in(5, Global);",
+          "    let iter = RawIter { iter: RawIterRange::new(), items: 1 };",
+          "    unsafe {",
+          "    assert!(std::panic::catch_unwind(|| table.drain_iter_from(iter)).is_ok()); // should not panic",
+          "    assert_eq!(table.len(), 0); // table should be empty after drain",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

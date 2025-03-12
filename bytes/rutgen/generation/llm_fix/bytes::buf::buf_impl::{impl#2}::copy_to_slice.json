@@ -1,0 +1,147 @@
+{
+  "name": "bytes::buf::buf_impl::{impl#2}::copy_to_slice",
+  "mod_info": {
+    "name": "buf::buf_impl",
+    "loc": "src/buf/mod.rs:17:1:17:14"
+  },
+  "visible": true,
+  "loc": "src/buf/buf_impl.rs:2913:5:2923:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: self.len() < dst.len() at line 2914 is true\n"
+      ],
+      "input_infer": "self.len() = 0, dst.len() > 0; self.len() = n, dst.len() = n + 1 for any n > 0.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{ ",
+                "    let mut src: &[u8] = &[]; ",
+                "    let mut dst: [u8; 1] = [0]; ",
+                "    src.copy_to_slice(&mut dst); ",
+                "}"
+              ],
+              "oracle": [
+                "    panic_advance(&TryGetError { requested: 1, available: 0 });",
+                "    src.len() < dst.len() for src: &[u8] = &[], dst: [u8; 1] = [0];"
+              ],
+              "code": [
+                "{ ",
+                "   let mut src: &[u8] = &[]; ",
+                "   let mut dst: [u8; 1] = [0]; ",
+                "   src.copy_to_slice(&mut dst); ",
+                "   panic_advance(&TryGetError { requested: 1, available: 0 });",
+                "   assert!(src.len() < dst.len());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{ ",
+                "    let mut src: &[u8] = &[1, 2, 3]; ",
+                "    let mut dst: [u8; 4] = [0; 4]; ",
+                "    src.copy_to_slice(&mut dst); ",
+                "}"
+              ],
+              "oracle": [
+                "    panic_advance(&TryGetError { requested: 4, available: 3 });"
+              ],
+              "code": [
+                "{ ",
+                "    let mut src: &[u8] = &[1, 2, 3]; ",
+                "    let mut dst: [u8; 4] = [0; 4]; ",
+                "    src.copy_to_slice(&mut dst); ",
+                "    panic_advance(&TryGetError { requested: 4, available: 3 });",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: self.len() < dst.len() at line 2914 is false, with bound self.len() == dst.len()\n"
+      ],
+      "input_infer": "self.len() == dst.len() where self.len() ranges from 1 to N and dst.len() equals self.len() with N being a valid buffer size; also test edge case of self.len() == 0 with dst.len() == 0 to examine behavior when both are empty.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &[1, 2, 3, 4, 5];",
+                "    let mut dst = vec![0; 5];",
+                "    buf.copy_to_slice(&mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(dst, vec![1, 2, 3, 4, 5]);",
+                "    assert_eq!(buf.len(), 5);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    assert!(buf.has_remaining() == false);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &[1, 2, 3, 4, 5];",
+                "    let mut dst = vec![0; 5];",
+                "    buf.copy_to_slice(&mut dst);",
+                "    assert_eq!(dst, vec![1, 2, 3, 4, 5]);",
+                "    assert_eq!(buf.len(), 5);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    assert!(buf.has_remaining() == false);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &[];",
+                "    let mut dst: Vec<u8> = vec![];",
+                "    buf.copy_to_slice(&mut dst);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(dst.len(), buf.len());",
+                "    assert!(buf.len() <= dst.len());",
+                "    assert!(buf.len() == dst.len());"
+              ],
+              "code": [
+                "{  ",
+                " let mut buf: &[u8] = &[];  ",
+                " let mut dst: Vec<u8> = std::vec![];  ",
+                " buf.copy_to_slice(&mut dst);  ",
+                " assert_eq!(dst.len(), buf.len());  ",
+                " assert!(buf.len() <= dst.len());  ",
+                " assert!(buf.len() == dst.len());  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

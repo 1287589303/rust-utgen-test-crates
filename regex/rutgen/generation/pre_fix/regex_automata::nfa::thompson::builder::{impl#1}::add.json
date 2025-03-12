@@ -1,0 +1,826 @@
+{
+  "name": "regex_automata::nfa::thompson::builder::{impl#1}::add",
+  "mod_info": {
+    "name": "nfa::thompson::builder",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:58:1:58:13"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/nfa/thompson/builder.rs:1114:5:1121:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: StateID::new(self.states.len())\n            .map_err(|_| BuildError::too_many_states(self.states.len()))? at line 1115 is Err/None\n"
+      ],
+      "input_infer": "self.states.len() must be less than MaxStates and state memory usage should not exceed SizeLimit, with valid State types including Empty, ByteRange, Look, CaptureStart, CaptureEnd, Fail, Match, Sparse, Union, UnionReverse, and the return types must be Result<StateID, BuildError>.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    for _ in 0..=MaxStates {  // Exceeding max allowed states",
+                "        let _ = builder.add(State::Empty { next: StateID::default() });",
+                "    }",
+                "    let result = builder.add(State::Empty { next: StateID::default() });",
+                "}"
+              ],
+              "oracle": [
+                "    let mut builder = Builder::new();",
+                "    for _ in 0..=MaxStates {",
+                "    let _ = builder.add(State::Empty { next: StateID::default() });",
+                "    }",
+                "    let result = builder.add(State::Empty { next: StateID::default() });",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates);"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    for _ in 0..=MaxStates {  // Exceeding max allowed states",
+                "        let _ = builder.add(State::Empty { next: StateID::default() });",
+                "    }",
+                "    let result = builder.add(State::Empty { next: StateID::default() });",
+                "    let mut builder = Builder::new();",
+                "    for _ in 0..=MaxStates {",
+                "    let _ = builder.add(State::Empty { next: StateID::default() });",
+                "    }",
+                "    let result = builder.add(State::Empty { next: StateID::default() });",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let _ = builder.set_size_limit(Some(1024)); // Setting a memory size limit",
+                "    while builder.memory_usage() < 1024 { // Adding states until we hit memory limit",
+                "        let _ = builder.add(State::Empty { next: StateID::default() });",
+                "    }",
+                "    let result = builder.add(State::ByteRange { trans: Transition::default() });",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), BuildError::too_many_states(1024));",
+                "    assert_eq!(builder.states.len(), 1024);",
+                "    assert_eq!(builder.memory_states, 1024);"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let _ = builder.set_size_limit(Some(1024)); // Setting a memory size limit",
+                "    while builder.memory_usage() < 1024 { // Adding states until we hit memory limit",
+                "        let _ = builder.add(State::Empty { next: StateID::default() });",
+                "    }",
+                "    let result = builder.add(State::ByteRange { trans: Transition::default() });",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), BuildError::too_many_states(1024));",
+                "    assert_eq!(builder.states.len(), 1024);",
+                "    assert_eq!(builder.memory_states, 1024);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let _ = builder.set_size_limit(Some(100)); // Setting a small memory size limit",
+                "    let _ = builder.add(State::Sparse { transitions: vec![Transition::default(); 5] }); // Add a few states",
+                "    let result = builder.add(State::Union { alternates: vec![StateID::default()] }); // This should be within limit",
+                "}"
+              ],
+              "oracle": [
+                "    builder.add(State::Sparse { transitions: vec![Transition::default(); 5] }).unwrap();",
+                "    let result = builder.add(State::Union { alternates: vec![StateID::default()] });",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    builder.set_size_limit(Some(0)); // Setting size limit to 0",
+                "    let result = builder.add(State::Union { alternates: vec![StateID::default()] });",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let result = builder.add(State::Sparse { transitions: vec![Transition::default(); 6] });",
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let _ = builder.set_size_limit(Some(100)); // Setting a small memory size limit",
+                "    let _ = builder.add(State::Sparse { transitions: vec![Transition::default(); 5] }); // Add a few states",
+                "    let result = builder.add(State::Union { alternates: vec![StateID::default()] }); // This should be within limit",
+                "    builder.add(State::Sparse { transitions: vec![Transition::default(); 5] }).unwrap();",
+                "    let result = builder.add(State::Union { alternates: vec![StateID::default()] });",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    builder.set_size_limit(Some(0)); // Setting size limit to 0",
+                "    let result = builder.add(State::Union { alternates: vec![StateID::default()] });",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let result = builder.add(State::Sparse { transitions: vec![Transition::default(); 6] });",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: StateID::new(self.states.len())\n            .map_err(|_| BuildError::too_many_states(self.states.len()))? at line 1115 is Ok/Some\n",
+        "precondition: self.check_size_limit()? at line 1119 is Err/None\n"
+      ],
+      "input_infer": "state: any valid non-empty State, self.states.len() < maximum allowed states, self.memory_states + state.memory_usage() <= size_limit (when set) or size_limit is None\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state = State::Empty { next: StateID::default() };",
+                "    let _ = builder.add(state).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(StateID::new(0).is_ok());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert!(matches!(builder.states[0], State::Empty { .. }));",
+                "    assert!(!builder.states.is_empty());",
+                "    assert_eq!(builder.memory_usage(), 0);",
+                "    builder.clear();",
+                "    assert!(builder.states.is_empty());",
+                "    builder.set_size_limit(Some(512)).unwrap();",
+                "    assert!(builder.check_size_limit().is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state = State::Empty { next: StateID::default() };",
+                "    let _ = builder.add(state).unwrap();",
+                "    assert!(StateID::new(0).is_ok());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert!(matches!(builder.states[0], State::Empty { .. }));",
+                "    assert!(!builder.states.is_empty());",
+                "    assert_eq!(builder.memory_usage(), 0);",
+                "    builder.clear();",
+                "    assert!(builder.states.is_empty());",
+                "    builder.set_size_limit(Some(512)).unwrap();",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state = State::ByteRange { trans: Transition::default() };",
+                "    let _ = builder.add(state).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.states.len() > 0);",
+                "    assert!(builder.states.last().unwrap() matches State::ByteRange { .. });",
+                "    assert!(builder.get_size_limit() == Some(1024));",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert!(builder.current_pattern_id() == PatternID::default());",
+                "    assert!(builder.pattern_len() == 1);"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state = State::ByteRange { trans: Transition::default() };",
+                "    let _ = builder.add(state).unwrap();",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.states.len() > 0);",
+                "    assert!(builder.states.last().unwrap() matches State::ByteRange { .. });",
+                "    assert!(builder.get_size_limit() == Some(1024));",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert!(builder.current_pattern_id() == PatternID::default());",
+                "    assert!(builder.pattern_len() == 1);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let transitions = vec![Transition::default(); 5]; // Create a few transitions",
+                "    let state = State::Sparse { transitions };",
+                "    let _ = builder.add(state).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    builder.clear();",
+                "    builder.set_size_limit(Some(1024)).unwrap();",
+                "    let transitions = vec![Transition::default(); 5];",
+                "    let state = State::Sparse { transitions };",
+                "    let result = builder.add(state);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    let state_id = result.unwrap();",
+                "    assert!(state_id != StateID::default());",
+                "    builder.set_size_limit(Some(10));",
+                "    let result = builder.add(state);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    builder.clear();",
+                "    let id_result = StateID::new(0);",
+                "    assert!(id_result.is_ok());",
+                "    let id = id_result.unwrap();",
+                "    assert_eq!(id, StateID::default());"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let transitions = vec![Transition::default(); 5]; // Create a few transitions",
+                "    let state = State::Sparse { transitions };",
+                "    let _ = builder.add(state).unwrap();",
+                "    builder.clear();",
+                "    builder.set_size_limit(Some(1024)).unwrap();",
+                "    let transitions = vec![Transition::default(); 5];",
+                "    let state = State::Sparse { transitions };",
+                "    let result = builder.add(state);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    let state_id = result.unwrap();",
+                "    assert!(state_id != StateID::default());",
+                "    builder.set_size_limit(Some(10));",
+                "    let result = builder.add(state);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    builder.clear();",
+                "    let id_result = StateID::new(0);",
+                "    assert!(id_result.is_ok());",
+                "    let id = id_result.unwrap();",
+                "    assert_eq!(id, StateID::default());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let alternates = vec![StateID::default(), StateID::default()]; // Create alternates",
+                "    let state = State::Union { alternates: alternates.into_boxed_slice() };",
+                "    let _ = builder.add(state).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(StateID::new(builder.states.len()).is_ok());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.states.len() > 0);",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert_eq!(builder.pattern_len(), 0);"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let alternates = vec![StateID::default(), StateID::default()]; // Create alternates",
+                "    let state = State::Union { alternates: alternates.into_boxed_slice() };",
+                "    let _ = builder.add(state).unwrap();",
+                "    assert!(StateID::new(builder.states.len()).is_ok());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.states.len() > 0);",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert_eq!(builder.pattern_len(), 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let alternates = vec![StateID::default(), StateID::default()]; // Create alternates",
+                "    let state = State::UnionReverse { alternates: alternates.into_boxed_slice() };",
+                "    let _ = builder.add(state).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(StateID::new(builder.states.len()).is_ok());",
+                "    assert!(builder.memory_states <= 1024);",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert!(matches!(builder.states[0], State::UnionReverse { .. }));"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let alternates = vec![StateID::default(), StateID::default()]; // Create alternates",
+                "    let state = State::UnionReverse { alternates: alternates.into_boxed_slice() };",
+                "    let _ = builder.add(state).unwrap();",
+                "    assert!(StateID::new(builder.states.len()).is_ok());",
+                "    assert!(builder.memory_states <= 1024);",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert!(matches!(builder.states[0], State::UnionReverse { .. }));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state_id = StateID::default();",
+                "    let state = State::CaptureStart {",
+                "        pattern_id: PatternID::default(),",
+                "        group_index: 0.into(),",
+                "        next: state_id,",
+                "    };",
+                "    let _ = builder.add(state).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.states.len() > 0);",
+                "    assert!(builder.get_size_limit() == Some(1024));",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert!(builder.add(State::CaptureStart { pattern_id: PatternID::default(), group_index: 0.into(), next: StateID::default() }).is_ok());",
+                "    assert!(builder.states.len() == 1);",
+                "    assert!(builder.memory_states > 0);",
+                "    assert_eq!(builder.add(State::CaptureStart { pattern_id: PatternID::default(), group_index: 1.into(), next: StateID::default() }).is_ok(), true);",
+                "    assert!(builder.memory_states <= 1024);",
+                "    assert!(builder.add(State::CaptureStart { pattern_id: PatternID::default(), group_index: 2.into(), next: StateID::default() }).is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state_id = StateID::default();",
+                "    let state = State::CaptureStart {",
+                "        pattern_id: PatternID::default(),",
+                "        group_index: 0.into(),",
+                "        next: state_id,",
+                "    };",
+                "    let _ = builder.add(state).unwrap();",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.states.len() > 0);",
+                "    assert!(builder.get_size_limit() == Some(1024));",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert!(builder.add(State::CaptureStart { pattern_id: PatternID::default(), group_index: 0.into(), next: StateID::default() }).is_ok());",
+                "    assert!(builder.states.len() == 1);",
+                "    assert!(builder.memory_states > 0);",
+                "    assert_eq!(builder.add(State::CaptureStart { pattern_id: PatternID::default(), group_index: 1.into(), next: StateID::default() }).is_ok(), true);",
+                "    assert!(builder.memory_states <= 1024);",
+                "    assert!(builder.add(State::CaptureStart { pattern_id: PatternID::default(), group_index: 2.into(), next: StateID::default() }).is_ok());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state_id = StateID::default();",
+                "    let state = State::CaptureEnd {",
+                "        pattern_id: PatternID::default(),",
+                "        group_index: 0.into(),",
+                "        next: state_id,",
+                "    };",
+                "    let _ = builder.add(state).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.states.len() > 0);",
+                "    assert!(builder.get_size_limit().is_some());",
+                "    assert_eq!(builder.get_size_limit(), Some(1024));",
+                "    assert!(matches!(builder.add(State::CaptureEnd { pattern_id: PatternID::default(), group_index: 0.into(), next: state_id }), Ok(_)));",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert!(builder.states.len() <= 1024);",
+                "    assert!(builder.states.last().is_some());",
+                "    assert!(matches!(builder.add(State::CaptureEnd { pattern_id: PatternID::default(), group_index: 0.into(), next: state_id }), Ok(id) if id.0 == 0));"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state_id = StateID::default();",
+                "    let state = State::CaptureEnd {",
+                "        pattern_id: PatternID::default(),",
+                "        group_index: 0.into(),",
+                "        next: state_id,",
+                "    };",
+                "    let _ = builder.add(state).unwrap();",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.states.len() > 0);",
+                "    assert!(builder.get_size_limit().is_some());",
+                "    assert_eq!(builder.get_size_limit(), Some(1024));",
+                "    assert!(matches!(builder.add(State::CaptureEnd { pattern_id: PatternID::default(), group_index: 0.into(), next: state_id }), Ok(_)));",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert!(builder.states.len() <= 1024);",
+                "    assert!(builder.states.last().is_some());",
+                "    assert!(matches!(builder.add(State::CaptureEnd { pattern_id: PatternID::default(), group_index: 0.into(), next: state_id }), Ok(id) if id.0 == 0));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state = State::Fail;",
+                "    let _ = builder.add(state).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap();",
+                "    let state = State::Fail;",
+                "    let result = builder.add(state);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert!(builder.check_size_limit().is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state = State::Fail;",
+                "    let _ = builder.add(state).unwrap();",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap();",
+                "    let state = State::Fail;",
+                "    let result = builder.add(state);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state = State::Match {",
+                "        pattern_id: PatternID::default(),",
+                "    };",
+                "    let _ = builder.add(state).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert!(builder.memory_states > 0);",
+                "    assert_eq!(builder.memory_usage(), builder.memory_states);",
+                "    assert!(builder.get_size_limit().is_some());",
+                "    assert!(builder.get_size_limit().unwrap() == 1024);",
+                "    assert!(builder.get_utf8() == false);",
+                "    assert!(builder.get_reverse() == false);",
+                "    assert!(builder.current_pattern_id() == PatternID::default());",
+                "    assert_eq!(builder.pattern_len(), 1);",
+                "    assert!(builder.start_pattern.len() > 0);",
+                "    ",
+                "    assert!(builder.states[0] == State::Match { pattern_id: PatternID::default() });"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    builder.set_size_limit(Some(1024)).unwrap(); // Set a size limit",
+                "    let state = State::Match {",
+                "        pattern_id: PatternID::default(),",
+                "    };",
+                "    let _ = builder.add(state).unwrap();",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert!(builder.memory_states > 0);",
+                "    assert_eq!(builder.memory_usage(), builder.memory_states);",
+                "    assert!(builder.get_size_limit().is_some());",
+                "    assert!(builder.get_size_limit().unwrap() == 1024);",
+                "    assert!(builder.get_utf8() == false);",
+                "    assert!(builder.get_reverse() == false);",
+                "    assert!(builder.current_pattern_id() == PatternID::default());",
+                "    assert_eq!(builder.pattern_len(), 1);",
+                "    assert!(builder.start_pattern.len() > 0);",
+                "    ",
+                "    assert!(builder.states[0] == State::Match { pattern_id: PatternID::default() });",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: StateID::new(self.states.len())\n            .map_err(|_| BuildError::too_many_states(self.states.len()))? at line 1115 is Ok/Some\n",
+        "precondition: self.check_size_limit()? at line 1119 is Ok/Some\n",
+        "expected return value/type: Ok(id)\n"
+      ],
+      "input_infer": "state: State with memory usage < size_limit; states.length < maximum_allowed_states\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let empty_state = State::Empty {",
+                "        next: StateID::default(),",
+                "    };",
+                "    let _ = builder.add(empty_state);",
+                "}"
+              ],
+              "oracle": [
+                "    let mut builder = Builder::new();",
+                "    let empty_state = State::Empty { next: StateID::default() };",
+                "    let result = builder.add(empty_state);",
+                "    assert!(result.is_ok());",
+                "    let id = result.unwrap();",
+                "    assert_eq!(id, StateID::new(0).unwrap());",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert_eq!(builder.memory_states, 0);"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let empty_state = State::Empty {",
+                "        next: StateID::default(),",
+                "    };",
+                "    let _ = builder.add(empty_state);",
+                "    let mut builder = Builder::new();",
+                "    let empty_state = State::Empty { next: StateID::default() };",
+                "    let result = builder.add(empty_state);",
+                "    assert!(result.is_ok());",
+                "    let id = result.unwrap();",
+                "    assert_eq!(id, StateID::new(0).unwrap());",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert_eq!(builder.memory_states, 0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let byte_range_state = State::ByteRange {",
+                "        trans: Transition::default(),",
+                "    };",
+                "    let _ = builder.add(byte_range_state);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(builder.states.len() < StateID::max_value() as usize);",
+                "    assert!(builder.memory_states >= 0);",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert_eq!(_result, Ok(expected_id));"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let byte_range_state = State::ByteRange {",
+                "        trans: Transition::default(),",
+                "    };",
+                "    let _ = builder.add(byte_range_state);",
+                "    assert!(builder.states.len() < StateID::max_value() as usize);",
+                "    assert!(builder.memory_states >= 0);",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert_eq!(_result, Ok(expected_id));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let sparse_state = State::Sparse {",
+                "        transitions: vec![Transition::default(), Transition::default()],",
+                "    };",
+                "    let _ = builder.add(sparse_state);",
+                "}"
+              ],
+              "oracle": [
+                "    let mut builder = Builder::new();",
+                "    let sparse_state = State::Sparse { transitions: vec![Transition::default(), Transition::default()] };",
+                "    let result = builder.add(sparse_state);",
+                "    assert!(result.is_ok());",
+                "    let id = result.unwrap();",
+                "    assert!(id.0 < builder.states.len());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.check_size_limit().is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let sparse_state = State::Sparse {",
+                "        transitions: vec![Transition::default(), Transition::default()],",
+                "    };",
+                "    let _ = builder.add(sparse_state);",
+                "    let mut builder = Builder::new();",
+                "    let sparse_state = State::Sparse { transitions: vec![Transition::default(), Transition::default()] };",
+                "    let result = builder.add(sparse_state);",
+                "    assert!(result.is_ok());",
+                "    let id = result.unwrap();",
+                "    assert!(id.0 < builder.states.len());",
+                "    assert_eq!(builder.memory_states, 0);",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let union_state = State::Union {",
+                "        alternates: vec![StateID::default(), StateID::default()],",
+                "    };",
+                "    let _ = builder.add(union_state);",
+                "}"
+              ],
+              "oracle": [
+                "    let mut builder = Builder::new();",
+                "    let union_state = State::Union { alternates: vec![StateID::default(), StateID::default()] };",
+                "    let result = builder.add(union_state);",
+                "    assert!(result.is_ok(), \"Expected Ok result, but got {:?}\", result);",
+                "    assert_eq!(builder.states.len(), 1, \"Expected one state to be added, but found {}\", builder.states.len());",
+                "    assert_eq!(builder.memory_states, 0, \"Expected memory_states to be 0, found {}\", builder.memory_states);",
+                "    assert!(builder.check_size_limit().is_ok(), \"Expected size limit check to succeed\");"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let union_state = State::Union {",
+                "        alternates: vec![StateID::default(), StateID::default()],",
+                "    };",
+                "    let _ = builder.add(union_state);",
+                "    let mut builder = Builder::new();",
+                "    let union_state = State::Union { alternates: vec![StateID::default(), StateID::default()] };",
+                "    let result = builder.add(union_state);",
+                "    assert!(result.is_ok(), \"Expected Ok result, but got {:?}\", result);",
+                "    assert_eq!(builder.states.len(), 1, \"Expected one state to be added, but found {}\", builder.states.len());",
+                "    assert_eq!(builder.memory_states, 0, \"Expected memory_states to be 0, found {}\", builder.memory_states);",
+                "    assert!(builder.check_size_limit().is_ok(), \"Expected size limit check to succeed\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let fail_state = State::Fail;",
+                "    let _ = builder.add(fail_state);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(builder.states.len() == 1);",
+                "    assert!(builder.memory_states == 0);",
+                "    assert!(builder.states[0] == State::Fail);",
+                "    assert!(matches!(builder.add(State::Fail), Ok(_)));",
+                "    assert!(matches!(builder.add(State::Empty { next: StateID::default()}), Ok(_)));",
+                "    assert!(builder.add(State::ByteRange { trans: Transition::default() }).is_ok());",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert!(builder.add(State::Match { pattern_id: PatternID::default() }).is_ok());",
+                "    assert!(builder.memory_usage() == 0);"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let fail_state = State::Fail;",
+                "    let _ = builder.add(fail_state);",
+                "    assert!(builder.states.len() == 1);",
+                "    assert!(builder.memory_states == 0);",
+                "    assert!(builder.states[0] == State::Fail);",
+                "    assert!(matches!(builder.add(State::Fail), Ok(_)));",
+                "    assert!(matches!(builder.add(State::Empty { next: StateID::default()}), Ok(_)));",
+                "    assert!(builder.add(State::ByteRange { trans: Transition::default() }).is_ok());",
+                "    assert!(builder.check_size_limit().is_ok());",
+                "    assert!(builder.add(State::Match { pattern_id: PatternID::default() }).is_ok());",
+                "    assert!(builder.memory_usage() == 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let match_state = State::Match {",
+                "        pattern_id: PatternID::default(),",
+                "    };",
+                "    let _ = builder.add(match_state);",
+                "}"
+              ],
+              "oracle": [
+                "    let mut builder = Builder::new();",
+                "    let match_state = State::Match {",
+                "    pattern_id: PatternID::default(),",
+                "    };",
+                "    let result = builder.add(match_state);",
+                "    assert!(result.is_ok());",
+                "    let state_id = result.unwrap();",
+                "    assert_eq!(state_id, StateID::new(builder.states.len() - 1).unwrap());",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert_eq!(builder.memory_states, 0);"
+              ],
+              "code": [
+                "{",
+                "    let mut builder = Builder::new();",
+                "    let match_state = State::Match {",
+                "        pattern_id: PatternID::default(),",
+                "    };",
+                "    let _ = builder.add(match_state);",
+                "    let mut builder = Builder::new();",
+                "    let match_state = State::Match {",
+                "    pattern_id: PatternID::default(),",
+                "    };",
+                "    let result = builder.add(match_state);",
+                "    assert!(result.is_ok());",
+                "    let state_id = result.unwrap();",
+                "    assert_eq!(state_id, StateID::new(builder.states.len() - 1).unwrap());",
+                "    assert_eq!(builder.states.len(), 1);",
+                "    assert_eq!(builder.memory_states, 0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

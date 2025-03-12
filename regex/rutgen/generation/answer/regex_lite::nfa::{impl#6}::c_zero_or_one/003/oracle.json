@@ -1,0 +1,160 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { nest_limit: 10, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, \"test_pattern\".to_string());",
+          "    let hir = Hir { kind: HirKind::Class(hir::Class::new(vec![('a', 'z')])), ",
+          "                     is_start_anchored: false, ",
+          "                     is_match_empty: false, ",
+          "                     static_explicit_captures_len: None };",
+          "",
+          "    let result = compiler.c_zero_or_one(&hir, true);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let thompson_ref = result.unwrap();",
+          "    assert_eq!(thompson_ref.start, expected_start_state_id); // Replace with expected StateID",
+          "    assert_eq!(thompson_ref.end, expected_end_state_id); // Replace with expected StateID",
+          "    assert!(thompson_ref.start != thompson_ref.end); // Ensure start and end are different states",
+          "    assert!(compiler.nfa.borrow().memory_extra > original_memory_extra); // Ensure memory usage increased after adding states"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { nest_limit: 10, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, \"test_pattern\".to_string());",
+          "    let hir = Hir { kind: HirKind::Class(hir::Class::new(vec![('a', 'z')])), ",
+          "                     is_start_anchored: false, ",
+          "                     is_match_empty: false, ",
+          "                     static_explicit_captures_len: None };",
+          "",
+          "    let result = compiler.c_zero_or_one(&hir, true);",
+          "    assert!(result.is_ok());",
+          "    let thompson_ref = result.unwrap();",
+          "    assert_eq!(thompson_ref.start, expected_start_state_id); // Replace with expected StateID",
+          "    assert_eq!(thompson_ref.end, expected_end_state_id); // Replace with expected StateID",
+          "    assert!(thompson_ref.start != thompson_ref.end); // Ensure start and end are different states",
+          "    assert!(compiler.nfa.borrow().memory_extra > original_memory_extra); // Ensure memory usage increased after adding states",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let config = Config { nest_limit: 10, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, \"test_pattern\".to_string());",
+          "    let hir = Hir { kind: HirKind::Repetition(hir::Repetition::new(1, 3)), ",
+          "                     is_start_anchored: false, ",
+          "                     is_match_empty: false, ",
+          "                     static_explicit_captures_len: None };",
+          "",
+          "    let result = compiler.c_zero_or_one(&hir, false);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.as_ref().unwrap().start, expected_split_state_id);",
+          "    assert_eq!(result.as_ref().unwrap().end, expected_empty_state_id);",
+          "    assert!(result.as_ref().unwrap().start != result.as_ref().unwrap().end);",
+          "    assert!(result.as_ref().unwrap().start > 0);",
+          "    assert!(result.as_ref().unwrap().end > 0);",
+          "    assert!(result.as_ref().unwrap().end > result.as_ref().unwrap().start);",
+          "    assert_eq!(compiler.nfa.borrow().states.len(), expected_states_count_after_adds);",
+          "    assert!(compiler.nfa.borrow().states[expected_split_state_id.as_usize()].is_splits());",
+          "    assert!(compiler.nfa.borrow().states[expected_empty_state_id.as_usize()].is_goto());",
+          "    assert!(compiler.nfa.borrow().memory_extra > initial_memory_extra);",
+          "    assert!(compiler.nfa.borrow().memory_extra < max_memory_limit);"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { nest_limit: 10, flags: Flags::empty() };",
+          "    let compiler = Compiler::new(config, \"test_pattern\".to_string());",
+          "    let hir = Hir { kind: HirKind::Repetition(hir::Repetition::new(1, 3)), ",
+          "                     is_start_anchored: false, ",
+          "                     is_match_empty: false, ",
+          "                     static_explicit_captures_len: None };",
+          "",
+          "    let result = compiler.c_zero_or_one(&hir, false);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.as_ref().unwrap().start, expected_split_state_id);",
+          "    assert_eq!(result.as_ref().unwrap().end, expected_empty_state_id);",
+          "    assert!(result.as_ref().unwrap().start != result.as_ref().unwrap().end);",
+          "    assert!(result.as_ref().unwrap().start > 0);",
+          "    assert!(result.as_ref().unwrap().end > 0);",
+          "    assert!(result.as_ref().unwrap().end > result.as_ref().unwrap().start);",
+          "    assert_eq!(compiler.nfa.borrow().states.len(), expected_states_count_after_adds);",
+          "    assert!(compiler.nfa.borrow().states[expected_split_state_id.as_usize()].is_splits());",
+          "    assert!(compiler.nfa.borrow().states[expected_empty_state_id.as_usize()].is_goto());",
+          "    assert!(compiler.nfa.borrow().memory_extra > initial_memory_extra);",
+          "    assert!(compiler.nfa.borrow().memory_extra < max_memory_limit);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let config = Config { nest_limit: 0, flags: Flags::empty() }; // Set limits to trigger error",
+          "    let compiler = Compiler::new(config, \"test_pattern\".to_string());",
+          "    let hir = Hir { kind: HirKind::Empty, ",
+          "                     is_start_anchored: false, ",
+          "                     is_match_empty: false, ",
+          "                     static_explicit_captures_len: None };",
+          "",
+          "    let result = compiler.c_zero_or_one(&hir, true);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.err().unwrap().msg, \"size limit exceeded\");",
+          "    assert!(matches!(result, Err(Error { .. })));",
+          "    assert!(result.is_ok());",
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().msg.contains(\"could not add empty state\"));",
+          "    assert!(result.unwrap_err().msg.contains(\"failed to add state\"));",
+          "    assert!(result.unwrap_err().msg == \"exhausted state IDs, too many states\");",
+          "    assert!(result.unwrap_err().msg.contains(\"memory limit exceeded\"));",
+          "    assert!(result.unwrap_err().msg.contains(\"state ID limit reached\"));"
+        ],
+        "code": [
+          "{",
+          "    let config = Config { nest_limit: 0, flags: Flags::empty() }; // Set limits to trigger error",
+          "    let compiler = Compiler::new(config, \"test_pattern\".to_string());",
+          "    let hir = Hir { kind: HirKind::Empty, ",
+          "                     is_start_anchored: false, ",
+          "                     is_match_empty: false, ",
+          "                     static_explicit_captures_len: None };",
+          "",
+          "    let result = compiler.c_zero_or_one(&hir, true);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.err().unwrap().msg, \"size limit exceeded\");",
+          "    assert!(matches!(result, Err(Error { .. })));",
+          "    assert!(result.is_ok());",
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().msg.contains(\"could not add empty state\"));",
+          "    assert!(result.unwrap_err().msg.contains(\"failed to add state\"));",
+          "    assert!(result.unwrap_err().msg == \"exhausted state IDs, too many states\");",
+          "    assert!(result.unwrap_err().msg.contains(\"memory limit exceeded\"));",
+          "    assert!(result.unwrap_err().msg.contains(\"state ID limit reached\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

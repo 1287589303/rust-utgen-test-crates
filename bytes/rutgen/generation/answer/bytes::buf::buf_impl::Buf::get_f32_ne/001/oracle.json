@@ -1,0 +1,240 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x9A\\x99\\x99\\x3F\"; // Represents 1.2f32",
+          "    let _ = buf.get_f32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert_eq!(buf.get_f32_ne(), 1.2f32);",
+          "    assert!(panic::catch_unwind(|| { buf.get_f32_ne(); }).is_err());",
+          "    let mut buf_underflow: &[u8] = b\"\";",
+          "    assert!(panic::catch_unwind(|| { buf_underflow.get_f32_ne(); }).is_err());",
+          "    let mut buf_insufficient: &[u8] = b\"\\x9A\\x99\";",
+          "    assert!(panic::catch_unwind(|| { buf_insufficient.get_f32_ne(); }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x9A\\x99\\x99\\x3F\"; // Represents 1.2f32",
+          "    let _ = buf.get_f32_ne();",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert_eq!(buf.get_f32_ne(), 1.2f32);",
+          "    assert!(panic::catch_unwind(|| { buf.get_f32_ne(); }).is_err());",
+          "    let mut buf_underflow: &[u8] = b\"\";",
+          "    assert!(panic::catch_unwind(|| { buf_underflow.get_f32_ne(); }).is_err());",
+          "    let mut buf_insufficient: &[u8] = b\"\\x9A\\x99\";",
+          "    assert!(panic::catch_unwind(|| { buf_insufficient.get_f32_ne(); }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x3F\\x99\\x99\\x9A\"; // Represents 1.2f32",
+          "    let _ = buf.get_f32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_f32_ne(), 1.2f32);",
+          "    assert_panics!(buf.get_f32_ne());",
+          "    buf.advance(4);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    let mut buf_overflow: &[u8] = b\"\\x3F\\x99\\x99\";",
+          "    assert_panics!(buf_overflow.get_f32_ne());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x3F\\x99\\x99\\x9A\"; // Represents 1.2f32",
+          "    let _ = buf.get_f32_ne();",
+          "    assert_eq!(buf.get_f32_ne(), 1.2f32);",
+          "    assert_panics!(buf.get_f32_ne());",
+          "    buf.advance(4);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    let mut buf_overflow: &[u8] = b\"\\x3F\\x99\\x99\";",
+          "    assert_panics!(buf_overflow.get_f32_ne());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x3F\\x99\"; // Less than 4 bytes",
+          "    let _ = buf.get_f32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| { let mut buf: &[u8] = b\"\\x3F\\x99\"; let _ = buf.get_f32_ne(); }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x3F\\x99\"; // Less than 4 bytes",
+          "    let _ = buf.get_f32_ne();",
+          "    assert!(std::panic::catch_unwind(|| { let mut buf: &[u8] = b\"\\x3F\\x99\"; let _ = buf.get_f32_ne(); }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x99\\x99\\x9A\"; // Less than 4 bytes",
+          "    let _ = buf.get_f32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(std::panic::catch_unwind(|| { buf.get_f32_ne(); }).is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x99\\x99\\x9A\"; // Less than 4 bytes",
+          "    let _ = buf.get_f32_ne();",
+          "    assert_eq!(std::panic::catch_unwind(|| { buf.get_f32_ne(); }).is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\"; // An empty buffer",
+          "    let _ = buf.get_f32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(1.2f32, buf.get_f32_ne()); // Valid input for non-empty buffer",
+          "    assert!(buf.remaining() >= 4); // Ensure there are at least 4 bytes to read",
+          "    let mut buf: &[u8] = b\"\\x3F\\x99\\x99\\x9A\"; // Big-endian example",
+          "    let result = buf.get_f32_ne();",
+          "    assert_eq!(result, 1.2f32); // Validate result for big-endian byte order",
+          "    let mut buf: &[u8] = b\"\\x9A\\x99\\x99\\x3F\"; // Little-endian example",
+          "    let result = buf.get_f32_ne();",
+          "    assert_eq!(result, 1.2f32); // Validate result for little-endian byte order",
+          "    let mut buf: &[u8] = b\"\\x00\\x00\\x00\\x00\"; // Zero value test",
+          "    let result = buf.get_f32_ne();",
+          "    assert_eq!(result, 0.0f32); // Validate zero as valid input",
+          "    let mut buf: &[u8] = b\"\\xFF\\xFF\\xFF\\xFF\"; // Max float test",
+          "    let result = buf.get_f32_ne();",
+          "    assert_eq!(result, f32::from_bits(0xFFFFFFFF)); // Validate max float input",
+          "    let mut buf: &[u8] = b\"\\x7F\\x7F\\x7F\\x7F\"; // Edge case test",
+          "    let result = buf.get_f32_ne();",
+          "    assert_eq!(result, f32::from_bits(0x7F7F7F7F)); // Validate edge case input",
+          "    let mut buf: &[u8] = b\"\\x3F\\x99\\x99\"; // Insufficient bytes leading to panic",
+          "    let _ = buf.get_f32_ne(); // Assert panic occurs due to insufficient bytes"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\"; // An empty buffer",
+          "    let _ = buf.get_f32_ne();",
+          "    assert_eq!(1.2f32, buf.get_f32_ne()); // Valid input for non-empty buffer",
+          "    assert!(buf.remaining() >= 4); // Ensure there are at least 4 bytes to read",
+          "    let mut buf: &[u8] = b\"\\x3F\\x99\\x99\\x9A\"; // Big-endian example",
+          "    let result = buf.get_f32_ne();",
+          "    assert_eq!(result, 1.2f32); // Validate result for big-endian byte order",
+          "    let mut buf: &[u8] = b\"\\x9A\\x99\\x99\\x3F\"; // Little-endian example",
+          "    let result = buf.get_f32_ne();",
+          "    assert_eq!(result, 1.2f32); // Validate result for little-endian byte order",
+          "    let mut buf: &[u8] = b\"\\x00\\x00\\x00\\x00\"; // Zero value test",
+          "    let result = buf.get_f32_ne();",
+          "    assert_eq!(result, 0.0f32); // Validate zero as valid input",
+          "    let mut buf: &[u8] = b\"\\xFF\\xFF\\xFF\\xFF\"; // Max float test",
+          "    let result = buf.get_f32_ne();",
+          "    assert_eq!(result, f32::from_bits(0xFFFFFFFF)); // Validate max float input",
+          "    let mut buf: &[u8] = b\"\\x7F\\x7F\\x7F\\x7F\"; // Edge case test",
+          "    let result = buf.get_f32_ne();",
+          "    assert_eq!(result, f32::from_bits(0x7F7F7F7F)); // Validate edge case input",
+          "    let mut buf: &[u8] = b\"\\x3F\\x99\\x99\"; // Insufficient bytes leading to panic",
+          "    let _ = buf.get_f32_ne(); // Assert panic occurs due to insufficient bytes",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x00\\x00\\x00\\x00\"; // Represents 0.0f32",
+          "    let _ = buf.get_f32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert_eq!(buf.get_f32_ne(), 0.0f32);",
+          "    assert!(std::panic::catch_unwind(|| buf.get_f32_ne()).is_err());",
+          "    assert_eq!(buf.remaining(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x00\\x00\\x00\\x00\"; // Represents 0.0f32",
+          "    let _ = buf.get_f32_ne();",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert_eq!(buf.get_f32_ne(), 0.0f32);",
+          "    assert!(std::panic::catch_unwind(|| buf.get_f32_ne()).is_err());",
+          "    assert_eq!(buf.remaining(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x7F\\x7F\\xFF\\xFF\"; // Represents very large float value",
+          "    let _ = buf.get_f32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_f32_ne(), f32::from_bits(0x7F7FFFFF));",
+          "    assert!(panic::catch_unwind(|| { buf.get_f32_ne(); }).is_err());",
+          "    buf = b\"\\x00\\x00\\x00\\x00\";",
+          "    assert_eq!(buf.get_f32_ne(), 0.0);",
+          "    buf = b\"\\xFF\\xFF\\xFF\\xFF\";",
+          "    assert_eq!(buf.get_f32_ne(), f32::from_bits(0xFFFFFFFF));",
+          "    buf = b\"\\x3F\\x80\\x00\\x00\";",
+          "    assert_eq!(buf.get_f32_ne(), 1.0);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x7F\\x7F\\xFF\\xFF\"; // Represents very large float value",
+          "    let _ = buf.get_f32_ne();",
+          "    assert_eq!(buf.get_f32_ne(), f32::from_bits(0x7F7FFFFF));",
+          "    assert!(panic::catch_unwind(|| { buf.get_f32_ne(); }).is_err());",
+          "    buf = b\"\\x00\\x00\\x00\\x00\";",
+          "    assert_eq!(buf.get_f32_ne(), 0.0);",
+          "    buf = b\"\\xFF\\xFF\\xFF\\xFF\";",
+          "    assert_eq!(buf.get_f32_ne(), f32::from_bits(0xFFFFFFFF));",
+          "    buf = b\"\\x3F\\x80\\x00\\x00\";",
+          "    assert_eq!(buf.get_f32_ne(), 1.0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

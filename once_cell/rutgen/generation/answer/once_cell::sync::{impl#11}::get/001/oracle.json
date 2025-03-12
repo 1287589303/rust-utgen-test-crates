@@ -1,0 +1,225 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct MyLazy;",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::get(&lazy), None);",
+          "    assert_eq!(lazy.cell.is_initialized(), false);"
+        ],
+        "code": [
+          "{",
+          "    struct MyLazy;",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), None);",
+          "    assert_eq!(lazy.cell.is_initialized(), false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::with_value(0),",
+          "        init: Cell::new(Some(|| 0)),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::get(&lazy), Some(&0));"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::with_value(0),",
+          "        init: Cell::new(Some(|| 0)),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), Some(&0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::with_value(42),",
+          "        init: Cell::new(Some(|| 42)),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::get(&lazy), Some(&42));",
+          "    assert_eq!(Lazy::get(&Lazy::new(|| 92)), None);",
+          "    assert_eq!(&*lazy, &42);",
+          "    let lazy_empty: Lazy<i32> = Lazy::new(|| 99);",
+          "    assert_eq!(Lazy::get(&lazy_empty), None);",
+          "    assert!(lazy_empty.init.get().is_some());"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::with_value(42),",
+          "        init: Cell::new(Some(|| 42)),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), Some(&42));",
+          "    assert_eq!(Lazy::get(&Lazy::new(|| 92)), None);",
+          "    assert_eq!(&*lazy, &42);",
+          "    let lazy_empty: Lazy<i32> = Lazy::new(|| 99);",
+          "    assert_eq!(Lazy::get(&lazy_empty), None);",
+          "    assert!(lazy_empty.init.get().is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::with_value(String::from(\"Hello\")),",
+          "        init: Cell::new(Some(|| String::from(\"Hello\"))),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::get(&lazy), Some(&String::from(\"Hello\")));",
+          "    assert_eq!(Lazy::get(&lazy), Some(&lazy.cell.get().unwrap().clone()));",
+          "    assert!(Lazy::get(&Lazy { cell: OnceCell::new(), init: Cell::new(None) }).is_none());",
+          "    assert_eq!(Lazy::get(&Lazy::new(|| String::from(\"World\"))), None);",
+          "    assert_eq!(Lazy::get(&lazy), Some(&lazy.cell.get().unwrap()));"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::with_value(String::from(\"Hello\")),",
+          "        init: Cell::new(Some(|| String::from(\"Hello\"))),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), Some(&String::from(\"Hello\")));",
+          "    assert_eq!(Lazy::get(&lazy), Some(&lazy.cell.get().unwrap().clone()));",
+          "    assert!(Lazy::get(&Lazy { cell: OnceCell::new(), init: Cell::new(None) }).is_none());",
+          "    assert_eq!(Lazy::get(&Lazy::new(|| String::from(\"World\"))), None);",
+          "    assert_eq!(Lazy::get(&lazy), Some(&lazy.cell.get().unwrap()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::with_value(String::new()),",
+          "        init: Cell::new(Some(|| String::new())),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::get(&lazy), Some(&String::new()));",
+          "    let lazy_uninitialized = Lazy { cell: OnceCell::new(), init: Cell::new(None) };",
+          "    assert_eq!(Lazy::get(&lazy_uninitialized), None);",
+          "    let lazy_with_default = Lazy { cell: OnceCell::with_value(42), init: Cell::new(Some(|| 0)) };",
+          "    assert_eq!(Lazy::get(&lazy_with_default), Some(&42));",
+          "    let lazy_with_empty_string = Lazy { cell: OnceCell::with_value(String::from(\"\")), init: Cell::new(Some(|| String::from(\"\"))) };",
+          "    assert_eq!(Lazy::get(&lazy_with_empty_string), Some(&String::from(\"\")));",
+          "    let lazy_with_non_empty_string = Lazy { cell: OnceCell::with_value(String::from(\"Hello\")), init: Cell::new(Some(|| String::from(\"World\"))) };",
+          "    assert_eq!(Lazy::get(&lazy_with_non_empty_string), Some(&String::from(\"Hello\")));"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::with_value(String::new()),",
+          "        init: Cell::new(Some(|| String::new())),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), Some(&String::new()));",
+          "    let lazy_uninitialized = Lazy { cell: OnceCell::new(), init: Cell::new(None) };",
+          "    assert_eq!(Lazy::get(&lazy_uninitialized), None);",
+          "    let lazy_with_default = Lazy { cell: OnceCell::with_value(42), init: Cell::new(Some(|| 0)) };",
+          "    assert_eq!(Lazy::get(&lazy_with_default), Some(&42));",
+          "    let lazy_with_empty_string = Lazy { cell: OnceCell::with_value(String::from(\"\")), init: Cell::new(Some(|| String::from(\"\"))) };",
+          "    assert_eq!(Lazy::get(&lazy_with_empty_string), Some(&String::from(\"\")));",
+          "    let lazy_with_non_empty_string = Lazy { cell: OnceCell::with_value(String::from(\"Hello\")), init: Cell::new(Some(|| String::from(\"World\"))) };",
+          "    assert_eq!(Lazy::get(&lazy_with_non_empty_string), Some(&String::from(\"Hello\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::with_value(0),",
+          "        init: Cell::new(Some(|| 0)),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::get(&lazy), Some(&0));",
+          "    assert_eq!(Lazy::get(&Lazy::new(|| 92)), None);",
+          "    assert_eq!(Lazy::get(&Lazy::new(|| 42)), None);",
+          "    assert_eq!(Lazy::get(&Lazy::new(|| 10)), None);",
+          "    let lazy_42 = Lazy::new(|| 42);",
+          "    assert_eq!(&*lazy_42, &42);",
+          "    assert_eq!(Lazy::get(&lazy_42), Some(&42));",
+          "    let lazy_empty: Lazy<i32> = Lazy::new(|| 0);",
+          "    assert_eq!(Lazy::get(&lazy_empty), None);"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell::with_value(0),",
+          "        init: Cell::new(Some(|| 0)),",
+          "    };",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), Some(&0));",
+          "    assert_eq!(Lazy::get(&Lazy::new(|| 92)), None);",
+          "    assert_eq!(Lazy::get(&Lazy::new(|| 42)), None);",
+          "    assert_eq!(Lazy::get(&Lazy::new(|| 10)), None);",
+          "    let lazy_42 = Lazy::new(|| 42);",
+          "    assert_eq!(&*lazy_42, &42);",
+          "    assert_eq!(Lazy::get(&lazy_42), Some(&42));",
+          "    let lazy_empty: Lazy<i32> = Lazy::new(|| 0);",
+          "    assert_eq!(Lazy::get(&lazy_empty), None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

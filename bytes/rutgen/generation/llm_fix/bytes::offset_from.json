@@ -1,0 +1,182 @@
+{
+  "name": "bytes::offset_from",
+  "mod_info": {
+    "name": "",
+    "loc": "src/lib.rs:1:1:199:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:197:1:199:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "expected return value/type: dst as usize - original as usize\n"
+      ],
+      "input_infer": "dst should be a pointer to a memory address greater than or equal to original, covering edge cases where dst equals original, dst is at the very start of allocated memory, and dst is at the maximum addressable memory limit within the context of the program's memory space.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let original: *const u8 = 0x1000 as *const u8;",
+                "    let dst: *const u8 = original; // dst equals original",
+                "    let result = offset_from(dst, original);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, 0);",
+                "    assert!(result == 0, \"Expected offset to be 0 when dst equals original\");",
+                "    assert!(original as usize <= dst as usize, \"Precondition not satisfied: dst should be greater than or equal to original\");",
+                "    assert!(result.is_zero(), \"Result should be zero when pointers are equal\");"
+              ],
+              "code": [
+                "{",
+                "   let original: *const u8 = 0x1000 as *const u8;  ",
+                "   let dst: *const u8 = original; // dst equals original  ",
+                "   let result = offset_from(dst, original);  ",
+                "   assert_eq!(result, 0);  ",
+                "   assert!(result == 0, \"Expected offset to be 0 when dst equals original\");  ",
+                "   assert!(original as usize <= dst as usize, \"Precondition not satisfied: dst should be greater than or equal to original\");  ",
+                "   assert!(result == 0, \"Result should be zero when pointers are equal\");  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let original: *const u8 = 0x1000 as *const u8;",
+                "    let dst: *const u8 = 0x1010 as *const u8; // dst is 16 bytes greater than original",
+                "    let result = offset_from(dst, original);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, 16);"
+              ],
+              "code": [
+                "{",
+                "    let original: *const u8 = 0x1000 as *const u8;",
+                "    let dst: *const u8 = 0x1010 as *const u8; // dst is 16 bytes greater than original",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, 16);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let original: *const u8 = 0x0 as *const u8; // start of allocated memory",
+                "    let dst: *const u8 = original; // dst equals original",
+                "    let result = offset_from(dst, original);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, 0usize);"
+              ],
+              "code": [
+                "{",
+                "    let original: *const u8 = 0x0 as *const u8; // start of allocated memory",
+                "    let dst: *const u8 = original; // dst equals original",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, 0usize);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let original: *const u8 = 0xFFFFFFFF as *const u8; // assuming max addressable memory",
+                "    let dst: *const u8 = original; // dst equals original at max address",
+                "    let result = offset_from(dst, original);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, 0);  // When dst equals original, the offset should be 0.",
+                "    ",
+                "    let dst: *const u8 = original.wrapping_add(1); // dst is 1 byte ahead of original",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, 1);  // Offset should be 1 when dst is 1 byte ahead.",
+                "    ",
+                "    let dst: *const u8 = original.wrapping_sub(1); // dst is 1 byte behind original",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, usize::MAX);  // Underflow should handle wrapping to max usize.",
+                "    ",
+                "    let dst: *const u8 = original.wrapping_add(10); // dst is 10 bytes ahead of original",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, 10);  // Offset should be 10 when dst is 10 bytes ahead.",
+                "    ",
+                "    let dst: *const u8 = (original as usize + 0x10) as *const u8; // dst is 16 bytes ahead of original",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, 16);  // Offset should be 16 when dst is 16 bytes ahead."
+              ],
+              "code": [
+                "{",
+                "    let original: *const u8 = 0xFFFFFFFF as *const u8; // assuming max addressable memory",
+                "    let dst: *const u8 = original; // dst equals original at max address",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, 0);  // When dst equals original, the offset should be 0.",
+                "    ",
+                "    let dst: *const u8 = original.wrapping_add(1); // dst is 1 byte ahead of original",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, 1);  // Offset should be 1 when dst is 1 byte ahead.",
+                "    ",
+                "    let dst: *const u8 = original.wrapping_sub(1); // dst is 1 byte behind original",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, usize::MAX);  // Underflow should handle wrapping to max usize.",
+                "    ",
+                "    let dst: *const u8 = original.wrapping_add(10); // dst is 10 bytes ahead of original",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, 10);  // Offset should be 10 when dst is 10 bytes ahead.",
+                "    ",
+                "    let dst: *const u8 = (original as usize + 0x10) as *const u8; // dst is 16 bytes ahead of original",
+                "    let result = offset_from(dst, original);",
+                "    assert_eq!(result, 16);  // Offset should be 16 when dst is 16 bytes ahead.",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let original: *const u8 = 0xFFFFFFFF as *const u8; // assuming max addressable memory",
+                "    let dst: *const u8 = 0xFFFFFFFE as *const u8; // dst is less than original",
+                "    let result = offset_from(dst, original); // this situation should not occur as per the precondition",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, (dst as usize - original as usize)); // Ensure calculation is as expected, might need to handle error for precondition violation",
+                "    assert!(dst >= original); // Validate the precondition, should fail test if false"
+              ],
+              "code": [
+                "{",
+                "    let original: *const u8 = 0xFFFFFFFF as *const u8; // assuming max addressable memory",
+                "    let dst: *const u8 = 0xFFFFFFFE as *const u8; // dst is less than original",
+                "    let result = offset_from(dst, original); // this situation should not occur as per the precondition",
+                "    assert_eq!(result, (dst as usize - original as usize)); // Ensure calculation is as expected, might need to handle error for precondition violation",
+                "    assert!(dst >= original); // Validate the precondition, should fail test if false",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

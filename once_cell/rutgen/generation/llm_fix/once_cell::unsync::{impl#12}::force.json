@@ -1,0 +1,266 @@
+{
+  "name": "once_cell::unsync::{impl#12}::force",
+  "mod_info": {
+    "name": "unsync",
+    "loc": "src/lib.rs:383:1:859:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:773:9:778:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "expected return value/type: this.cell.get_or_init(|| match this.init.take() {\n                Some(f) => f(),\n                None => panic!(\"Lazy instance has previously been poisoned\"),\n            })\n"
+      ],
+      "input_infer": "Valid input conditions or ranges are: `Lazy<T, F>` should be created with a valid function `F` that returns a value of type `T`, where `T` can be a numeric, string, or custom type, and `F` is a function that is callable; ensure the Lazy instance is not previously poisoned, and validate behavior on first call and subsequent calls to `force` while checking state with no initialized value (i.e., None).\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestFunction;",
+                "",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+                "        init: Cell::new(Some(|| 42)),",
+                "    };",
+                "",
+                "    let value: &i32 = Lazy::force(&lazy);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(*value, 42);",
+                "    assert_eq!(Lazy::force(&lazy), &42);",
+                "    assert_eq!(&*lazy, &42);",
+                "    assert_eq!(lazy.init.get().is_some(), true);",
+                "    assert!(lazy.cell.inner.get().is_null());"
+              ],
+              "code": [
+                "{",
+                "    struct TestFunction;",
+                "",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+                "        init: Cell::new(Some(|| 42)),",
+                "    };",
+                "",
+                "    let value: &i32 = Lazy::force(&lazy);",
+                "    assert_eq!(*value, 42);",
+                "    assert_eq!(Lazy::force(&lazy), &42);",
+                "    assert_eq!(&*lazy, &42);",
+                "    assert_eq!(lazy.init.get().is_some(), true);",
+                "    assert!(lazy.cell.inner.get().is_null());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestFunction;",
+                "",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+                "        init: Cell::new(Some(|| String::from(\"Hello, world!\"))),",
+                "    };",
+                "",
+                "    let value: &String = Lazy::force(&lazy);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Lazy::force(&lazy), \"Hello, world!\");",
+                "    assert_eq!(value, \"Hello, world!\");",
+                "    assert!(lazy.cell.get_mut().is_none());",
+                "    assert!(lazy.init.get().is_none());",
+                "    assert!(matches!(std::panic::catch_unwind(|| Lazy::force(&Lazy { cell: OnceCell { inner: UnsafeCell::new(Some(String::from(\"Test\")) ) }, init: Cell::new(None) })), Err(_)));",
+                "    lazy.init.set(Some(|| String::from(\"New Value\")));",
+                "    assert_eq!(Lazy::force(&lazy), \"New Value\");"
+              ],
+              "code": [
+                "{",
+                "    struct TestFunction;",
+                "",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+                "        init: Cell::new(Some(|| String::from(\"Hello, world!\"))),",
+                "    };",
+                "",
+                "    let value: &String = Lazy::force(&lazy);",
+                "    assert_eq!(Lazy::force(&lazy), \"Hello, world!\");",
+                "    assert_eq!(value, \"Hello, world!\");",
+                "    assert!(lazy.cell.get_mut().is_none());",
+                "    assert!(lazy.init.get().is_none());",
+                "    assert!(matches!(std::panic::catch_unwind(|| Lazy::force(&Lazy { cell: OnceCell { inner: UnsafeCell::new(Some(String::from(\"Test\")) ) }, init: Cell::new(None) })), Err(_)));",
+                "    lazy.init.set(Some(|| String::from(\"New Value\")));",
+                "    assert_eq!(Lazy::force(&lazy), \"New Value\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(Debug)]",
+                "    struct CustomStruct {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    struct TestFunction;",
+                "",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+                "        init: Cell::new(Some(|| CustomStruct { value: 99 })),",
+                "    };",
+                "",
+                "    let value: &CustomStruct = Lazy::force(&lazy);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(value.value, 99);",
+                "    assert!(value.is_some());",
+                "    assert!(!lazy.init.get().is_some());",
+                "    assert_eq!(lazy.cell.inner.get().is_null(), false);",
+                "    assert_eq!(Lazy::force(&lazy), value);",
+                "    assert!(std::panic::catch_unwind(|| Lazy::force(&lazy)).is_err());",
+                "    assert!(std::panic::catch_unwind(|| Lazy::force(&lazy)).is_err());"
+              ],
+              "code": [
+                "{",
+                "    #[derive(Debug)]",
+                "    struct CustomStruct {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    struct TestFunction;",
+                "",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+                "        init: Cell::new(Some(|| CustomStruct { value: 99 })),",
+                "    };",
+                "",
+                "    let value: &CustomStruct = Lazy::force(&lazy);",
+                "    assert_eq!(value.value, 99);",
+                "    assert!(value.is_some());",
+                "    assert!(!lazy.init.get().is_some());",
+                "    assert_eq!(lazy.cell.inner.get().is_null(), false);",
+                "    assert_eq!(Lazy::force(&lazy), value);",
+                "    assert!(std::panic::catch_unwind(|| Lazy::force(&lazy)).is_err());",
+                "    assert!(std::panic::catch_unwind(|| Lazy::force(&lazy)).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Lazy instance has previously been poisoned\")]"
+              ],
+              "prefix": [
+                "{",
+                "    struct TestFunction;",
+                "",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+                "        init: Cell::new(None), // Simulate a poisoned state.",
+                "    };",
+                "",
+                "    let _value: &i32 = Lazy::force(&lazy);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Lazy::force(&lazy), &92);",
+                "    assert_eq!(Lazy::force(&lazy2), &value);",
+                "    let lazy3 = Lazy::new(|| panic!(\"unexpected panic\"));",
+                "    let result = std::panic::catch_unwind(|| { Lazy::force(&lazy3); });",
+                "    assert!(result.is_err());",
+                "    let lazy4 = Lazy::new(|| 50);",
+                "    assert_eq!(Lazy::force(&lazy4), &50);",
+                "    let mut lazy5 = Lazy::new(|| 100);",
+                "    assert_eq!(Lazy::force(&lazy5), &100);"
+              ],
+              "code": [
+                "{",
+                "    struct TestFunction;",
+                "",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+                "        init: Cell::new(None), // Simulate a poisoned state.",
+                "    };",
+                "",
+                "   let value: &i32 = Lazy::force(&lazy);",
+                "   assert_eq!(Lazy::force(&lazy), &92);",
+                "   assert_eq!(Lazy::force(&lazy2), &value);",
+                "    let lazy3 = Lazy::new(|| panic!(\"unexpected panic\"));",
+                "    let result = std::panic::catch_unwind(|| { Lazy::force(&lazy3); });",
+                "    assert!(result.is_err());",
+                "    let lazy4 = Lazy::new(|| 50);",
+                "    assert_eq!(Lazy::force(&lazy4), &50);",
+                "    let mut lazy5 = Lazy::new(|| 100);",
+                "    assert_eq!(Lazy::force(&lazy5), &100);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestFunction;",
+                "",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+                "        init: Cell::new(Some(|| 100)),",
+                "    };",
+                "",
+                "    let first_call: &i32 = Lazy::force(&lazy);",
+                "    let second_call: &i32 = Lazy::force(&lazy);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(first_call, &100);",
+                "    assert_eq!(second_call, &100);",
+                "    assert!(lazy.cell.inner.get().is_some());",
+                "    assert_eq!(lazy.init.get(), None);",
+                "    assert_eq!(*(first_call as *const _), *(second_call as *const _));",
+                "    assert!(std::ptr::eq(first_call, second_call));",
+                "    assert_panics!(Lazy::force(&Lazy { cell: OnceCell { inner: UnsafeCell::new(Some(200)) }, init: Cell::new(None) }));"
+              ],
+              "code": [
+                "{",
+                "    struct TestFunction;",
+                "",
+                "   let lazy = Lazy {  ",
+                "       cell: OnceCell { inner: UnsafeCell::new(None) },  ",
+                "       init: Cell::new(Some(Box::new(|| 100))),  ",
+                "   };  ",
+                "",
+                "    let first_call: &i32 = Lazy::force(&lazy);",
+                "    let second_call: &i32 = Lazy::force(&lazy);",
+                "    assert_eq!(first_call, &100);",
+                "    assert_eq!(second_call, &100);",
+                "    assert!(lazy.cell.inner.get().is_some());",
+                "   assert_eq!(lazy.init.get(), Some(Box::new(|| 100)));  ",
+                "   assert_eq!(*(first_call as *const _), *(second_call as *const _));  ",
+                "   assert!(std::ptr::eq(first_call, second_call));  ",
+                "   assert_panics!(Lazy::force(&Lazy { cell: OnceCell { inner: UnsafeCell::new(Some(200)) }, init: Cell::new(None) }));  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

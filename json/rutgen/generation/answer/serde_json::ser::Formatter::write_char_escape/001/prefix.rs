@@ -1,0 +1,101 @@
+// Answer 0
+
+#[test]
+fn test_write_char_escape_quote() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::Quote).unwrap();
+}
+
+#[test]
+fn test_write_char_escape_reverse_solidus() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::ReverseSolidus).unwrap();
+}
+
+#[test]
+fn test_write_char_escape_solidus() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::Solidus).unwrap();
+}
+
+#[test]
+fn test_write_char_escape_backspace() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::Backspace).unwrap();
+}
+
+#[test]
+fn test_write_char_escape_form_feed() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::FormFeed).unwrap();
+}
+
+#[test]
+fn test_write_char_escape_line_feed() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::LineFeed).unwrap();
+}
+
+#[test]
+fn test_write_char_escape_carriage_return() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::CarriageReturn).unwrap();
+}
+
+#[test]
+fn test_write_char_escape_tab() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::Tab).unwrap();
+}
+
+#[test]
+fn test_write_char_escape_ascii_control_0() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::AsciiControl(0)).unwrap();
+}
+
+#[test]
+fn test_write_char_escape_ascii_control_255() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::AsciiControl(255)).unwrap();
+}
+
+#[test]
+fn test_write_char_escape_ascii_control_mid() {
+    struct TestFormatter;
+    
+    let mut formatter = TestFormatter;
+    let mut writer = vec![];
+    formatter.write_char_escape(&mut writer, CharEscape::AsciiControl(128)).unwrap();
+}
+

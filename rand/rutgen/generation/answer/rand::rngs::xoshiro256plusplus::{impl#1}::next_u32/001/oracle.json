@@ -1,0 +1,175 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut rng = Xoshiro256PlusPlus { s: [0, 0, 0, 0] };",
+          "    let result = rng.next_u32();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 0);",
+          "    assert!(result <= u32::MAX);",
+          "    assert!(result >= u32::MIN);",
+          "    rng.s = [1, 2, 3, 4];",
+          "    let result_non_zero = rng.next_u32();",
+          "    assert!(result_non_zero > 0);",
+          "    rng.s = [u64::MAX, u64::MAX, u64::MAX, u64::MAX];",
+          "    let result_max = rng.next_u32();",
+          "    assert_eq!(result_max, (u64::MAX >> 32) as u32);",
+          "    rng.s = [0, 0, 0, 0];",
+          "    for _ in 0..1000 {",
+          "    let val = rng.next_u32();",
+          "    assert!(val <= u32::MAX);",
+          "    assert!(val >= u32::MIN);",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let mut rng = Xoshiro256PlusPlus { s: [0, 0, 0, 0] };",
+          "    let result = rng.next_u32();",
+          "    assert_eq!(result, 0);",
+          "    assert!(result <= u32::MAX);",
+          "    assert!(result >= u32::MIN);",
+          "    rng.s = [1, 2, 3, 4];",
+          "    let result_non_zero = rng.next_u32();",
+          "    assert!(result_non_zero > 0);",
+          "    rng.s = [u64::MAX, u64::MAX, u64::MAX, u64::MAX];",
+          "    let result_max = rng.next_u32();",
+          "    assert_eq!(result_max, (u64::MAX >> 32) as u32);",
+          "    rng.s = [0, 0, 0, 0];",
+          "    for _ in 0..1000 {",
+          "    let val = rng.next_u32();",
+          "    assert!(val <= u32::MAX);",
+          "    assert!(val >= u32::MIN);",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut rng = Xoshiro256PlusPlus { s: [u64::MAX, u64::MAX, u64::MAX, u64::MAX] };",
+          "    let result = rng.next_u32();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, u32::MAX);",
+          "    assert!(result <= u32::MAX);",
+          "    assert!(result >= 0);",
+          "    assert!(result == (u64::MAX >> 32) as u32);",
+          "    assert_eq!(rng.s, [u64::MAX, u64::MAX, u64::MAX, u64::MAX]);"
+        ],
+        "code": [
+          "{",
+          "    let mut rng = Xoshiro256PlusPlus { s: [u64::MAX, u64::MAX, u64::MAX, u64::MAX] };",
+          "    let result = rng.next_u32();",
+          "    assert_eq!(result, u32::MAX);",
+          "    assert!(result <= u32::MAX);",
+          "    assert!(result >= 0);",
+          "    assert!(result == (u64::MAX >> 32) as u32);",
+          "    assert_eq!(rng.s, [u64::MAX, u64::MAX, u64::MAX, u64::MAX]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut rng = Xoshiro256PlusPlus { s: [u64::MIN, u64::MIN, u64::MIN, u64::MIN] };",
+          "    let result = rng.next_u32();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut rng = Xoshiro256PlusPlus { s: [u64::MIN, u64::MIN, u64::MIN, u64::MIN] };",
+          "    let result = rng.next_u32();",
+          "    assert_eq!(result, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut rng = Xoshiro256PlusPlus { s: [0, 0, 0, 0] };",
+          "    for _ in 0..10 {",
+          "        let _ = rng.next_u32();",
+          "    }",
+          "    rng.s = [u64::MAX, u64::MAX, u64::MAX, u64::MAX];",
+          "    for _ in 0..10 {",
+          "        let _ = rng.next_u32();",
+          "    }",
+          "    rng.s = [u64::MIN, u64::MIN, u64::MIN, u64::MIN];",
+          "    for _ in 0..10 {",
+          "        let _ = rng.next_u32();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    let mut rng = Xoshiro256PlusPlus { s: [0, 0, 0, 0] };",
+          "    let result = rng.next_u32();",
+          "    assert!(result <= u32::MAX);",
+          "    assert_eq!(result, (rng.s[0].wrapping_add(rng.s[3]).rotate_left(23).wrapping_add(rng.s[0]) >> 32) as u32);",
+          "    ",
+          "    rng.s = [u64::MAX, u64::MAX, u64::MAX, u64::MAX];",
+          "    let result_max = rng.next_u32();",
+          "    assert!(result_max <= u32::MAX);",
+          "    assert_eq!(result_max, (rng.s[0].wrapping_add(rng.s[3]).rotate_left(23).wrapping_add(rng.s[0]) >> 32) as u32);",
+          "    ",
+          "    rng.s = [u64::MIN, u64::MIN, u64::MIN, u64::MIN];",
+          "    let result_min = rng.next_u32();",
+          "    assert!(result_min <= u32::MAX);",
+          "    assert_eq!(result_min, (rng.s[0].wrapping_add(rng.s[3]).rotate_left(23).wrapping_add(rng.s[0]) >> 32) as u32);"
+        ],
+        "code": [
+          "{",
+          "    let mut rng = Xoshiro256PlusPlus { s: [0, 0, 0, 0] };",
+          "    for _ in 0..10 {",
+          "        let _ = rng.next_u32();",
+          "    }",
+          "    rng.s = [u64::MAX, u64::MAX, u64::MAX, u64::MAX];",
+          "    for _ in 0..10 {",
+          "        let _ = rng.next_u32();",
+          "    }",
+          "    rng.s = [u64::MIN, u64::MIN, u64::MIN, u64::MIN];",
+          "    for _ in 0..10 {",
+          "        let _ = rng.next_u32();",
+          "    }",
+          "    let mut rng = Xoshiro256PlusPlus { s: [0, 0, 0, 0] };",
+          "    let result = rng.next_u32();",
+          "    assert!(result <= u32::MAX);",
+          "    assert_eq!(result, (rng.s[0].wrapping_add(rng.s[3]).rotate_left(23).wrapping_add(rng.s[0]) >> 32) as u32);",
+          "    ",
+          "    rng.s = [u64::MAX, u64::MAX, u64::MAX, u64::MAX];",
+          "    let result_max = rng.next_u32();",
+          "    assert!(result_max <= u32::MAX);",
+          "    assert_eq!(result_max, (rng.s[0].wrapping_add(rng.s[3]).rotate_left(23).wrapping_add(rng.s[0]) >> 32) as u32);",
+          "    ",
+          "    rng.s = [u64::MIN, u64::MIN, u64::MIN, u64::MIN];",
+          "    let result_min = rng.next_u32();",
+          "    assert!(result_min <= u32::MAX);",
+          "    assert_eq!(result_min, (rng.s[0].wrapping_add(rng.s[3]).rotate_left(23).wrapping_add(rng.s[0]) >> 32) as u32);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

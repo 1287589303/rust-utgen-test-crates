@@ -1,0 +1,2751 @@
+{
+  "name": "regex_automata::nfa::thompson::literal_trie::{impl#0}::compile",
+  "mod_info": {
+    "name": "nfa::thompson::literal_trie",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:63:1:63:18"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/nfa/thompson/literal_trie.rs:151:5:236:6",
+  "doc": "/// Compile this literal trie to the NFA builder given.\n///\n/// This forwards any errors that may occur while using the given builder.\n",
+  "code": [
+    "pub(crate) fn compile(",
+    "    &self,",
+    "    builder: &mut Builder,",
+    ") -> Result<ThompsonRef, BuildError> {",
+    "    // Compilation proceeds via depth-first traversal of the trie.",
+    "    //",
+    "    // This is overall pretty brutal. The recursive version of this is",
+    "    // deliciously simple. (See 'compile_to_hir' below for what it might",
+    "    // look like.) But recursion on a trie means your call stack grows",
+    "    // in accordance with the longest literal, which just does not seem",
+    "    // appropriate. So we push the call stack to the heap. But as a result,",
+    "    // the trie traversal becomes pretty brutal because we essentially",
+    "    // have to encode the state of a double for-loop into an explicit call",
+    "    // frame. If someone can simplify this without using recursion, that'd",
+    "    // be great.",
+    "",
+    "    // 'end' is our match state for this trie, but represented in the the",
+    "    // NFA. Any time we see a match in the trie, we insert a transition",
+    "    // from the current state we're in to 'end'.",
+    "    let end = builder.add_empty()?;",
+    "    let mut stack = vec![];",
+    "    let mut f = Frame::new(&self.states[StateID::ZERO]);",
+    "    loop {",
+    "        if let Some(t) = f.transitions.next() {",
+    "            if self.states[t.next].is_leaf() {",
+    "                f.sparse.push(thompson::Transition {",
+    "                    start: t.byte,",
+    "                    end: t.byte,",
+    "                    next: end,",
+    "                });",
+    "            } else {",
+    "                f.sparse.push(thompson::Transition {",
+    "                    start: t.byte,",
+    "                    end: t.byte,",
+    "                    // This is a little funny, but when the frame we create",
+    "                    // below completes, it will pop this parent frame off",
+    "                    // and modify this transition to point to the correct",
+    "                    // state.",
+    "                    next: StateID::ZERO,",
+    "                });",
+    "                stack.push(f);",
+    "                f = Frame::new(&self.states[t.next]);",
+    "            }",
+    "            continue;",
+    "        }",
+    "        // At this point, we have visited all transitions in f.chunk, so",
+    "        // add it as a sparse NFA state. Unless the chunk was empty, in",
+    "        // which case, we don't do anything.",
+    "        if !f.sparse.is_empty() {",
+    "            let chunk_id = if f.sparse.len() == 1 {",
+    "                builder.add_range(f.sparse.pop().unwrap())?",
+    "            } else {",
+    "                let sparse = mem::replace(&mut f.sparse, vec![]);",
+    "                builder.add_sparse(sparse)?",
+    "            };",
+    "            f.union.push(chunk_id);",
+    "        }",
+    "        // Now we need to look to see if there are other chunks to visit.",
+    "        if let Some(chunk) = f.chunks.next() {",
+    "            // If we're here, it means we're on the second (or greater)",
+    "            // chunk, which implies there is a match at this point. So",
+    "            // connect this state to the final end state.",
+    "            f.union.push(end);",
+    "            // Advance to the next chunk.",
+    "            f.transitions = chunk.iter();",
+    "            continue;",
+    "        }",
+    "        // Now that we are out of chunks, we have completely visited",
+    "        // this state. So turn our union of chunks into an NFA union",
+    "        // state, and add that union state to the parent state's current",
+    "        // sparse state. (If there is no parent, we're done.)",
+    "        let start = builder.add_union(f.union)?;",
+    "        match stack.pop() {",
+    "            None => {",
+    "                return Ok(ThompsonRef { start, end });",
+    "            }",
+    "            Some(mut parent) => {",
+    "                // OK because the only way a frame gets pushed on to the",
+    "                // stack (aside from the root) is when a transition has",
+    "                // been added to 'sparse'.",
+    "                parent.sparse.last_mut().unwrap().next = start;",
+    "                f = parent;",
+    "            }",
+    "        }",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 25,
+    "contra": 0,
+    "min_set": 6
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 170,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        6,
+        7,
+        100,
+        101,
+        102
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 222,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        30,
+        31,
+        32,
+        60,
+        61,
+        66,
+        67,
+        68,
+        70,
+        72,
+        73,
+        89,
+        90,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 222,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start, end })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        30,
+        31,
+        32,
+        60,
+        61,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        77,
+        79,
+        88,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "false",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_range(f.sparse.pop().unwrap())?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 201,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        43,
+        44,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "false",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_range(f.sparse.pop().unwrap())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 201,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 222,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        45,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        70,
+        72,
+        73,
+        89,
+        90,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "false",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_range(f.sparse.pop().unwrap())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 201,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 222,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start, end })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        45,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        77,
+        79,
+        88,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "true",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_sparse(sparse)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 204,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        54,
+        55,
+        91,
+        92,
+        93,
+        96,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "true",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_sparse(sparse)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 204,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 222,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        46,
+        47,
+        48,
+        49,
+        50,
+        53,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        70,
+        72,
+        73,
+        89,
+        90,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "true",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_sparse(sparse)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 204,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 222,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start, end })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        46,
+        47,
+        48,
+        49,
+        50,
+        53,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        77,
+        79,
+        88,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "true",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 222,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        32,
+        60,
+        61,
+        66,
+        67,
+        68,
+        70,
+        72,
+        73,
+        89,
+        90,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "true",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 222,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start, end })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        32,
+        60,
+        61,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        77,
+        79,
+        88,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "true",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "false",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_range(f.sparse.pop().unwrap())?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 201,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        43,
+        44,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "true",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "false",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_range(f.sparse.pop().unwrap())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 201,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 222,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        45,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        70,
+        72,
+        73,
+        89,
+        90,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "true",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "false",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_range(f.sparse.pop().unwrap())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 201,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 222,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start, end })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        45,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        77,
+        79,
+        88,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "true",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "true",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_sparse(sparse)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 204,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        54,
+        55,
+        91,
+        92,
+        93,
+        96,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "true",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "true",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_sparse(sparse)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 204,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 222,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        46,
+        47,
+        48,
+        49,
+        50,
+        53,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        70,
+        72,
+        73,
+        89,
+        90,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "true",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "true",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_sparse(sparse)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 204,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 222,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start, end })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        46,
+        47,
+        48,
+        49,
+        50,
+        53,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        77,
+        79,
+        88,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "false",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 222,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        32,
+        60,
+        61,
+        66,
+        67,
+        68,
+        70,
+        72,
+        73,
+        89,
+        90,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "false",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 222,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start, end })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        32,
+        60,
+        61,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        77,
+        79,
+        88,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "false",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "false",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_range(f.sparse.pop().unwrap())?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 201,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        43,
+        44,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "false",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "false",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_range(f.sparse.pop().unwrap())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 201,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 222,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        45,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        70,
+        72,
+        73,
+        89,
+        90,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "false",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "false",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_range(f.sparse.pop().unwrap())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 201,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 222,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start, end })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        45,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        77,
+        79,
+        88,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "false",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "true",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_sparse(sparse)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 204,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        54,
+        55,
+        91,
+        92,
+        93,
+        96,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "false",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "true",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_sparse(sparse)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 204,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 222,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        46,
+        47,
+        48,
+        49,
+        50,
+        53,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        70,
+        72,
+        73,
+        89,
+        90,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "builder.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 170,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "self.states[t.next].is_leaf()",
+          "norm": null,
+          "value": "false",
+          "line": 175,
+          "bound": null
+        },
+        {
+          "cond": "let Some(t) = f.transitions.next()",
+          "norm": null,
+          "value": "true",
+          "line": 174,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 199,
+          "bound": null
+        },
+        {
+          "cond": "f.sparse.len() == 1",
+          "norm": "1 == f.sparse.len()",
+          "value": "true",
+          "line": 200,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_sparse(sparse)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 204,
+          "bound": null
+        },
+        {
+          "cond": "let Some(chunk) = f.chunks.next()",
+          "norm": null,
+          "value": "true",
+          "line": 209,
+          "bound": null
+        },
+        {
+          "cond": "builder.add_union(f.union)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 222,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        },
+        {
+          "cond": "stack.pop() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 223,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start, end })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        12,
+        13,
+        14,
+        30,
+        31,
+        33,
+        34,
+        46,
+        47,
+        48,
+        49,
+        50,
+        53,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        66,
+        67,
+        68,
+        71,
+        74,
+        75,
+        77,
+        79,
+        88,
+        97,
+        98,
+        99,
+        102
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut group_info = GroupInfoInner::default();",
+          "    let pid = PatternID(SmallIndex::new(0).unwrap());",
+          "    let group = SmallIndex::new(0).unwrap();",
+          "    let name = \"valid_group_name\".to_string();",
+          "",
+          "    group_info.slot_ranges.push((SmallIndex::ZERO, SmallIndex::new(2).unwrap()));",
+          "    ",
+          "    let result = group_info.add_explicit_group(pid, group, Some(name));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(()));",
+          "    assert_eq!(group_info.memory_extra, 2 * (name.len() + core::mem::size_of::<Option<Arc<str>>>()) + core::mem::size_of::<SmallIndex>());",
+          "    assert_eq!(group_info.group_len(pid), group.one_more());",
+          "    assert!(group_info.index_to_name[pid].last().unwrap().is_some());",
+          "    assert_eq!(group_info.name_to_index[pid].get(&Arc::from(\"valid_group_name\")).unwrap(), &group);",
+          "    assert!(SmallIndex::new(group_info.slot_ranges[pid].1.as_usize()).is_ok());",
+          "    assert_eq!(group_info.index_to_name[pid].len(), group.one_more());"
+        ],
+        "code": [
+          "{",
+          "    let mut group_info = GroupInfoInner::default();",
+          "    let pid = PatternID(SmallIndex::new(0).unwrap());",
+          "    let group = SmallIndex::new(0).unwrap();",
+          "    let name = \"valid_group_name\".to_string();",
+          "",
+          "    group_info.slot_ranges.push((SmallIndex::ZERO, SmallIndex::new(2).unwrap()));",
+          "    ",
+          "    let result = group_info.add_explicit_group(pid, group, Some(name));",
+          "    assert_eq!(result, Ok(()));",
+          "    assert_eq!(group_info.memory_extra, 2 * (name.len() + core::mem::size_of::<Option<Arc<str>>>()) + core::mem::size_of::<SmallIndex>());",
+          "    assert_eq!(group_info.group_len(pid), group.one_more());",
+          "    assert!(group_info.index_to_name[pid].last().unwrap().is_some());",
+          "    assert_eq!(group_info.name_to_index[pid].get(&Arc::from(\"valid_group_name\")).unwrap(), &group);",
+          "    assert!(SmallIndex::new(group_info.slot_ranges[pid].1.as_usize()).is_ok());",
+          "    assert_eq!(group_info.index_to_name[pid].len(), group.one_more());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut group_info = GroupInfoInner::default();",
+          "    let pid = PatternID(SmallIndex::new(1).unwrap());",
+          "    let group = SmallIndex::new(1).unwrap();",
+          "    let name = \"another_group\".to_string();",
+          "",
+          "    group_info.slot_ranges.push((SmallIndex::ZERO, SmallIndex::new(2).unwrap()));",
+          "    ",
+          "    let result = group_info.add_explicit_group(pid, group, Some(name));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(group_info.memory_extra, 2 * (name.len() + core::mem::size_of::<Option<Arc<str>>>()) + core::mem::size_of::<SmallIndex>());",
+          "    assert_eq!(group_info.group_len(pid), group.one_more());",
+          "    assert_eq!(group_info.index_to_name[pid].len(), group.one_more());",
+          "    assert!(group_info.name_to_index[pid].contains_key(&Arc::<str>::from(\"another_group\")));"
+        ],
+        "code": [
+          "{",
+          "    let mut group_info = GroupInfoInner::default();",
+          "    let pid = PatternID(SmallIndex::new(1).unwrap());",
+          "    let group = SmallIndex::new(1).unwrap();",
+          "    let name = \"another_group\".to_string();",
+          "",
+          "    group_info.slot_ranges.push((SmallIndex::ZERO, SmallIndex::new(2).unwrap()));",
+          "    ",
+          "    let result = group_info.add_explicit_group(pid, group, Some(name));",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(group_info.memory_extra, 2 * (name.len() + core::mem::size_of::<Option<Arc<str>>>()) + core::mem::size_of::<SmallIndex>());",
+          "    assert_eq!(group_info.group_len(pid), group.one_more());",
+          "    assert_eq!(group_info.index_to_name[pid].len(), group.one_more());",
+          "    assert!(group_info.name_to_index[pid].contains_key(&Arc::<str>::from(\"another_group\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut group_info = GroupInfoInner::default();",
+          "    let pid = PatternID(SmallIndex::new(2).unwrap());",
+          "    let group = SmallIndex::new(SmallIndex::LIMIT - 2).unwrap();",
+          "    let name = \"boundary_group\".to_string();",
+          "",
+          "    group_info.slot_ranges.push((SmallIndex::ZERO, SmallIndex::new(SmallIndex::LIMIT - 1).unwrap()));",
+          "    ",
+          "    let result = group_info.add_explicit_group(pid, group, Some(name));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(group_info.slot_ranges[pid.as_usize()].1.as_usize(), SmallIndex::LIMIT - 1);",
+          "    assert!(group_info.name_to_index[pid].contains_key(&Arc::from(\"boundary_group\")));",
+          "    assert_eq!(group_info.index_to_name[pid].len(), 1);",
+          "    assert_eq!(group_info.memory_extra, 2 * (\"boundary_group\".len() + core::mem::size_of::<Option<Arc<str>>>()) + core::mem::size_of::<SmallIndex>());",
+          "    assert_eq!(group_info.group_len(pid), 1);",
+          "    assert_eq!(group_info.index_to_name[pid][0], Some(Arc::from(\"boundary_group\")));"
+        ],
+        "code": [
+          "{",
+          "    let mut group_info = GroupInfoInner::default();",
+          "    let pid = PatternID(SmallIndex::new(2).unwrap());",
+          "    let group = SmallIndex::new(SmallIndex::LIMIT - 2).unwrap();",
+          "    let name = \"boundary_group\".to_string();",
+          "",
+          "    group_info.slot_ranges.push((SmallIndex::ZERO, SmallIndex::new(SmallIndex::LIMIT - 1).unwrap()));",
+          "    ",
+          "    let result = group_info.add_explicit_group(pid, group, Some(name));",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(group_info.slot_ranges[pid.as_usize()].1.as_usize(), SmallIndex::LIMIT - 1);",
+          "    assert!(group_info.name_to_index[pid].contains_key(&Arc::from(\"boundary_group\")));",
+          "    assert_eq!(group_info.index_to_name[pid].len(), 1);",
+          "    assert_eq!(group_info.memory_extra, 2 * (\"boundary_group\".len() + core::mem::size_of::<Option<Arc<str>>>()) + core::mem::size_of::<SmallIndex>());",
+          "    assert_eq!(group_info.group_len(pid), 1);",
+          "    assert_eq!(group_info.index_to_name[pid][0], Some(Arc::from(\"boundary_group\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

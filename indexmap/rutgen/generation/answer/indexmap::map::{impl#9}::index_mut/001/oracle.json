@@ -1,0 +1,203 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestMap {",
+          "        map: crate::IndexMap<String, i32, crate::RandomState>,",
+          "    }",
+          "    let mut test_map = TestMap {",
+          "        map: crate::IndexMap::new(),",
+          "    };",
+          "    test_map.map.insert(\"key1\".to_string(), 10);",
+          "    let value = test_map.map.index_mut(&\"key1\".to_string());",
+          "}"
+        ],
+        "oracle": [
+          "    test_map.map.index_mut(&\"key1\".to_string());",
+          "    let value = test_map.map.get_mut(&\"key1\".to_string()).expect(\"no entry found for key\");",
+          "    assert_eq!(*value, 10);",
+          "    *value = 20;",
+          "    assert_eq!(test_map.map.get_mut(&\"key1\".to_string()).expect(\"no entry found for key\"), &mut 20);",
+          "    assert!(std::panic::catch_unwind(|| { test_map.map.index_mut(&\"non_existent_key\"); }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    struct TestMap {",
+          "        map: crate::IndexMap<String, i32, crate::RandomState>,",
+          "    }",
+          "    let mut test_map = TestMap {",
+          "        map: crate::IndexMap::new(),",
+          "    };",
+          "    test_map.map.insert(\"key1\".to_string(), 10);",
+          "    let value = test_map.map.index_mut(&\"key1\".to_string());",
+          "    test_map.map.index_mut(&\"key1\".to_string());",
+          "    let value = test_map.map.get_mut(&\"key1\".to_string()).expect(\"no entry found for key\");",
+          "    assert_eq!(*value, 10);",
+          "    *value = 20;",
+          "    assert_eq!(test_map.map.get_mut(&\"key1\".to_string()).expect(\"no entry found for key\"), &mut 20);",
+          "    assert!(std::panic::catch_unwind(|| { test_map.map.index_mut(&\"non_existent_key\"); }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic(expected = \"no entry found for key\")]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestMap {",
+          "        map: crate::IndexMap<String, i32, crate::RandomState>,",
+          "    }",
+          "    let mut test_map = TestMap {",
+          "        map: crate::IndexMap::new(),",
+          "    };",
+          "    test_map.map.index_mut(&\"non_existing_key\".to_string());",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(test_map.map.get_mut(&\"existing_key\".to_string()), Some(&mut value));",
+          "    assert!(test_map.map.get_mut(&\"new_key\".to_string()).is_none());",
+          "    assert!(std::panic::catch_unwind(|| test_map.map.index_mut(&\"non_existing_key\".to_string())).is_err());",
+          "    assert!(test_map.map.get_index_mut2(0).is_none());",
+          "    assert!(test_map.map.iter_mut2().count() == 0);",
+          "    test_map.map.insert(\"key\".to_string(), 42);",
+          "    assert_eq!(test_map.map.index_mut(&\"key\".to_string()), &mut 42);",
+          "    test_map.map.retain2(|k, v| *v > 41);",
+          "    assert_eq!(test_map.map.len(), 1);"
+        ],
+        "code": [
+          "{",
+          "    struct TestMap {",
+          "        map: crate::IndexMap<String, i32, crate::RandomState>,",
+          "    }",
+          "    let mut test_map = TestMap {",
+          "        map: crate::IndexMap::new(),",
+          "    };",
+          "    test_map.map.index_mut(&\"non_existing_key\".to_string());",
+          "    assert_eq!(test_map.map.get_mut(&\"existing_key\".to_string()), Some(&mut value));",
+          "    assert!(test_map.map.get_mut(&\"new_key\".to_string()).is_none());",
+          "    assert!(std::panic::catch_unwind(|| test_map.map.index_mut(&\"non_existing_key\".to_string())).is_err());",
+          "    assert!(test_map.map.get_index_mut2(0).is_none());",
+          "    assert!(test_map.map.iter_mut2().count() == 0);",
+          "    test_map.map.insert(\"key\".to_string(), 42);",
+          "    assert_eq!(test_map.map.index_mut(&\"key\".to_string()), &mut 42);",
+          "    test_map.map.retain2(|k, v| *v > 41);",
+          "    assert_eq!(test_map.map.len(), 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestMap {",
+          "        map: crate::IndexMap<String, i32, crate::RandomState>,",
+          "    }",
+          "    let mut test_map = TestMap {",
+          "        map: crate::IndexMap::new(),",
+          "    };",
+          "    test_map.map.insert(\"key2\".to_string(), 20);",
+          "    let value = test_map.map.index_mut(&\"key2\".to_string());",
+          "}"
+        ],
+        "oracle": [
+          "    test_map.map.index_mut(&\"key2\".to_string()); // expect mutable reference to value 20",
+          "    assert_eq!(*test_map.map.index_mut(&\"key2\".to_string()), 20); // verify the value is correct",
+          "    let value_ref = test_map.map.index_mut(&\"key2\".to_string()); // obtain mutable reference",
+          "    *value_ref += 10; // modify the value through the mutable reference",
+          "    assert_eq!(*test_map.map.index_mut(&\"key2\".to_string()), 30); // verify the updated value is correct",
+          "    let panic_result = std::panic::catch_unwind(|| {",
+          "    test_map.map.index_mut(&\"nonexistent_key\".to_string()); // expect panic due to key not being present",
+          "    });",
+          "    assert!(panic_result.is_err()); // verify that panic occurred"
+        ],
+        "code": [
+          "{",
+          "    struct TestMap {",
+          "        map: crate::IndexMap<String, i32, crate::RandomState>,",
+          "    }",
+          "    let mut test_map = TestMap {",
+          "        map: crate::IndexMap::new(),",
+          "    };",
+          "    test_map.map.insert(\"key2\".to_string(), 20);",
+          "    let value = test_map.map.index_mut(&\"key2\".to_string());",
+          "    test_map.map.index_mut(&\"key2\".to_string()); // expect mutable reference to value 20",
+          "    assert_eq!(*test_map.map.index_mut(&\"key2\".to_string()), 20); // verify the value is correct",
+          "    let value_ref = test_map.map.index_mut(&\"key2\".to_string()); // obtain mutable reference",
+          "    *value_ref += 10; // modify the value through the mutable reference",
+          "    assert_eq!(*test_map.map.index_mut(&\"key2\".to_string()), 30); // verify the updated value is correct",
+          "    let panic_result = std::panic::catch_unwind(|| {",
+          "    test_map.map.index_mut(&\"nonexistent_key\".to_string()); // expect panic due to key not being present",
+          "    });",
+          "    assert!(panic_result.is_err()); // verify that panic occurred",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestMap {",
+          "        map: crate::IndexMap<i32, i32, crate::RandomState>,",
+          "    }",
+          "    let mut test_map = TestMap {",
+          "        map: crate::IndexMap::new(),",
+          "    };",
+          "    test_map.map.insert(0, 100);",
+          "    let value = test_map.map.index_mut(&0);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(*value, 100);",
+          "    value += 50;",
+          "    assert_eq!(test_map.map.index_mut(&0), &mut 150);",
+          "    let mut panicked = false;",
+          "    let result = std::panic::catch_unwind(|| {",
+          "    test_map.map.index_mut(&1);",
+          "    });",
+          "    if result.is_err() {",
+          "    panicked = true;",
+          "    }",
+          "    assert!(panicked);"
+        ],
+        "code": [
+          "{",
+          "    struct TestMap {",
+          "        map: crate::IndexMap<i32, i32, crate::RandomState>,",
+          "    }",
+          "    let mut test_map = TestMap {",
+          "        map: crate::IndexMap::new(),",
+          "    };",
+          "    test_map.map.insert(0, 100);",
+          "    let value = test_map.map.index_mut(&0);",
+          "    assert_eq!(*value, 100);",
+          "    value += 50;",
+          "    assert_eq!(test_map.map.index_mut(&0), &mut 150);",
+          "    let mut panicked = false;",
+          "    let result = std::panic::catch_unwind(|| {",
+          "    test_map.map.index_mut(&1);",
+          "    });",
+          "    if result.is_err() {",
+          "    panicked = true;",
+          "    }",
+          "    assert!(panicked);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

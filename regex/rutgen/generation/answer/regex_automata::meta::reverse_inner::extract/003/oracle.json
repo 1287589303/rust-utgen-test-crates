@@ -1,0 +1,169 @@
+[
+  {
+    "uses": [
+      "use regex_syntax::hir::Hir;",
+      "use regex_syntax::hir;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use regex_syntax::hir::{self, Hir};",
+          "",
+          "    struct TestHir;",
+          "",
+          "    // Construct a valid HIR that forms a top-level concatenation.",
+          "    let hirs: Vec<&Hir> = vec![&Hir::concat(vec![",
+          "        Hir::literal(\"fast\"),",
+          "        Hir::literal(\"inner\"),",
+          "    ])];",
+          "",
+          "    // Call the extract function.",
+          "    let result = extract(&hirs);",
+          "}"
+        ],
+        "oracle": [
+          "    let hirs: Vec<&Hir> = vec![&Hir::concat(vec![Hir::literal(\"fast\"), Hir::literal(\"inner\")])];",
+          "    assert_eq!(result, Some((Hir::concat(vec![Hir::literal(\"fast\"), Hir::literal(\"inner\")]), pre2)));",
+          "    let pre2 = Prefilter::new(MatchKind::LeftmostFirst, vec![b\"fast\", b\"inner\"]);",
+          "    assert!(pre2.is_fast());",
+          "    assert!(hirs.len() == 1);",
+          "    let concat = vec![Hir::literal(\"fast\"), Hir::literal(\"inner\")];",
+          "    assert!(top_concat(&hirs[0]).is_some());",
+          "    assert!(concat.len() > 1);"
+        ],
+        "code": [
+          "{",
+          "    use regex_syntax::hir::{self, Hir};",
+          "",
+          "    struct TestHir;",
+          "",
+          "    // Construct a valid HIR that forms a top-level concatenation.",
+          "    let hirs: Vec<&Hir> = vec![&Hir::concat(vec![",
+          "        Hir::literal(\"fast\"),",
+          "        Hir::literal(\"inner\"),",
+          "    ])];",
+          "",
+          "    // Call the extract function.",
+          "    let result = extract(&hirs);",
+          "    let hirs: Vec<&Hir> = vec![&Hir::concat(vec![Hir::literal(\"fast\"), Hir::literal(\"inner\")])];",
+          "    assert_eq!(result, Some((Hir::concat(vec![Hir::literal(\"fast\"), Hir::literal(\"inner\")]), pre2)));",
+          "    let pre2 = Prefilter::new(MatchKind::LeftmostFirst, vec![b\"fast\", b\"inner\"]);",
+          "    assert!(pre2.is_fast());",
+          "    assert!(hirs.len() == 1);",
+          "    let concat = vec![Hir::literal(\"fast\"), Hir::literal(\"inner\")];",
+          "    assert!(top_concat(&hirs[0]).is_some());",
+          "    assert!(concat.len() > 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use regex_syntax::hir::{self, Hir};",
+          "",
+          "    struct FastPrefilter;",
+          "",
+          "    // Construct a valid HIR with at least one fast prefilter.",
+          "    let hirs: Vec<&Hir> = vec![&Hir::concat(vec![",
+          "        Hir::literal(\"fast\"),",
+          "        Hir::literal(\"inner\"),",
+          "    ])];",
+          "",
+          "    // Call the extract function.",
+          "    let result = extract(&hirs);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_some());",
+          "    let (concat_prefix, pre2) = result.unwrap();",
+          "    assert!(matches!(concat_prefix.kind(), HirKind::Concat(_)));",
+          "    assert_eq!(pre2.max_needle_len(), expected_len); // expected_len to be defined based on context",
+          "    assert!(!pre2.is_fast());",
+          "    assert!(pre2.memory_usage() < max_usage_limit); // max_usage_limit to be defined based on context"
+        ],
+        "code": [
+          "{",
+          "    use regex_syntax::hir::{self, Hir};",
+          "",
+          "    struct FastPrefilter;",
+          "",
+          "    // Construct a valid HIR with at least one fast prefilter.",
+          "    let hirs: Vec<&Hir> = vec![&Hir::concat(vec![",
+          "        Hir::literal(\"fast\"),",
+          "        Hir::literal(\"inner\"),",
+          "    ])];",
+          "",
+          "    // Call the extract function.",
+          "    let result = extract(&hirs);",
+          "    assert!(result.is_some());",
+          "    let (concat_prefix, pre2) = result.unwrap();",
+          "    assert!(matches!(concat_prefix.kind(), HirKind::Concat(_)));",
+          "    assert_eq!(pre2.max_needle_len(), expected_len); // expected_len to be defined based on context",
+          "    assert!(!pre2.is_fast());",
+          "    assert!(pre2.memory_usage() < max_usage_limit); // max_usage_limit to be defined based on context",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use regex_syntax::hir::{self, Hir};",
+          "",
+          "    struct NonFastPrefilter;",
+          "",
+          "    // Construct a valid HIR that results in a non-fast prefilter.",
+          "    let hirs: Vec<&Hir> = vec![&Hir::concat(vec![",
+          "        Hir::literal(\"outer\"),",
+          "        Hir::literal(\"non_fast_inner\"),",
+          "    ])];",
+          "",
+          "    // Call the extract function.",
+          "    let result = extract(&hirs);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_some(), true);",
+          "    assert_eq!(result.unwrap().1.is_fast(), false);",
+          "    assert_eq!(result.unwrap().0.kind(), HirKind::Concat);",
+          "    assert_eq!(result.unwrap().0.len(), 2);",
+          "    assert_eq!(result.unwrap().0[0].kind(), HirKind::Literal(\"outer\"));",
+          "    assert_eq!(result.unwrap().0[1].kind(), HirKind::Literal(\"non_fast_inner\"));"
+        ],
+        "code": [
+          "{",
+          "    use regex_syntax::hir::{self, Hir};",
+          "",
+          "    struct NonFastPrefilter;",
+          "",
+          "    // Construct a valid HIR that results in a non-fast prefilter.",
+          "    let hirs: Vec<&Hir> = vec![&Hir::concat(vec![",
+          "        Hir::literal(\"outer\"),",
+          "        Hir::literal(\"non_fast_inner\"),",
+          "    ])];",
+          "",
+          "    // Call the extract function.",
+          "    let result = extract(&hirs);",
+          "    assert_eq!(result.is_some(), true);",
+          "    assert_eq!(result.unwrap().1.is_fast(), false);",
+          "    assert_eq!(result.unwrap().0.kind(), HirKind::Concat);",
+          "    assert_eq!(result.unwrap().0.len(), 2);",
+          "    assert_eq!(result.unwrap().0[0].kind(), HirKind::Literal(\"outer\"));",
+          "    assert_eq!(result.unwrap().0[1].kind(), HirKind::Literal(\"non_fast_inner\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

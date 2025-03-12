@@ -1,0 +1,324 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [
+          "#[should_panic(expected = \"label must not be longer than 255 bytes\")]"
+        ],
+        "prefix": [
+          "{",
+          "    let label = \"a\".repeat(256); // label length exceeds 255",
+          "    let _ = write_label_len(&label);",
+          "}"
+        ],
+        "oracle": [
+          "    let label = \"a\".repeat(256); // label length exceeds 255",
+          "    let _ = write_label_len(&label); // expect panic \"label must not be longer than 255 bytes\"",
+          "    ",
+          "    let label = \"valid_label\"; // valid label within length",
+          "    let _ = write_label_len(&label); // should return correct length including padding",
+          "    ",
+          "    let label = \"valid_label\\0\"; // label contains NUL byte",
+          "    let _ = write_label_len(&label); // expect panic \"label must not contain NUL bytes\"",
+          "    ",
+          "    let label = \"a\".repeat(255); // label length exactly 255",
+          "    let _ = write_label_len(&label); // should return correct length including padding",
+          "    ",
+          "    let label = \"abc\\0def\"; // label with NUL byte in between",
+          "    let _ = write_label_len(&label); // expect panic \"label must not contain NUL bytes\""
+        ],
+        "code": [
+          "{",
+          "    let label = \"a\".repeat(256); // label length exceeds 255",
+          "    let _ = write_label_len(&label);",
+          "    let label = \"a\".repeat(256); // label length exceeds 255",
+          "    let _ = write_label_len(&label); // expect panic \"label must not be longer than 255 bytes\"",
+          "    ",
+          "    let label = \"valid_label\"; // valid label within length",
+          "    let _ = write_label_len(&label); // should return correct length including padding",
+          "    ",
+          "    let label = \"valid_label\\0\"; // label contains NUL byte",
+          "    let _ = write_label_len(&label); // expect panic \"label must not contain NUL bytes\"",
+          "    ",
+          "    let label = \"a\".repeat(255); // label length exactly 255",
+          "    let _ = write_label_len(&label); // should return correct length including padding",
+          "    ",
+          "    let label = \"abc\\0def\"; // label with NUL byte in between",
+          "    let _ = write_label_len(&label); // expect panic \"label must not contain NUL bytes\"",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic(expected = \"label must not contain NUL bytes\")]"
+        ],
+        "prefix": [
+          "{",
+          "    let label = \"label\\0with_nul\"; // label contains NUL byte",
+          "    let _ = write_label_len(&label);",
+          "}"
+        ],
+        "oracle": [
+          "    let label = \"a\".repeat(255); // label length is 255, should not panic",
+          "    let len = write_label_len(&label); assert_eq!(len, 260); // verifies correct output with padding",
+          "    let label_with_nul = \"label\\0with_nul\"; // label contains NUL byte",
+          "    let _ = write_label_len(&label_with_nul); // expects panic with message \"label must not contain NUL bytes\""
+        ],
+        "code": [
+          "{",
+          "    let label = \"label\\0with_nul\"; // label contains NUL byte",
+          "    let _ = write_label_len(&label);",
+          "    let label = \"a\".repeat(255); // label length is 255, should not panic",
+          "    let len = write_label_len(&label); assert_eq!(len, 260); // verifies correct output with padding",
+          "    let label_with_nul = \"label\\0with_nul\"; // label contains NUL byte",
+          "    let _ = write_label_len(&label_with_nul); // expects panic with message \"label must not contain NUL bytes\"",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label = \"a\".repeat(255); // label length exactly 255",
+          "    let _ = write_label_len(&label);",
+          "}"
+        ],
+        "oracle": [
+          "    panic!(\"label must not contain NUL bytes\");"
+        ],
+        "code": [
+          "{",
+          "    let label = \"a\".repeat(255); // label length exactly 255",
+          "    let _ = write_label_len(&label);",
+          "    panic!(\"label must not contain NUL bytes\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label = \"\"; // label length is 0",
+          "    let _ = write_label_len(&label);",
+          "}"
+        ],
+        "oracle": [
+          "    let label = \"a\".repeat(255); // label length is 255",
+          "    let result = write_label_len(&label);",
+          "    assert_eq!(result, 260); // Expect 255 + 1 for NUL + 4 bytes padding",
+          "    ",
+          "    let label = \"valid_label_with_null\\x00\"; // label contains NUL byte",
+          "    let result = std::panic::catch_unwind(|| write_label_len(&label));",
+          "    assert!(result.is_err()); // Expect panic due to NUL byte",
+          "    ",
+          "    let label = \"a\".repeat(256); // label length is 256",
+          "    let result = std::panic::catch_unwind(|| write_label_len(&label));",
+          "    assert!(result.is_err()); // Expect panic due to length greater than 255"
+        ],
+        "code": [
+          "{",
+          "    let label = \"\"; // label length is 0",
+          "    let _ = write_label_len(&label);",
+          "    let label = \"a\".repeat(255); // label length is 255",
+          "    let result = write_label_len(&label);",
+          "    assert_eq!(result, 260); // Expect 255 + 1 for NUL + 4 bytes padding",
+          "    ",
+          "    let label = \"valid_label_with_null\\x00\"; // label contains NUL byte",
+          "    let result = std::panic::catch_unwind(|| write_label_len(&label));",
+          "    assert!(result.is_err()); // Expect panic due to NUL byte",
+          "    ",
+          "    let label = \"a\".repeat(256); // label length is 256",
+          "    let result = std::panic::catch_unwind(|| write_label_len(&label));",
+          "    assert!(result.is_err()); // Expect panic due to length greater than 255",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label = \"a\"; // label length is 1",
+          "    let _ = write_label_len(&label);",
+          "}"
+        ],
+        "oracle": [
+          "    panic!(\"label must not be longer than 255 bytes\");",
+          "    panic!(\"label must not contain NUL bytes\");",
+          "    assert_eq!(write_label_len(&\"a\"), 2);",
+          "    assert_eq!(write_label_len(&\"a\\0\"), 3);",
+          "    assert_eq!(write_label_len(&\"a\".repeat(255)), 256);",
+          "    assert_eq!(write_label_len(&\"a\".repeat(255) + \"\\0\"), 257);"
+        ],
+        "code": [
+          "{",
+          "    let label = \"a\"; // label length is 1",
+          "    let _ = write_label_len(&label);",
+          "    panic!(\"label must not be longer than 255 bytes\");",
+          "    panic!(\"label must not contain NUL bytes\");",
+          "    assert_eq!(write_label_len(&\"a\"), 2);",
+          "    assert_eq!(write_label_len(&\"a\\0\"), 3);",
+          "    assert_eq!(write_label_len(&\"a\".repeat(255)), 256);",
+          "    assert_eq!(write_label_len(&\"a\".repeat(255) + \"\\0\"), 257);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label = \"12345678901234567890\"; // label length is 20",
+          "    let _ = write_label_len(&label);",
+          "}"
+        ],
+        "oracle": [
+          "    let label = \"a\".repeat(256); // Tests length > 255, should panic",
+          "    let _ = std::panic::catch_unwind(|| write_label_len(&label)); // Expect panic with message \"label must not be longer than 255 bytes\"",
+          "    ",
+          "    let label = \"valid_label\\0\"; // Tests NUL byte presence, should panic",
+          "    let _ = std::panic::catch_unwind(|| write_label_len(&label)); // Expect panic with message \"label must not contain NUL bytes\"",
+          "    ",
+          "    let label = \"12345678901234567890\"; // label length is 20",
+          "    let result = write_label_len(&label);",
+          "    assert_eq!(result, 24); // Expect length including padding (20 + 1 + 3) = 24",
+          "    ",
+          "    let label = \"\"; // Empty label, should not panic",
+          "    let result = write_label_len(&label);",
+          "    assert_eq!(result, 4); // Expect length including padding (0 + 1 + 3) = 4",
+          "    ",
+          "    let label = \"abc\"; // label length is 3",
+          "    let result = write_label_len(&label);",
+          "    assert_eq!(result, 8); // Expect length including padding (3 + 1 + 4) = 8",
+          "    ",
+          "    let label = \"a\".repeat(255); // Tests max length, should not panic",
+          "    let result = write_label_len(&label);",
+          "    assert_eq!(result, 260); // Expect length including padding (255 + 1 + 4) = 260"
+        ],
+        "code": [
+          "{",
+          "    let label = \"12345678901234567890\"; // label length is 20",
+          "    let _ = write_label_len(&label);",
+          "    let label = \"a\".repeat(256); // Tests length > 255, should panic",
+          "    let _ = std::panic::catch_unwind(|| write_label_len(&label)); // Expect panic with message \"label must not be longer than 255 bytes\"",
+          "    ",
+          "    let label = \"valid_label\\0\"; // Tests NUL byte presence, should panic",
+          "    let _ = std::panic::catch_unwind(|| write_label_len(&label)); // Expect panic with message \"label must not contain NUL bytes\"",
+          "    ",
+          "    let label = \"12345678901234567890\"; // label length is 20",
+          "    let result = write_label_len(&label);",
+          "    assert_eq!(result, 24); // Expect length including padding (20 + 1 + 3) = 24",
+          "    ",
+          "    let label = \"\"; // Empty label, should not panic",
+          "    let result = write_label_len(&label);",
+          "    assert_eq!(result, 4); // Expect length including padding (0 + 1 + 3) = 4",
+          "    ",
+          "    let label = \"abc\"; // label length is 3",
+          "    let result = write_label_len(&label);",
+          "    assert_eq!(result, 8); // Expect length including padding (3 + 1 + 4) = 8",
+          "    ",
+          "    let label = \"a\".repeat(255); // Tests max length, should not panic",
+          "    let result = write_label_len(&label);",
+          "    assert_eq!(result, 260); // Expect length including padding (255 + 1 + 4) = 260",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic(expected = \"label must not contain NUL bytes\")]"
+        ],
+        "prefix": [
+          "{",
+          "    let label = \"\\0label\"; // NUL byte at start",
+          "    let _ = write_label_len(&label);",
+          "}"
+        ],
+        "oracle": [
+          "    write_label_len(\"\\0label\") == panic!(\"label must not contain NUL bytes\")",
+          "    write_label_len(\"a\".repeat(255)) == 256 + padding_len(256)",
+          "    write_label_len(\"a\".repeat(256)) == panic!(\"label must not be longer than 255 bytes\")"
+        ],
+        "code": [
+          "{",
+          "    let label = \"\\0label\"; // NUL byte at start",
+          "    let _ = write_label_len(&label);",
+          "    write_label_len(\"\\0label\") == panic!(\"label must not contain NUL bytes\")",
+          "    write_label_len(\"a\".repeat(255)) == 256 + padding_len(256)",
+          "    write_label_len(\"a\".repeat(256)) == panic!(\"label must not be longer than 255 bytes\")",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic(expected = \"label must not contain NUL bytes\")]"
+        ],
+        "prefix": [
+          "{",
+          "    let label = \"label\\0\"; // NUL byte at end",
+          "    let _ = write_label_len(&label);",
+          "}"
+        ],
+        "oracle": [
+          "    let label = \"label\\0\"; // NUL byte at end",
+          "    let _ = write_label_len(&label); // should panic with \"label must not contain NUL bytes\""
+        ],
+        "code": [
+          "{",
+          "    let label = \"label\\0\"; // NUL byte at end",
+          "    let _ = write_label_len(&label);",
+          "    let label = \"label\\0\"; // NUL byte at end",
+          "    let _ = write_label_len(&label); // should panic with \"label must not contain NUL bytes\"",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic(expected = \"label must not contain NUL bytes\")]"
+        ],
+        "prefix": [
+          "{",
+          "    let label = \"label\\0middle\"; // NUL byte in middle",
+          "    let _ = write_label_len(&label);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(write_label_len(&\"a\".repeat(255)), 260);  // label length is at maximum, should not panic",
+          "    #[should_panic(expected = \"label must not contain NUL bytes\")]",
+          "    assert_eq!(write_label_len(&\"label\\0middle\"), 0);  // NUL byte in middle, should panic",
+          "    #[should_panic(expected = \"label must not be longer than 255 bytes\")]",
+          "    assert_eq!(write_label_len(&\"a\".repeat(256)), 0);  // label length exceeds max, should panic"
+        ],
+        "code": [
+          "{",
+          "    let label = \"label\\0middle\"; // NUL byte in middle",
+          "    let _ = write_label_len(&label);",
+          "    assert_eq!(write_label_len(&\"a\".repeat(255)), 260);  // label length is at maximum, should not panic",
+          "    #[should_panic(expected = \"label must not contain NUL bytes\")]",
+          "    assert_eq!(write_label_len(&\"label\\0middle\"), 0);  // NUL byte in middle, should panic",
+          "    #[should_panic(expected = \"label must not be longer than 255 bytes\")]",
+          "    assert_eq!(write_label_len(&\"a\".repeat(256)), 0);  // label length exceeds max, should panic",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

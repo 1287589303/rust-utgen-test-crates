@@ -1,0 +1,166 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let result = GroupInfo::new(Vec::<Vec<Option<String>>>::new());",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let info = result.unwrap();",
+          "    assert_eq!(0, info.pattern_len());",
+          "    assert_eq!(0, info.slot_len());",
+          "    ",
+          "    let result = GroupInfo::new(vec![vec![]]);",
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result.err().unwrap().kind, GroupInfoErrorKind::MissingGroups { .. }));",
+          "    ",
+          "    let result = GroupInfo::new(vec![vec![None, Some(\"foo\")]]);",
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result.err().unwrap().kind, GroupInfoErrorKind::FirstMustBeUnnamed { .. }));",
+          "    ",
+          "    let result = GroupInfo::new(vec![vec![None, Some(\"foo\"), Some(\"foo\")]]);",
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result.err().unwrap().kind, GroupInfoErrorKind::Duplicate { .. }));"
+        ],
+        "code": [
+          "{",
+          "    let result = GroupInfo::new(Vec::<Vec<Option<String>>>::new());",
+          "    assert!(result.is_ok());",
+          "    let info = result.unwrap();",
+          "    assert_eq!(0, info.pattern_len());",
+          "    assert_eq!(0, info.slot_len());",
+          "    ",
+          "    let result = GroupInfo::new(vec![vec![]]);",
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result.err().unwrap().kind, GroupInfoErrorKind::MissingGroups { .. }));",
+          "    ",
+          "    let result = GroupInfo::new(vec![vec![None, Some(\"foo\")]]);",
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result.err().unwrap().kind, GroupInfoErrorKind::FirstMustBeUnnamed { .. }));",
+          "    ",
+          "    let result = GroupInfo::new(vec![vec![None, Some(\"foo\"), Some(\"foo\")]]);",
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result.err().unwrap().kind, GroupInfoErrorKind::Duplicate { .. }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let result = GroupInfo::new((0..PatternID::LIMIT as usize + 1)",
+          "        .map(|_| vec![None, Some(\"group\")]));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().map(|e| e.kind), Some(GroupInfoErrorKind::TooManyPatterns { .. }));",
+          "    assert_eq!(result.err().map(|e| e.pattern_id()), Some(PatternID::new(PatternID::LIMIT as usize).unwrap()));",
+          "    assert_eq!(result.err().map(|e| e.message()), Some(\"too many patterns\"));"
+        ],
+        "code": [
+          "{",
+          "    let result = GroupInfo::new((0..PatternID::LIMIT as usize + 1)",
+          "        .map(|_| vec![None, Some(\"group\")]));",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().map(|e| e.kind), Some(GroupInfoErrorKind::TooManyPatterns { .. }));",
+          "    assert_eq!(result.err().map(|e| e.pattern_id()), Some(PatternID::new(PatternID::LIMIT as usize).unwrap()));",
+          "    assert_eq!(result.err().map(|e| e.message()), Some(\"too many patterns\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let result = GroupInfo::new(vec![",
+          "        vec![None],",
+          "        vec![],",
+          "    ]);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, GroupInfoErrorKind::MissingGroups { pattern: PatternID::new(0).unwrap() });"
+        ],
+        "code": [
+          "{",
+          "    let result = GroupInfo::new(vec![",
+          "        vec![None],",
+          "        vec![],",
+          "    ]);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, GroupInfoErrorKind::MissingGroups { pattern: PatternID::new(0).unwrap() });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let result = GroupInfo::new(vec![",
+          "        vec![None, Some(\"foo\"), Some(\"foo\")],",
+          "    ]);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, GroupInfoErrorKind::Duplicate { pattern: PatternID(SmallIndex(0)), name: Arc::<str>::from(\"foo\") });"
+        ],
+        "code": [
+          "{",
+          "    let result = GroupInfo::new(vec![",
+          "        vec![None, Some(\"foo\"), Some(\"foo\")],",
+          "    ]);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, GroupInfoErrorKind::Duplicate { pattern: PatternID(SmallIndex(0)), name: Arc::<str>::from(\"foo\") });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let result = GroupInfo::new(vec![",
+          "        vec![Some(\"named\")],",
+          "    ]);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind, GroupInfoErrorKind::FirstMustBeUnnamed { pattern: PatternID(SmallIndex(0)) });",
+          "    assert_eq!(result.err().unwrap().kind, GroupInfoErrorKind::missing_groups(PatternID(SmallIndex(0))));",
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let result = GroupInfo::new(vec![",
+          "        vec![Some(\"named\")],",
+          "    ]);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind, GroupInfoErrorKind::FirstMustBeUnnamed { pattern: PatternID(SmallIndex(0)) });",
+          "    assert_eq!(result.err().unwrap().kind, GroupInfoErrorKind::missing_groups(PatternID(SmallIndex(0))));",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

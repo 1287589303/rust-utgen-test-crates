@@ -1,0 +1,175 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mime = Mime {",
+          "        type_: String::from(\"text\"),",
+          "        subtype: String::from(\"plain\"),",
+          "        parameters: vec![",
+          "            (String::from(\"charset\"), String::from(\"utf-8\")),",
+          "            (String::new(), String::from(\"value\")), // This should trigger an error on f.write_str(\";\")",
+          "        ],",
+          "    };",
+          "    let _ = format!(\"{}\", mime);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(format!(\"{}\", mime), \"text/plain;charset=utf-8;\\\"\\\"\");"
+        ],
+        "code": [
+          "{",
+          "    let mime = Mime {",
+          "        type_: String::from(\"text\"),",
+          "        subtype: String::from(\"plain\"),",
+          "        parameters: vec![",
+          "            (String::from(\"charset\"), String::from(\"utf-8\")),",
+          "            (String::new(), String::from(\"value\")), // This should trigger an error on f.write_str(\";\")",
+          "        ],",
+          "    };",
+          "    let _ = format!(\"{}\", mime);",
+          "    assert_eq!(format!(\"{}\", mime), \"text/plain;charset=utf-8;\\\"\\\"\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mime = Mime {",
+          "        type_: String::from(\"application\"),",
+          "        subtype: String::from(\"json\"),",
+          "        parameters: vec![",
+          "            (String::from(\"type\"), String::from(\"data\")),",
+          "            (String::from(\"example\"), String::from(\"value with \\\"quote\\\" and \\\\ backslash\")),",
+          "        ],",
+          "    };",
+          "    let _ = format!(\"{}\", mime);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(format!(\"{}\", mime), \"application/json;type=data;example=\\\"value with \\\\\\\"quote\\\\\\\" and \\\\\\\\ backslash\\\"\");",
+          "    assert!(matches!(f.write_str(&mime.type_), Ok(_)));",
+          "    assert!(matches!(f.write_str(\"/\"), Ok(_)));",
+          "    assert!(matches!(f.write_str(&mime.subtype), Ok(_)));",
+          "    assert!(!mime.parameters.is_empty());",
+          "    assert!(matches!(f.write_str(\";\"), Err(_)));"
+        ],
+        "code": [
+          "{",
+          "    let mime = Mime {",
+          "        type_: String::from(\"application\"),",
+          "        subtype: String::from(\"json\"),",
+          "        parameters: vec![",
+          "            (String::from(\"type\"), String::from(\"data\")),",
+          "            (String::from(\"example\"), String::from(\"value with \\\"quote\\\" and \\\\ backslash\")),",
+          "        ],",
+          "    };",
+          "    let _ = format!(\"{}\", mime);",
+          "    assert_eq!(format!(\"{}\", mime), \"application/json;type=data;example=\\\"value with \\\\\\\"quote\\\\\\\" and \\\\\\\\ backslash\\\"\");",
+          "    assert!(matches!(f.write_str(&mime.type_), Ok(_)));",
+          "    assert!(matches!(f.write_str(\"/\"), Ok(_)));",
+          "    assert!(matches!(f.write_str(&mime.subtype), Ok(_)));",
+          "    assert!(!mime.parameters.is_empty());",
+          "    assert!(matches!(f.write_str(\";\"), Err(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mime = Mime {",
+          "        type_: String::from(\"image\"),",
+          "        subtype: String::from(\"png\"),",
+          "        parameters: vec![",
+          "            (String::from(\"name\"), String::from(\"value\")),",
+          "        ],",
+          "    };",
+          "    let _ = format!(\"{}\", mime);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(mime.type_, String::from(\"image\"));",
+          "    assert_eq!(mime.subtype, String::from(\"png\"));",
+          "    assert!(!mime.parameters.is_empty());",
+          "    assert!(f.write_str(&mime.type_).is_ok());",
+          "    assert!(f.write_str(\"/\").is_ok());",
+          "    assert!(f.write_str(&mime.subtype).is_ok());",
+          "    assert!(f.write_str(\";\").is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mime = Mime {",
+          "        type_: String::from(\"image\"),",
+          "        subtype: String::from(\"png\"),",
+          "        parameters: vec![",
+          "            (String::from(\"name\"), String::from(\"value\")),",
+          "        ],",
+          "    };",
+          "    let _ = format!(\"{}\", mime);",
+          "    assert_eq!(mime.type_, String::from(\"image\"));",
+          "    assert_eq!(mime.subtype, String::from(\"png\"));",
+          "    assert!(!mime.parameters.is_empty());",
+          "    assert!(f.write_str(&mime.type_).is_ok());",
+          "    assert!(f.write_str(\"/\").is_ok());",
+          "    assert!(f.write_str(&mime.subtype).is_ok());",
+          "    assert!(f.write_str(\";\").is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mime = Mime {",
+          "        type_: String::from(\"audio\"),",
+          "        subtype: String::from(\"wav\"),",
+          "        parameters: vec![",
+          "            (String::from(\"type\"), String::from(\"\")),",
+          "        ],",
+          "    };",
+          "    let _ = format!(\"{}\", mime);",
+          "}"
+        ],
+        "oracle": [
+          "    f.write_str(&self.type_)? == Ok(())",
+          "    f.write_str(\"/\")? == Ok(())",
+          "    f.write_str(&self.subtype)? == Ok(())",
+          "    (name, value) in &self.parameters == true",
+          "    f.write_str(\";\")? == Err(())"
+        ],
+        "code": [
+          "{",
+          "    let mime = Mime {",
+          "        type_: String::from(\"audio\"),",
+          "        subtype: String::from(\"wav\"),",
+          "        parameters: vec![",
+          "            (String::from(\"type\"), String::from(\"\")),",
+          "        ],",
+          "    };",
+          "    let _ = format!(\"{}\", mime);",
+          "    f.write_str(&self.type_)? == Ok(())",
+          "    f.write_str(\"/\")? == Ok(())",
+          "    f.write_str(&self.subtype)? == Ok(())",
+          "    (name, value) in &self.parameters == true",
+          "    f.write_str(\";\")? == Err(())",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

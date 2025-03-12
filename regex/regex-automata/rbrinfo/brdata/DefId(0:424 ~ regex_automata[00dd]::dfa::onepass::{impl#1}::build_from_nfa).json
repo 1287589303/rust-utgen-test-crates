@@ -1,0 +1,53 @@
+{
+  "name": "regex_automata::dfa::onepass::{impl#1}::build_from_nfa",
+  "mod_info": {
+    "name": "dfa::onepass",
+    "loc": "regex-automata/src/dfa/mod.rs:339:1:339:17"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/onepass.rs:395:5:414:6",
+  "doc": "/// Build a DFA from the given NFA.\n///\n/// # Example\n///\n/// This example shows how to build a DFA if you already have an NFA in\n/// hand.\n///\n/// ```\n/// use regex_automata::{dfa::onepass::DFA, nfa::thompson::NFA, Match};\n///\n/// // This shows how to set non-default options for building an NFA.\n/// let nfa = NFA::compiler()\n///     .configure(NFA::config().shrink(true))\n///     .build(r\"[a-z0-9]+\")?;\n/// let re = DFA::builder().build_from_nfa(nfa)?;\n/// let (mut cache, mut caps) = (re.create_cache(), re.create_captures());\n/// re.captures(&mut cache, \"foo123bar\", &mut caps);\n/// assert_eq!(Some(Match::must(0, 0..9)), caps.get_match());\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn build_from_nfa(&self, nfa: NFA) -> Result<DFA, BuildError> {",
+    "    // Why take ownership if we're just going to pass a reference to the",
+    "    // NFA to our internal builder? Well, the first thing to note is that",
+    "    // an NFA uses reference counting internally, so either choice is going",
+    "    // to be cheap. So there isn't much cost either way.",
+    "    //",
+    "    // The real reason is that a one-pass DFA, semantically, shares",
+    "    // ownership of an NFA. This is unlike other DFAs that don't share",
+    "    // ownership of an NFA at all, primarily because they want to be",
+    "    // self-contained in order to support cheap (de)serialization.",
+    "    //",
+    "    // But then why pass a '&nfa' below if we want to share ownership?",
+    "    // Well, it turns out that using a '&NFA' in our internal builder",
+    "    // separates its lifetime from the DFA we're building, and this turns",
+    "    // out to make code a bit more composable. e.g., We can iterate over",
+    "    // things inside the NFA while borrowing the builder as mutable because",
+    "    // we know the NFA cannot be mutated. So TL;DR --- this weirdness is",
+    "    // \"because borrow checker.\"",
+    "    InternalBuilder::new(self.config.clone(), &nfa).build()",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

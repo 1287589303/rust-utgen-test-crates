@@ -1,0 +1,126 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestCell {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestCell { value: 42 });",
+          "    ",
+          "    let result = cell.get_or_try_init(|| Err(\"initialization failed\"));",
+          "    let _ = result; // Call the function",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(\"initialization failed\"));",
+          "    assert_eq!(cell.get(), Some(&TestCell { value: 42 }));"
+        ],
+        "code": [
+          "{",
+          "    struct TestCell {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestCell { value: 42 });",
+          "    ",
+          "    let result = cell.get_or_try_init(|| Err(\"initialization failed\"));",
+          "    let _ = result; // Call the function",
+          "    assert_eq!(result, Err(\"initialization failed\"));",
+          "    assert_eq!(cell.get(), Some(&TestCell { value: 42 }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestCell {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestCell { value: 42 });",
+          "    ",
+          "    let _ = cell.get_or_try_init(|| {",
+          "        cell.get_or_try_init(|| Ok(TestCell { value: 100 }))?;",
+          "        Err(\"initialization failed\")",
+          "    });",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(cell.get_or_try_init(|| Err(\"initialization failed\")), Err(\"initialization failed\"));",
+          "    assert!(cell.get().is_some());",
+          "    assert_eq!(cell.get(), Some(&TestCell { value: 42 }));"
+        ],
+        "code": [
+          "{",
+          "    struct TestCell {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestCell { value: 42 });",
+          "    ",
+          "    let _ = cell.get_or_try_init(|| {",
+          "        cell.get_or_try_init(|| Ok(TestCell { value: 100 }))?;",
+          "        Err(\"initialization failed\")",
+          "    });",
+          "    assert_eq!(cell.get_or_try_init(|| Err(\"initialization failed\")), Err(\"initialization failed\"));",
+          "    assert!(cell.get().is_some());",
+          "    assert_eq!(cell.get(), Some(&TestCell { value: 42 }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestCell {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestCell { value: 42 });",
+          "    ",
+          "    let result: Result<&TestCell, &str> = cell.get_or_try_init(|| None);",
+          "    let _ = result; // Call the function",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(()));",
+          "    assert!(cell.get().is_some());",
+          "    let inner_value = cell.get().unwrap();",
+          "    assert_eq!(inner_value.value, 42);"
+        ],
+        "code": [
+          "{",
+          "    struct TestCell {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let cell = OnceCell::with_value(TestCell { value: 42 });",
+          "    ",
+          "    let result: Result<&TestCell, &str> = cell.get_or_try_init(|| None);",
+          "    let _ = result; // Call the function",
+          "    assert_eq!(result, Err(()));",
+          "    assert!(cell.get().is_some());",
+          "    let inner_value = cell.get().unwrap();",
+          "    assert_eq!(inner_value.value, 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

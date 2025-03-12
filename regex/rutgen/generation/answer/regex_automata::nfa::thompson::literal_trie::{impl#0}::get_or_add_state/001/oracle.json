@@ -1,0 +1,161 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut trie = LiteralTrie::forward();",
+          "    let from = StateID::new(0).unwrap();",
+          "    let byte = 10;",
+          "    trie.get_or_add_state(from, byte).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    trie.get_or_add_state(from, byte).unwrap_err();",
+          "    assert_eq!(trie.states.len(), INITIAL_STATE_COUNT);",
+          "    assert!(trie.states.is_empty());",
+          "    let result = trie.get_or_add_state(from, byte);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates);",
+          "    trie.states.push(State::default());",
+          "    let state_id = StateID::new(trie.states.len()).unwrap();",
+          "    assert_eq!(trie.get_or_add_state(from, byte).unwrap(), state_id);",
+          "    assert_eq!(trie.states[from].transitions.len(), 1);",
+          "    assert_eq!(trie.states[from].transitions[0].byte, byte);"
+        ],
+        "code": [
+          "{",
+          "    let mut trie = LiteralTrie::forward();",
+          "    let from = StateID::new(0).unwrap();",
+          "    let byte = 10;",
+          "    trie.get_or_add_state(from, byte).unwrap();",
+          "    trie.get_or_add_state(from, byte).unwrap_err();",
+          "    assert_eq!(trie.states.len(), INITIAL_STATE_COUNT);",
+          "    assert!(trie.states.is_empty());",
+          "    let result = trie.get_or_add_state(from, byte);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates);",
+          "    trie.states.push(State::default());",
+          "    let state_id = StateID::new(trie.states.len()).unwrap();",
+          "    assert_eq!(trie.get_or_add_state(from, byte).unwrap(), state_id);",
+          "    assert_eq!(trie.states[from].transitions.len(), 1);",
+          "    assert_eq!(trie.states[from].transitions[0].byte, byte);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut trie = LiteralTrie {",
+          "        states: vec![State::default(); usize::MAX], // Simulating maximum states.",
+          "        rev: false,",
+          "    };",
+          "    let from = StateID::new(0).unwrap();",
+          "    let byte = 10;",
+          "    trie.get_or_add_state(from, byte).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(trie.states.len(), usize::MAX);",
+          "    assert!(trie.get_or_add_state(from, byte).is_err());",
+          "    assert!(matches!(trie.get_or_add_state(from, byte), Err(BuildError::too_many_states(usize::MAX))));"
+        ],
+        "code": [
+          "{",
+          "    let mut trie = LiteralTrie {",
+          "        states: vec![State::default(); usize::MAX], // Simulating maximum states.",
+          "        rev: false,",
+          "    };",
+          "    let from = StateID::new(0).unwrap();",
+          "    let byte = 10;",
+          "    trie.get_or_add_state(from, byte).unwrap();",
+          "    assert_eq!(trie.states.len(), usize::MAX);",
+          "    assert!(trie.get_or_add_state(from, byte).is_err());",
+          "    assert!(matches!(trie.get_or_add_state(from, byte), Err(BuildError::too_many_states(usize::MAX))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut trie = LiteralTrie::forward();",
+          "    let from = StateID::new(0).unwrap();",
+          "    let existing_byte = 5;",
+          "    trie.get_or_add_state(from, existing_byte).unwrap();",
+          "    let next_state = trie.get_or_add_state(from, existing_byte).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(trie.get_or_add_state(from, existing_byte).is_ok(), false);",
+          "    assert_eq!(trie.get_or_add_state(from, existing_byte).unwrap_err(), BuildError::too_many_states(trie.states.len()));",
+          "    assert_eq!(trie.states.len(), expected_state_count);",
+          "    assert!(trie.states[from].transitions.iter().any(|t| t.byte == existing_byte));"
+        ],
+        "code": [
+          "{",
+          "    let mut trie = LiteralTrie::forward();",
+          "    let from = StateID::new(0).unwrap();",
+          "    let existing_byte = 5;",
+          "    trie.get_or_add_state(from, existing_byte).unwrap();",
+          "    let next_state = trie.get_or_add_state(from, existing_byte).unwrap();",
+          "    assert_eq!(trie.get_or_add_state(from, existing_byte).is_ok(), false);",
+          "    assert_eq!(trie.get_or_add_state(from, existing_byte).unwrap_err(), BuildError::too_many_states(trie.states.len()));",
+          "    assert_eq!(trie.states.len(), expected_state_count);",
+          "    assert!(trie.states[from].transitions.iter().any(|t| t.byte == existing_byte));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut trie = LiteralTrie {",
+          "        states: vec![], // No states available",
+          "        rev: false,",
+          "    };",
+          "    let from = StateID::new(0).unwrap();",
+          "    let overflow_byte = 255;",
+          "    trie.get_or_add_state(from, overflow_byte).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(trie.states.len(), 0);",
+          "    assert!(trie.get_or_add_state(from, overflow_byte).is_err());",
+          "    assert!(matches!(trie.get_or_add_state(from, overflow_byte).unwrap_err(), BuildError::too_many_states(_)));"
+        ],
+        "code": [
+          "{",
+          "    let mut trie = LiteralTrie {",
+          "        states: vec![], // No states available",
+          "        rev: false,",
+          "    };",
+          "    let from = StateID::new(0).unwrap();",
+          "    let overflow_byte = 255;",
+          "    trie.get_or_add_state(from, overflow_byte).unwrap();",
+          "    assert_eq!(trie.states.len(), 0);",
+          "    assert!(trie.get_or_add_state(from, overflow_byte).is_err());",
+          "    assert!(matches!(trie.get_or_add_state(from, overflow_byte).unwrap_err(), BuildError::too_many_states(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

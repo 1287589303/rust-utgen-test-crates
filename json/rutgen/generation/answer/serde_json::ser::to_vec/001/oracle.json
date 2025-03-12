@@ -1,0 +1,140 @@
+[
+  {
+    "uses": [
+      "use serde::Serialize;",
+      "use std::collections::HashMap;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct NonSerializable;",
+          "",
+          "    let value = NonSerializable;",
+          "    let result = serde_json::to_vec(&value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    struct NonSerializable;",
+          "",
+          "    let value = NonSerializable;",
+          "    let result = serde_json::to_vec(&value);",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::collections::HashMap;",
+          "",
+          "    let mut map: HashMap<i32, String> = HashMap::new();",
+          "    map.insert(1, \"value\".to_string());",
+          "",
+          "    let result = serde_json::to_vec(&map);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().is::<Error>());"
+        ],
+        "code": [
+          "{",
+          "    use std::collections::HashMap;",
+          "",
+          "    let mut map: HashMap<i32, String> = HashMap::new();",
+          "    map.insert(1, \"value\".to_string());",
+          "",
+          "    let result = serde_json::to_vec(&map);",
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().is::<Error>());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use serde::Serialize;",
+          "",
+          "    struct FailingSerialize;",
+          "",
+          "    impl Serialize for FailingSerialize {",
+          "        fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>",
+          "        where",
+          "            S: serde::Serializer,",
+          "        {",
+          "            Err(ser::Error::custom(\"serialization failed\"))",
+          "        }",
+          "    }",
+          "",
+          "    let value = FailingSerialize;",
+          "    let result = serde_json::to_vec(&value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result, Err(ser::Error::custom(\"serialization failed\"))));"
+        ],
+        "code": [
+          "{",
+          "    use serde::Serialize;",
+          "",
+          "    struct FailingSerialize;",
+          "",
+          "    impl Serialize for FailingSerialize {",
+          "        fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>",
+          "        where",
+          "            S: serde::Serializer,",
+          "        {",
+          "            Err(ser::Error::custom(\"serialization failed\"))",
+          "        }",
+          "    }",
+          "",
+          "    let value = FailingSerialize;",
+          "    let result = serde_json::to_vec(&value);",
+          "    assert!(result.is_err());",
+          "    assert!(matches!(result, Err(ser::Error::custom(\"serialization failed\"))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let value = vec![0; usize::MAX]; // Attempting to create a very large vector.",
+          "",
+          "    let result = serde_json::to_vec(&value);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let value = vec![0; usize::MAX]; // Attempting to create a very large vector.",
+          "",
+          "    let result = serde_json::to_vec(&value);",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

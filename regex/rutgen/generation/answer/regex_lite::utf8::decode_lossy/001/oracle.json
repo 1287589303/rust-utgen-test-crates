@@ -1,0 +1,221 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"a\"; // valid ASCII character",
+          "    let result = decode_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let expected_char = 'a';",
+          "    let expected_size = 1;",
+          "    assert_eq!(result, (expected_char, expected_size));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"a\"; // valid ASCII character",
+          "    let result = decode_lossy(input);",
+          "    let expected_char = 'a';",
+          "    let expected_size = 1;",
+          "    assert_eq!(result, (expected_char, expected_size));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"\\xe2\\x9c\\x94\"; // valid UTF-8 character (check mark)",
+          "    let result = decode_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input: &[u8] = b\"\\xe2\\x9c\\x94\"; // valid UTF-8 character (check mark)",
+          "    let expected_char = '✔'; // expected decoded character",
+          "    let expected_size = 3; // size of the UTF-8 encoded character",
+          "    assert_eq!(result.0, expected_char);",
+          "    assert_eq!(result.1, expected_size);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"\\xe2\\x9c\\x94\"; // valid UTF-8 character (check mark)",
+          "    let result = decode_lossy(input);",
+          "    let input: &[u8] = b\"\\xe2\\x9c\\x94\"; // valid UTF-8 character (check mark)",
+          "    let expected_char = '✔'; // expected decoded character",
+          "    let expected_size = 3; // size of the UTF-8 encoded character",
+          "    assert_eq!(result.0, expected_char);",
+          "    assert_eq!(result.1, expected_size);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"\\xe2\\x98\\x83\"; // valid UTF-8 character (snowman)",
+          "    let result = decode_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let expected_char = '\\u{2603}'; // snowman character",
+          "    let expected_size = 3; // size of the UTF-8 sequence for snowman",
+          "    assert_eq!(result, (expected_char, expected_size));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"\\xe2\\x98\\x83\"; // valid UTF-8 character (snowman)",
+          "    let result = decode_lossy(input);",
+          "    let expected_char = '\\u{2603}'; // snowman character",
+          "    let expected_size = 3; // size of the UTF-8 sequence for snowman",
+          "    assert_eq!(result, (expected_char, expected_size));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"\"; // empty input",
+          "    let result = decode_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input: &[u8] = b\"\"; // empty input",
+          "    let expected = ('\\u{FFFD}', 0); // expected return value for empty input",
+          "    assert_eq!(decode_lossy(input), expected);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"\"; // empty input",
+          "    let result = decode_lossy(input);",
+          "    let input: &[u8] = b\"\"; // empty input",
+          "    let expected = ('\\u{FFFD}', 0); // expected return value for empty input",
+          "    assert_eq!(decode_lossy(input), expected);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = &[0xff]; // invalid UTF-8 byte",
+          "    let result = decode_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input: &[u8] = &[0xff]; // invalid UTF-8 byte",
+          "    let expected_char = '\\u{FFFD}'; // replacement character",
+          "    let expected_size = 1; // since decoding fails at the first byte",
+          "    let result = decode_lossy(input);",
+          "    assert_eq!(result, (expected_char, expected_size));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = &[0xff]; // invalid UTF-8 byte",
+          "    let result = decode_lossy(input);",
+          "    let input: &[u8] = &[0xff]; // invalid UTF-8 byte",
+          "    let expected_char = '\\u{FFFD}'; // replacement character",
+          "    let expected_size = 1; // since decoding fails at the first byte",
+          "    let result = decode_lossy(input);",
+          "    assert_eq!(result, (expected_char, expected_size));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"\\xe2\\x82\"; // partial multi-byte sequence",
+          "    let result = decode_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input: &[u8] = b\"\\xe2\\x82\"; // partial multi-byte sequence",
+          "    let (ch, size) = decode_lossy(input);",
+          "    assert_eq!(ch, '\\u{FFFD}'); // expected replacement character for invalid UTF-8",
+          "    assert_eq!(size, 1); // expect size to be at least 1 due to partial byte handling"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"\\xe2\\x82\"; // partial multi-byte sequence",
+          "    let result = decode_lossy(input);",
+          "    let input: &[u8] = b\"\\xe2\\x82\"; // partial multi-byte sequence",
+          "    let (ch, size) = decode_lossy(input);",
+          "    assert_eq!(ch, '\\u{FFFD}'); // expected replacement character for invalid UTF-8",
+          "    assert_eq!(size, 1); // expect size to be at least 1 due to partial byte handling",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"hello \\xe2\\x9c\\x94\"; // valid ASCII followed by valid UTF-8",
+          "    let result = decode_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input: &[u8] = b\"hello \\xe2\\x9c\\x94\"; // valid ASCII followed by valid UTF-8",
+          "    let expected_char = '✓'; // the character corresponding to the UTF-8 sequence",
+          "    let expected_size = 10; // the total length of the input",
+          "    assert_eq!(result, (expected_char, expected_size));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"hello \\xe2\\x9c\\x94\"; // valid ASCII followed by valid UTF-8",
+          "    let result = decode_lossy(input);",
+          "    let input: &[u8] = b\"hello \\xe2\\x9c\\x94\"; // valid ASCII followed by valid UTF-8",
+          "    let expected_char = '✓'; // the character corresponding to the UTF-8 sequence",
+          "    let expected_size = 10; // the total length of the input",
+          "    assert_eq!(result, (expected_char, expected_size));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = &[0x7F]; // maximum single-byte value (valid ASCII)",
+          "    let result = decode_lossy(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let expected_char = '\\x7F';",
+          "    let expected_size = 1;",
+          "    assert_eq!(result, (expected_char, expected_size));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = &[0x7F]; // maximum single-byte value (valid ASCII)",
+          "    let result = decode_lossy(input);",
+          "    let expected_char = '\\x7F';",
+          "    let expected_size = 1;",
+          "    assert_eq!(result, (expected_char, expected_size));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

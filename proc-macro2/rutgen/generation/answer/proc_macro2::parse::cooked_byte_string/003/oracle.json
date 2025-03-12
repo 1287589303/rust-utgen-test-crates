@@ -1,0 +1,170 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"こんにちは\" }; // Non-ASCII characters",
+          "    let _ = cooked_byte_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    let cursor = Cursor { rest: \"こんにちは\" }; // Non-ASCII characters",
+          "    assert!(matches!(cooked_byte_string(cursor), Err(Reject)));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"こんにちは\" }; // Non-ASCII characters",
+          "    let _ = cooked_byte_string(cursor);",
+          "    let cursor = Cursor { rest: \"こんにちは\" }; // Non-ASCII characters",
+          "    assert!(matches!(cooked_byte_string(cursor), Err(Reject)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"abcこんにちは\" }; // ASCII before non-ASCII",
+          "    let _ = cooked_byte_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    let cursor = Cursor { rest: \"abcこんにちは\" }; // Input contains ASCII and non-ASCII",
+          "    let result = cooked_byte_string(cursor);",
+          "    assert!(result.is_err()); // Expecting an error due to non-ASCII character"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"abcこんにちは\" }; // ASCII before non-ASCII",
+          "    let _ = cooked_byte_string(cursor);",
+          "    let cursor = Cursor { rest: \"abcこんにちは\" }; // Input contains ASCII and non-ASCII",
+          "    let result = cooked_byte_string(cursor);",
+          "    assert!(result.is_err()); // Expecting an error due to non-ASCII character",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"こんにちはxyz\" }; // Non-ASCII followed by ASCII",
+          "    let _ = cooked_byte_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(cooked_byte_string(Cursor { rest: \"こんにちはxyz\" }), Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"こんにちはxyz\" }; // Non-ASCII followed by ASCII",
+          "    let _ = cooked_byte_string(cursor);",
+          "    assert_eq!(cooked_byte_string(Cursor { rest: \"こんにちはxyz\" }), Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"あああ\" }; // Only non-ASCII characters",
+          "    let _ = cooked_byte_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!($return_value, Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"あああ\" }; // Only non-ASCII characters",
+          "    let _ = cooked_byte_string(cursor);",
+          "    assert_eq!($return_value, Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"\" }; // Empty string",
+          "    let _ = cooked_byte_string(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    let cursor = Cursor { rest: \"\\\"valid string\\\"\" }; // Input with valid byte string",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(15))));",
+          "    ",
+          "    let cursor = Cursor { rest: \"\\r\\n\" }; // Input with CRLF",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(2))));",
+          "    ",
+          "    let cursor = Cursor { rest: \"\\\\n\" }; // Input with valid escape sequence",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(2))));",
+          "    ",
+          "    let cursor = Cursor { rest: \"\\\\xFF\" }; // Input with hexadecimal escape sequence",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(4))));",
+          "    ",
+          "    let cursor = Cursor { rest: \"\\\\\\\\\" }; // Input with double backslash",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(2))));",
+          "    ",
+          "    let cursor = Cursor { rest: \"\\x80\" }; // Input containing non-ASCII byte",
+          "    assert_eq!(cooked_byte_string(cursor), Err(Reject));",
+          "    ",
+          "    let cursor = Cursor { rest: \"invalid\" }; // Input without any valid byte string syntax",
+          "    assert_eq!(cooked_byte_string(cursor), Err(Reject));",
+          "    ",
+          "    let cursor = Cursor { rest: \"text\\\\notescaped\"; }; // Input with trailing backslash",
+          "    assert_eq!(cooked_byte_string(cursor), Err(Reject));",
+          "    ",
+          "    let cursor = Cursor { rest: \"text\\\"more text\"; }; // Input with valid escape sequence following ASCII",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(9))));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"\" }; // Empty string",
+          "    let _ = cooked_byte_string(cursor);",
+          "    let cursor = Cursor { rest: \"\\\"valid string\\\"\" }; // Input with valid byte string",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(15))));",
+          "    ",
+          "    let cursor = Cursor { rest: \"\\r\\n\" }; // Input with CRLF",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(2))));",
+          "    ",
+          "    let cursor = Cursor { rest: \"\\\\n\" }; // Input with valid escape sequence",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(2))));",
+          "    ",
+          "    let cursor = Cursor { rest: \"\\\\xFF\" }; // Input with hexadecimal escape sequence",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(4))));",
+          "    ",
+          "    let cursor = Cursor { rest: \"\\\\\\\\\" }; // Input with double backslash",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(2))));",
+          "    ",
+          "    let cursor = Cursor { rest: \"\\x80\" }; // Input containing non-ASCII byte",
+          "    assert_eq!(cooked_byte_string(cursor), Err(Reject));",
+          "    ",
+          "    let cursor = Cursor { rest: \"invalid\" }; // Input without any valid byte string syntax",
+          "    assert_eq!(cooked_byte_string(cursor), Err(Reject));",
+          "    ",
+          "    let cursor = Cursor { rest: \"text\\\\notescaped\"; }; // Input with trailing backslash",
+          "    assert_eq!(cooked_byte_string(cursor), Err(Reject));",
+          "    ",
+          "    let cursor = Cursor { rest: \"text\\\"more text\"; }; // Input with valid escape sequence following ASCII",
+          "    assert_eq!(cooked_byte_string(cursor), Ok(literal_suffix(cursor.advance(9))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

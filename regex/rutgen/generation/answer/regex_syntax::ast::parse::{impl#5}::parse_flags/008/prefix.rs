@@ -1,0 +1,81 @@
+// Answer 0
+
+#[test]
+fn test_parse_flags_with_multiple_negations_and_no_flags() {
+    struct TestParser {
+        pos: Position,
+        input: &'static str,
+        index: usize,
+    }
+
+    impl Borrow<Parser> for TestParser {
+        fn borrow(&self) -> &Parser {
+            // Returning an empty Parser implementation for the purpose of this test case
+            &Parser {
+                pos: Cell::new(self.pos),
+                capture_index: Cell::new(0),
+                nest_limit: 0,
+                octal: false,
+                initial_ignore_whitespace: false,
+                empty_min_range: false,
+                ignore_whitespace: Cell::new(false),
+                comments: RefCell::new(vec![]),
+                stack_group: RefCell::new(vec![]),
+                stack_class: RefCell::new(vec![]),
+                capture_names: RefCell::new(vec![]),
+                scratch: RefCell::new(String::new()),
+            }
+        }
+    }
+
+    impl TestParser {
+        fn char(&self) -> char {
+            if self.index < self.input.len() {
+                self.input[self.index..].chars().next().unwrap()
+            } else {
+                '\0' // Simulating EOF
+            }
+        }
+
+        fn bump(&mut self) -> bool {
+            if self.index < self.input.len() {
+                self.index += 1;
+                true
+            } else {
+                false
+            }
+        }
+
+        fn span(&self) -> Span {
+            Span {
+                start: self.pos,
+                end: self.pos,
+            }
+        }
+
+        fn span_char(&self) -> Span {
+            Span {
+                start: self.pos,
+                end: self.pos,
+            }
+        }
+
+        fn error(&self, _span: Span, kind: ErrorKind) -> ast::Error {
+            ast::Error { kind, pattern: self.input.to_string(), span: self.span() }
+        }
+
+        fn parse_flag(&self) -> Result<ast::Flag> {
+            Ok(ast::Flag::CaseInsensitive) // Simulating a valid flag
+        }
+    }
+
+    let mut parser = TestParser {
+        pos: Position { offset: 0, line: 1, column: 1 },
+        input: "--",
+        index: 0,
+    };
+
+    let parser_instance = ParserI { parser: &parser, pattern: parser.input };
+    let result = parser_instance.parse_flags();
+}
+

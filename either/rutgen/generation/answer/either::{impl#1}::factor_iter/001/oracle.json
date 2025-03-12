@@ -1,0 +1,220 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let left: Either<&[&str], Vec<u8>> = Left(&[]);",
+          "    let _ = left.factor_iter(); // testing with empty left",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(left.factor_iter().collect::<Vec<_>>(), vec![]);",
+          "    let right: Either<&[&str], Vec<u8>> = Right(vec![1, 2]);",
+          "    assert_eq!(right.factor_iter().collect::<Vec<_>>(), vec![Right(&1), Right(&2)]);",
+          "    let right_empty: Either<&[&str], Vec<u8>> = Right(vec![]);",
+          "    assert_eq!(right_empty.factor_iter().collect::<Vec<_>>(), vec![]);",
+          "    let mixed: Either<Vec<&str>, Vec<u8>> = Right(vec![3]);",
+          "    assert_eq!(mixed.factor_iter().next(), Some(Right(&3)));"
+        ],
+        "code": [
+          "{",
+          "    let left: Either<&[&str], Vec<u8>> = Left(&[]);",
+          "    let _ = left.factor_iter(); // testing with empty left",
+          "    assert_eq!(left.factor_iter().collect::<Vec<_>>(), vec![]);",
+          "    let right: Either<&[&str], Vec<u8>> = Right(vec![1, 2]);",
+          "    assert_eq!(right.factor_iter().collect::<Vec<_>>(), vec![Right(&1), Right(&2)]);",
+          "    let right_empty: Either<&[&str], Vec<u8>> = Right(vec![]);",
+          "    assert_eq!(right_empty.factor_iter().collect::<Vec<_>>(), vec![]);",
+          "    let mixed: Either<Vec<&str>, Vec<u8>> = Right(vec![3]);",
+          "    assert_eq!(mixed.factor_iter().next(), Some(Right(&3)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let left: Either<&[&str], Vec<u8>> = Left(&[\"hello\", \"world\"]);",
+          "    let _ = left.factor_iter(); // testing with non-empty left",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(left.factor_iter().next().is_none());",
+          "    ",
+          "    let right: Either<[&str; 2], Vec<u8>> = Right(vec![0, 1]);",
+          "    let iter = right.factor_iter();",
+          "    ",
+          "    assert_eq!(iter.next(), Some(Right(&0)));",
+          "    assert_eq!(iter.next(), Some(Right(&1)));",
+          "    assert_eq!(iter.next(), None);"
+        ],
+        "code": [
+          "{",
+          "    let left: Either<&[&str], Vec<u8>> = Left(&[\"hello\", \"world\"]);",
+          "    let _ = left.factor_iter(); // testing with non-empty left",
+          "    assert!(left.factor_iter().next().is_none());",
+          "    ",
+          "    let right: Either<[&str; 2], Vec<u8>> = Right(vec![0, 1]);",
+          "    let iter = right.factor_iter();",
+          "    ",
+          "    assert_eq!(iter.next(), Some(Right(&0)));",
+          "    assert_eq!(iter.next(), Some(Right(&1)));",
+          "    assert_eq!(iter.next(), None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let right: Either<&[&str], Vec<u8>> = Right(vec![0, 1, 2]);",
+          "    let _ = right.factor_iter(); // testing with non-empty right",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&0)));",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&1)));",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&2)));",
+          "    assert_eq!(right.factor_iter().next(), None);",
+          "    assert_eq!(right.factor_iter().collect::<Vec<_>>(), vec![Right(&0), Right(&1), Right(&2)]);"
+        ],
+        "code": [
+          "{",
+          "    let right: Either<&[&str], Vec<u8>> = Right(vec![0, 1, 2]);",
+          "    let _ = right.factor_iter(); // testing with non-empty right",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&0)));",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&1)));",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&2)));",
+          "    assert_eq!(right.factor_iter().next(), None);",
+          "    assert_eq!(right.factor_iter().collect::<Vec<_>>(), vec![Right(&0), Right(&1), Right(&2)]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let both: Either<&[&str], Vec<u8>> = Left(&[\"item1\", \"item2\"]);",
+          "    let _: IterEither<_, _> = both.factor_iter(); // testing with non-empty left and skip right",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(both.factor_iter().next(), Some(Left(&\"item1\")));",
+          "    assert_eq!(both.factor_iter().nth(1), Some(Left(&\"item2\")));",
+          "    assert_eq!(both.factor_iter().collect::<Vec<_>>(), vec![Left(&\"item1\"), Left(&\"item2\")]);",
+          "    assert!(both.factor_iter().count() == 2);",
+          "    assert!(either.factor_iter().map(|x| x.is_left()).all(|is_left| is_left));"
+        ],
+        "code": [
+          "{",
+          "    let both: Either<&[&str], Vec<u8>> = Left(&[\"item1\", \"item2\"]);",
+          "    let _: IterEither<_, _> = both.factor_iter(); // testing with non-empty left and skip right",
+          "    assert_eq!(both.factor_iter().next(), Some(Left(&\"item1\")));",
+          "    assert_eq!(both.factor_iter().nth(1), Some(Left(&\"item2\")));",
+          "    assert_eq!(both.factor_iter().collect::<Vec<_>>(), vec![Left(&\"item1\"), Left(&\"item2\")]);",
+          "    assert!(both.factor_iter().count() == 2);",
+          "    assert!(either.factor_iter().map(|x| x.is_left()).all(|is_left| is_left));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let right: Either<&[&str], Vec<u8>> = Right(vec![3]);",
+          "    let _ = right.factor_iter(); // testing with non-empty right and empty left",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&3)));",
+          "    assert_eq!(right.factor_iter().count(), 1);",
+          "    assert_eq!(right.factor_iter().collect::<Vec<_>>(), vec![Right(&3)]);",
+          "    assert!(right.is_right());",
+          "    assert!(!right.is_left());",
+          "    assert!(right.right().is_some());",
+          "    assert!(right.left().is_none());"
+        ],
+        "code": [
+          "{",
+          "    let right: Either<&[&str], Vec<u8>> = Right(vec![3]);",
+          "    let _ = right.factor_iter(); // testing with non-empty right and empty left",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&3)));",
+          "    assert_eq!(right.factor_iter().count(), 1);",
+          "    assert_eq!(right.factor_iter().collect::<Vec<_>>(), vec![Right(&3)]);",
+          "    assert!(right.is_right());",
+          "    assert!(!right.is_left());",
+          "    assert!(right.right().is_some());",
+          "    assert!(right.left().is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let right: Either<&[&str], Vec<u8>> = Right(vec![4, 5, 6]);",
+          "    let _ = right.factor_iter(); // testing with fully non-empty right",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&4)));",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&5)));",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&6)));",
+          "    assert_eq!(right.factor_iter().next(), None);"
+        ],
+        "code": [
+          "{",
+          "    let right: Either<&[&str], Vec<u8>> = Right(vec![4, 5, 6]);",
+          "    let _ = right.factor_iter(); // testing with fully non-empty right",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&4)));",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&5)));",
+          "    assert_eq!(right.factor_iter().next(), Some(Right(&6)));",
+          "    assert_eq!(right.factor_iter().next(), None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let left: Either<&[&str], Vec<u8>> = Left(&[]);",
+          "    let right: Either<&[&str], Vec<u8>> = Right(vec![7]);",
+          "    let _ = right.factor_iter(); // testing with empty left and non-empty right",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(left.factor_iter().next(), None);",
+          "    assert_eq!(right.factor_iter().collect::<Vec<_>>(), vec![Right(&7)]);"
+        ],
+        "code": [
+          "{",
+          "    let left: Either<&[&str], Vec<u8>> = Left(&[]);",
+          "    let right: Either<&[&str], Vec<u8>> = Right(vec![7]);",
+          "    let _ = right.factor_iter(); // testing with empty left and non-empty right",
+          "    assert_eq!(left.factor_iter().next(), None);",
+          "    assert_eq!(right.factor_iter().collect::<Vec<_>>(), vec![Right(&7)]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

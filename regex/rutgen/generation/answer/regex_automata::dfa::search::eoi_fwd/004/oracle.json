@@ -1,0 +1,169 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "// Dummy DFA for testing",
+      "struct DummyDFA;",
+      "",
+      "impl DummyDFA {",
+      "    fn new() -> Self {",
+      "        Self {}",
+      "    }",
+      "}",
+      "",
+      "impl Automaton for DummyDFA {",
+      "    // Implement required methods for the DummyDFA",
+      "    fn next_state(&self, sid: StateID, byte: u8) -> StateID {",
+      "        // Return a valid StateID based on logic",
+      "        sid",
+      "    }",
+      "",
+      "    fn next_eoi_state(&self, sid: StateID) -> StateID {",
+      "        // Return a valid StateID for EOI state",
+      "        sid",
+      "    }",
+      "",
+      "    fn is_match_state(&self, sid: StateID) -> bool {",
+      "        // Simulate matches",
+      "        true",
+      "    }",
+      "",
+      "    fn is_quit_state(&self, sid: StateID) -> bool {",
+      "        // Simulate quit condition",
+      "        false",
+      "    }",
+      "",
+      "    fn match_pattern(&self, sid: StateID, _: usize) -> PatternID {",
+      "        // Return a valid PatternID",
+      "        PatternID::default()",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let haystack: &[u8] = b\"\";",
+          "    let span = Span { start: 0, end: 0 };",
+          "    let input = Input::new(&haystack).span(span);",
+          "    let mut sid = StateID::default();",
+          "    let mut mat: Option<HalfMatch> = None;",
+          "    ",
+          "    let dfa = DummyDFA::new();",
+          "    assert!(eoi_fwd(&dfa, &input, &mut sid, &mut mat).is_ok());",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(input.haystack().get(sp.end), None);",
+          "    assert!(dfa.is_match_state(sid));",
+          "    assert!(eoi_fwd(&dfa, &input, &mut sid, &mut mat).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let haystack: &[u8] = b\"\";",
+          "    let span = Span { start: 0, end: 0 };",
+          "    let input = Input::new(&haystack).span(span);",
+          "    let mut sid = StateID::default();",
+          "    let mut mat: Option<HalfMatch> = None;",
+          "    ",
+          "    let dfa = DummyDFA::new();",
+          "    assert!(eoi_fwd(&dfa, &input, &mut sid, &mut mat).is_ok());",
+          "    assert_eq!(input.haystack().get(sp.end), None);",
+          "    assert!(dfa.is_match_state(sid));",
+          "    assert!(eoi_fwd(&dfa, &input, &mut sid, &mut mat).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let haystack: &[u8] = b\"a\";",
+          "    let span = Span { start: 1, end: 1 }; // `end` equals the length of haystack",
+          "    let input = Input::new(&haystack).span(span);",
+          "    let mut sid = StateID::default();",
+          "    let mut mat: Option<HalfMatch> = None;",
+          "    ",
+          "    let dfa = DummyDFA::new();",
+          "    assert!(eoi_fwd(&dfa, &input, &mut sid, &mut mat).is_ok());",
+          "}"
+        ],
+        "oracle": [
+          "    input.haystack.get(input.get_span().end).is_none()",
+          "    dfa.is_match_state(*sid).is_true()",
+          "    assert_eq!(eoi_fwd(&dfa, &input, &mut sid, &mut mat), Ok(()))",
+          "    assert!(matches!(eoi_fwd(&dfa, &input, &mut sid, &mut mat), Ok(_)))",
+          "    assert!(mat.is_some())"
+        ],
+        "code": [
+          "{",
+          "    let haystack: &[u8] = b\"a\";",
+          "    let span = Span { start: 1, end: 1 }; // `end` equals the length of haystack",
+          "    let input = Input::new(&haystack).span(span);",
+          "    let mut sid = StateID::default();",
+          "    let mut mat: Option<HalfMatch> = None;",
+          "    ",
+          "    let dfa = DummyDFA::new();",
+          "    assert!(eoi_fwd(&dfa, &input, &mut sid, &mut mat).is_ok());",
+          "    input.haystack.get(input.get_span().end).is_none()",
+          "    dfa.is_match_state(*sid).is_true()",
+          "    assert_eq!(eoi_fwd(&dfa, &input, &mut sid, &mut mat), Ok(()))",
+          "    assert!(matches!(eoi_fwd(&dfa, &input, &mut sid, &mut mat), Ok(_)))",
+          "    assert!(mat.is_some())",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let haystack: &[u8] = b\"abc\";",
+          "    let span = Span { start: 3, end: 3 }; // `end` equal to the length of haystack",
+          "    let input = Input::new(&haystack).span(span);",
+          "    let mut sid = StateID::default();",
+          "    let mut mat: Option<HalfMatch> = None;",
+          "    ",
+          "    let dfa = DummyDFA::new();",
+          "    assert!(eoi_fwd(&dfa, &input, &mut sid, &mut mat).is_ok());",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(mat, None);",
+          "    assert_eq!(sid, StateID::default());",
+          "    assert!(matches!(eoi_fwd(&dfa, &input, &mut sid, &mut mat), Ok(())));",
+          "    assert!(dfa.is_match_state(sid));",
+          "    assert!(input.get_span().end == 3);",
+          "    assert!(input.start() == 3);",
+          "    assert!(input.end() == 3);"
+        ],
+        "code": [
+          "{",
+          "    let haystack: &[u8] = b\"abc\";",
+          "    let span = Span { start: 3, end: 3 }; // `end` equal to the length of haystack",
+          "    let input = Input::new(&haystack).span(span);",
+          "    let mut sid = StateID::default();",
+          "    let mut mat: Option<HalfMatch> = None;",
+          "    ",
+          "    let dfa = DummyDFA::new();",
+          "    assert!(eoi_fwd(&dfa, &input, &mut sid, &mut mat).is_ok());",
+          "    assert_eq!(mat, None);",
+          "    assert_eq!(sid, StateID::default());",
+          "    assert!(matches!(eoi_fwd(&dfa, &input, &mut sid, &mut mat), Ok(())));",
+          "    assert!(dfa.is_match_state(sid));",
+          "    assert!(input.get_span().end == 3);",
+          "    assert!(input.start() == 3);",
+          "    assert!(input.end() == 3);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,232 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "    ",
+          "    let init_fn = || TestStruct { value: 42 };",
+          "    let mut lazy_instance = Lazy {",
+          "        cell: OnceCell(UnsafeCell::new(None)),",
+          "        init: Cell::new(Some(init_fn)),",
+          "    };",
+          "",
+          "    let _result: &mut TestStruct = lazy_instance.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let _result: &mut TestStruct = lazy_instance.deref_mut();",
+          "    assert_eq!(_result.value, 42);",
+          "    assert!(lazy_instance.cell.get_mut().is_some());",
+          "    assert!(lazy_instance.init.get_mut().is_none());",
+          "    assert_eq!(lazy_instance.cell.get_mut().unwrap().value, 42);"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "    ",
+          "    let init_fn = || TestStruct { value: 42 };",
+          "    let mut lazy_instance = Lazy {",
+          "        cell: OnceCell(UnsafeCell::new(None)),",
+          "        init: Cell::new(Some(init_fn)),",
+          "    };",
+          "",
+          "    let _result: &mut TestStruct = lazy_instance.deref_mut();",
+          "    let _result: &mut TestStruct = lazy_instance.deref_mut();",
+          "    assert_eq!(_result.value, 42);",
+          "    assert!(lazy_instance.cell.get_mut().is_some());",
+          "    assert!(lazy_instance.init.get_mut().is_none());",
+          "    assert_eq!(lazy_instance.cell.get_mut().unwrap().value, 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let init_fn = || String::from(\"Hello, World!\");",
+          "    let mut lazy_instance = Lazy {",
+          "        cell: OnceCell(UnsafeCell::new(None)),",
+          "        init: Cell::new(Some(init_fn)),",
+          "    };",
+          "",
+          "    let _result: &mut String = lazy_instance.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(lazy_instance.cell.get_mut().is_none());",
+          "    assert_eq!(lazy_instance.init.get_mut().is_some());",
+          "    let expected_value = \"Hello, World!\";",
+          "    let result: &mut String = lazy_instance.deref_mut();",
+          "    assert_eq!(*result, expected_value);"
+        ],
+        "code": [
+          "{",
+          "    let init_fn = || String::from(\"Hello, World!\");",
+          "    let mut lazy_instance = Lazy {",
+          "        cell: OnceCell(UnsafeCell::new(None)),",
+          "        init: Cell::new(Some(init_fn)),",
+          "    };",
+          "",
+          "    let _result: &mut String = lazy_instance.deref_mut();",
+          "    assert!(lazy_instance.cell.get_mut().is_none());",
+          "    assert_eq!(lazy_instance.init.get_mut().is_some());",
+          "    let expected_value = \"Hello, World!\";",
+          "    let result: &mut String = lazy_instance.deref_mut();",
+          "    assert_eq!(*result, expected_value);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let init_fn = || 0;",
+          "    let mut lazy_instance = Lazy {",
+          "        cell: OnceCell(UnsafeCell::new(None)),",
+          "        init: Cell::new(Some(init_fn)),",
+          "    };",
+          "",
+          "    let _result: &mut i32 = lazy_instance.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy_instance.cell.get_mut(), None);",
+          "    assert!(lazy_instance.init.get().is_some());",
+          "    assert_eq!(*lazy_instance.deref_mut(), 0);",
+          "    assert!(lazy_instance.cell.get_mut().is_some());"
+        ],
+        "code": [
+          "{",
+          "    let init_fn = || 0;",
+          "    let mut lazy_instance = Lazy {",
+          "        cell: OnceCell(UnsafeCell::new(None)),",
+          "        init: Cell::new(Some(init_fn)),",
+          "    };",
+          "",
+          "    let _result: &mut i32 = lazy_instance.deref_mut();",
+          "    assert_eq!(lazy_instance.cell.get_mut(), None);",
+          "    assert!(lazy_instance.init.get().is_some());",
+          "    assert_eq!(*lazy_instance.deref_mut(), 0);",
+          "    assert!(lazy_instance.cell.get_mut().is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let init_fn = || {",
+          "        panic!(\"This should not be called twice\");",
+          "    };",
+          "    let mut lazy_instance = Lazy {",
+          "        cell: OnceCell(UnsafeCell::new(None)),",
+          "        init: Cell::new(Some(init_fn)),",
+          "    };",
+          "",
+          "    let _result: &mut i32 = lazy_instance.deref_mut(); // Initializes",
+          "    let _result: &mut i32 = lazy_instance.deref_mut(); // Should panic",
+          "}"
+        ],
+        "oracle": [
+          "    let init_fn = || { panic!(\"This should not be called twice\"); };",
+          "    let mut lazy_instance = Lazy { cell: OnceCell(UnsafeCell::new(None)), init: Cell::new(Some(init_fn)) };",
+          "    let _result: &mut i32 = lazy_instance.deref_mut(); // Initializes",
+          "    #[should_panic]",
+          "    let _result: &mut i32 = lazy_instance.deref_mut(); // Should panic"
+        ],
+        "code": [
+          "{",
+          "    let init_fn = || {",
+          "        panic!(\"This should not be called twice\");",
+          "    };",
+          "    let mut lazy_instance = Lazy {",
+          "        cell: OnceCell(UnsafeCell::new(None)),",
+          "        init: Cell::new(Some(init_fn)),",
+          "    };",
+          "",
+          "    let _result: &mut i32 = lazy_instance.deref_mut(); // Initializes",
+          "    let _result: &mut i32 = lazy_instance.deref_mut(); // Should panic",
+          "    let init_fn = || { panic!(\"This should not be called twice\"); };",
+          "    let mut lazy_instance = Lazy { cell: OnceCell(UnsafeCell::new(None)), init: Cell::new(Some(init_fn)) };",
+          "    let _result: &mut i32 = lazy_instance.deref_mut(); // Initializes",
+          "    #[should_panic]",
+          "    let _result: &mut i32 = lazy_instance.deref_mut(); // Should panic",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct Sample {",
+          "        id: u32,",
+          "        name: String,",
+          "    }",
+          "",
+          "    let init_fn = || Sample { id: 1, name: String::from(\"Sample\") };",
+          "    let mut lazy_instance = Lazy {",
+          "        cell: OnceCell(UnsafeCell::new(None)),",
+          "        init: Cell::new(Some(init_fn)),",
+          "    };",
+          "",
+          "    let _result: &mut Sample = lazy_instance.deref_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(lazy_instance.cell.get_mut().is_none());",
+          "    assert!(lazy_instance.init.get_mut().is_some());",
+          "    assert_eq!(lazy_instance.init.get_mut().unwrap().as_ref().unwrap()(), Sample { id: 1, name: String::from(\"Sample\") });",
+          "    assert!(!lazy_instance.cell.get_mut().is_none());",
+          "    let result: &mut Sample = lazy_instance.deref_mut();",
+          "    assert_eq!(result.id, 1);",
+          "    assert_eq!(result.name, \"Sample\");"
+        ],
+        "code": [
+          "{",
+          "    struct Sample {",
+          "        id: u32,",
+          "        name: String,",
+          "    }",
+          "",
+          "    let init_fn = || Sample { id: 1, name: String::from(\"Sample\") };",
+          "    let mut lazy_instance = Lazy {",
+          "        cell: OnceCell(UnsafeCell::new(None)),",
+          "        init: Cell::new(Some(init_fn)),",
+          "    };",
+          "",
+          "    let _result: &mut Sample = lazy_instance.deref_mut();",
+          "    assert!(lazy_instance.cell.get_mut().is_none());",
+          "    assert!(lazy_instance.init.get_mut().is_some());",
+          "    assert_eq!(lazy_instance.init.get_mut().unwrap().as_ref().unwrap()(), Sample { id: 1, name: String::from(\"Sample\") });",
+          "    assert!(!lazy_instance.cell.get_mut().is_none());",
+          "    let result: &mut Sample = lazy_instance.deref_mut();",
+          "    assert_eq!(result.id, 1);",
+          "    assert_eq!(result.name, \"Sample\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

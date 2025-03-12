@@ -1,0 +1,222 @@
+{
+  "name": "once_cell::race::once_box::{impl#2}::drop",
+  "mod_info": {
+    "name": "race::once_box",
+    "loc": "src/race.rs:321:1:460:2"
+  },
+  "visible": true,
+  "loc": "src/race.rs:346:9:351:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: ptr.is_null() at line 348 is true\n"
+      ],
+      "input_infer": "Test input conditions: inner must hold a null pointer (i.e., AtomicPtr<T> initialized to null) for the drop function to satisfy precondition ptr.is_null() == true.\n",
+      "answers": [
+        {
+          "uses": [
+            "use std::ptr::null_mut;",
+            "use std::sync::atomic::AtomicPtr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::sync::atomic::AtomicPtr;",
+                "    use std::ptr::null_mut;",
+                "",
+                "    let null_ptr: AtomicPtr<i32> = AtomicPtr::new(null_mut());",
+                "    let once_box = OnceBox {",
+                "        inner: null_ptr,",
+                "        ghost: PhantomData,",
+                "    };",
+                "",
+                "    // Calling drop method",
+                "    drop(once_box);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst), null_mut());",
+                "    assert!(!once_box.inner.load(Ordering::SeqCst).is_null());",
+                "    assert_eq!(std::mem::size_of::<OnceBox<i32>>(), std::mem::size_of::<AtomicPtr<i32>>() + std::mem::size_of::<PhantomData<Option<Box<i32>>>>());",
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst) as usize, null_mut() as usize);",
+                "    assert!(std::panic::catch_unwind(|| drop(once_box)).is_ok());"
+              ],
+              "code": [
+                "{",
+                "    use std::sync::atomic::AtomicPtr;",
+                "    use std::ptr::null_mut;",
+                "",
+                "    let null_ptr: AtomicPtr<i32> = AtomicPtr::new(null_mut());",
+                "    let once_box = OnceBox {",
+                "        inner: null_ptr,",
+                "        ghost: PhantomData,",
+                "    };",
+                "",
+                "    // Calling drop method",
+                "    drop(once_box);",
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst), null_mut());",
+                "    assert!(!once_box.inner.load(Ordering::SeqCst).is_null());",
+                "    assert_eq!(std::mem::size_of::<OnceBox<i32>>(), std::mem::size_of::<AtomicPtr<i32>>() + std::mem::size_of::<PhantomData<Option<Box<i32>>>>());",
+                "    assert_eq!(once_box.inner.load(Ordering::SeqCst) as usize, null_mut() as usize);",
+                "    assert!(std::panic::catch_unwind(|| drop(once_box)).is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: ptr.is_null() at line 348 is false\n"
+      ],
+      "input_infer": "Test input conditions or ranges: inner must contain a valid non-null pointer to a Box<T> instance allocated on the heap, ensuring that the memory address is valid and has been initialized before the drop method is called.\n",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr;",
+            "use std::sync::atomic::Ordering;",
+            "use alloc::boxed::Box;",
+            "use std::sync::atomic::AtomicPtr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use core::ptr;",
+                "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                "    use alloc::boxed::Box;",
+                "",
+                "    struct TestStruct {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let box_instance = Box::new(TestStruct { value: 42 });",
+                "    let inner_ptr: AtomicPtr<TestStruct> = AtomicPtr::new(Box::into_raw(box_instance));",
+                "",
+                "    let once_box = OnceBox {",
+                "        inner: inner_ptr,",
+                "        ghost: PhantomData,",
+                "    };",
+                "",
+                "    let _ = once_box; // This will trigger the Drop implementation",
+                "}"
+              ],
+              "oracle": [
+                "    let ptr = *self.inner.get_mut(); // Validate that ptr is explicitly accessed before drop",
+                "    assert!(!ptr.is_null()); // Ensure that ptr.is_null() is false to meet precondition",
+                "    drop(unsafe { Box::from_raw(ptr) }); // Confirm that drop handles the pointer correctly",
+                "    assert_eq!(*ptr, 42); // Verify that the value inside the dropped Box is correct"
+              ],
+              "code": [
+                "{",
+                "    use core::ptr;",
+                "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                "    use alloc::boxed::Box;",
+                "",
+                "    struct TestStruct {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let box_instance = Box::new(TestStruct { value: 42 });",
+                "    let inner_ptr: AtomicPtr<TestStruct> = AtomicPtr::new(Box::into_raw(box_instance));",
+                "",
+                "    let once_box = OnceBox {",
+                "        inner: inner_ptr,",
+                "        ghost: PhantomData,",
+                "    };",
+                "",
+                "    let _ = once_box; // This will trigger the Drop implementation",
+                "    let ptr = *self.inner.get_mut(); // Validate that ptr is explicitly accessed before drop",
+                "    assert!(!ptr.is_null()); // Ensure that ptr.is_null() is false to meet precondition",
+                "    drop(unsafe { Box::from_raw(ptr) }); // Confirm that drop handles the pointer correctly",
+                "    assert_eq!(*ptr, 42); // Verify that the value inside the dropped Box is correct",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use core::ptr;",
+                "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                "    use alloc::boxed::Box;",
+                "",
+                "    struct TestStruct {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let box_instance = Box::new(TestStruct { value: 84 });",
+                "    let inner_ptr: AtomicPtr<TestStruct> = AtomicPtr::new(Box::into_raw(box_instance));",
+                "",
+                "    let once_box1 = OnceBox {",
+                "        inner: inner_ptr,",
+                "        ghost: PhantomData,",
+                "    };",
+                "    ",
+                "    let once_box2 = OnceBox {",
+                "        inner: inner_ptr,",
+                "        ghost: PhantomData,",
+                "    };",
+                "",
+                "    let _ = once_box1; // This will drop the first instance",
+                "    let _ = once_box2; // This will trigger the panic due to double drop, demonstrating invalid memory access",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| { let _ = once_box1; }).is_err());",
+                "    assert!(!inner_ptr.load(Ordering::SeqCst).is_null());",
+                "    assert_eq!(unsafe { (*inner_ptr.load(Ordering::SeqCst)).value }, 84);"
+              ],
+              "code": [
+                "{",
+                "    use core::ptr;",
+                "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                "    use alloc::boxed::Box;",
+                "",
+                "    struct TestStruct {",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let box_instance = Box::new(TestStruct { value: 84 });",
+                "    let inner_ptr: AtomicPtr<TestStruct> = AtomicPtr::new(Box::into_raw(box_instance));",
+                "",
+                "    let once_box1 = OnceBox {",
+                "        inner: inner_ptr,",
+                "        ghost: PhantomData,",
+                "    };",
+                "    ",
+                "    let once_box2 = OnceBox {",
+                "        inner: inner_ptr,",
+                "        ghost: PhantomData,",
+                "    };",
+                "",
+                "    let _ = once_box1; // This will drop the first instance",
+                "    let _ = once_box2; // This will trigger the panic due to double drop, demonstrating invalid memory access",
+                "    assert!(std::panic::catch_unwind(|| { let _ = once_box1; }).is_err());",
+                "    assert!(!inner_ptr.load(Ordering::SeqCst).is_null());",
+                "    assert_eq!(unsafe { (*inner_ptr.load(Ordering::SeqCst)).value }, 84);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

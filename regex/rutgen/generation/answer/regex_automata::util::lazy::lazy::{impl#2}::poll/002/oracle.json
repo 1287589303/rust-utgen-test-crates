@@ -1,0 +1,136 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let lazy = Lazy {",
+          "        state: AtomicU8::new(2), // LAZY_STATE_DONE",
+          "        create: Cell::new(Some(|| TestStruct { value: 42 })),",
+          "        data: Cell::new(MaybeUninit::new(TestStruct { value: 42 })),",
+          "    };",
+          "",
+          "    let result = lazy.poll();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_some());",
+          "    assert_eq!(unsafe { &*(result.unwrap() as *const _) }, &TestStruct { value: 42 });"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let lazy = Lazy {",
+          "        state: AtomicU8::new(2), // LAZY_STATE_DONE",
+          "        create: Cell::new(Some(|| TestStruct { value: 42 })),",
+          "        data: Cell::new(MaybeUninit::new(TestStruct { value: 42 })),",
+          "    };",
+          "",
+          "    let result = lazy.poll();",
+          "    assert!(result.is_some());",
+          "    assert_eq!(unsafe { &*(result.unwrap() as *const _) }, &TestStruct { value: 42 });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct AnotherStruct {",
+          "        value: String,",
+          "    }",
+          "",
+          "    let lazy = Lazy {",
+          "        state: AtomicU8::new(2), // LAZY_STATE_DONE",
+          "        create: Cell::new(Some(|| AnotherStruct { value: String::from(\"Hello\") })),",
+          "        data: Cell::new(MaybeUninit::new(AnotherStruct { value: String::from(\"Hello\") })),",
+          "    };",
+          "",
+          "    let result = lazy.poll();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy.state.load(Ordering::Acquire), 2); // LAZY_STATE_DONE",
+          "    assert!(lazy.data.get_ref().is_initialized()); // Data should be initialized",
+          "    assert!(result.is_some()); // Expected to return Some",
+          "    let result_value = result.unwrap();",
+          "    assert_eq!(result_value.value, \"Hello\"); // Check the stored value is \"Hello\""
+        ],
+        "code": [
+          "{",
+          "    struct AnotherStruct {",
+          "        value: String,",
+          "    }",
+          "",
+          "    let lazy = Lazy {",
+          "        state: AtomicU8::new(2), // LAZY_STATE_DONE",
+          "        create: Cell::new(Some(|| AnotherStruct { value: String::from(\"Hello\") })),",
+          "        data: Cell::new(MaybeUninit::new(AnotherStruct { value: String::from(\"Hello\") })),",
+          "    };",
+          "",
+          "    let result = lazy.poll();",
+          "    assert_eq!(lazy.state.load(Ordering::Acquire), 2); // LAZY_STATE_DONE",
+          "    assert!(lazy.data.get_ref().is_initialized()); // Data should be initialized",
+          "    assert!(result.is_some()); // Expected to return Some",
+          "    let result_value = result.unwrap();",
+          "    assert_eq!(result_value.value, \"Hello\"); // Check the stored value is \"Hello\"",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct EdgeStruct {",
+          "        value: f64,",
+          "    }",
+          "",
+          "    let lazy = Lazy {",
+          "        state: AtomicU8::new(2), // LAZY_STATE_DONE",
+          "        create: Cell::new(Some(|| EdgeStruct { value: 0.0 })),",
+          "        data: Cell::new(MaybeUninit::new(EdgeStruct { value: 0.0 })),",
+          "    };",
+          "",
+          "    let result = lazy.poll();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Some(&EdgeStruct { value: 0.0 }));"
+        ],
+        "code": [
+          "{",
+          "    struct EdgeStruct {",
+          "        value: f64,",
+          "    }",
+          "",
+          "    let lazy = Lazy {",
+          "        state: AtomicU8::new(2), // LAZY_STATE_DONE",
+          "        create: Cell::new(Some(|| EdgeStruct { value: 0.0 })),",
+          "        data: Cell::new(MaybeUninit::new(EdgeStruct { value: 0.0 })),",
+          "    };",
+          "",
+          "    let result = lazy.poll();",
+          "    assert_eq!(result, Some(&EdgeStruct { value: 0.0 }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

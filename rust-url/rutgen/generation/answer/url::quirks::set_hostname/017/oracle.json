@@ -1,0 +1,227 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap();",
+          "    url.set_hostname(\"example.com\").unwrap(); // Ensure initial state valid for next test",
+          "    assert!(url.cannot_be_a_base());",
+          "    let result = set_hostname(&mut url, \"new-host\");",
+          "}"
+        ],
+        "oracle": [
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap();",
+          "    url.set_hostname(\"example.com\").unwrap();",
+          "    assert!(!url.cannot_be_a_base());",
+          "    assert_eq!(url.scheme(), \"http\");",
+          "    let scheme_type = SchemeType::from(url.scheme());",
+          "    assert_eq!(scheme_type, SchemeType::NotSpecial);",
+          "    let input = Input::new_no_trim(\"new-host\");",
+          "    let (host, _) = Parser::parse_host(input, scheme_type).unwrap_err();",
+          "    if let Host::Domain(h) = &host {",
+          "    assert!(h.is_empty());",
+          "    }",
+          "    assert!(!port(&url).is_empty());",
+          "    let result = set_hostname(&mut url, \"new-host\");",
+          "    assert!(result.is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap();",
+          "    url.set_hostname(\"example.com\").unwrap(); // Ensure initial state valid for next test",
+          "    assert!(url.cannot_be_a_base());",
+          "    let result = set_hostname(&mut url, \"new-host\");",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap();",
+          "    url.set_hostname(\"example.com\").unwrap();",
+          "    assert!(!url.cannot_be_a_base());",
+          "    assert_eq!(url.scheme(), \"http\");",
+          "    let scheme_type = SchemeType::from(url.scheme());",
+          "    assert_eq!(scheme_type, SchemeType::NotSpecial);",
+          "    let input = Input::new_no_trim(\"new-host\");",
+          "    let (host, _) = Parser::parse_host(input, scheme_type).unwrap_err();",
+          "    if let Host::Domain(h) = &host {",
+          "    assert!(h.is_empty());",
+          "    }",
+          "    assert!(!port(&url).is_empty());",
+          "    let result = set_hostname(&mut url, \"new-host\");",
+          "    assert!(result.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"file:///path/to/file\").unwrap(); // URL with File scheme",
+          "    let result = set_hostname(&mut url, \"example.com\"); // Attempt to set hostname",
+          "}"
+        ],
+        "oracle": [
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap(); // URL with non-file scheme",
+          "    assert_eq!(set_hostname(&mut url, \"\"), Err(())); // Test empty hostname with non-special type and ensured credentials exist",
+          "    assert_eq!(set_hostname(&mut url, \"example.com\"), Ok(())); // Test valid hostname setting",
+          "    let mut url_special = Url::parse(\"https://example.com/path\").unwrap(); // URL with special scheme",
+          "    assert_eq!(set_hostname(&mut url_special, \"\"), Err(())); // Test empty hostname on special URL with existing port and credentials",
+          "    assert_eq!(set_hostname(&mut url_special, \"newdomain.com\"), Ok(())); // Test valid hostname setting on special URL",
+          "    let mut url_no_port = Url::parse(\"http://example.com:8080/path\").unwrap(); // URL with port",
+          "    assert_eq!(set_hostname(&mut url_no_port, \"\"), Err(())); // Test empty hostname with existing port",
+          "    let mut url_empty_host = Url::parse(\"http://example.com/path\").unwrap(); // URL with existing host",
+          "    url_empty_host.set_username(\"user\").unwrap(); // Set credentials to ensure error case",
+          "    assert_eq!(set_hostname(&mut url_empty_host, \"\"), Err(())); // Test empty hostname with credentials",
+          "    let mut url_opaque = Url::parse(\"http://user:pass@example.com/path\").unwrap(); // URL with credentials",
+          "    assert_eq!(set_hostname(&mut url_opaque, \"\"), Err(())); // Test empty hostname with credentials",
+          "    let mut url_wrong_path = Url::parse(\"http://example.com/path\").unwrap(); // Different path",
+          "    assert_eq!(set_hostname(&mut url_wrong_path, \"\"), Err(())); // Ensure behavior is consistent with empty hostname",
+          "    assert_eq!(set_hostname(&mut url_wrong_path, \"valid.com\"), Ok(())); // Valid hostname on different path"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"file:///path/to/file\").unwrap(); // URL with File scheme",
+          "    let result = set_hostname(&mut url, \"example.com\"); // Attempt to set hostname",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap(); // URL with non-file scheme",
+          "    assert_eq!(set_hostname(&mut url, \"\"), Err(())); // Test empty hostname with non-special type and ensured credentials exist",
+          "    assert_eq!(set_hostname(&mut url, \"example.com\"), Ok(())); // Test valid hostname setting",
+          "    let mut url_special = Url::parse(\"https://example.com/path\").unwrap(); // URL with special scheme",
+          "    assert_eq!(set_hostname(&mut url_special, \"\"), Err(())); // Test empty hostname on special URL with existing port and credentials",
+          "    assert_eq!(set_hostname(&mut url_special, \"newdomain.com\"), Ok(())); // Test valid hostname setting on special URL",
+          "    let mut url_no_port = Url::parse(\"http://example.com:8080/path\").unwrap(); // URL with port",
+          "    assert_eq!(set_hostname(&mut url_no_port, \"\"), Err(())); // Test empty hostname with existing port",
+          "    let mut url_empty_host = Url::parse(\"http://example.com/path\").unwrap(); // URL with existing host",
+          "    url_empty_host.set_username(\"user\").unwrap(); // Set credentials to ensure error case",
+          "    assert_eq!(set_hostname(&mut url_empty_host, \"\"), Err(())); // Test empty hostname with credentials",
+          "    let mut url_opaque = Url::parse(\"http://user:pass@example.com/path\").unwrap(); // URL with credentials",
+          "    assert_eq!(set_hostname(&mut url_opaque, \"\"), Err(())); // Test empty hostname with credentials",
+          "    let mut url_wrong_path = Url::parse(\"http://example.com/path\").unwrap(); // Different path",
+          "    assert_eq!(set_hostname(&mut url_wrong_path, \"\"), Err(())); // Ensure behavior is consistent with empty hostname",
+          "    assert_eq!(set_hostname(&mut url_wrong_path, \"valid.com\"), Ok(())); // Valid hostname on different path",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap();",
+          "    url.set_hostname(\"invalid_host\").unwrap(); // Ensure host can be set to a valid one",
+          "    let result = set_hostname(&mut url, \"invalid_host\"); // Attempt with input that is expected to fail",
+          "}"
+        ],
+        "oracle": [
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap();",
+          "    url.set_hostname(\"valid_host\").unwrap();",
+          "    assert_eq!(set_hostname(&mut url, \"\"), Err(()));",
+          "    assert_eq!(set_hostname(&mut url, \"invalid_host:80\"), Err(()));",
+          "    assert_eq!(set_hostname(&mut url, \"host_with_credentials:port\"), Err(()));"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap();",
+          "    url.set_hostname(\"invalid_host\").unwrap(); // Ensure host can be set to a valid one",
+          "    let result = set_hostname(&mut url, \"invalid_host\"); // Attempt with input that is expected to fail",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap();",
+          "    url.set_hostname(\"valid_host\").unwrap();",
+          "    assert_eq!(set_hostname(&mut url, \"\"), Err(()));",
+          "    assert_eq!(set_hostname(&mut url, \"invalid_host:80\"), Err(()));",
+          "    assert_eq!(set_hostname(&mut url, \"host_with_credentials:port\"), Err(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:pass@example.com/path\").unwrap();",
+          "    url.set_hostname(\"\").unwrap(); // Setting to empty host initially",
+          "    url.set_host_internal(Host::Domain(\"example.com\".to_string()), Some(80)).unwrap(); // Simulate having credentials",
+          "    let result = set_hostname(&mut url, \"\"); // Attempt to set hostname to empty",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result, Err(()));"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://user:pass@example.com/path\").unwrap();",
+          "    url.set_hostname(\"\").unwrap(); // Setting to empty host initially",
+          "    url.set_host_internal(Host::Domain(\"example.com\".to_string()), Some(80)).unwrap(); // Simulate having credentials",
+          "    let result = set_hostname(&mut url, \"\"); // Attempt to set hostname to empty",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result, Err(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap(); // Ensure a non-file scheme",
+          "    let result = set_hostname(&mut url, \"example.com\"); // Attempt to set hostname on non-file",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(()));",
+          "    assert!(url.has_host());",
+          "    assert_eq!(url.host_str(), Some(\"example.com\"));",
+          "    assert!(url.username().is_empty());",
+          "    assert!(url.password().is_none());",
+          "    assert!(url.port().is_some());",
+          "    assert!(url.cannot_be_a_base());",
+          "    assert!(!url.path().is_empty());",
+          "    assert!(url.scheme() != \"file\");"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://example.com/path\").unwrap(); // Ensure a non-file scheme",
+          "    let result = set_hostname(&mut url, \"example.com\"); // Attempt to set hostname on non-file",
+          "    assert_eq!(result, Err(()));",
+          "    assert!(url.has_host());",
+          "    assert_eq!(url.host_str(), Some(\"example.com\"));",
+          "    assert!(url.username().is_empty());",
+          "    assert!(url.password().is_none());",
+          "    assert!(url.port().is_some());",
+          "    assert!(url.cannot_be_a_base());",
+          "    assert!(!url.path().is_empty());",
+          "    assert!(url.scheme() != \"file\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut url = Url::parse(\"http://example.com:8080/path\").unwrap(); // URL with a port",
+          "    let result = set_hostname(&mut url, \"new-host.com\"); // Attempt to set hostname while port exists",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(()));"
+        ],
+        "code": [
+          "{",
+          "    let mut url = Url::parse(\"http://example.com:8080/path\").unwrap(); // URL with a port",
+          "    let result = set_hostname(&mut url, \"new-host.com\"); // Attempt to set hostname while port exists",
+          "    assert_eq!(result, Err(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,155 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex::new(\"test\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    let reverse_cache = cache.reverse_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let regex = Regex::new(\"test\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    let reverse_cache = cache.reverse_mut();",
+          "    assert_eq!(std::ptr::addr_of_mut!(*reverse_cache), std::ptr::addr_of_mut!(cache.reverse));",
+          "    assert!(matches!(reverse_cache, &mut dfa::Cache { .. }));"
+        ],
+        "code": [
+          "{",
+          "    let regex = Regex::new(\"test\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    let reverse_cache = cache.reverse_mut();",
+          "    let regex = Regex::new(\"test\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    let reverse_cache = cache.reverse_mut();",
+          "    assert_eq!(std::ptr::addr_of_mut!(*reverse_cache), std::ptr::addr_of_mut!(cache.reverse));",
+          "    assert!(matches!(reverse_cache, &mut dfa::Cache { .. }));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex1 = Regex::new(\"abc\").unwrap();",
+          "    let mut cache = Cache::new(&regex1);",
+          "    cache.reset(&regex1);",
+          "    let reverse_cache = cache.reverse_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let regex1 = Regex::new(\"abc\").unwrap();",
+          "    let mut cache = Cache::new(&regex1);",
+          "    cache.reset(&regex1);",
+          "    let reverse_cache = cache.reverse_mut();",
+          "    assert_eq!(reverse_cache, &mut cache.reverse);",
+          "    assert!(std::ptr::eq(reverse_cache, &mut cache.reverse));",
+          "    assert_eq!(std::mem::size_of_val(reverse_cache), std::mem::size_of_val(&cache.reverse));",
+          "    reverse_cache.clear();  // Assuming clear is a method to validate mutable access",
+          "    assert!(reverse_cache.is_empty());  // Assuming cache starts empty",
+          "    cache.reset(&regex1);",
+          "    assert!(reverse_cache.is_empty());  // Check reverse cache after reset"
+        ],
+        "code": [
+          "{",
+          "    let regex1 = Regex::new(\"abc\").unwrap();",
+          "    let mut cache = Cache::new(&regex1);",
+          "    cache.reset(&regex1);",
+          "    let reverse_cache = cache.reverse_mut();",
+          "    let regex1 = Regex::new(\"abc\").unwrap();",
+          "    let mut cache = Cache::new(&regex1);",
+          "    cache.reset(&regex1);",
+          "    let reverse_cache = cache.reverse_mut();",
+          "    assert_eq!(reverse_cache, &mut cache.reverse);",
+          "    assert!(std::ptr::eq(reverse_cache, &mut cache.reverse));",
+          "    assert_eq!(std::mem::size_of_val(reverse_cache), std::mem::size_of_val(&cache.reverse));",
+          "    reverse_cache.clear();  // Assuming clear is a method to validate mutable access",
+          "    assert!(reverse_cache.is_empty());  // Assuming cache starts empty",
+          "    cache.reset(&regex1);",
+          "    assert!(reverse_cache.is_empty());  // Check reverse cache after reset",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex::new(\"xyz\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    let reverse_cache1 = cache.reverse_mut();",
+          "    let reverse_cache2 = cache.reverse_mut();",
+          "}"
+        ],
+        "oracle": [
+          "    let regex = Regex::new(\"xyz\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    let reverse_cache1 = cache.reverse_mut();",
+          "    let reverse_cache2 = cache.reverse_mut();",
+          "    assert_eq!(reverse_cache1 as *const _ as usize, reverse_cache2 as *const _ as usize);"
+        ],
+        "code": [
+          "{",
+          "    let regex = Regex::new(\"xyz\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    let reverse_cache1 = cache.reverse_mut();",
+          "    let reverse_cache2 = cache.reverse_mut();",
+          "    let regex = Regex::new(\"xyz\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    let reverse_cache1 = cache.reverse_mut();",
+          "    let reverse_cache2 = cache.reverse_mut();",
+          "    assert_eq!(reverse_cache1 as *const _ as usize, reverse_cache2 as *const _ as usize);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex::new(\".*\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    let initial_usage = cache.memory_usage();",
+          "    cache.reverse_mut(); // Call to ensure cache is used",
+          "    let usage_after = cache.memory_usage();",
+          "}"
+        ],
+        "oracle": [
+          "    let regex = Regex::new(\".*\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    assert_eq!(cache.memory_usage(), initial_usage);",
+          "    cache.reverse_mut();",
+          "    assert_ne!(cache.memory_usage(), initial_usage);",
+          "    assert!(cache.memory_usage() > initial_usage);"
+        ],
+        "code": [
+          "{",
+          "    let regex = Regex::new(\".*\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    let initial_usage = cache.memory_usage();",
+          "    cache.reverse_mut(); // Call to ensure cache is used",
+          "    let usage_after = cache.memory_usage();",
+          "    let regex = Regex::new(\".*\").unwrap();",
+          "    let mut cache = Cache::new(&regex);",
+          "    assert_eq!(cache.memory_usage(), initial_usage);",
+          "    cache.reverse_mut();",
+          "    assert_ne!(cache.memory_usage(), initial_usage);",
+          "    assert!(cache.memory_usage() > initial_usage);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

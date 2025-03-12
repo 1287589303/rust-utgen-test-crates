@@ -1,0 +1,255 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = &[0x01, 0x02, 0x03, b'\\n', 0x7F]; // valid control characters and line feed",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").is_ok()",
+          "    utf8::decode(bytes).is_some()",
+          "    matches!(result, Ok(_))",
+          "    matches!(result, Ok(ch) if ch == '\\n')",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err()"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = &[0x01, 0x02, 0x03, b'\\n', 0x7F]; // valid control characters and line feed",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    write!(f, \"\\\"\").is_ok()",
+          "    utf8::decode(bytes).is_some()",
+          "    matches!(result, Ok(_))",
+          "    matches!(result, Ok(ch) if ch == '\\n')",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err()",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = &[0, b'\\n', 0x04, 0x05]; // null byte and valid characters",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\")? is Ok",
+          "    let Some(result) = utf8::decode(bytes) is true",
+          "    result matches Ok(ch) is true",
+          "    ch matches '\\n' is true",
+          "    write!(f, \"{}\", ch.escape_debug())? is Err",
+          "    write!(f, \"{}\", ch.escape_debug())? is None"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = &[0, b'\\n', 0x04, 0x05]; // null byte and valid characters",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    write!(f, \"\\\"\")? is Ok",
+          "    let Some(result) = utf8::decode(bytes) is true",
+          "    result matches Ok(ch) is true",
+          "    ch matches '\\n' is true",
+          "    write!(f, \"{}\", ch.escape_debug())? is Err",
+          "    write!(f, \"{}\", ch.escape_debug())? is None",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = &[0xFF, b'\\n', 0x01, 0x02]; // invalid UTF-8 byte followed by valid characters",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(core::fmt::write(&mut core::fmt::Formatter::new(), |f| DebugHaystack(&[0xFF, b'\\n', 0x01, 0x02]).fmt(f)).is_ok());",
+          "    assert!(utf8::decode(&[0xFF, b'\\n', 0x01, 0x02]).is_some());",
+          "    assert!(matches!(utf8::decode(&[0xFF, b'\\n', 0x01, 0x02]), Some(Ok(_))));",
+          "    assert!(matches!(utf8::decode(&[0xFF, b'\\n', 0x01, 0x02]), Some(Ok(_)));",
+          "    assert_eq!(DebugHaystack(&[0xFF, b'\\n', 0x01, 0x02]).fmt(core::fmt::Formatter::new()), Ok(()));",
+          "    assert!(matches!(DebugHaystack(&[0xFF, b'\\n', 0x01, 0x02]).fmt(core::fmt::Formatter::new()), Err(_)));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = &[0xFF, b'\\n', 0x01, 0x02]; // invalid UTF-8 byte followed by valid characters",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(core::fmt::write(&mut core::fmt::Formatter::new(), |f| DebugHaystack(&[0xFF, b'\\n', 0x01, 0x02]).fmt(f)).is_ok());",
+          "    assert!(utf8::decode(&[0xFF, b'\\n', 0x01, 0x02]).is_some());",
+          "    assert!(matches!(utf8::decode(&[0xFF, b'\\n', 0x01, 0x02]), Some(Ok(_))));",
+          "    assert!(matches!(utf8::decode(&[0xFF, b'\\n', 0x01, 0x02]), Some(Ok(_)));",
+          "    assert_eq!(DebugHaystack(&[0xFF, b'\\n', 0x01, 0x02]).fmt(core::fmt::Formatter::new()), Ok(()));",
+          "    assert!(matches!(DebugHaystack(&[0xFF, b'\\n', 0x01, 0x02]).fmt(core::fmt::Formatter::new()), Err(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = &[0x01, 0x02, 0x03, 0x0B, 0x0C, 0x0E, 0x7F]; // full range of control characters excluding new lines and tabs",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").is_ok()",
+          "    utf8::decode(bytes).is_some()",
+          "    matches!(result, Ok(ch))",
+          "    ch == '\\n'",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err()"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = &[0x01, 0x02, 0x03, 0x0B, 0x0C, 0x0E, 0x7F]; // full range of control characters excluding new lines and tabs",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    write!(f, \"\\\"\").is_ok()",
+          "    utf8::decode(bytes).is_some()",
+          "    matches!(result, Ok(ch))",
+          "    ch == '\\n'",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err()",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = &[]; // empty input",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    let input: &[u8] = &[0x00]; // test input with null byte",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\0\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x01]; // test input for ASCII control character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\x01\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x0A]; // test input for newline character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\n\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x7F]; // test input for delete control character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\x7f\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x0D]; // test input for carriage return character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\r\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x09]; // test input for tab character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\t\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x0B]; // test input for vertical tab character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\x0b\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x0C]; // test input for form feed character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\x0c\\\"\""
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = &[]; // empty input",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    let input: &[u8] = &[0x00]; // test input with null byte",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\0\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x01]; // test input for ASCII control character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\x01\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x0A]; // test input for newline character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\n\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x7F]; // test input for delete control character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\x7f\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x0D]; // test input for carriage return character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\r\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x09]; // test input for tab character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\t\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x0B]; // test input for vertical tab character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\x0b\\\"\"",
+          "    ",
+          "    let input: &[u8] = &[0x0C]; // test input for form feed character",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)); // expect output \"\\\"\\\\x0c\\\"\"",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = &[0x01, 0xFF, b'\\n', 0x7F, 0x0A, 0]; // mixed valid and invalid bytes with line feed and control characters",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").is_ok()",
+          "    let Some(result) = utf8::decode(bytes).is_some()",
+          "    result.is_ok()",
+          "    result.is_ok()",
+          "    ch == '\\n'",
+          "    ch == '\\n'",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err()"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = &[0x01, 0xFF, b'\\n', 0x7F, 0x0A, 0]; // mixed valid and invalid bytes with line feed and control characters",
+          "    let haystack = DebugHaystack(input);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    write!(f, \"\\\"\").is_ok()",
+          "    let Some(result) = utf8::decode(bytes).is_some()",
+          "    result.is_ok()",
+          "    result.is_ok()",
+          "    ch == '\\n'",
+          "    ch == '\\n'",
+          "    write!(f, \"{}\", ch.escape_debug()).is_err()",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

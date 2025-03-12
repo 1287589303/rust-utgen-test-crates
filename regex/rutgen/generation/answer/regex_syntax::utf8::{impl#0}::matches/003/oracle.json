@@ -1,0 +1,140 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let utf8_seq = Utf8Sequence::Three([",
+          "        Utf8Range::new(0x30, 0x39), // '0' to '9'",
+          "        Utf8Range::new(0x41, 0x5A), // 'A' to 'Z'",
+          "        Utf8Range::new(0x61, 0x7A), // 'a' to 'z'",
+          "    ]);",
+          "",
+          "    let bytes = [0x31, 0x43, 0x7B]; // '1', 'C', and '{' (not in range)",
+          "    ",
+          "    utf8_seq.matches(&bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    utf8_seq.matches(&[0x31, 0x43, 0x7B]) == false;  // bytes.len() == utf8_seq.len(), r.matches(0x7B) is false",
+          "    utf8_seq.matches(&[0x31, 0x41, 0x61]) == true;   // bytes.len() == utf8_seq.len(), all matches",
+          "    utf8_seq.matches(&[0x30, 0x42, 0x6A]) == false;  // bytes.len() == utf8_seq.len(), r.matches(0x42) is false",
+          "    utf8_seq.matches(&[0x30, 0x43]) == false;         // bytes.len() < utf8_seq.len(), returns false",
+          "    utf8_seq.matches(&[0x31]) == false;                // bytes.len() < utf8_seq.len(), returns false"
+        ],
+        "code": [
+          "{",
+          "    let utf8_seq = Utf8Sequence::Three([",
+          "        Utf8Range::new(0x30, 0x39), // '0' to '9'",
+          "        Utf8Range::new(0x41, 0x5A), // 'A' to 'Z'",
+          "        Utf8Range::new(0x61, 0x7A), // 'a' to 'z'",
+          "    ]);",
+          "",
+          "    let bytes = [0x31, 0x43, 0x7B]; // '1', 'C', and '{' (not in range)",
+          "    ",
+          "    utf8_seq.matches(&bytes);",
+          "    utf8_seq.matches(&[0x31, 0x43, 0x7B]) == false;  // bytes.len() == utf8_seq.len(), r.matches(0x7B) is false",
+          "    utf8_seq.matches(&[0x31, 0x41, 0x61]) == true;   // bytes.len() == utf8_seq.len(), all matches",
+          "    utf8_seq.matches(&[0x30, 0x42, 0x6A]) == false;  // bytes.len() == utf8_seq.len(), r.matches(0x42) is false",
+          "    utf8_seq.matches(&[0x30, 0x43]) == false;         // bytes.len() < utf8_seq.len(), returns false",
+          "    utf8_seq.matches(&[0x31]) == false;                // bytes.len() < utf8_seq.len(), returns false",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let utf8_seq = Utf8Sequence::Four([",
+          "        Utf8Range::new(0x61, 0x7A), // 'a' to 'z'",
+          "        Utf8Range::new(0x30, 0x39), // '0' to '9'",
+          "        Utf8Range::new(0x41, 0x5A), // 'A' to 'Z'",
+          "        Utf8Range::new(0x20, 0x7E), // space to '~'",
+          "    ]);",
+          "",
+          "    let bytes = [0x61, 0x35, 0x40, 0x7F]; // 'a', '5', '@', and DEL (not matched)",
+          "    ",
+          "    utf8_seq.matches(&bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    utf8_seq.matches(&[0x61, 0x35, 0x40, 0x7F]) == false;   // Test where last byte '@' is not matched against the ranges",
+          "    utf8_seq.matches(&[0x61, 0x30, 0x41, 0x7E]) == true;    // Test with all bytes matched",
+          "    utf8_seq.matches(&[0x7A, 0x39, 0x5A, 0x7E]) == true;    // Test with boundary values matched",
+          "    utf8_seq.matches(&[0x61, 0x36, 0x41, 0x80]) == false;   // Test where last byte '0x80' is outside of match range",
+          "    utf8_seq.matches(&[0x62, 0x31, 0x42, 0x7D]) == true;    // Test where all bytes are within ranges",
+          "    utf8_seq.matches(&[0x7D]) == false;                      // Test single byte not matched",
+          "    utf8_seq.matches(&[0x61, 0x35]) == false;               // Check with fewer bytes than len",
+          "    utf8_seq.matches(&[0x71, 0x40, 0x7E]) == false;         // Check where first byte is within, but second is not within range",
+          "    utf8_seq.matches(&[0x61, 0x39, 0x60, 0x7E]) == false;   // Check where third byte '@' is outside the range",
+          "    utf8_seq.matches(&[0x7A, 0x37, 0x5A, 0x20]) == true;    // Check where all are within the valid character ranges"
+        ],
+        "code": [
+          "{",
+          "    let utf8_seq = Utf8Sequence::Four([",
+          "        Utf8Range::new(0x61, 0x7A), // 'a' to 'z'",
+          "        Utf8Range::new(0x30, 0x39), // '0' to '9'",
+          "        Utf8Range::new(0x41, 0x5A), // 'A' to 'Z'",
+          "        Utf8Range::new(0x20, 0x7E), // space to '~'",
+          "    ]);",
+          "",
+          "    let bytes = [0x61, 0x35, 0x40, 0x7F]; // 'a', '5', '@', and DEL (not matched)",
+          "    ",
+          "    utf8_seq.matches(&bytes);",
+          "    utf8_seq.matches(&[0x61, 0x35, 0x40, 0x7F]) == false;   // Test where last byte '@' is not matched against the ranges",
+          "    utf8_seq.matches(&[0x61, 0x30, 0x41, 0x7E]) == true;    // Test with all bytes matched",
+          "    utf8_seq.matches(&[0x7A, 0x39, 0x5A, 0x7E]) == true;    // Test with boundary values matched",
+          "    utf8_seq.matches(&[0x61, 0x36, 0x41, 0x80]) == false;   // Test where last byte '0x80' is outside of match range",
+          "    utf8_seq.matches(&[0x62, 0x31, 0x42, 0x7D]) == true;    // Test where all bytes are within ranges",
+          "    utf8_seq.matches(&[0x7D]) == false;                      // Test single byte not matched",
+          "    utf8_seq.matches(&[0x61, 0x35]) == false;               // Check with fewer bytes than len",
+          "    utf8_seq.matches(&[0x71, 0x40, 0x7E]) == false;         // Check where first byte is within, but second is not within range",
+          "    utf8_seq.matches(&[0x61, 0x39, 0x60, 0x7E]) == false;   // Check where third byte '@' is outside the range",
+          "    utf8_seq.matches(&[0x7A, 0x37, 0x5A, 0x20]) == true;    // Check where all are within the valid character ranges",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let utf8_seq = Utf8Sequence::Two([",
+          "        Utf8Range::new(0x31, 0x39), // '1' to '9'",
+          "        Utf8Range::new(0x41, 0x4A), // 'A' to 'J'",
+          "    ]);",
+          "",
+          "    let bytes = [0x39, 0x4B]; // '9' and 'K' (not in range)",
+          "    ",
+          "    utf8_seq.matches(&bytes);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(utf8_seq.matches(&bytes), false);"
+        ],
+        "code": [
+          "{",
+          "    let utf8_seq = Utf8Sequence::Two([",
+          "        Utf8Range::new(0x31, 0x39), // '1' to '9'",
+          "        Utf8Range::new(0x41, 0x4A), // 'A' to 'J'",
+          "    ]);",
+          "",
+          "    let bytes = [0x39, 0x4B]; // '9' and 'K' (not in range)",
+          "    ",
+          "    utf8_seq.matches(&bytes);",
+          "    assert_eq!(utf8_seq.matches(&bytes), false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

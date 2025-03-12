@@ -1,0 +1,158 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor { rest: \"b'\\\\xG\", off: 0 }; // 'G' is not a valid hex character following '\\\\x'",
+          "    let result = byte(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor { rest: \"b'\\\\xG\", off: 0 }; // 'G' is not a valid hex character following '\\\\x'",
+          "    let result = byte(input);",
+          "    assert_eq!(result, Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor { rest: \"b'\\\\\\\\x00\", off: 0 }; // Valid escape '\\\\' followed by valid hex '00'",
+          "    let result = byte(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input = Cursor { rest: \"b'\\\\\\\\x00\", off: 0 }; // Valid escape with hex '00'",
+          "    assert_eq!(result, Err(Reject)); // Confirming the expected outcome is Err(Reject)"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor { rest: \"b'\\\\\\\\x00\", off: 0 }; // Valid escape '\\\\' followed by valid hex '00'",
+          "    let result = byte(input);",
+          "    let input = Cursor { rest: \"b'\\\\\\\\x00\", off: 0 }; // Valid escape with hex '00'",
+          "    assert_eq!(result, Err(Reject)); // Confirming the expected outcome is Err(Reject)",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor { rest: \"b'\\\\x2\", off: 0 }; // '2' is only the first half of a valid hex sequence",
+          "    let result = byte(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor { rest: \"b'\\\\x2\", off: 0 }; // '2' is only the first half of a valid hex sequence",
+          "    let result = byte(input);",
+          "    assert_eq!(result, Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor { rest: \"b'\\\\x00x\", off: 0 }; // Valid escape '\\\\x00', followed by another character which fails the boundary check",
+          "    let result = byte(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap(), Reject);"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor { rest: \"b'\\\\x00x\", off: 0 }; // Valid escape '\\\\x00', followed by another character which fails the boundary check",
+          "    let result = byte(input);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap(), Reject);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = Cursor { rest: \"b'\\\\n\\\\'\", off: 0 }; // Valid escape '\\\\n', followed by an additional valid escape",
+          "    let result = byte(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input = Cursor { rest: \"b'\\\\n\\\\'\", off: 0 }; // Precondition: input.parse(\"b'\")? is Ok/Some",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\x'\", off: 0 }; // Precondition: first byte matches Some(b'\\\\'), second byte matches Some(b'x')",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\a'\", off: 0 }; // Precondition: first byte matches Some(b'\\\\'), second byte matches Some(b'a')",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\z'\", off: 0 }; // Precondition: first byte matches Some(b'\\\\'), second byte is invalid",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\x1'\", off: 0 }; // Precondition: first byte matches Some(b'\\\\'), second byte matches Some(b'x')",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\xg'\", off: 0 }; // Precondition: first byte matches Some(b'\\\\'), second byte matches Some(b'x'), third byte is invalid",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\'\", off: 0 }; // Only escape character",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)"
+        ],
+        "code": [
+          "{",
+          "    let input = Cursor { rest: \"b'\\\\n\\\\'\", off: 0 }; // Valid escape '\\\\n', followed by an additional valid escape",
+          "    let result = byte(input);",
+          "    let input = Cursor { rest: \"b'\\\\n\\\\'\", off: 0 }; // Precondition: input.parse(\"b'\")? is Ok/Some",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\x'\", off: 0 }; // Precondition: first byte matches Some(b'\\\\'), second byte matches Some(b'x')",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\a'\", off: 0 }; // Precondition: first byte matches Some(b'\\\\'), second byte matches Some(b'a')",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\z'\", off: 0 }; // Precondition: first byte matches Some(b'\\\\'), second byte is invalid",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\x1'\", off: 0 }; // Precondition: first byte matches Some(b'\\\\'), second byte matches Some(b'x')",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\xg'\", off: 0 }; // Precondition: first byte matches Some(b'\\\\'), second byte matches Some(b'x'), third byte is invalid",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "    let input = Cursor { rest: \"b'\\\\'\", off: 0 }; // Only escape character",
+          "    let result = byte(input);",
+          "    assert!(result.is_err()); // Expected return value/type: Err(Reject)",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

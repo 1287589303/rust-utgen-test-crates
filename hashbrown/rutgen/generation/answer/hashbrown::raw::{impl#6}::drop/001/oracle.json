@@ -1,0 +1,168 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestData {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let data = Box::new(TestData { value: 42 });",
+          "    let non_null_ptr = NonNull::new(Box::into_raw(data)).unwrap();",
+          "    let bucket = Bucket { ptr: non_null_ptr };",
+          "    ",
+          "    unsafe {",
+          "        bucket.drop();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(unsafe { bucket.as_ptr().read() }.value, 42);",
+          "    assert!(unsafe { bucket.ptr.as_ptr() }.is_null());",
+          "    let invalid_mut_drop = || unsafe { bucket.drop() };",
+          "    assert!(std::panic::catch_unwind(invalid_mut_drop).is_err());",
+          "    assert!(unsafe { bucket.ptr.as_ref() }.is_none());",
+          "    let data_after_drop = Box::from_raw(non_null_ptr.as_ptr());",
+          "    assert_eq!(data_after_drop.value, 42);"
+        ],
+        "code": [
+          "{",
+          "    struct TestData {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let data = Box::new(TestData { value: 42 });",
+          "    let non_null_ptr = NonNull::new(Box::into_raw(data)).unwrap();",
+          "    let bucket = Bucket { ptr: non_null_ptr };",
+          "    ",
+          "    unsafe {",
+          "        bucket.drop();",
+          "    }",
+          "    assert_eq!(unsafe { bucket.as_ptr().read() }.value, 42);",
+          "    assert!(unsafe { bucket.ptr.as_ptr() }.is_null());",
+          "    let invalid_mut_drop = || unsafe { bucket.drop() };",
+          "    assert!(std::panic::catch_unwind(invalid_mut_drop).is_err());",
+          "    assert!(unsafe { bucket.ptr.as_ref() }.is_none());",
+          "    let data_after_drop = Box::from_raw(non_null_ptr.as_ptr());",
+          "    assert_eq!(data_after_drop.value, 42);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestData {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let non_null_ptr = NonNull::new(0 as *mut TestData).unwrap();",
+          "    let bucket = Bucket { ptr: non_null_ptr };",
+          "    ",
+          "    unsafe {",
+          "        bucket.drop();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let non_null_ptr = NonNull::new(0 as *mut TestData).unwrap();",
+          "    let bucket = Bucket { ptr: non_null_ptr };",
+          "    unsafe {",
+          "    bucket.drop();",
+          "    }",
+          "    }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    struct TestData {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let non_null_ptr = NonNull::new(0 as *mut TestData).unwrap();",
+          "    let bucket = Bucket { ptr: non_null_ptr };",
+          "    ",
+          "    unsafe {",
+          "        bucket.drop();",
+          "    }",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let non_null_ptr = NonNull::new(0 as *mut TestData).unwrap();",
+          "    let bucket = Bucket { ptr: non_null_ptr };",
+          "    unsafe {",
+          "    bucket.drop();",
+          "    }",
+          "    }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestData {",
+          "        value: i32,",
+          "    }",
+          "    ",
+          "    let data1 = Box::new(TestData { value: 1 });",
+          "    let data2 = Box::new(TestData { value: 2 });",
+          "    ",
+          "    let non_null_ptr1 = NonNull::new(Box::into_raw(data1)).unwrap();",
+          "    let non_null_ptr2 = NonNull::new(Box::into_raw(data2)).unwrap();",
+          "",
+          "    let bucket1 = Bucket { ptr: non_null_ptr1 };",
+          "    let bucket2 = Bucket { ptr: non_null_ptr2 };",
+          "",
+          "    unsafe {",
+          "        bucket1.drop();",
+          "        bucket2.drop();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(unsafe { bucket1.as_ptr() }, ptr::null_mut());",
+          "    assert_eq!(unsafe { bucket2.as_ptr() }, ptr::null_mut());",
+          "    assert!(unsafe { NonNull::new(bucket1.ptr.as_ptr()).is_none() });",
+          "    assert!(unsafe { NonNull::new(bucket2.ptr.as_ptr()).is_none() });"
+        ],
+        "code": [
+          "{",
+          "    struct TestData {",
+          "        value: i32,",
+          "    }",
+          "    ",
+          "    let data1 = Box::new(TestData { value: 1 });",
+          "    let data2 = Box::new(TestData { value: 2 });",
+          "    ",
+          "    let non_null_ptr1 = NonNull::new(Box::into_raw(data1)).unwrap();",
+          "    let non_null_ptr2 = NonNull::new(Box::into_raw(data2)).unwrap();",
+          "",
+          "    let bucket1 = Bucket { ptr: non_null_ptr1 };",
+          "    let bucket2 = Bucket { ptr: non_null_ptr2 };",
+          "",
+          "    unsafe {",
+          "        bucket1.drop();",
+          "        bucket2.drop();",
+          "    }",
+          "    assert_eq!(unsafe { bucket1.as_ptr() }, ptr::null_mut());",
+          "    assert_eq!(unsafe { bucket2.as_ptr() }, ptr::null_mut());",
+          "    assert!(unsafe { NonNull::new(bucket1.ptr.as_ptr()).is_none() });",
+          "    assert!(unsafe { NonNull::new(bucket2.ptr.as_ptr()).is_none() });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

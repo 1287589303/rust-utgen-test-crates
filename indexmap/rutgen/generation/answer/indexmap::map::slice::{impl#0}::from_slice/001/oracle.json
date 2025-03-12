@@ -1,0 +1,173 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bucket = Bucket { hash: 0, key: 1, value: \"value\" };",
+          "    let entries = &[bucket];",
+          "    let slice = Slice::from_slice(entries);",
+          "}"
+        ],
+        "oracle": [
+          "    let bucket = Bucket { hash: 0, key: 1, value: \"value\" };",
+          "    let entries: &[Bucket<i32, &str>] = &[bucket];",
+          "    let slice: &Slice<i32, &str> = Slice::from_slice(entries);",
+          "    assert_eq!(slice.entries.len(), 1);",
+          "    assert_eq!(slice.entries[0].key, 1);",
+          "    assert_eq!(slice.entries[0].value, \"value\");",
+          "    assert_eq!(slice.entries[0].hash, 0);"
+        ],
+        "code": [
+          "{",
+          "    let bucket = Bucket { hash: 0, key: 1, value: \"value\" };",
+          "    let entries = &[bucket];",
+          "    let slice = Slice::from_slice(entries);",
+          "    let bucket = Bucket { hash: 0, key: 1, value: \"value\" };",
+          "    let entries: &[Bucket<i32, &str>] = &[bucket];",
+          "    let slice: &Slice<i32, &str> = Slice::from_slice(entries);",
+          "    assert_eq!(slice.entries.len(), 1);",
+          "    assert_eq!(slice.entries[0].key, 1);",
+          "    assert_eq!(slice.entries[0].value, \"value\");",
+          "    assert_eq!(slice.entries[0].hash, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let entries: &[Bucket<i32, &str>] = &[];",
+          "    let slice = Slice::from_slice(entries);",
+          "}"
+        ],
+        "oracle": [
+          "    let entries: &[Bucket<i32, &str>] = &[];",
+          "    let slice = Slice::from_slice(entries);",
+          "    assert_eq!(slice.entries.as_ptr(), entries.as_ptr());",
+          "    assert_eq!(slice.entries.len(), entries.len());",
+          "    assert!(slice as *const _ != std::ptr::null());"
+        ],
+        "code": [
+          "{",
+          "    let entries: &[Bucket<i32, &str>] = &[];",
+          "    let slice = Slice::from_slice(entries);",
+          "    let entries: &[Bucket<i32, &str>] = &[];",
+          "    let slice = Slice::from_slice(entries);",
+          "    assert_eq!(slice.entries.as_ptr(), entries.as_ptr());",
+          "    assert_eq!(slice.entries.len(), entries.len());",
+          "    assert!(slice as *const _ != std::ptr::null());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let entries: *const Bucket<i32, &str> = std::ptr::null();",
+          "    let slice = unsafe { Slice::from_slice(&*(entries as *const [Bucket<i32, &str>])) };",
+          "}"
+        ],
+        "oracle": [
+          "    let entries: &[Bucket<i32, &str>] = &[];",
+          "    let slice = Slice::from_slice(entries);",
+          "    assert_eq!(slice.entries.len(), 0);",
+          "    let entries: &[Bucket<i32, &str>] = &[Bucket { hash: 0, key: 1, value: \"one\" }];",
+          "    let slice = Slice::from_slice(entries);",
+          "    assert_eq!(slice.entries[0].key, 1);",
+          "    assert_eq!(slice.entries[0].value, \"one\");",
+          "    let entries: &[Bucket<i32, &str>] = &[Bucket { hash: 0, key: 1, value: \"one\" }, Bucket { hash: 0, key: 2, value: \"two\" }];",
+          "    let slice = Slice::from_slice(entries);",
+          "    assert_eq!(slice.entries.len(), 2);",
+          "    assert_eq!(slice.entries[1].key, 2);",
+          "    assert_eq!(slice.entries[1].value, \"two\");",
+          "    let entries: *const Bucket<i32, &str> = std::ptr::null();",
+          "    let slice = unsafe { Slice::from_slice(&*(entries as *const [Bucket<i32, &str>])) };",
+          "    assert_eq!(slice as *const _, std::ptr::null());"
+        ],
+        "code": [
+          "{",
+          "    let entries: *const Bucket<i32, &str> = std::ptr::null();",
+          "    let slice = unsafe { Slice::from_slice(&*(entries as *const [Bucket<i32, &str>])) };",
+          "    let entries: &[Bucket<i32, &str>] = &[];",
+          "    let slice = Slice::from_slice(entries);",
+          "    assert_eq!(slice.entries.len(), 0);",
+          "    let entries: &[Bucket<i32, &str>] = &[Bucket { hash: 0, key: 1, value: \"one\" }];",
+          "    let slice = Slice::from_slice(entries);",
+          "    assert_eq!(slice.entries[0].key, 1);",
+          "    assert_eq!(slice.entries[0].value, \"one\");",
+          "    let entries: &[Bucket<i32, &str>] = &[Bucket { hash: 0, key: 1, value: \"one\" }, Bucket { hash: 0, key: 2, value: \"two\" }];",
+          "    let slice = Slice::from_slice(entries);",
+          "    assert_eq!(slice.entries.len(), 2);",
+          "    assert_eq!(slice.entries[1].key, 2);",
+          "    assert_eq!(slice.entries[1].value, \"two\");",
+          "    let entries: *const Bucket<i32, &str> = std::ptr::null();",
+          "    let slice = unsafe { Slice::from_slice(&*(entries as *const [Bucket<i32, &str>])) };",
+          "    assert_eq!(slice as *const _, std::ptr::null());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buckets: Vec<Bucket<i32, &str>> = Vec::with_capacity(1_000_000);",
+          "    for i in 0..1_000_000 {",
+          "        buckets.push(Bucket { hash: i as u64, key: i, value: \"value\" });",
+          "    }",
+          "    let entries = buckets.as_slice();",
+          "    let slice = Slice::from_slice(entries);",
+          "}"
+        ],
+        "oracle": [
+          "    let mut buckets: Vec<Bucket<i32, &str>> = Vec::with_capacity(1_000_000);",
+          "    for i in 0..1_000_000 {",
+          "    buckets.push(Bucket { hash: i as u64, key: i, value: \"value\" });",
+          "    }",
+          "    let entries = buckets.as_slice();",
+          "    assert_eq!(slice.entries.len(), entries.len());",
+          "    for (index, entry) in entries.iter().enumerate() {",
+          "    assert_eq!(slice.entries[index].key, entry.key);",
+          "    assert_eq!(slice.entries[index].value, entry.value);",
+          "    assert_eq!(slice.entries[index].hash, entry.hash);",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let mut buckets: Vec<Bucket<i32, &str>> = Vec::with_capacity(1_000_000);",
+          "    for i in 0..1_000_000 {",
+          "        buckets.push(Bucket { hash: i as u64, key: i, value: \"value\" });",
+          "    }",
+          "    let entries = buckets.as_slice();",
+          "    let slice = Slice::from_slice(entries);",
+          "    let mut buckets: Vec<Bucket<i32, &str>> = Vec::with_capacity(1_000_000);",
+          "    for i in 0..1_000_000 {",
+          "    buckets.push(Bucket { hash: i as u64, key: i, value: \"value\" });",
+          "    }",
+          "    let entries = buckets.as_slice();",
+          "    assert_eq!(slice.entries.len(), entries.len());",
+          "    for (index, entry) in entries.iter().enumerate() {",
+          "    assert_eq!(slice.entries[index].key, entry.key);",
+          "    assert_eq!(slice.entries[index].value, entry.value);",
+          "    assert_eq!(slice.entries[index].hash, entry.hash);",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

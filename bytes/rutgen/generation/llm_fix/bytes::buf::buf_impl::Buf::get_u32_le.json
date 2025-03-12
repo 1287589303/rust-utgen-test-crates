@@ -1,0 +1,215 @@
+{
+  "name": "bytes::buf::buf_impl::Buf::get_u32_le",
+  "mod_info": {
+    "name": "buf::buf_impl",
+    "loc": "src/buf/mod.rs:17:1:17:14"
+  },
+  "visible": true,
+  "loc": "src/buf/buf_impl.rs:517:5:519:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "valid input: buffer length >= 4; valid byte values for u32 in little-endian format; edge cases: buffer exactly 4 bytes, buffer larger than 4 bytes, buffer with non-byte values, buffer with exactly 0 bytes, buffer with less than 4 bytes; ensure panic for insufficient data.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &[0xA1, 0xA0, 0x09, 0x08];",
+                "    let _result = buf.get_u32_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(0x0809A0A1, buf.get_u32_le());",
+                "    assert_panics!(buf.get_u32_le());",
+                "    buf.advance(4);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    buf.copy_to_slice(&mut []);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    buf.advance(4);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &[0xA1, 0xA0, 0x09, 0x08];",
+                "    let _result = buf.get_u32_le();",
+                "    assert_eq!(0x0809A0A1, buf.get_u32_le());",
+                "    assert_panics!(buf.get_u32_le());",
+                "    buf.advance(4);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    buf.copy_to_slice(&mut []);",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    buf.advance(4);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &[0xA1, 0xA0]; // Only 2 bytes available",
+                "    let _result = buf.get_u32_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, Err(TryGetError { requested: 4, available: 2 }));",
+                "    assert!(std::panic::catch_unwind(|| { buf.get_u32_le(); }).is_err());",
+                "    assert_eq!(buf.remaining(), 2);",
+                "    assert_eq!(buf.chunk(), &[0xA1, 0xA0]);",
+                "    assert!(!buf.has_remaining());",
+                "    assert_eq!(buf.try_get_u32_le(), Err(TryGetError { requested: 4, available: 2 }));",
+                "    assert_eq!(buf.get_u32_le(), 0);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &[0xA1, 0xA0]; // Only 2 bytes available",
+                "    let _result = buf.get_u32_le();",
+                "    assert_eq!(_result, Err(TryGetError { requested: 4, available: 2 }));",
+                "    assert!(std::panic::catch_unwind(|| { buf.get_u32_le(); }).is_err());",
+                "    assert_eq!(buf.remaining(), 2);",
+                "    assert_eq!(buf.chunk(), &[0xA1, 0xA0]);",
+                "    assert!(!buf.has_remaining());",
+                "    assert_eq!(buf.try_get_u32_le(), Err(TryGetError { requested: 4, available: 2 }));",
+                "    assert_eq!(buf.get_u32_le(), 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &[0x01, 0x00, 0x00, 0x00];",
+                "    let _result = buf.get_u32_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(buf.remaining(), 4);",
+                "    assert_eq!(buf.get_u32_le(), 0x00000001);",
+                "    assert!(buf.has_remaining() == false);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &[0x01, 0x00, 0x00, 0x00];",
+                "    let _result = buf.get_u32_le();",
+                "    assert_eq!(buf.remaining(), 4);",
+                "    assert_eq!(buf.get_u32_le(), 0x00000001);",
+                "    assert!(buf.has_remaining() == false);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0xFF, 0xFF];",
+                "    let _result = buf.get_u32_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(buf.get_u32_le(), 0x00000001);",
+                "    assert_eq!(buf.remaining(), 2);",
+                "    assert!(buf.has_remaining());",
+                "    buf.advance(4);",
+                "    assert_eq!(buf.remaining(), 2);",
+                "    assert_eq!(buf.get_u32_le(), 0xFFFFFFFF); // Assuming next valid input exists",
+                "    assert!(std::panic::catch_unwind(|| { buf.get_u32_le(); }).is_err()); // Testing for panic on insufficient data"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0xFF, 0xFF];",
+                "    let _result = buf.get_u32_le();",
+                "    assert_eq!(buf.get_u32_le(), 0x00000001);",
+                "    assert_eq!(buf.remaining(), 2);",
+                "    assert!(buf.has_remaining());",
+                "    buf.advance(4);",
+                "    assert_eq!(buf.remaining(), 2);",
+                "    assert_eq!(buf.get_u32_le(), 0xFFFFFFFF); // Assuming next valid input exists",
+                "    assert!(std::panic::catch_unwind(|| { buf.get_u32_le(); }).is_err()); // Testing for panic on insufficient data",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &[];",
+                "    let _result = buf.get_u32_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result.requested, 4);",
+                "    assert_eq!(_result.available, 0);",
+                "    assert!(buf.has_remaining() == false);",
+                "    assert!(buf.remaining() == 0);",
+                "    assert!(panic_does_not_fit(get_u32_le, buf));"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &[];",
+                "    let _result = buf.get_u32_le();",
+                "    assert_eq!(_result.requested, 4);",
+                "    assert_eq!(_result.available, 0);",
+                "    assert!(buf.has_remaining() == false);",
+                "    assert!(buf.remaining() == 0);",
+                "    assert!(panic_does_not_fit(get_u32_le, buf));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &[0x01, 0x02, 0x03]; // Only 3 bytes available",
+                "    let _result = buf.get_u32_le();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(1, 3); // Expected panic due to insufficient bytes",
+                "    assert_eq!(buf.remaining(), 3); // Remaining bytes should be 3",
+                "    assert!(buf.has_remaining()); // Should return true for remaining bytes",
+                "    assert_eq!(buf.chunk(), &[0x01, 0x02, 0x03]); // Chunk should match input bytes",
+                "    assert!(matches!(buf.try_get_u32_le(), Err(TryGetError { requested: 4, available: 3 }))); // Expected TryGetError for insufficient bytes",
+                "    assert_eq!(buf.get_u32_le(), 0); // Should panic, hence no valid return value"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &[0x01, 0x02, 0x03]; // Only 3 bytes available",
+                "    let _result = buf.get_u32_le();",
+                "    assert_eq!(1, 3); // Expected panic due to insufficient bytes",
+                "    assert_eq!(buf.remaining(), 3); // Remaining bytes should be 3",
+                "    assert!(buf.has_remaining()); // Should return true for remaining bytes",
+                "    assert_eq!(buf.chunk(), &[0x01, 0x02, 0x03]); // Chunk should match input bytes",
+                "    assert!(matches!(buf.try_get_u32_le(), Err(TryGetError { requested: 4, available: 3 }))); // Expected TryGetError for insufficient bytes",
+                "    assert_eq!(buf.get_u32_le(), 0); // Should panic, hence no valid return value",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

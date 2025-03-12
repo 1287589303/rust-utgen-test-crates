@@ -1,0 +1,180 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re1 = BoundedBacktracker::new(r\"\\w\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"\\W\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Some(Ok(Match::must(0, 0..2))), re1.try_find_iter(&mut cache, \"Δ\").next());",
+          "    assert_eq!(Some(Ok(Match::must(0, 0..3))), re2.try_find_iter(&mut cache, \"☃\").next());"
+        ],
+        "code": [
+          "{",
+          "    let re1 = BoundedBacktracker::new(r\"\\w\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"\\W\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "    assert_eq!(Some(Ok(Match::must(0, 0..2))), re1.try_find_iter(&mut cache, \"Δ\").next());",
+          "    assert_eq!(Some(Ok(Match::must(0, 0..3))), re2.try_find_iter(&mut cache, \"☃\").next());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re1 = BoundedBacktracker::new(r\"\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"\\d\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(re1.pattern_len(), 0);",
+          "    assert_eq!(re2.pattern_len(), 2);",
+          "    assert!(cache.memory_usage() > 0);",
+          "    assert!(cache.visited.capacity() > 0);",
+          "    assert_eq!(cache.visited.len(), 0);",
+          "    assert!(matches!(cache.setup_search(&re2, &Input::new(\"123\")), Ok(())));"
+        ],
+        "code": [
+          "{",
+          "    let re1 = BoundedBacktracker::new(r\"\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"\\d\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "    assert_eq!(re1.pattern_len(), 0);",
+          "    assert_eq!(re2.pattern_len(), 2);",
+          "    assert!(cache.memory_usage() > 0);",
+          "    assert!(cache.visited.capacity() > 0);",
+          "    assert_eq!(cache.visited.len(), 0);",
+          "    assert!(matches!(cache.setup_search(&re2, &Input::new(\"123\")), Ok(())));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let re1 = BoundedBacktracker::new(r\"\\d\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"\\w\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(cache.memory_usage() > 0, true);",
+          "    assert!(std::panic::catch_unwind(|| cache.reset(&re1)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| cache.reset(&re2)).is_err());",
+          "    assert_eq!(re1.try_find_iter(&mut cache, \"1\").next(), None);",
+          "    assert_eq!(re2.try_find_iter(&mut cache, \"a\").next(), None);"
+        ],
+        "code": [
+          "{",
+          "    let re1 = BoundedBacktracker::new(r\"\\d\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"\\w\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "    assert_eq!(cache.memory_usage() > 0, true);",
+          "    assert!(std::panic::catch_unwind(|| cache.reset(&re1)).is_err());",
+          "    assert!(std::panic::catch_unwind(|| cache.reset(&re2)).is_err());",
+          "    assert_eq!(re1.try_find_iter(&mut cache, \"1\").next(), None);",
+          "    assert_eq!(re2.try_find_iter(&mut cache, \"a\").next(), None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re1 = BoundedBacktracker::new(r\"^abc$\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"[a-z]+\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(re1.try_find_iter(&mut cache, \"abc\").next(), None);",
+          "    assert_eq!(re2.try_find_iter(&mut cache, \"abc\").next(), Some(Ok(Match::must(0, 0..3))));",
+          "    assert_eq!(re1.try_find_iter(&mut cache, \"abc123\").next(), None);",
+          "    assert_eq!(re2.try_find_iter(&mut cache, \"abc123\").next(), Some(Ok(Match::must(0, 0..3))));",
+          "    assert_eq!(cache.memory_usage(), expected_memory_usage);"
+        ],
+        "code": [
+          "{",
+          "    let re1 = BoundedBacktracker::new(r\"^abc$\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"[a-z]+\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "    assert_eq!(re1.try_find_iter(&mut cache, \"abc\").next(), None);",
+          "    assert_eq!(re2.try_find_iter(&mut cache, \"abc\").next(), Some(Ok(Match::must(0, 0..3))));",
+          "    assert_eq!(re1.try_find_iter(&mut cache, \"abc123\").next(), None);",
+          "    assert_eq!(re2.try_find_iter(&mut cache, \"abc123\").next(), Some(Ok(Match::must(0, 0..3))));",
+          "    assert_eq!(cache.memory_usage(), expected_memory_usage);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re1 = BoundedBacktracker::new(r\"foo\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"bar\").unwrap();",
+          "    let re3 = BoundedBacktracker::new(r\"baz\").unwrap();",
+          "    ",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "    cache.reset(&re3);",
+          "}"
+        ],
+        "oracle": [
+          "    let re1 = BoundedBacktracker::new(r\"foo\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"bar\").unwrap();",
+          "    let re3 = BoundedBacktracker::new(r\"baz\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "    cache.reset(&re3);"
+        ],
+        "code": [
+          "{",
+          "    let re1 = BoundedBacktracker::new(r\"foo\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"bar\").unwrap();",
+          "    let re3 = BoundedBacktracker::new(r\"baz\").unwrap();",
+          "    ",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "    cache.reset(&re3);",
+          "    let re1 = BoundedBacktracker::new(r\"foo\").unwrap();",
+          "    let re2 = BoundedBacktracker::new(r\"bar\").unwrap();",
+          "    let re3 = BoundedBacktracker::new(r\"baz\").unwrap();",
+          "    let mut cache = re1.create_cache();",
+          "    cache.reset(&re2);",
+          "    cache.reset(&re3);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

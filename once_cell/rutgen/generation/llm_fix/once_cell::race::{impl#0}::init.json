@@ -1,0 +1,445 @@
+{
+  "name": "once_cell::race::{impl#0}::init",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": false,
+  "loc": "src/race.rs:129:5:136:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: f()? at line 130 is Err/None\n"
+      ],
+      "input_infer": "f() returns an Err value or None, and the value passed to NonZeroUsize::new_unchecked must be a valid non-zero usize derived from f(); test with f() returning an Err with a variety of error types including custom errors, and test f() returning None.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct CustomError;",
+                "    ",
+                "    let once: OnceNonZeroUsize = OnceNonZeroUsize::new();",
+                "    ",
+                "    let _ = once.init(|| -> Result<NonZeroUsize, CustomError> {",
+                "        Err(CustomError)",
+                "    });",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(once.inner.load(Ordering::Acquire) == 0);",
+                "    assert!(once.get().is_none());",
+                "    assert!(once.get_unchecked().is_err());",
+                "    assert!(once.set(NonZeroUsize::new(1).unwrap()).is_ok());",
+                "    assert!(once.get().is_some());",
+                "    assert!(once.inner.load(Ordering::Acquire) != 0);",
+                "    assert!(once.get_or_init(|| NonZeroUsize::new(1).unwrap()) == NonZeroUsize::new(1).unwrap());",
+                "    assert!(once.get_or_try_init(|| Err(CustomError)).is_err());"
+              ],
+              "code": [
+                "{",
+                "    struct CustomError;",
+                "    ",
+                "    let once: OnceNonZeroUsize = OnceNonZeroUsize::new();",
+                "    ",
+                "    let _ = once.init(|| -> Result<NonZeroUsize, CustomError> {",
+                "        Err(CustomError)",
+                "    });",
+                "    assert!(once.inner.load(Ordering::Acquire) == 0);",
+                "    assert!(once.get().is_none());",
+                "    assert!(once.get().is_none());  ",
+                "    assert!(once.set(NonZeroUsize::new(1).unwrap()).is_ok());  ",
+                "    assert!(once.get().is_some());",
+                "    assert!(once.inner.load(Ordering::Acquire) != 0);",
+                "    assert!(once.get_or_init(|| NonZeroUsize::new(1).unwrap()) == NonZeroUsize::new(1).unwrap());",
+                "    assert!(once.get_or_try_init(|| Err(CustomError)).is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(Debug)]",
+                "    struct AnotherError;",
+                "",
+                "    let once: OnceNonZeroUsize = OnceNonZeroUsize::new();",
+                "    ",
+                "    let _ = once.init(|| -> Result<NonZeroUsize, AnotherError> {",
+                "        Err(AnotherError)",
+                "    });",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(once.inner.load(Ordering::Acquire), 0);",
+                "    assert!(once.get().is_none());",
+                "    assert!(once.get_unchecked().is_err());"
+              ],
+              "code": [
+                "{",
+                "    #[derive(Debug)]",
+                "    struct AnotherError;",
+                "",
+                "    let once: OnceNonZeroUsize = OnceNonZeroUsize::new();",
+                "    ",
+                "    let _ = once.init(|| -> Result<NonZeroUsize, AnotherError> {",
+                "        Err(AnotherError)",
+                "    });",
+                "    assert_eq!(once.inner.load(Ordering::Acquire), 0);",
+                "   assert!(once.get().is_none());",
+                "   assert!(once.init(|| -> Result<NonZeroUsize, AnotherError> { Err(AnotherError) }).is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let once: OnceNonZeroUsize = OnceNonZeroUsize::new();",
+                "    ",
+                "    let _ = once.init(|| -> Result<NonZeroUsize, ()> {",
+                "        None",
+                "    });",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(once.get().is_none());",
+                "    assert!(once.inner.load(Ordering::Relaxed) == 0);",
+                "    assert_eq!(once.init(|| -> Result<NonZeroUsize, ()> { Err(()) }), Err(()));",
+                "    assert!(once.inner.load(Ordering::Relaxed) == 0);",
+                "    assert!(once.get().is_none());"
+              ],
+              "code": [
+                "{",
+                "   let once: OnceNonZeroUsize = OnceNonZeroUsize::new();",
+                "   ",
+                "   let _ = once.init(|| -> Result<NonZeroUsize, ()> {",
+                "       Err(())",
+                "   });",
+                "    assert!(once.get().is_none());",
+                "    assert!(once.inner.load(Ordering::Relaxed) == 0);",
+                "    assert_eq!(once.init(|| -> Result<NonZeroUsize, ()> { Err(()) }), Err(()));",
+                "    assert!(once.inner.load(Ordering::Relaxed) == 0);",
+                "    assert!(once.get().is_none());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let once: OnceNonZeroUsize = OnceNonZeroUsize::new();",
+                "    ",
+                "    let _ = once.init(|| -> Result<NonZeroUsize, &'static str> {",
+                "        Err(\"some error occurred\")",
+                "    });",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(once.get(), None);",
+                "    assert!(once.inner.load(Ordering::Acquire) == 0);",
+                "    assert!(matches!(once.init(|| -> Result<NonZeroUsize, &'static str> { Err(\"some error occurred\") }), Err(_)));",
+                "    assert!(once.init(|| -> Result<NonZeroUsize, &'static str> { Err(\"some error occurred\") }).is_err());",
+                "    assert!(once.init(|| -> Result<NonZeroUsize, &'static str> { Err(\"another error\") }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let once: OnceNonZeroUsize = OnceNonZeroUsize::new();",
+                "    ",
+                "    let _ = once.init(|| -> Result<NonZeroUsize, &'static str> {",
+                "        Err(\"some error occurred\")",
+                "    });",
+                "    assert_eq!(once.get(), None);",
+                "    assert!(once.inner.load(Ordering::Acquire) == 0);",
+                "    assert!(matches!(once.init(|| -> Result<NonZeroUsize, &'static str> { Err(\"some error occurred\") }), Err(_)));",
+                "    assert!(once.init(|| -> Result<NonZeroUsize, &'static str> { Err(\"some error occurred\") }).is_err());",
+                "    assert!(once.init(|| -> Result<NonZeroUsize, &'static str> { Err(\"another error\") }).is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let once: OnceNonZeroUsize = OnceNonZeroUsize::new();",
+                "    ",
+                "    let _ = once.init(|| -> Result<NonZeroUsize, String> {",
+                "        Err(String::new())",
+                "    });",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(once.inner.load(Ordering::Relaxed), 0);",
+                "    assert!(once.get().is_none());",
+                "    assert!(once.get_unchecked().is_err());",
+                "    assert!(once.get_or_init(|| NonZeroUsize::new(1).unwrap()).get() == Some(NonZeroUsize::new(1).unwrap());",
+                "    assert!(once.get_or_try_init(|| Err(\"error\")).is_err());",
+                "    assert!(once.set(NonZeroUsize::new(2).unwrap()).is_ok());",
+                "    assert!(once.get() == Some(NonZeroUsize::new(2).unwrap());",
+                "    assert!(once.set(NonZeroUsize::new(2).unwrap()).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let once: OnceNonZeroUsize = OnceNonZeroUsize::new();",
+                "    ",
+                "    let _ = once.init(|| -> Result<NonZeroUsize, String> {",
+                "        Err(String::new())",
+                "    });",
+                "    assert_eq!(once.inner.load(Ordering::Relaxed), 0);",
+                "    assert!(once.get().is_none());",
+                "    assert!(once.get_unchecked().is_err());",
+                "    assert!(once.get_or_init(|| NonZeroUsize::new(1).unwrap()).get() == Some(NonZeroUsize::new(1).unwrap());",
+                "    assert!(once.get_or_try_init(|| Err(\"error\")).is_err());",
+                "    assert!(once.set(NonZeroUsize::new(2).unwrap()).is_ok());",
+                "    assert!(once.get() == Some(NonZeroUsize::new(2).unwrap());",
+                "    assert!(once.set(NonZeroUsize::new(2).unwrap()).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: f()? at line 130 is Ok/Some\n",
+        "precondition: let Err(old) = exchange at line 132 is true\n",
+        "expected return value/type: Ok(unsafe { NonZeroUsize::new_unchecked(val) })\n"
+      ],
+      "input_infer": "f() returns a Result<NonZeroUsize, E> with a NonZeroUsize greater than 0, self.inner starts at 0 before compare_exchange, and old retains a value greater than 0 during the exchange at line 132.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestOnce {",
+                "        once: OnceNonZeroUsize,",
+                "    }",
+                "    ",
+                "    impl TestOnce {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                once: OnceNonZeroUsize::new(),",
+                "            }",
+                "        }",
+                "    ",
+                "        fn init_value(&self) -> NonZeroUsize {",
+                "            NonZeroUsize::new(1).unwrap() // returns a NonZeroUsize greater than 0",
+                "        }",
+                "    }",
+                "",
+                "    let test_instance = TestOnce::new();",
+                "    let _ = test_instance.once.init(|_| {",
+                "        Ok(test_instance.init_value())",
+                "    });",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(test_instance.once.inner.load(Ordering::Acquire) == 1);",
+                "    assert!(test_instance.once.get().is_some());",
+                "    assert_eq!(test_instance.once.get().unwrap().get(), 1);",
+                "    assert!(std::mem::size_of::<NonZeroUsize>() > 0);",
+                "    assert!(test_instance.once.inner.load(Ordering::Acquire) != 0);",
+                "    assert!(test_instance.once.get_unchecked().get() == 1);"
+              ],
+              "code": [
+                "{",
+                "    struct TestOnce {",
+                "        once: OnceNonZeroUsize,",
+                "    }",
+                "    ",
+                "    impl TestOnce {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                once: OnceNonZeroUsize::new(),",
+                "            }",
+                "        }",
+                "    ",
+                "        fn init_value(&self) -> NonZeroUsize {",
+                "            NonZeroUsize::new(1).unwrap() // returns a NonZeroUsize greater than 0",
+                "        }",
+                "    }",
+                "",
+                "    let test_instance = TestOnce::new();",
+                "    let _ = test_instance.once.init(|_| {",
+                "        Ok(test_instance.init_value())",
+                "    });",
+                "    assert!(test_instance.once.inner.load(Ordering::Acquire) == 1);",
+                "    assert!(test_instance.once.get().is_some());",
+                "    assert_eq!(test_instance.once.get().unwrap().get(), 1);",
+                "    assert!(std::mem::size_of::<NonZeroUsize>() > 0);",
+                "    assert!(test_instance.once.inner.load(Ordering::Acquire) != 0);",
+                "    assert!(test_instance.once.get_unchecked().get() == 1);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestOnce {",
+                "        once: OnceNonZeroUsize,",
+                "    }",
+                "",
+                "    impl TestOnce {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                once: OnceNonZeroUsize::new(),",
+                "            }",
+                "        }",
+                "",
+                "        fn other_value(&self) -> Result<NonZeroUsize, ()> {",
+                "            Ok(NonZeroUsize::new(2).unwrap()) // returns a different NonZeroUsize greater than 0",
+                "        }",
+                "    }",
+                "",
+                "    let test_instance = TestOnce::new();",
+                "    let _ = test_instance.once.init(|_| {",
+                "        let other = test_instance.other_value();",
+                "        match other {",
+                "            Ok(val) => Ok(val),",
+                "            Err(_) => Err(()),",
+                "        }",
+                "    });",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(test_instance.once.init(|_| Ok(NonZeroUsize::new(1).unwrap())), Ok(NonZeroUsize::new_unchecked(1)));",
+                "    assert_eq!(test_instance.once.init(|_| Ok(NonZeroUsize::new(3).unwrap())), Ok(NonZeroUsize::new_unchecked(3)));",
+                "    assert_eq!(test_instance.once.init(|_| test_instance.other_value()), Ok(NonZeroUsize::new_unchecked(2)));"
+              ],
+              "code": [
+                "{",
+                "    struct TestOnce {",
+                "        once: OnceNonZeroUsize,",
+                "    }",
+                "",
+                "    impl TestOnce {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                once: OnceNonZeroUsize::new(),",
+                "            }",
+                "        }",
+                "",
+                "        fn other_value(&self) -> Result<NonZeroUsize, ()> {",
+                "            Ok(NonZeroUsize::new(2).unwrap()) // returns a different NonZeroUsize greater than 0",
+                "        }",
+                "    }",
+                "",
+                "    let test_instance = TestOnce::new();",
+                "   let _ = test_instance.once.init(|| {",
+                "       let other = test_instance.other_value();",
+                "       match other {",
+                "           Ok(val) => Ok(val),",
+                "           Err(_) => Err(()),",
+                "       }",
+                "   });",
+                "   assert_eq!(test_instance.once.init(|| Ok(NonZeroUsize::new(1).unwrap())), Ok(NonZeroUsize::new_unchecked(1)));",
+                "   assert_eq!(test_instance.once.init(|| Ok(NonZeroUsize::new(3).unwrap())), Ok(NonZeroUsize::new_unchecked(3)));",
+                "   assert_eq!(test_instance.once.init(|| test_instance.other_value()), Ok(NonZeroUsize::new_unchecked(2)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestOnce {",
+                "        once: OnceNonZeroUsize,",
+                "    }",
+                "",
+                "    impl TestOnce {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                once: OnceNonZeroUsize::new(),",
+                "            }",
+                "        }",
+                "",
+                "        fn init_value(&self) -> Result<NonZeroUsize, ()> {",
+                "            Ok(NonZeroUsize::new(3).unwrap()) // returns a NonZeroUsize greater than 0",
+                "        }",
+                "    }",
+                "",
+                "    let test_instance = TestOnce::new();",
+                "    let _ = test_instance.once.init(|_| {",
+                "        test_instance.init_value()",
+                "    });",
+                "    let _ = test_instance.once.init(|_| {",
+                "        test_instance.init_value()",
+                "    }); // Should trigger exchange case",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(test_instance.once.inner.get(), 3);",
+                "    assert!(test_instance.once.get().is_some());",
+                "    assert_eq!(test_instance.once.get().unwrap().get(), 3);",
+                "    assert_eq!(test_instance.once.init(|_| test_instance.init_value()), Ok(unsafe { NonZeroUsize::new_unchecked(3) }));",
+                "    assert_ne!(test_instance.once.inner.get(), 0);"
+              ],
+              "code": [
+                "{",
+                "    struct TestOnce {",
+                "        once: OnceNonZeroUsize,",
+                "    }",
+                "",
+                "    impl TestOnce {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                once: OnceNonZeroUsize::new(),",
+                "            }",
+                "        }",
+                "",
+                "        fn init_value(&self) -> Result<NonZeroUsize, ()> {",
+                "            Ok(NonZeroUsize::new(3).unwrap()) // returns a NonZeroUsize greater than 0",
+                "        }",
+                "    }",
+                "",
+                "    let test_instance = TestOnce::new();",
+                "   let _ = test_instance.once.init(|| {  ",
+                "       test_instance.init_value()  ",
+                "   });  ",
+                "   let _ = test_instance.once.init(|| {  ",
+                "       test_instance.init_value()  ",
+                "   }); // Should trigger exchange case  ",
+                "   assert_eq!(test_instance.once.inner.load(Ordering::SeqCst), 3);  ",
+                "   assert!(test_instance.once.get().is_some());  ",
+                "   assert_eq!(test_instance.once.get().unwrap().get(), 3);  ",
+                "  assert_eq!(test_instance.once.init(|| test_instance.init_value()), Ok(unsafe { NonZeroUsize::new_unchecked(3) }));  ",
+                "  assert_ne!(test_instance.once.inner.load(Ordering::SeqCst), 0);  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

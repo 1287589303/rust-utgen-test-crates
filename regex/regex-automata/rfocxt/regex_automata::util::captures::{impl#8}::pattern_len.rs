@@ -1,0 +1,35 @@
+#[cfg(feature = "std")]
+type CaptureNameMap = std::collections::HashMap<Arc<str>, SmallIndex>;
+#[cfg(not(feature = "std"))]
+type CaptureNameMap = alloc::collections::BTreeMap<Arc<str>, SmallIndex>;
+use alloc::{string::String, sync::Arc, vec, vec::Vec};
+use crate::util::{
+    interpolate,
+    primitives::{NonMaxUsize, PatternID, PatternIDError, PatternIDIter, SmallIndex},
+    search::{Match, Span},
+};
+#[derive(Debug, Default)]
+struct GroupInfoInner {
+    slot_ranges: Vec<(SmallIndex, SmallIndex)>,
+    name_to_index: Vec<CaptureNameMap>,
+    index_to_name: Vec<Vec<Option<Arc<str>>>>,
+    memory_extra: usize,
+}
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct SmallIndex(u32);
+impl GroupInfoInner {
+    fn add_first_group(&mut self, pid: PatternID) {}
+    fn add_explicit_group<N: AsRef<str>>(
+        &mut self,
+        pid: PatternID,
+        group: SmallIndex,
+        maybe_name: Option<N>,
+    ) -> Result<(), GroupInfoError> {}
+    fn fixup_slot_ranges(&mut self) -> Result<(), GroupInfoError> {}
+    fn pattern_len(&self) -> usize {
+        self.slot_ranges.len()
+    }
+    fn group_len(&self, pid: PatternID) -> usize {}
+    fn small_slot_len(&self) -> SmallIndex {}
+}

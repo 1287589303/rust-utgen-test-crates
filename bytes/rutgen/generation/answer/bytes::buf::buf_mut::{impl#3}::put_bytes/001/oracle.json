@@ -1,0 +1,179 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer: &mut [core::mem::MaybeUninit<u8>] = &mut [core::mem::MaybeUninit::uninit(); 5];",
+          "    let count = 10; // Exceeds buffer length",
+          "    let value: u8 = 255; // Value to write",
+          "    unsafe {",
+          "        buffer.put_bytes(value, count);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    panic_advance(&TryGetError { requested: 10, available: 5 });",
+          "    self.len() < cnt is true;",
+          "    ptr::write_bytes(self.as_mut_ptr() as *mut u8, 255, 10);",
+          "    self.advance_mut(10);"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer: &mut [core::mem::MaybeUninit<u8>] = &mut [core::mem::MaybeUninit::uninit(); 5];",
+          "    let count = 10; // Exceeds buffer length",
+          "    let value: u8 = 255; // Value to write",
+          "    unsafe {",
+          "        buffer.put_bytes(value, count);",
+          "    }",
+          "    panic_advance(&TryGetError { requested: 10, available: 5 });",
+          "    self.len() < cnt is true;",
+          "    ptr::write_bytes(self.as_mut_ptr() as *mut u8, 255, 10);",
+          "    self.advance_mut(10);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buffer: &mut [core::mem::MaybeUninit<u8>] = &mut [core::mem::MaybeUninit::uninit(); 0];",
+          "    let count = 1; // Buffer length is 0",
+          "    let value: u8 = 100; // Value to write",
+          "    unsafe {",
+          "        buffer.put_bytes(value, count);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    panic_advance(&TryGetError { requested: 1, available: 0 });"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer: &mut [core::mem::MaybeUninit<u8>] = &mut [core::mem::MaybeUninit::uninit(); 0];",
+          "    let count = 1; // Buffer length is 0",
+          "    let value: u8 = 100; // Value to write",
+          "    unsafe {",
+          "        buffer.put_bytes(value, count);",
+          "    }",
+          "    panic_advance(&TryGetError { requested: 1, available: 0 });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer: &mut [core::mem::MaybeUninit<u8>] = &mut [core::mem::MaybeUninit::uninit(); 5];",
+          "    let count = 5; // Matches buffer length",
+          "    let value: u8 = 200; // Value to write",
+          "    unsafe {",
+          "        buffer.put_bytes(value, count);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    panic_advance(&TryGetError { requested: 5, available: 0 });",
+          "    panic_advance(&TryGetError { requested: 5, available: 2 });",
+          "    panic_advance(&TryGetError { requested: 5, available: 3 });",
+          "    panic_advance(&TryGetError { requested: 5, available: 4 });",
+          "    buffer.len() == 5;",
+          "    buffer.as_mut_ptr() as *mut u8;",
+          "    ptr::write_bytes(buffer.as_mut_ptr() as *mut u8, 200, 5);",
+          "    self.advance_mut(5);"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer: &mut [core::mem::MaybeUninit<u8>] = &mut [core::mem::MaybeUninit::uninit(); 5];",
+          "    let count = 5; // Matches buffer length",
+          "    let value: u8 = 200; // Value to write",
+          "    unsafe {",
+          "        buffer.put_bytes(value, count);",
+          "    }",
+          "    panic_advance(&TryGetError { requested: 5, available: 0 });",
+          "    panic_advance(&TryGetError { requested: 5, available: 2 });",
+          "    panic_advance(&TryGetError { requested: 5, available: 3 });",
+          "    panic_advance(&TryGetError { requested: 5, available: 4 });",
+          "    buffer.len() == 5;",
+          "    buffer.as_mut_ptr() as *mut u8;",
+          "    ptr::write_bytes(buffer.as_mut_ptr() as *mut u8, 200, 5);",
+          "    self.advance_mut(5);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buffer: &mut [core::mem::MaybeUninit<u8>] = &mut [core::mem::MaybeUninit::uninit(); 8];",
+          "    let count = 7; // Less than buffer length",
+          "    let value: u8 = 1; // Value to write",
+          "    unsafe {",
+          "        buffer.put_bytes(value, count);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    let mut buffer: &mut [core::mem::MaybeUninit<u8>] = &mut [core::mem::MaybeUninit::uninit(); 8];",
+          "    let count = 9; // Greater than buffer length",
+          "    let value: u8 = 1; // Value to write",
+          "    let result = std::panic::catch_unwind(|| {",
+          "    unsafe {",
+          "    buffer.put_bytes(value, count);",
+          "    }",
+          "    });",
+          "    assert!(result.is_err()); // Expect a panic due to insufficient buffer size",
+          "    ",
+          "    let count = 8; // Exactly equal to buffer length",
+          "    let result = std::panic::catch_unwind(|| {",
+          "    unsafe {",
+          "    buffer.put_bytes(value, count);",
+          "    }",
+          "    });",
+          "    assert!(result.is_err()); // Expect a panic due to insufficient buffer size"
+        ],
+        "code": [
+          "{",
+          "    let mut buffer: &mut [core::mem::MaybeUninit<u8>] = &mut [core::mem::MaybeUninit::uninit(); 8];",
+          "    let count = 7; // Less than buffer length",
+          "    let value: u8 = 1; // Value to write",
+          "    unsafe {",
+          "        buffer.put_bytes(value, count);",
+          "    }",
+          "    let mut buffer: &mut [core::mem::MaybeUninit<u8>] = &mut [core::mem::MaybeUninit::uninit(); 8];",
+          "    let count = 9; // Greater than buffer length",
+          "    let value: u8 = 1; // Value to write",
+          "    let result = std::panic::catch_unwind(|| {",
+          "    unsafe {",
+          "    buffer.put_bytes(value, count);",
+          "    }",
+          "    });",
+          "    assert!(result.is_err()); // Expect a panic due to insufficient buffer size",
+          "    ",
+          "    let count = 8; // Exactly equal to buffer length",
+          "    let result = std::panic::catch_unwind(|| {",
+          "    unsafe {",
+          "    buffer.put_bytes(value, count);",
+          "    }",
+          "    });",
+          "    assert!(result.is_err()); // Expect a panic due to insufficient buffer size",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

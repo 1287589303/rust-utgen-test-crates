@@ -1,0 +1,783 @@
+{
+  "name": "regex_automata::dfa::onepass::{impl#4}::try_search_slots",
+  "mod_info": {
+    "name": "dfa::onepass",
+    "loc": "regex-automata/src/dfa/mod.rs:339:1:339:17"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/onepass.rs:1971:5:2000:6",
+  "doc": "/// Executes an anchored leftmost forward search and writes the spans\n/// of capturing groups that participated in a match into the provided\n/// `slots`, and returns the matching pattern ID. The contents of the\n/// slots for patterns other than the matching pattern are unspecified. If\n/// no match was found, then `None` is returned and the contents of all\n/// `slots` is unspecified.\n///\n/// This is like [`DFA::try_search`], but it accepts a raw slots slice\n/// instead of a `Captures` value. This is useful in contexts where you\n/// don't want or need to allocate a `Captures`.\n///\n/// It is legal to pass _any_ number of slots to this routine. If the regex\n/// engine would otherwise write a slot offset that doesn't fit in the\n/// provided slice, then it is simply skipped. In general though, there are\n/// usually three slice lengths you might want to use:\n///\n/// * An empty slice, if you only care about which pattern matched.\n/// * A slice with\n/// [`pattern_len() * 2`](crate::dfa::onepass::DFA::pattern_len)\n/// slots, if you only care about the overall match spans for each matching\n/// pattern.\n/// * A slice with\n/// [`slot_len()`](crate::util::captures::GroupInfo::slot_len) slots, which\n/// permits recording match offsets for every capturing group in every\n/// pattern.\n///\n/// # Errors\n///\n/// This routine errors if the search could not complete. This can occur\n/// in the following circumstances:\n///\n/// * When the provided `Input` configuration is not supported. For\n/// example, by providing an unsupported anchor mode. Concretely,\n/// this occurs when using [`Anchored::Pattern`] without enabling\n/// [`Config::starts_for_each_pattern`].\n///\n/// When a search returns an error, callers cannot know whether a match\n/// exists or not.\n///\n/// # Example\n///\n/// This example shows how to find the overall match offsets in a\n/// multi-pattern search without allocating a `Captures` value. Indeed, we\n/// can put our slots right on the stack.\n///\n/// ```\n/// use regex_automata::{dfa::onepass::DFA, Anchored, Input, PatternID};\n///\n/// let re = DFA::new_many(&[\n///     r\"[a-zA-Z]+\",\n///     r\"[0-9]+\",\n/// ])?;\n/// let mut cache = re.create_cache();\n/// let input = Input::new(\"123\").anchored(Anchored::Yes);\n///\n/// // We only care about the overall match offsets here, so we just\n/// // allocate two slots for each pattern. Each slot records the start\n/// // and end of the match.\n/// let mut slots = [None; 4];\n/// let pid = re.try_search_slots(&mut cache, &input, &mut slots)?;\n/// assert_eq!(Some(PatternID::must(1)), pid);\n///\n/// // The overall match offsets are always at 'pid * 2' and 'pid * 2 + 1'.\n/// // See 'GroupInfo' for more details on the mapping between groups and\n/// // slot indices.\n/// let slot_start = pid.unwrap().as_usize() * 2;\n/// let slot_end = slot_start + 1;\n/// assert_eq!(Some(0), slots[slot_start].map(|s| s.get()));\n/// assert_eq!(Some(3), slots[slot_end].map(|s| s.get()));\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn try_search_slots(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    input: &Input<'_>,",
+    "    slots: &mut [Option<NonMaxUsize>],",
+    ") -> Result<Option<PatternID>, MatchError> {",
+    "    let utf8empty = self.get_nfa().has_empty() && self.get_nfa().is_utf8();",
+    "    if !utf8empty {",
+    "        return self.try_search_slots_imp(cache, input, slots);",
+    "    }",
+    "    // See PikeVM::try_search_slots for why we do this.",
+    "    let min = self.get_nfa().group_info().implicit_slot_len();",
+    "    if slots.len() >= min {",
+    "        return self.try_search_slots_imp(cache, input, slots);",
+    "    }",
+    "    if self.get_nfa().pattern_len() == 1 {",
+    "        let mut enough = [None, None];",
+    "        let got = self.try_search_slots_imp(cache, input, &mut enough)?;",
+    "        // This is OK because we know `enough_slots` is strictly bigger",
+    "        // than `slots`, otherwise this special case isn't reached.",
+    "        slots.copy_from_slice(&enough[..slots.len()]);",
+    "        return Ok(got);",
+    "    }",
+    "    let mut enough = vec![None; min];",
+    "    let got = self.try_search_slots_imp(cache, input, &mut enough)?;",
+    "    // This is OK because we know `enough_slots` is strictly bigger than",
+    "    // `slots`, otherwise this special case isn't reached.",
+    "    slots.copy_from_slice(&enough[..slots.len()]);",
+    "    Ok(got)",
+    "}"
+  ],
+  "size": {
+    "chain": 12,
+    "contra": 0,
+    "min_set": 6
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1978,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "true",
+          "line": 1983,
+          "bound": "slots.len() == min"
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        53,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1978,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1983,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1986,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1988,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        26,
+        27,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1978,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1983,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1986,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1988,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(got)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        28,
+        29,
+        30,
+        31,
+        52,
+        53,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1978,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1983,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1986,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1995,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        40,
+        41,
+        47,
+        48,
+        49,
+        53,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1978,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1983,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1986,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1995,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(got)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        46,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 1978,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1978,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "true",
+          "line": 1983,
+          "bound": "slots.len() == min"
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        53,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1978,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1983,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1986,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1988,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        26,
+        27,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1978,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1983,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "false",
+          "line": 1986,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1988,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(got)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        28,
+        29,
+        30,
+        31,
+        52,
+        53,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1978,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1983,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1986,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1995,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        40,
+        41,
+        47,
+        48,
+        49,
+        53,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1978,
+          "bound": null
+        },
+        {
+          "cond": "slots.len() >= min",
+          "norm": "min <= slots.len()",
+          "value": "false",
+          "line": 1983,
+          "bound": null
+        },
+        {
+          "cond": "self.get_nfa().pattern_len() == 1",
+          "norm": "1 == self.get_nfa().pattern_len()",
+          "value": "true",
+          "line": 1986,
+          "bound": null
+        },
+        {
+          "cond": "self.try_search_slots_imp(cache, input, &mut enough)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1995,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(got)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        19,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        42,
+        43,
+        44,
+        45,
+        46,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "self.get_nfa().has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1977,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 1978,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        8,
+        9,
+        54,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

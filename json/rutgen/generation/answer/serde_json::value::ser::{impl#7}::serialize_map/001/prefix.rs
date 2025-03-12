@@ -1,0 +1,26 @@
+// Answer 0
+
+#[inline]
+fn test_serialize_map_len_none() {
+    let serializer = MapKeySerializer;
+    let result = serializer.serialize_map(None);
+}
+
+#[inline]
+fn test_serialize_map_len_zero() {
+    let serializer = MapKeySerializer;
+    let result = serializer.serialize_map(Some(0));
+}
+
+#[inline]
+fn test_serialize_map_len_one() {
+    let serializer = MapKeySerializer;
+    let result = serializer.serialize_map(Some(1));
+}
+
+#[inline]
+fn test_serialize_map_len_max() {
+    let serializer = MapKeySerializer;
+    let result = serializer.serialize_map(Some(usize::MAX));
+}
+

@@ -1,0 +1,453 @@
+{
+  "name": "proc_macro2::fallback::validate_ident",
+  "mod_info": {
+    "name": "fallback",
+    "loc": "src/lib.rs:151:1:151:18"
+  },
+  "visible": false,
+  "loc": "src/fallback.rs:848:1:874:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: string.is_empty() at line 849 is true\n"
+      ],
+      "input_infer": "string = \"\" (empty string)\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Ident is not allowed to be empty; use Option<Ident>\")]"
+              ],
+              "prefix": [
+                "{",
+                "    let input = \"\";",
+                "    validate_ident(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"\")), Err(_));"
+              ],
+              "code": [
+                "{",
+                "    let input = \"\";",
+                "    validate_ident(input);",
+                "   assert!(std::panic::catch_unwind(|| validate_ident(\"\")).is_err());  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: string.is_empty() at line 849 is false\n",
+        "precondition: string.bytes().all(|digit| b'0' <= digit && digit <= b'9') at line 853 is true\n"
+      ],
+      "input_infer": "Non-empty strings containing only numeric characters (e.g., \"1\", \"123\", \"999\")\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    validate_ident(\"\");",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"123\")).is_err(), true);",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"\")).is_err(), true);",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"a\")).is_err(), false);",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"valid_ident\")).is_err(), false);",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"1valid\")).is_err(), true);",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"valid ident\")).is_err(), true);"
+              ],
+              "code": [
+                "{",
+                "    validate_ident(\"\");",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"123\")).is_err(), true);",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"\")).is_err(), true);",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"a\")).is_err(), false);",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"valid_ident\")).is_err(), false);",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"1valid\")).is_err(), true);",
+                "    assert_eq!(std::panic::catch_unwind(|| validate_ident(\"valid ident\")).is_err(), true);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    validate_ident(\"1\");",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"1\")).is_err());"
+              ],
+              "code": [
+                "{",
+                "    validate_ident(\"1\");",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"1\")).is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    validate_ident(\"123\");",
+                "}"
+              ],
+              "oracle": [
+                "    validate_ident(\"\"); // Should panic: Ident is not allowed to be empty; use Option<Ident>",
+                "    validate_ident(\"123\"); // Should panic: Ident cannot be a number; use Literal instead",
+                "    validate_ident(\"a\"); // Should not panic: valid identifier",
+                "    validate_ident(\"_validIdent\"); // Should not panic: valid identifier",
+                "    validate_ident(\"valid123\"); // Should not panic: valid identifier",
+                "    validate_ident(\"invalid char!\"); // Should panic: invalid character in identifier",
+                "    validate_ident(\"123abc\"); // Should panic: Ident cannot be a number; use Literal instead"
+              ],
+              "code": [
+                "{",
+                "    validate_ident(\"123\");",
+                "    validate_ident(\"\"); // Should panic: Ident is not allowed to be empty; use Option<Ident>",
+                "    validate_ident(\"123\"); // Should panic: Ident cannot be a number; use Literal instead",
+                "    validate_ident(\"a\"); // Should not panic: valid identifier",
+                "    validate_ident(\"_validIdent\"); // Should not panic: valid identifier",
+                "    validate_ident(\"valid123\"); // Should not panic: valid identifier",
+                "    validate_ident(\"invalid char!\"); // Should panic: invalid character in identifier",
+                "    validate_ident(\"123abc\"); // Should panic: Ident cannot be a number; use Literal instead",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    validate_ident(\"999\");",
+                "}"
+              ],
+              "oracle": [
+                "    #[should_panic]",
+                "    #[test]",
+                "    fn test_validate_ident_non_empty_number() {",
+                "    validate_ident(\"999\");",
+                "    }",
+                "    ",
+                "    #[should_panic]",
+                "    #[test]",
+                "    fn test_validate_ident_empty_string() {",
+                "    validate_ident(\"\");",
+                "    }",
+                "    ",
+                "    #[should_panic]",
+                "    #[test]",
+                "    fn test_validate_ident_only_numbers() {",
+                "    validate_ident(\"123456\");",
+                "    }",
+                "    ",
+                "    #[should_panic]",
+                "    #[test]",
+                "    fn test_validate_ident_invalid_ident() {",
+                "    validate_ident(\"1abc\");",
+                "    }"
+              ],
+              "code": [
+                "{",
+                "    validate_ident(\"999\");",
+                "    #[should_panic]",
+                "    #[test]",
+                "    fn test_validate_ident_non_empty_number() {",
+                "    validate_ident(\"999\");",
+                "    }",
+                "    ",
+                "    #[should_panic]",
+                "    #[test]",
+                "    fn test_validate_ident_empty_string() {",
+                "    validate_ident(\"\");",
+                "    }",
+                "    ",
+                "    #[should_panic]",
+                "    #[test]",
+                "    fn test_validate_ident_only_numbers() {",
+                "    validate_ident(\"123456\");",
+                "    }",
+                "    ",
+                "    #[should_panic]",
+                "    #[test]",
+                "    fn test_validate_ident_invalid_ident() {",
+                "    validate_ident(\"1abc\");",
+                "    }",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: string.is_empty() at line 849 is false\n",
+        "precondition: string.bytes().all(|digit| b'0' <= digit && digit <= b'9') at line 853 is false\n",
+        "precondition: ident_ok(string) at line 871 is true\n"
+      ],
+      "input_infer": "non-empty strings that start with a valid character (not a number or special character) and consist only of valid identifier characters (letters, digits, underscores) such as \"validIdent\", \"identifier_1\", \"Ident123\"\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let valid_ident = \"validIdent\";",
+                "    validate_ident(valid_ident);",
+                "}"
+              ],
+              "oracle": [
+                "    validate_ident(\"validIdent\");  // Valid identifier test case",
+                "    validate_ident(\"identifier_123\"); // Valid identifier with underscore test case",
+                "    validate_ident(\"Id\");  // Valid short identifier test case",
+                "    validate_ident(\"validIdentWithNumbers123\"); // Valid identifier with numbers after letters",
+                "    validate_ident(\"áéíóú\"); // Valid identifier with unicode characters",
+                "    validate_ident(\"myIdent\"); // Another valid identifier test case",
+                "    validate_ident(\"Ident_\"); // Valid identifier ending with underscore"
+              ],
+              "code": [
+                "{",
+                "    let valid_ident = \"validIdent\";",
+                "    validate_ident(valid_ident);",
+                "    validate_ident(\"validIdent\");  // Valid identifier test case",
+                "    validate_ident(\"identifier_123\"); // Valid identifier with underscore test case",
+                "    validate_ident(\"Id\");  // Valid short identifier test case",
+                "    validate_ident(\"validIdentWithNumbers123\"); // Valid identifier with numbers after letters",
+                "    validate_ident(\"áéíóú\"); // Valid identifier with unicode characters",
+                "    validate_ident(\"myIdent\"); // Another valid identifier test case",
+                "    validate_ident(\"Ident_\"); // Valid identifier ending with underscore",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let valid_ident_with_number = \"identifier_1\";",
+                "    validate_ident(valid_ident_with_number);",
+                "}"
+              ],
+              "oracle": [
+                "    validate_ident(\"identifier_1\");"
+              ],
+              "code": [
+                "{",
+                "    let valid_ident_with_number = \"identifier_1\";",
+                "    validate_ident(valid_ident_with_number);",
+                "    validate_ident(\"identifier_1\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let valid_ident_mixed = \"Ident123\";",
+                "    validate_ident(valid_ident_mixed);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"Ident123\")).is_ok());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"\")).is_err());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"123\")).is_err());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"  \")).is_err());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"1abc\")).is_err());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"Ident!\")).is_err());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"valid_ident\")).is_ok());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"ValidIdent123\")).is_ok());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"Ident_With_Underscore\")).is_ok());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"Ident-123\")).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let valid_ident_mixed = \"Ident123\";",
+                "    validate_ident(valid_ident_mixed);",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"Ident123\")).is_ok());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"\")).is_err());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"123\")).is_err());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"  \")).is_err());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"1abc\")).is_err());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"Ident!\")).is_err());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"valid_ident\")).is_ok());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"ValidIdent123\")).is_ok());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"Ident_With_Underscore\")).is_ok());",
+                "    assert!(std::panic::catch_unwind(|| validate_ident(\"Ident-123\")).is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: string.is_empty() at line 849 is false\n",
+        "precondition: string.bytes().all(|digit| b'0' <= digit && digit <= b'9') at line 853 is false\n",
+        "precondition: ident_ok(string) at line 871 is false\n"
+      ],
+      "input_infer": "string is a non-empty identifier that consists only of non-alphanumeric characters (e.g., `!@#$`, or `*()`), or starts with an invalid character (e.g., `-test`)\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic(expected = r#\"Ident is not a valid Ident\"#)]"
+              ],
+              "prefix": [
+                "{",
+                "    let string = \"-test\";",
+                "    validate_ident(string);",
+                "}"
+              ],
+              "oracle": [
+                "    #[should_panic(expected = \"Ident is not allowed to be empty; use Option<Ident>\")] validate_ident(\"\");",
+                "    #[should_panic(expected = \"Ident cannot be a number; use Literal instead\")] validate_ident(\"12345\");",
+                "    #[should_panic(expected = r#\"\"-test\" is not a valid Ident\"#)] validate_ident(\"-test\");",
+                "    #[should_panic(expected = r#\"\"!\" is not a valid Ident\"#)] validate_ident(\"!\");",
+                "    #[should_panic(expected = r#\"\"test@\" is not a valid Ident\"#)] validate_ident(\"test@\");",
+                "    #[should_panic(expected = r#\"\"test#test\" is not a valid Ident\"#)] validate_ident(\"test#test\");"
+              ],
+              "code": [
+                "{",
+                "    let string = \"-test\";",
+                "    validate_ident(string);",
+                "    #[should_panic(expected = \"Ident is not allowed to be empty; use Option<Ident>\")] validate_ident(\"\");",
+                "    #[should_panic(expected = \"Ident cannot be a number; use Literal instead\")] validate_ident(\"12345\");",
+                "    #[should_panic(expected = r#\"\"-test\" is not a valid Ident\"#)] validate_ident(\"-test\");",
+                "    #[should_panic(expected = r#\"\"!\" is not a valid Ident\"#)] validate_ident(\"!\");",
+                "    #[should_panic(expected = r#\"\"test@\" is not a valid Ident\"#)] validate_ident(\"test@\");",
+                "    #[should_panic(expected = r#\"\"test#test\" is not a valid Ident\"#)] validate_ident(\"test#test\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = r#\"Ident is not a valid Ident\"#)]"
+              ],
+              "prefix": [
+                "{",
+                "    let string = \"!@#$\";",
+                "    validate_ident(string);",
+                "}"
+              ],
+              "oracle": [
+                "    #[should_panic(expected = r#\"Ident is not allowed to be empty; use Option<Ident>\"#)]",
+                "    validate_ident(\"\");",
+                "    ",
+                "    #[should_panic(expected = r#\"Ident cannot be a number; use Literal instead\"#)]",
+                "    validate_ident(\"12345\");",
+                "    ",
+                "    #[should_panic(expected = r#\"\\\"!@#$\\\" is not a valid Ident\"#)]",
+                "    validate_ident(\"!@#$\");"
+              ],
+              "code": [
+                "{",
+                "    let string = \"!@#$\";",
+                "    validate_ident(string);",
+                "    #[should_panic(expected = r#\"Ident is not allowed to be empty; use Option<Ident>\"#)]",
+                "    validate_ident(\"\");",
+                "    ",
+                "    #[should_panic(expected = r#\"Ident cannot be a number; use Literal instead\"#)]",
+                "    validate_ident(\"12345\");",
+                "    ",
+                "    #[should_panic(expected = r#\"\\\"!@#$\\\" is not a valid Ident\"#)]",
+                "    validate_ident(\"!@#$\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = r#\"Ident is not a valid Ident\"#)]"
+              ],
+              "prefix": [
+                "{",
+                "    let string = \"123@#\";",
+                "    validate_ident(string);",
+                "}"
+              ],
+              "oracle": [
+                "    #[should_panic(expected = r#\"Ident is not allowed to be empty; use Option<Ident>\"#)]",
+                "    validate_ident(\"\");",
+                "    ",
+                "    #[should_panic(expected = r#\"Ident cannot be a number; use Literal instead\"#)]",
+                "    validate_ident(\"123\");",
+                "    ",
+                "    #[should_panic(expected = r#\"\"123@#\" is not a valid Ident\"#)]",
+                "    validate_ident(\"123@#\");"
+              ],
+              "code": [
+                "{",
+                "    let string = \"123@#\";",
+                "    validate_ident(string);",
+                "    #[should_panic(expected = r#\"Ident is not allowed to be empty; use Option<Ident>\"#)]",
+                "    validate_ident(\"\");",
+                "    ",
+                "    #[should_panic(expected = r#\"Ident cannot be a number; use Literal instead\"#)]",
+                "    validate_ident(\"123\");",
+                "    ",
+                "    #[should_panic(expected = r#\"\"123@#\" is not a valid Ident\"#)]",
+                "    validate_ident(\"123@#\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

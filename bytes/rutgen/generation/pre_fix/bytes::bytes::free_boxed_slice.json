@@ -1,0 +1,278 @@
+{
+  "name": "bytes::bytes::free_boxed_slice",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1350:1:1353:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "buf: non-null pointer to allocated memory, offset: pointer within the allocated memory, len: non-negative integer representing length to deallocate, ensuring offset + len does not exceed buffer capacity.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(2) }; // Ensure offset is within bounds",
+                "    let dealloc_len = 5; // Length to deallocate",
+                "",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(unsafe { free_boxed_slice(buffer, offset, dealloc_len) }).is_ok();",
+                "    assert_eq!(mem::size_of::<u8>(), 1);",
+                "    assert_eq!(mem::align_of::<u8>(), 1);",
+                "    assert!(buffer.is_non_null());",
+                "    assert!(offset.is_non_null());",
+                "    assert!(dealloc_len > 0);",
+                "    assert!(len >= dealloc_len);",
+                "    assert!(unsafe { buffer.add(len) } >= unsafe { buffer.add(2).add(dealloc_len) });"
+              ],
+              "code": [
+                "{",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(2) }; // Ensure offset is within bounds",
+                "    let dealloc_len = 5; // Length to deallocate",
+                "",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "    assert!(unsafe { free_boxed_slice(buffer, offset, dealloc_len) }).is_ok();",
+                "    assert_eq!(mem::size_of::<u8>(), 1);",
+                "    assert_eq!(mem::align_of::<u8>(), 1);",
+                "    assert!(buffer.is_non_null());",
+                "    assert!(offset.is_non_null());",
+                "    assert!(dealloc_len > 0);",
+                "    assert!(len >= dealloc_len);",
+                "    assert!(unsafe { buffer.add(len) } >= unsafe { buffer.add(2).add(dealloc_len) });",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer }; // Offset at the beginning of the buffer",
+                "    let dealloc_len = len; // Deallocate full length",
+                "",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(!buffer.is_null(), \"Buffer should not be null after allocation\");",
+                "    assert_eq!(offset_from(offset, buffer), 0, \"Offset should be 0 when set to the start of the buffer\");",
+                "    assert!(len > 0, \"Length should be greater than 0 for deallocation\");",
+                "    assert!(Layout::from_size_align(len, 1).is_ok(), \"Layout should be valid for given length and alignment\");",
+                "    assert!((len as usize) > 0, \"Deallocation length must be greater than zero\");",
+                "    assert_eq!(unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) }.is_null(), false, \"Buffer should be allocated successfully\");"
+              ],
+              "code": [
+                "{",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer }; // Offset at the beginning of the buffer",
+                "    let dealloc_len = len; // Deallocate full length",
+                "",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "    assert!(!buffer.is_null(), \"Buffer should not be null after allocation\");",
+                "    assert_eq!(offset_from(offset, buffer), 0, \"Offset should be 0 when set to the start of the buffer\");",
+                "    assert!(len > 0, \"Length should be greater than 0 for deallocation\");",
+                "    assert!(Layout::from_size_align(len, 1).is_ok(), \"Layout should be valid for given length and alignment\");",
+                "    assert!((len as usize) > 0, \"Deallocation length must be greater than zero\");",
+                "    assert_eq!(unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) }.is_null(), false, \"Buffer should be allocated successfully\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(1) }; // Valid offset within buffer",
+                "    let dealloc_len = 0; // Deallocate length of zero",
+                "",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(buffer.is_null() == false); // Ensure buffer is allocated",
+                "    assert!(offset as usize >= buffer as usize); // Ensure offset is not before buffer",
+                "    assert!(offset as usize < (buffer as usize + len)); // Ensure offset is within bounds of buffer",
+                "    assert_eq!(dealloc_len, 0); // Check that deallocation length is as expected",
+                "    // Assuming after dealloc the buffer should not be usable (for usage checks in complete tests)"
+              ],
+              "code": [
+                "{",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(1) }; // Valid offset within buffer",
+                "    let dealloc_len = 0; // Deallocate length of zero",
+                "",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "    assert!(buffer.is_null() == false); // Ensure buffer is allocated",
+                "    assert!(offset as usize >= buffer as usize); // Ensure offset is not before buffer",
+                "    assert!(offset as usize < (buffer as usize + len)); // Ensure offset is within bounds of buffer",
+                "    assert_eq!(dealloc_len, 0); // Check that deallocation length is as expected",
+                "    // Assuming after dealloc the buffer should not be usable (for usage checks in complete tests)",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(len + 1) }; // Invalid offset outside the buffer",
+                "    let dealloc_len = 1; // Arbitrary length",
+                "",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "}"
+              ],
+              "oracle": [
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(10, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(11) }; // Invalid offset",
+                "    let dealloc_len = 1; // Valid length",
+                "    ",
+                "    let result = std::panic::catch_unwind(|| {",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) }",
+                "    });",
+                "    assert!(result.is_err()); // Expect the panic to occur",
+                "    ",
+                "    let layout = Layout::from_size_align(10, 1).unwrap();",
+                "    let buffer2 = unsafe { alloc::alloc::alloc(layout) };",
+                "    let offset2 = unsafe { buffer2.add(10) }; // Edge case at the end of the buffer",
+                "    let dealloc_len2 = 1; // Valid length",
+                "    ",
+                "    let result2 = std::panic::catch_unwind(|| {",
+                "    unsafe { free_boxed_slice(buffer2, offset2, dealloc_len2) }",
+                "    });",
+                "    assert!(result2.is_err()); // Expect the panic to occur",
+                "    ",
+                "    let buffer3 = unsafe { alloc::alloc::alloc(Layout::from_size_align(10, 1).unwrap()) };",
+                "    let offset3 = unsafe { buffer3.add(5) }; // Valid offset within buffer",
+                "    let dealloc_len3 = 10; // Length to be deallocated",
+                "    ",
+                "    let result3 = std::panic::catch_unwind(|| {",
+                "    unsafe { free_boxed_slice(buffer3, offset3, dealloc_len3) }",
+                "    });",
+                "    assert!(result3.is_err()); // Expect the panic to occur due to invalid deallocation length"
+              ],
+              "code": [
+                "{",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(len + 1) }; // Invalid offset outside the buffer",
+                "    let dealloc_len = 1; // Arbitrary length",
+                "",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(10, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(11) }; // Invalid offset",
+                "    let dealloc_len = 1; // Valid length",
+                "    ",
+                "    let result = std::panic::catch_unwind(|| {",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) }",
+                "    });",
+                "    assert!(result.is_err()); // Expect the panic to occur",
+                "    ",
+                "    let layout = Layout::from_size_align(10, 1).unwrap();",
+                "    let buffer2 = unsafe { alloc::alloc::alloc(layout) };",
+                "    let offset2 = unsafe { buffer2.add(10) }; // Edge case at the end of the buffer",
+                "    let dealloc_len2 = 1; // Valid length",
+                "    ",
+                "    let result2 = std::panic::catch_unwind(|| {",
+                "    unsafe { free_boxed_slice(buffer2, offset2, dealloc_len2) }",
+                "    });",
+                "    assert!(result2.is_err()); // Expect the panic to occur",
+                "    ",
+                "    let buffer3 = unsafe { alloc::alloc::alloc(Layout::from_size_align(10, 1).unwrap()) };",
+                "    let offset3 = unsafe { buffer3.add(5) }; // Valid offset within buffer",
+                "    let dealloc_len3 = 10; // Length to be deallocated",
+                "    ",
+                "    let result3 = std::panic::catch_unwind(|| {",
+                "    unsafe { free_boxed_slice(buffer3, offset3, dealloc_len3) }",
+                "    });",
+                "    assert!(result3.is_err()); // Expect the panic to occur due to invalid deallocation length",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(5) }; // Valid offset",
+                "    let dealloc_len = 6; // Length exceeds available memory",
+                "",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "}"
+              ],
+              "oracle": [
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(5) };",
+                "    let dealloc_len = 6;",
+                "    let cap = offset_from(offset, buffer) + dealloc_len;",
+                "    assert!(cap > len);",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "    let buffer_invalid = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset_invalid = unsafe { buffer_invalid.add(len) };",
+                "    let dealloc_len_invalid = 1;",
+                "    panic::catch_unwind(|| { unsafe { free_boxed_slice(buffer_invalid, offset_invalid, dealloc_len_invalid) } }).is_err();"
+              ],
+              "code": [
+                "{",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(5) }; // Valid offset",
+                "    let dealloc_len = 6; // Length exceeds available memory",
+                "",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "    let len = 10;",
+                "    let buffer = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset = unsafe { buffer.add(5) };",
+                "    let dealloc_len = 6;",
+                "    let cap = offset_from(offset, buffer) + dealloc_len;",
+                "    assert!(cap > len);",
+                "    unsafe { free_boxed_slice(buffer, offset, dealloc_len) };",
+                "    let buffer_invalid = unsafe { alloc::alloc::alloc(Layout::from_size_align(len, 1).unwrap()) };",
+                "    let offset_invalid = unsafe { buffer_invalid.add(len) };",
+                "    let dealloc_len_invalid = 1;",
+                "    panic::catch_unwind(|| { unsafe { free_boxed_slice(buffer_invalid, offset_invalid, dealloc_len_invalid) } }).is_err();",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe extern \"C\" fn drop_fn(_: *mut ()) {}",
+          "",
+          "    let mut lifetime = TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize::new(2),",
+          "        drop: drop_fn,",
+          "    };",
+          "",
+          "    let owned: *mut TestOwnedLifetime = &mut lifetime as *mut _;",
+          "",
+          "    owned_drop_impl(owned);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lifetime.ref_cnt.load(Ordering::SeqCst), 1);",
+          "    unsafe { owned_drop_impl(owned) };",
+          "    assert_eq!(lifetime.ref_cnt.load(Ordering::SeqCst), 0);",
+          "    unsafe { assert!((*owned).drop.is_some()) };",
+          "    assert!(std::intrinsics::drop_in_place_is_safe(owned));"
+        ],
+        "code": [
+          "{",
+          "    struct TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe extern \"C\" fn drop_fn(_: *mut ()) {}",
+          "",
+          "    let mut lifetime = TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize::new(2),",
+          "        drop: drop_fn,",
+          "    };",
+          "",
+          "    let owned: *mut TestOwnedLifetime = &mut lifetime as *mut _;",
+          "",
+          "    owned_drop_impl(owned);",
+          "    assert_eq!(lifetime.ref_cnt.load(Ordering::SeqCst), 1);",
+          "    unsafe { owned_drop_impl(owned) };",
+          "    assert_eq!(lifetime.ref_cnt.load(Ordering::SeqCst), 0);",
+          "    unsafe { assert!((*owned).drop.is_some()) };",
+          "    assert!(std::intrinsics::drop_in_place_is_safe(owned));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe extern \"C\" fn drop_fn(_: *mut ()) {}",
+          "",
+          "    let mut lifetime = TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+          "        drop: drop_fn,",
+          "    };",
+          "",
+          "    let owned: *mut TestOwnedLifetime = &mut lifetime as *mut _;",
+          "",
+          "    owned_drop_impl(owned);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(lifetime.ref_cnt.load(Ordering::Relaxed) == (usize::MAX >> 1) - 1);",
+          "    assert!(lifetime.ref_cnt.load(Ordering::Relaxed) > 0);",
+          "    assert!(lifetime.ref_cnt.load(Ordering::Relaxed) <= usize::MAX >> 1);",
+          "    assert!(lifetime.ref_cnt.load(Ordering::Relaxed) != 1);"
+        ],
+        "code": [
+          "{",
+          "    struct TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe extern \"C\" fn drop_fn(_: *mut ()) {}",
+          "",
+          "    let mut lifetime = TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+          "        drop: drop_fn,",
+          "    };",
+          "",
+          "    let owned: *mut TestOwnedLifetime = &mut lifetime as *mut _;",
+          "",
+          "    owned_drop_impl(owned);",
+          "    assert!(lifetime.ref_cnt.load(Ordering::Relaxed) == (usize::MAX >> 1) - 1);",
+          "    assert!(lifetime.ref_cnt.load(Ordering::Relaxed) > 0);",
+          "    assert!(lifetime.ref_cnt.load(Ordering::Relaxed) <= usize::MAX >> 1);",
+          "    assert!(lifetime.ref_cnt.load(Ordering::Relaxed) != 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

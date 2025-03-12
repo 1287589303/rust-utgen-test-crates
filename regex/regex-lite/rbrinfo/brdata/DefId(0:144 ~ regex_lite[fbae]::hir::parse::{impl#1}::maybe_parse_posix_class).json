@@ -1,0 +1,3920 @@
+{
+  "name": "regex_lite::hir::parse::{impl#1}::maybe_parse_posix_class",
+  "mod_info": {
+    "name": "hir::parse",
+    "loc": "regex-lite/src/hir/mod.rs:5:1:5:11"
+  },
+  "visible": false,
+  "loc": "regex-lite/src/hir/parse.rs:1140:5:1207:6",
+  "doc": "/// Attempt to parse a POSIX character class, e.g., `[:alnum:]`.\n///\n/// This assumes the parser is positioned at the opening `[`.\n///\n/// If no valid POSIX character class could be found, then this does not\n/// advance the parser and `None` is returned. Otherwise, the parser is\n/// advanced to the first byte following the closing `]` and the\n/// corresponding POSIX class is returned.\n",
+  "code": [
+    "fn maybe_parse_posix_class(&self) -> Option<hir::Class> {",
+    "    // POSIX character classes are interesting from a parsing perspective",
+    "    // because parsing cannot fail with any interesting error. For example,",
+    "    // in order to use an POSIX character class, it must be enclosed in",
+    "    // double brackets, e.g., `[[:alnum:]]`. Alternatively, you might think",
+    "    // of it as \"POSIX character classes have the syntax `[:NAME:]` which",
+    "    // can only appear within character brackets.\" This means that things",
+    "    // like `[[:lower:]A]` are legal constructs.",
+    "    //",
+    "    // However, if one types an incorrect POSIX character class, e.g.,",
+    "    // `[[:loower:]]`, then we treat that as if it were normal nested",
+    "    // character class containing the characters `:elorw`. (Which isn't",
+    "    // supported and results in an error in regex-lite.) One might argue",
+    "    // that we should return an error instead since the repeated colons",
+    "    // give away the intent to write an POSIX class. But what if the user",
+    "    // typed `[[:lower]]` instead? How can we tell that was intended to be",
+    "    // a POSXI class and not just a normal nested class?",
+    "    //",
+    "    // Reasonable people can probably disagree over this, but for better",
+    "    // or worse, we implement semantics that never fails at the expense of",
+    "    // better failure modes.",
+    "    assert_eq!(self.char(), '[');",
+    "",
+    "    // If parsing fails, then we back up the parser to this starting point.",
+    "    let start_pos = self.pos();",
+    "    let start_char = self.char.get();",
+    "    let reset = || {",
+    "        self.pos.set(start_pos);",
+    "        self.char.set(start_char);",
+    "    };",
+    "",
+    "    let mut negated = false;",
+    "    if !self.bump() || self.char() != ':' {",
+    "        reset();",
+    "        return None;",
+    "    }",
+    "    if !self.bump() {",
+    "        reset();",
+    "        return None;",
+    "    }",
+    "    if self.char() == '^' {",
+    "        negated = true;",
+    "        if !self.bump() {",
+    "            reset();",
+    "            return None;",
+    "        }",
+    "    }",
+    "    let name_start = self.pos();",
+    "    while self.char() != ':' && self.bump() {}",
+    "    if self.is_done() {",
+    "        reset();",
+    "        return None;",
+    "    }",
+    "    let name = &self.pattern()[name_start..self.pos()];",
+    "    if !self.bump_if(\":]\") {",
+    "        reset();",
+    "        return None;",
+    "    }",
+    "    if let Ok(ranges) = posix_class(name) {",
+    "        let mut class = hir::Class::new(ranges);",
+    "        if negated {",
+    "            class.negate();",
+    "        }",
+    "        return Some(class);",
+    "    }",
+    "    reset();",
+    "    None",
+    "}"
+  ],
+  "size": {
+    "chain": 35,
+    "contra": 10,
+    "min_set": 11
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "true",
+          "line": 1189,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        37,
+        38,
+        63,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "true",
+          "line": 1198,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        56,
+        57,
+        58,
+        65
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "true",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "false",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        53,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "false",
+          "line": 1194,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "true",
+          "line": 1189,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        37,
+        38,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "true",
+          "line": 1198,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        56,
+        57,
+        58,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "true",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "false",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        53,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "false",
+          "line": 1194,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "true",
+          "line": 1189,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        37,
+        38,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "true",
+          "line": 1198,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        56,
+        57,
+        58,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "true",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "false",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        53,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1182,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "false",
+          "line": 1194,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "false",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1182,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        19,
+        20,
+        22,
+        23,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "true",
+          "line": 1189,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        37,
+        38,
+        63,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "true",
+          "line": 1198,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        56,
+        57,
+        58,
+        65
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "true",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "false",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        53,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "false",
+          "line": 1194,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "true",
+          "line": 1189,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        37,
+        38,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "true",
+          "line": 1198,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        56,
+        57,
+        58,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "true",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 26,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "false",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        53,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 27,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "true",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "false",
+          "line": 1194,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 28,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "true",
+          "line": 1189,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        37,
+        38,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 29,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "true",
+          "line": 1198,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        56,
+        57,
+        58,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 30,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "true",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 31,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "true",
+          "line": 1194,
+          "bound": null
+        },
+        {
+          "cond": "let Ok(ranges) = posix_class(name)",
+          "norm": null,
+          "value": "false",
+          "line": 1198,
+          "bound": null
+        },
+        {
+          "cond": "negated",
+          "norm": null,
+          "value": "false",
+          "line": 1200,
+          "bound": null
+        }
+      ],
+      "ret": "Some(class)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        47,
+        48,
+        49,
+        50,
+        53,
+        54,
+        55,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 32,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1176,
+          "bound": null
+        },
+        {
+          "cond": "self.char() == '^'",
+          "norm": "'^' == self.char()",
+          "value": "true",
+          "line": 1180,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1188,
+          "bound": null
+        },
+        {
+          "cond": "self.is_done()",
+          "norm": null,
+          "value": "false",
+          "line": 1189,
+          "bound": null
+        },
+        {
+          "cond": "self.bump_if(\":]\")",
+          "norm": null,
+          "value": "false",
+          "line": 1194,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        15,
+        18,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        43,
+        45,
+        46,
+        62,
+        63,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 33,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "true",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.char() != ':'",
+          "norm": "':' != self.char()",
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1176,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        13,
+        14,
+        16,
+        17,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 34,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null
+        },
+        {
+          "cond": "self.bump()",
+          "norm": null,
+          "value": "false",
+          "line": 1172,
+          "bound": null
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        8,
+        11,
+        12,
+        64,
+        65
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 35,
+      "conds": [
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

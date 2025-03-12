@@ -1,0 +1,113 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestPool {",
+          "        owner: AtomicUsize,",
+          "        stacks: Vec<(Mutex<Vec<Box<i32>>>,)>,",
+          "    }",
+          "",
+          "    let create_fn = || Box::new(42i32);",
+          "    let pool = TestPool {",
+          "        owner: AtomicUsize::new(THREAD_ID_INUSE),",
+          "        stacks: vec![(Mutex { locked: AtomicBool::new(false), data: UnsafeCell::new(vec![]) })],",
+          "    };",
+          "",
+          "    pool.get_slow(1, THREAD_ID_INUSE);",
+          "}"
+        ],
+        "oracle": [
+          "    let pool = TestPool { owner: AtomicUsize::new(THREAD_ID_INUSE), stacks: vec![(Mutex { locked: AtomicBool::new(false), data: UnsafeCell::new(vec![]) })] };",
+          "    let guard = pool.get_slow(1, THREAD_ID_INUSE);",
+          "    assert!(guard.value.is_some());",
+          "    assert_eq!(*guard.value.unwrap(), Box::new(42i32));",
+          "    let pool = TestPool { owner: AtomicUsize::new(THREAD_ID_INUSE), stacks: vec![(Mutex { locked: AtomicBool::new(false), data: UnsafeCell::new(vec![]) })] };",
+          "    let guard = pool.get_slow(1, THREAD_ID_INUSE);",
+          "    assert!(guard.value.is_err());"
+        ],
+        "code": [
+          "{",
+          "    struct TestPool {",
+          "        owner: AtomicUsize,",
+          "        stacks: Vec<(Mutex<Vec<Box<i32>>>,)>,",
+          "    }",
+          "",
+          "    let create_fn = || Box::new(42i32);",
+          "    let pool = TestPool {",
+          "        owner: AtomicUsize::new(THREAD_ID_INUSE),",
+          "        stacks: vec![(Mutex { locked: AtomicBool::new(false), data: UnsafeCell::new(vec![]) })],",
+          "    };",
+          "",
+          "    pool.get_slow(1, THREAD_ID_INUSE);",
+          "    let pool = TestPool { owner: AtomicUsize::new(THREAD_ID_INUSE), stacks: vec![(Mutex { locked: AtomicBool::new(false), data: UnsafeCell::new(vec![]) })] };",
+          "    let guard = pool.get_slow(1, THREAD_ID_INUSE);",
+          "    assert!(guard.value.is_some());",
+          "    assert_eq!(*guard.value.unwrap(), Box::new(42i32));",
+          "    let pool = TestPool { owner: AtomicUsize::new(THREAD_ID_INUSE), stacks: vec![(Mutex { locked: AtomicBool::new(false), data: UnsafeCell::new(vec![]) })] };",
+          "    let guard = pool.get_slow(1, THREAD_ID_INUSE);",
+          "    assert!(guard.value.is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestPool {",
+          "        owner: AtomicUsize,",
+          "        stacks: Vec<(Mutex<Vec<Box<i32>>>,)>,",
+          "    }",
+          "",
+          "    let create_fn = || Box::new(42i32);",
+          "    let pool = TestPool {",
+          "        owner: AtomicUsize::new(THREAD_ID_UNOWNED),",
+          "        stacks: vec![(Mutex { locked: AtomicBool::new(false), data: UnsafeCell::new(vec![]) })],",
+          "    };",
+          "",
+          "    pool.get_slow(1, THREAD_ID_INUSE);",
+          "}"
+        ],
+        "oracle": [
+          "    let pool = TestPool { owner: AtomicUsize::new(THREAD_ID_UNOWNED), stacks: vec![(Mutex { locked: AtomicBool::new(false), data: UnsafeCell::new(vec![]) })] };",
+          "    assert_eq!(pool.owner.load(Ordering::SeqCst), THREAD_ID_UNOWNED);",
+          "    let guard = pool.get_slow(1, THREAD_ID_INUSE);",
+          "    assert!(guard.value.is_none());",
+          "    assert_eq!(pool.stacks[0].0.locked.load(Ordering::SeqCst), false);",
+          "    assert_eq!(pool.owner.load(Ordering::SeqCst), THREAD_ID_INUSE);"
+        ],
+        "code": [
+          "{",
+          "    struct TestPool {",
+          "        owner: AtomicUsize,",
+          "        stacks: Vec<(Mutex<Vec<Box<i32>>>,)>,",
+          "    }",
+          "",
+          "    let create_fn = || Box::new(42i32);",
+          "    let pool = TestPool {",
+          "        owner: AtomicUsize::new(THREAD_ID_UNOWNED),",
+          "        stacks: vec![(Mutex { locked: AtomicBool::new(false), data: UnsafeCell::new(vec![]) })],",
+          "    };",
+          "",
+          "    pool.get_slow(1, THREAD_ID_INUSE);",
+          "    let pool = TestPool { owner: AtomicUsize::new(THREAD_ID_UNOWNED), stacks: vec![(Mutex { locked: AtomicBool::new(false), data: UnsafeCell::new(vec![]) })] };",
+          "    assert_eq!(pool.owner.load(Ordering::SeqCst), THREAD_ID_UNOWNED);",
+          "    let guard = pool.get_slow(1, THREAD_ID_INUSE);",
+          "    assert!(guard.value.is_none());",
+          "    assert_eq!(pool.stacks[0].0.locked.load(Ordering::SeqCst), false);",
+          "    assert_eq!(pool.owner.load(Ordering::SeqCst), THREAD_ID_INUSE);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

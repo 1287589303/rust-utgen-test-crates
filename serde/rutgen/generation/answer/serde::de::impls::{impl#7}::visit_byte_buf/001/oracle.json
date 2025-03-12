@@ -1,0 +1,176 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestVisitor<'a>(&'a mut String);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "    ",
+          "    let input = vec![0xFF, 0xFE, 0xFD];",
+          "    let _ = visitor.visit_byte_buf(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "    let input = vec![0xFF, 0xFE, 0xFD];",
+          "    let error = visitor.visit_byte_buf(input).unwrap_err();",
+          "    assert_eq!(error, Error::invalid_value(Unexpected::Bytes(&[0xFF, 0xFE, 0xFD]), &visitor));"
+        ],
+        "code": [
+          "{",
+          "    struct TestVisitor<'a>(&'a mut String);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "    ",
+          "    let input = vec![0xFF, 0xFE, 0xFD];",
+          "    let _ = visitor.visit_byte_buf(input);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "    let input = vec![0xFF, 0xFE, 0xFD];",
+          "    let error = visitor.visit_byte_buf(input).unwrap_err();",
+          "    assert_eq!(error, Error::invalid_value(Unexpected::Bytes(&[0xFF, 0xFE, 0xFD]), &visitor));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestVisitor<'a>(&'a mut String);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "",
+          "    let input = vec![0xC3, 0x28]; // invalid UTF-8",
+          "    let _ = visitor.visit_byte_buf(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input = vec![0xC3, 0x28]; // invalid UTF-8",
+          "    let expected = Err(Error::invalid_value(Unexpected::Bytes(&[0xC3, 0x28]), &visitor));",
+          "    assert_eq!(visitor.visit_byte_buf(input), expected);"
+        ],
+        "code": [
+          "{",
+          "    struct TestVisitor<'a>(&'a mut String);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "",
+          "    let input = vec![0xC3, 0x28]; // invalid UTF-8",
+          "    let _ = visitor.visit_byte_buf(input);",
+          "    let input = vec![0xC3, 0x28]; // invalid UTF-8",
+          "    let expected = Err(Error::invalid_value(Unexpected::Bytes(&[0xC3, 0x28]), &visitor));",
+          "    assert_eq!(visitor.visit_byte_buf(input), expected);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestVisitor<'a>(&'a mut String);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "",
+          "    let input: Vec<u8> = vec![]; ",
+          "    let _ = visitor.visit_byte_buf(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "    let input: Vec<u8> = vec![255]; // input containing invalid UTF-8 bytes",
+          "    let expected_error = Err(Error::invalid_value(Unexpected::Bytes(&[255]), &visitor));",
+          "    assert_eq!(visitor.visit_byte_buf(input), expected_error);"
+        ],
+        "code": [
+          "{",
+          "    struct TestVisitor<'a>(&'a mut String);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "",
+          "    let input: Vec<u8> = vec![]; ",
+          "    let _ = visitor.visit_byte_buf(input);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "    let input: Vec<u8> = vec![255]; // input containing invalid UTF-8 bytes",
+          "    let expected_error = Err(Error::invalid_value(Unexpected::Bytes(&[255]), &visitor));",
+          "    assert_eq!(visitor.visit_byte_buf(input), expected_error);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestVisitor<'a>(&'a mut String);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "    ",
+          "    let input = vec![0x80]; // invalid UTF-8",
+          "    let _ = visitor.visit_byte_buf(input);",
+          "}"
+        ],
+        "oracle": [
+          "    Err(Error::invalid_value(Unexpected::Bytes(&[0x80]), &self))"
+        ],
+        "code": [
+          "{",
+          "    struct TestVisitor<'a>(&'a mut String);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "    ",
+          "    let input = vec![0x80]; // invalid UTF-8",
+          "    let _ = visitor.visit_byte_buf(input);",
+          "    Err(Error::invalid_value(Unexpected::Bytes(&[0x80]), &self))",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestVisitor<'a>(&'a mut String);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "    ",
+          "    let input = vec![0x80; 1000]; // repeated invalid byte",
+          "    let _ = visitor.visit_byte_buf(input);",
+          "}"
+        ],
+        "oracle": [
+          "    visitor.visit_byte_buf(vec![0x80; 1000]).unwrap_err();",
+          "    assert_eq!(visitor.visit_byte_buf(vec![0x80; 1000]), Err(Error::invalid_value(Unexpected::Bytes(&[0x80; 1000]), &visitor)));"
+        ],
+        "code": [
+          "{",
+          "    struct TestVisitor<'a>(&'a mut String);",
+          "    let mut result = String::new();",
+          "    let visitor = TestVisitor(&mut result);",
+          "    ",
+          "    let input = vec![0x80; 1000]; // repeated invalid byte",
+          "    let _ = visitor.visit_byte_buf(input);",
+          "    visitor.visit_byte_buf(vec![0x80; 1000]).unwrap_err();",
+          "    assert_eq!(visitor.visit_byte_buf(vec![0x80; 1000]), Err(Error::invalid_value(Unexpected::Bytes(&[0x80; 1000]), &visitor)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

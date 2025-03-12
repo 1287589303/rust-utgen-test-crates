@@ -1,0 +1,105 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct Owned {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    let owned_instance = Owned {",
+          "        ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+          "        drop: |ptr| { /* Drop implementation */ },",
+          "    };",
+          "",
+          "    let ptr: *mut () = &owned_instance as *const _ as *mut ();",
+          "",
+          "    unsafe { owned_drop_impl(ptr) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(owned_instance.ref_cnt.load(Ordering::Relaxed), usize::MAX >> 1);",
+          "    assert_eq!(owned_instance.ref_cnt.fetch_sub(1, Ordering::Release), usize::MAX >> 1);",
+          "    assert!(std::panic::catch_unwind(|| { owned_drop_impl(ptr) }).is_err());",
+          "    assert_eq!(owned_instance.ref_cnt.load(Ordering::Relaxed), (usize::MAX >> 1) - 1);"
+        ],
+        "code": [
+          "{",
+          "    struct Owned {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    let owned_instance = Owned {",
+          "        ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+          "        drop: |ptr| { /* Drop implementation */ },",
+          "    };",
+          "",
+          "    let ptr: *mut () = &owned_instance as *const _ as *mut ();",
+          "",
+          "    unsafe { owned_drop_impl(ptr) };",
+          "    assert_eq!(owned_instance.ref_cnt.load(Ordering::Relaxed), usize::MAX >> 1);",
+          "    assert_eq!(owned_instance.ref_cnt.fetch_sub(1, Ordering::Release), usize::MAX >> 1);",
+          "    assert!(std::panic::catch_unwind(|| { owned_drop_impl(ptr) }).is_err());",
+          "    assert_eq!(owned_instance.ref_cnt.load(Ordering::Relaxed), (usize::MAX >> 1) - 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct Owned {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    let owned_instance = Owned {",
+          "        ref_cnt: AtomicUsize::new(usize::MAX >> 1 + 1),",
+          "        drop: |ptr| { /* Drop implementation */ },",
+          "    };",
+          "",
+          "    let ptr: *mut () = &owned_instance as *const _ as *mut ();",
+          "",
+          "    unsafe { owned_drop_impl(ptr) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(owned_instance.ref_cnt.load(Ordering::Relaxed) == usize::MAX >> 1 + 1);",
+          "    assert!(owned_instance.ref_cnt.fetch_sub(1, Ordering::Release) == usize::MAX >> 1 + 1);",
+          "    assert!(owned_instance.ref_cnt.load(Ordering::Relaxed) == usize::MAX >> 1);"
+        ],
+        "code": [
+          "{",
+          "    struct Owned {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    let owned_instance = Owned {",
+          "        ref_cnt: AtomicUsize::new(usize::MAX >> 1 + 1),",
+          "        drop: |ptr| { /* Drop implementation */ },",
+          "    };",
+          "",
+          "    let ptr: *mut () = &owned_instance as *const _ as *mut ();",
+          "",
+          "    unsafe { owned_drop_impl(ptr) };",
+          "    assert!(owned_instance.ref_cnt.load(Ordering::Relaxed) == usize::MAX >> 1 + 1);",
+          "    assert!(owned_instance.ref_cnt.fetch_sub(1, Ordering::Release) == usize::MAX >> 1 + 1);",
+          "    assert!(owned_instance.ref_cnt.load(Ordering::Relaxed) == usize::MAX >> 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

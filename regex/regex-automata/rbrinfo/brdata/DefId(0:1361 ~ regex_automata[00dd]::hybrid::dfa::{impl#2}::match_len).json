@@ -1,0 +1,67 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#2}::match_len",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:1716:5:1719:6",
+  "doc": "/// Returns the total number of patterns that match in this state.\n///\n/// If the lazy DFA was compiled with one pattern, then this must\n/// necessarily always return `1` for all match states.\n///\n/// A lazy DFA guarantees that [`DFA::match_pattern`] can be called with\n/// indices up to (but not including) the length returned by this routine\n/// without panicking.\n///\n/// # Panics\n///\n/// If the given state is not a match state, then this may either panic\n/// or return an incorrect result.\n///\n/// # Example\n///\n/// This example shows a simple instance of implementing overlapping\n/// matches. In particular, it shows not only how to determine how many\n/// patterns have matched in a particular state, but also how to access\n/// which specific patterns have matched.\n///\n/// Notice that we must use [`MatchKind::All`] when building the DFA. If we\n/// used [`MatchKind::LeftmostFirst`] instead, then the DFA would not be\n/// constructed in a way that supports overlapping matches. (It would only\n/// report a single pattern that matches at any particular point in time.)\n///\n/// Another thing to take note of is the patterns used and the order in\n/// which the pattern IDs are reported. In the example below, pattern `3`\n/// is yielded first. Why? Because it corresponds to the match that\n/// appears first. Namely, the `@` symbol is part of `\\S+` but not part\n/// of any of the other patterns. Since the `\\S+` pattern has a match that\n/// starts to the left of any other pattern, its ID is returned before any\n/// other.\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{hybrid::dfa::DFA, Input, MatchKind};\n///\n/// let dfa = DFA::builder()\n///     .configure(DFA::config().match_kind(MatchKind::All))\n///     .build_many(&[\n///         r\"\\w+\", r\"[a-z]+\", r\"[A-Z]+\", r\"\\S+\",\n///     ])?;\n/// let mut cache = dfa.create_cache();\n/// let haystack = \"@bar\".as_bytes();\n///\n/// // The start state is determined by inspecting the position and the\n/// // initial bytes of the haystack.\n/// let mut sid = dfa.start_state_forward(\n///     &mut cache, &Input::new(haystack),\n/// )?;\n/// // Walk all the bytes in the haystack.\n/// for &b in haystack {\n///     sid = dfa.next_state(&mut cache, sid, b)?;\n/// }\n/// sid = dfa.next_eoi_state(&mut cache, sid)?;\n///\n/// assert!(sid.is_match());\n/// assert_eq!(dfa.match_len(&mut cache, sid), 3);\n/// // The following calls are guaranteed to not panic since `match_len`\n/// // returned `3` above.\n/// assert_eq!(dfa.match_pattern(&mut cache, sid, 0).as_usize(), 3);\n/// assert_eq!(dfa.match_pattern(&mut cache, sid, 1).as_usize(), 0);\n/// assert_eq!(dfa.match_pattern(&mut cache, sid, 2).as_usize(), 1);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn match_len(&self, cache: &Cache, id: LazyStateID) -> usize {",
+    "    assert!(id.is_match());",
+    "    LazyRef::new(self, cache).get_cached_state(id).match_len()",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "id.is_match()",
+          "norm": null,
+          "value": "true",
+          "line": 1717,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "id.is_match()",
+          "norm": null,
+          "value": "false",
+          "line": 1717,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        7
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: Box<[u8]> = Box::from([0u8, 1u8, 2u8, 3u8]); // Length > 0",
+          "    let result = Bytes::from(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.len(), 4);",
+          "    assert_eq!(unsafe { result.as_ptr() }, slice.as_ptr() as *const u8);",
+          "    assert_eq!(result.data.load(Ordering::SeqCst), (slice.as_ptr() as *mut u8).cast());",
+          "    assert_eq!(result.vtable, &PROMOTABLE_ODD_VTABLE);",
+          "    assert!(!result.is_empty());",
+          "    assert!(result.is_unique());"
+        ],
+        "code": [
+          "{",
+          "    let slice: Box<[u8]> = Box::from([0u8, 1u8, 2u8, 3u8]); // Length > 0",
+          "    let result = Bytes::from(slice);",
+          "    assert_eq!(result.len(), 4);",
+          "    assert_eq!(unsafe { result.as_ptr() }, slice.as_ptr() as *const u8);",
+          "    assert_eq!(result.data.load(Ordering::SeqCst), (slice.as_ptr() as *mut u8).cast());",
+          "    assert_eq!(result.vtable, &PROMOTABLE_ODD_VTABLE);",
+          "    assert!(!result.is_empty());",
+          "    assert!(result.is_unique());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let slice: Box<[u8]> = Box::from([0u8; 1024]); // Length > 0, aligning ptr since it's an array",
+          "    let result = Bytes::from(slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: Box<[u8]> = Box::from([0u8; 1024]); // Length > 0, aligning ptr since it's an array",
+          "    let result = Bytes::from(slice);",
+          "    assert_eq!(result.len, 1024);",
+          "    assert_eq!(result.ptr, slice.as_ptr() as *mut u8);",
+          "    assert_eq!(result.data.load(Ordering::SeqCst), (result.ptr as usize | KIND_VEC) as *mut ());",
+          "    assert_eq!(result.vtable, &PROMOTABLE_EVEN_VTABLE);"
+        ],
+        "code": [
+          "{",
+          "    let slice: Box<[u8]> = Box::from([0u8; 1024]); // Length > 0, aligning ptr since it's an array",
+          "    let result = Bytes::from(slice);",
+          "    let slice: Box<[u8]> = Box::from([0u8; 1024]); // Length > 0, aligning ptr since it's an array",
+          "    let result = Bytes::from(slice);",
+          "    assert_eq!(result.len, 1024);",
+          "    assert_eq!(result.ptr, slice.as_ptr() as *mut u8);",
+          "    assert_eq!(result.data.load(Ordering::SeqCst), (result.ptr as usize | KIND_VEC) as *mut ());",
+          "    assert_eq!(result.vtable, &PROMOTABLE_EVEN_VTABLE);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

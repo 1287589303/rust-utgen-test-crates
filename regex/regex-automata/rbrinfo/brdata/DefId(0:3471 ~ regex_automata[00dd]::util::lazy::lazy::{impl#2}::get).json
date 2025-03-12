@@ -1,0 +1,143 @@
+{
+  "name": "regex_automata::util::lazy::lazy::{impl#2}::get",
+  "mod_info": {
+    "name": "util::lazy::lazy",
+    "loc": "regex-automata/src/util/lazy.rs:98:1:223:2"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/util/lazy.rs:164:9:190:10",
+  "doc": "/// Get the underlying lazy value. If it hasn't been initialized\n/// yet, then always attempt to initialize it (even if some other\n/// thread is initializing it) and atomically attach it to this lazy\n/// value before returning it.\n",
+  "code": [
+    "pub(super) fn get(&self) -> &T {",
+    "    if let Some(data) = self.poll() {",
+    "        return data;",
+    "    }",
+    "    let data = (self.create)();",
+    "    let mut ptr = Box::into_raw(Box::new(data));",
+    "    // We attempt to stuff our initialized value into our atomic",
+    "    // pointer. Upon success, we don't need to do anything. But if",
+    "    // someone else beat us to the punch, then we need to make sure",
+    "    // our newly created value is dropped.",
+    "    let result = self.data.compare_exchange(",
+    "        core::ptr::null_mut(),",
+    "        ptr,",
+    "        Ordering::AcqRel,",
+    "        Ordering::Acquire,",
+    "    );",
+    "    if let Err(old) = result {",
+    "        // SAFETY: We created 'ptr' via Box::into_raw above, so turning",
+    "        // it back into a Box via from_raw is safe.",
+    "        drop(unsafe { Box::from_raw(ptr) });",
+    "        ptr = old;",
+    "    }",
+    "    // SAFETY: We just set the pointer above to a non-null value, even",
+    "    // in the error case, and set it to a fully initialized value",
+    "    // returned by 'create'.",
+    "    unsafe { &*ptr }",
+    "}"
+  ],
+  "size": {
+    "chain": 3,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "let Some(data) = self.poll()",
+          "norm": null,
+          "value": "true",
+          "line": 165,
+          "bound": null
+        },
+        {
+          "cond": "let Err(old) = result",
+          "norm": null,
+          "value": "true",
+          "line": 180,
+          "bound": null
+        }
+      ],
+      "ret": "&*ptr",
+      "path": [
+        0,
+        1,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        14,
+        15,
+        16,
+        17
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "let Some(data) = self.poll()",
+          "norm": null,
+          "value": "true",
+          "line": 165,
+          "bound": null
+        },
+        {
+          "cond": "let Err(old) = result",
+          "norm": null,
+          "value": "true",
+          "line": 180,
+          "bound": null
+        }
+      ],
+      "ret": "&*ptr",
+      "path": [
+        0,
+        1,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        16,
+        17
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "let Some(data) = self.poll()",
+          "norm": null,
+          "value": "true",
+          "line": 165,
+          "bound": null
+        }
+      ],
+      "ret": "data",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        17
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

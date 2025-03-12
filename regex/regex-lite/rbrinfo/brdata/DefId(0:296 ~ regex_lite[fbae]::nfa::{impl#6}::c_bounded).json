@@ -1,0 +1,1016 @@
+{
+  "name": "regex_lite::nfa::{impl#6}::c_bounded",
+  "mod_info": {
+    "name": "nfa",
+    "loc": "regex-lite/src/lib.rs:880:1:880:9"
+  },
+  "visible": false,
+  "loc": "regex-lite/src/nfa.rs:380:5:434:6",
+  "doc": "/// Compile the given expression such that it matches at least `min` times,\n/// but no more than `max` times.\n///\n/// When `greedy` is true, then the preference is for the expression to\n/// match as much as possible. Otherwise, it will match as little as\n/// possible.\n",
+  "code": [
+    "fn c_bounded(",
+    "    &self,",
+    "    hir: &Hir,",
+    "    greedy: bool,",
+    "    min: u32,",
+    "    max: u32,",
+    ") -> Result<ThompsonRef, Error> {",
+    "    let prefix = self.c_exactly(hir, min)?;",
+    "    if min == max {",
+    "        return Ok(prefix);",
+    "    }",
+    "",
+    "    // It is tempting here to compile the rest here as a concatenation",
+    "    // of zero-or-one matches. i.e., for `a{2,5}`, compile it as if it",
+    "    // were `aaa?a?a?`. The problem here is that it leads to this program:",
+    "    //",
+    "    //     >000000: 61 => 01",
+    "    //      000001: 61 => 02",
+    "    //      000002: union(03, 04)",
+    "    //      000003: 61 => 04",
+    "    //      000004: union(05, 06)",
+    "    //      000005: 61 => 06",
+    "    //      000006: union(07, 08)",
+    "    //      000007: 61 => 08",
+    "    //      000008: MATCH",
+    "    //",
+    "    // And effectively, once you hit state 2, the epsilon closure will",
+    "    // include states 3, 5, 6, 7 and 8, which is quite a bit. It is better",
+    "    // to instead compile it like so:",
+    "    //",
+    "    //     >000000: 61 => 01",
+    "    //      000001: 61 => 02",
+    "    //      000002: union(03, 08)",
+    "    //      000003: 61 => 04",
+    "    //      000004: union(05, 08)",
+    "    //      000005: 61 => 06",
+    "    //      000006: union(07, 08)",
+    "    //      000007: 61 => 08",
+    "    //      000008: MATCH",
+    "    //",
+    "    // So that the epsilon closure of state 2 is now just 3 and 8.",
+    "    let empty = self.add_empty()?;",
+    "    let mut prev_end = prefix.end;",
+    "    for _ in min..max {",
+    "        let splits =",
+    "            self.add(State::Splits { targets: vec![], reverse: !greedy })?;",
+    "        let compiled = self.c(hir)?;",
+    "        self.patch(prev_end, splits)?;",
+    "        self.patch(splits, compiled.start)?;",
+    "        self.patch(splits, empty)?;",
+    "        prev_end = compiled.end;",
+    "    }",
+    "    self.patch(prev_end, empty)?;",
+    "    Ok(ThompsonRef { start: prefix.start, end: empty })",
+    "}"
+  ],
+  "size": {
+    "chain": 12,
+    "contra": 2,
+    "min_set": 11
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 387,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        6,
+        7,
+        73,
+        74
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "true",
+          "line": 388,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(prefix)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        73,
+        74
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 421,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        13,
+        15,
+        16,
+        72,
+        73,
+        74
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 421,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 425,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        32,
+        33,
+        70,
+        71,
+        72,
+        73,
+        74
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 421,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 425,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 426,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        27,
+        28,
+        31,
+        34,
+        35,
+        37,
+        39,
+        40,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 421,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 425,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 426,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, splits)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 427,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        27,
+        28,
+        31,
+        34,
+        35,
+        38,
+        41,
+        42,
+        44,
+        46,
+        47,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 421,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 425,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 426,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, splits)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 427,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, compiled.start)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 428,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        27,
+        28,
+        31,
+        34,
+        35,
+        38,
+        41,
+        42,
+        45,
+        48,
+        49,
+        51,
+        53,
+        54,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 421,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 425,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 426,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, splits)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 427,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 428,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, empty)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 429,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        27,
+        28,
+        31,
+        34,
+        35,
+        38,
+        41,
+        42,
+        45,
+        48,
+        49,
+        52,
+        55,
+        56,
+        58,
+        60,
+        61,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 421,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 425,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 426,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, splits)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 427,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 428,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 429,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "false",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, empty)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 432,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        27,
+        28,
+        31,
+        34,
+        35,
+        38,
+        41,
+        42,
+        45,
+        48,
+        49,
+        52,
+        55,
+        56,
+        59,
+        18,
+        19,
+        20,
+        22,
+        24,
+        62,
+        63,
+        65,
+        67,
+        68,
+        71,
+        72,
+        73,
+        74
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 421,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "true",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.add(State::Splits { targets: vec![], reverse: !greedy })?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 425,
+          "bound": null
+        },
+        {
+          "cond": "self.c(hir)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 426,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, splits)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 427,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, compiled.start)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 428,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(splits, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 429,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "false",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 432,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start: prefix.start, end: empty })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        26,
+        27,
+        28,
+        31,
+        34,
+        35,
+        38,
+        41,
+        42,
+        45,
+        48,
+        49,
+        52,
+        55,
+        56,
+        59,
+        18,
+        19,
+        20,
+        22,
+        24,
+        62,
+        63,
+        66,
+        74
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 421,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "false",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, empty)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 432,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        20,
+        22,
+        24,
+        62,
+        63,
+        65,
+        67,
+        68,
+        71,
+        72,
+        73,
+        74
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "self.c_exactly(hir, min)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 387,
+          "bound": null
+        },
+        {
+          "cond": "min == max",
+          "norm": "max == min",
+          "value": "false",
+          "line": 388,
+          "bound": null
+        },
+        {
+          "cond": "self.add_empty()?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 421,
+          "bound": null
+        },
+        {
+          "cond": "_ in min..max",
+          "norm": null,
+          "value": "false",
+          "line": 423,
+          "bound": null
+        },
+        {
+          "cond": "self.patch(prev_end, empty)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 432,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(ThompsonRef { start: prefix.start, end: empty })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        10,
+        11,
+        14,
+        17,
+        18,
+        19,
+        20,
+        22,
+        24,
+        62,
+        63,
+        66,
+        74
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

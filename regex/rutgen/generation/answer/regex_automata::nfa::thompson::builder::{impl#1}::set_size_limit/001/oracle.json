@@ -1,0 +1,195 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let result = builder.set_size_limit(None);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(builder.get_size_limit(), None);",
+          "    ",
+          "    let size_limit = Some(1024);",
+          "    let result = builder.set_size_limit(size_limit);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(builder.get_size_limit(), size_limit);",
+          "    ",
+          "    let size_limit_large = Some(0);",
+          "    let result = builder.set_size_limit(size_limit_large);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(builder.get_size_limit(), size_limit_large);",
+          "    ",
+          "    builder.memory_states = 2048; // simulate memory exhaustion",
+          "    let size_limit_exceed = Some(1024);",
+          "    let result = builder.set_size_limit(size_limit_exceed);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::ExceededSizeLimit);",
+          "    ",
+          "    builder.memory_states = 500; // reset memory usage",
+          "    let result = builder.set_size_limit(Some(1024));",
+          "    assert!(result.is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let result = builder.set_size_limit(None);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(builder.get_size_limit(), None);",
+          "    ",
+          "    let size_limit = Some(1024);",
+          "    let result = builder.set_size_limit(size_limit);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(builder.get_size_limit(), size_limit);",
+          "    ",
+          "    let size_limit_large = Some(0);",
+          "    let result = builder.set_size_limit(size_limit_large);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(builder.get_size_limit(), size_limit_large);",
+          "    ",
+          "    builder.memory_states = 2048; // simulate memory exhaustion",
+          "    let size_limit_exceed = Some(1024);",
+          "    let result = builder.set_size_limit(size_limit_exceed);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::ExceededSizeLimit);",
+          "    ",
+          "    builder.memory_states = 500; // reset memory usage",
+          "    let result = builder.set_size_limit(Some(1024));",
+          "    assert!(result.is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let result = builder.set_size_limit(Some(0));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(BuildError::exceeded_size_limit(0)));",
+          "    ",
+          "    let result = builder.set_size_limit(None);",
+          "    assert_eq!(result, Ok(()));",
+          "    ",
+          "    let initial_memory_usage = builder.memory_usage();",
+          "    builder.set_size_limit(Some(initial_memory_usage + 10)).unwrap();",
+          "    let result = builder.check_size_limit();",
+          "    assert_eq!(result, Ok(()));",
+          "    ",
+          "    builder.set_size_limit(Some(initial_memory_usage)).unwrap();",
+          "    let result = builder.check_size_limit();",
+          "    assert_eq!(result, Ok(()));",
+          "    ",
+          "    builder.set_size_limit(Some(initial_memory_usage - 1)).unwrap();",
+          "    let result = builder.check_size_limit();",
+          "    assert_eq!(result, Err(BuildError::exceeded_size_limit(initial_memory_usage - 1)));"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    let result = builder.set_size_limit(Some(0));",
+          "    assert_eq!(result, Err(BuildError::exceeded_size_limit(0)));",
+          "    ",
+          "    let result = builder.set_size_limit(None);",
+          "    assert_eq!(result, Ok(()));",
+          "    ",
+          "    let initial_memory_usage = builder.memory_usage();",
+          "    builder.set_size_limit(Some(initial_memory_usage + 10)).unwrap();",
+          "    let result = builder.check_size_limit();",
+          "    assert_eq!(result, Ok(()));",
+          "    ",
+          "    builder.set_size_limit(Some(initial_memory_usage)).unwrap();",
+          "    let result = builder.check_size_limit();",
+          "    assert_eq!(result, Ok(()));",
+          "    ",
+          "    builder.set_size_limit(Some(initial_memory_usage - 1)).unwrap();",
+          "    let result = builder.check_size_limit();",
+          "    assert_eq!(result, Err(BuildError::exceeded_size_limit(initial_memory_usage - 1)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.set_size_limit(Some(100)).unwrap();",
+          "    let result = builder.set_size_limit(Some(200));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(()));",
+          "    assert_eq!(builder.size_limit, Some(200));",
+          "    builder.memory_usage = 150;",
+          "    let result = builder.set_size_limit(Some(100));",
+          "    assert_eq!(result, Err(BuildError::exceeded_size_limit(100)));",
+          "    assert_eq!(builder.size_limit, Some(100));",
+          "    builder.memory_usage = 50;",
+          "    let result = builder.set_size_limit(None);",
+          "    assert_eq!(result, Ok(()));",
+          "    assert_eq!(builder.size_limit, None);"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.set_size_limit(Some(100)).unwrap();",
+          "    let result = builder.set_size_limit(Some(200));",
+          "    assert_eq!(result, Ok(()));",
+          "    assert_eq!(builder.size_limit, Some(200));",
+          "    builder.memory_usage = 150;",
+          "    let result = builder.set_size_limit(Some(100));",
+          "    assert_eq!(result, Err(BuildError::exceeded_size_limit(100)));",
+          "    assert_eq!(builder.size_limit, Some(100));",
+          "    builder.memory_usage = 50;",
+          "    let result = builder.set_size_limit(None);",
+          "    assert_eq!(result, Ok(()));",
+          "    assert_eq!(builder.size_limit, None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.set_size_limit(Some(100)).unwrap();",
+          "    builder.set_size_limit(Some(50)).unwrap(); // Assuming current memory usage > 50",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(builder.set_size_limit(Some(100)), Ok(()));",
+          "    assert_eq!(builder.set_size_limit(Some(50)).is_err(), true);",
+          "    assert!(matches!(builder.set_size_limit(Some(50)), Err(BuildError { kind: BuildErrorKind::SizeLimitExceeded })));"
+        ],
+        "code": [
+          "{",
+          "    let mut builder = Builder::new();",
+          "    builder.set_size_limit(Some(100)).unwrap();",
+          "    builder.set_size_limit(Some(50)).unwrap(); // Assuming current memory usage > 50",
+          "    assert_eq!(builder.set_size_limit(Some(100)), Ok(()));",
+          "    assert_eq!(builder.set_size_limit(Some(50)).is_err(), true);",
+          "    assert!(matches!(builder.set_size_limit(Some(50)), Err(BuildError { kind: BuildErrorKind::SizeLimitExceeded })));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

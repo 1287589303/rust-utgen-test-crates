@@ -1,0 +1,456 @@
+{
+  "name": "regex_automata::dfa::automaton::Automaton::try_search_overlapping_fwd",
+  "mod_info": {
+    "name": "dfa::automaton",
+    "loc": "regex-automata/src/dfa/mod.rs:348:1:348:15"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/automaton.rs:1582:5:1600:6",
+  "doc": "/// Executes an overlapping forward search. Matches, if one exists, can be\n/// obtained via the [`OverlappingState::get_match`] method.\n///\n/// This routine is principally only useful when searching for multiple\n/// patterns on inputs where multiple patterns may match the same regions\n/// of text. In particular, callers must preserve the automaton's search\n/// state from prior calls so that the implementation knows where the last\n/// match occurred.\n///\n/// When using this routine to implement an iterator of overlapping\n/// matches, the `start` of the search should always be set to the end\n/// of the last match. If more patterns match at the previous location,\n/// then they will be immediately returned. (This is tracked by the given\n/// overlapping state.) Otherwise, the search continues at the starting\n/// position given.\n///\n/// If for some reason you want the search to forget about its previous\n/// state and restart the search at a particular position, then setting the\n/// state to [`OverlappingState::start`] will accomplish that.\n///\n/// # Errors\n///\n/// This routine errors if the search could not complete. This can occur\n/// in a number of circumstances:\n///\n/// * The configuration of the DFA may permit it to \"quit\" the search.\n/// For example, setting quit bytes or enabling heuristic support for\n/// Unicode word boundaries. The default configuration does not enable any\n/// option that could result in the DFA quitting.\n/// * When the provided `Input` configuration is not supported. For\n/// example, by providing an unsupported anchor mode.\n///\n/// When a search returns an error, callers cannot know whether a match\n/// exists or not.\n///\n/// # Example\n///\n/// This example shows how to run a basic overlapping search with a\n/// [`dense::DFA`](crate::dfa::dense::DFA). Notice that we build the\n/// automaton with a `MatchKind::All` configuration. Overlapping searches\n/// are unlikely to work as one would expect when using the default\n/// `MatchKind::LeftmostFirst` match semantics, since leftmost-first\n/// matching is fundamentally incompatible with overlapping searches.\n/// Namely, overlapping searches need to report matches as they are seen,\n/// where as leftmost-first searches will continue searching even after a\n/// match has been observed in order to find the conventional end position\n/// of the match. More concretely, leftmost-first searches use dead states\n/// to terminate a search after a specific match can no longer be extended.\n/// Overlapping searches instead do the opposite by continuing the search\n/// to find totally new matches (potentially of other patterns).\n///\n/// ```\n/// # if cfg!(miri) { return Ok(()); } // miri takes too long\n/// use regex_automata::{\n///     dfa::{Automaton, OverlappingState, dense},\n///     HalfMatch, Input, MatchKind,\n/// };\n///\n/// let dfa = dense::Builder::new()\n///     .configure(dense::Config::new().match_kind(MatchKind::All))\n///     .build_many(&[r\"[[:word:]]+$\", r\"[[:^space:]]+$\"])?;\n/// let haystack = \"@foo\";\n/// let mut state = OverlappingState::start();\n///\n/// let expected = Some(HalfMatch::must(1, 4));\n/// dfa.try_search_overlapping_fwd(&Input::new(haystack), &mut state)?;\n/// assert_eq!(expected, state.get_match());\n///\n/// // The first pattern also matches at the same position, so re-running\n/// // the search will yield another match. Notice also that the first\n/// // pattern is returned after the second. This is because the second\n/// // pattern begins its match before the first, is therefore an earlier\n/// // match and is thus reported first.\n/// let expected = Some(HalfMatch::must(0, 4));\n/// dfa.try_search_overlapping_fwd(&Input::new(haystack), &mut state)?;\n/// assert_eq!(expected, state.get_match());\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "fn try_search_overlapping_fwd(",
+    "    &self,",
+    "    input: &Input<'_>,",
+    "    state: &mut OverlappingState,",
+    ") -> Result<(), MatchError> {",
+    "    let utf8empty = self.has_empty() && self.is_utf8();",
+    "    search::find_overlapping_fwd(self, input, state)?;",
+    "    match state.get_match() {",
+    "        None => Ok(()),",
+    "        Some(_) if !utf8empty => Ok(()),",
+    "        Some(_) => skip_empty_utf8_splits_overlapping(",
+    "            input,",
+    "            state,",
+    "            |input, state| {",
+    "                search::find_overlapping_fwd(self, input, state)",
+    "            },",
+    "        ),",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 0,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1587,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_fwd(self, input, state)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1588,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        12,
+        25,
+        26,
+        27
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1587,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_fwd(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1588,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1591,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        17,
+        20,
+        21,
+        18,
+        23,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1587,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_fwd(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1588,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 1591,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        17,
+        20,
+        22,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1587,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_fwd(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1588,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        16,
+        19,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1587,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_fwd(self, input, state)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1588,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        9,
+        11,
+        12,
+        25,
+        26,
+        27
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1587,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_fwd(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1588,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1591,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        17,
+        20,
+        21,
+        18,
+        23,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1587,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_fwd(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1588,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 1591,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        17,
+        20,
+        22,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1587,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_fwd(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1588,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1589,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        16,
+        19,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

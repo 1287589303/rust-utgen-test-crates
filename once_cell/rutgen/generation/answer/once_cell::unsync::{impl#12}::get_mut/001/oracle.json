@@ -1,0 +1,283 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct;",
+          "    let mut lazy: Lazy<TestStruct, fn() -> TestStruct> = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);",
+          "    lazy.get_or_init(|| TestStruct);",
+          "    let result_after_init = Lazy::get_mut(&mut lazy);",
+          "    assert!(result_after_init.is_some());",
+          "    assert_eq!(result_after_init.unwrap() as *const _, lazy.cell.get_mut().unwrap() as *const _);",
+          "    assert_eq!(Lazy::get_mut(&mut lazy), result_after_init);"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct;",
+          "    let mut lazy: Lazy<TestStruct, fn() -> TestStruct> = Lazy {",
+          "        cell: OnceCell::new(),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result, None);",
+          "    lazy.get_or_init(|| TestStruct);",
+          "    let result_after_init = Lazy::get_mut(&mut lazy);",
+          "    assert!(result_after_init.is_some());",
+          "    assert_eq!(result_after_init.unwrap() as *const _, lazy.cell.get_mut().unwrap() as *const _);",
+          "    assert_eq!(Lazy::get_mut(&mut lazy), result_after_init);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let mut lazy: Lazy<TestStruct, fn() -> TestStruct> = Lazy {",
+          "        cell: OnceCell::with_value(TestStruct { value: 92 }),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Some(&mut TestStruct { value: 92 }));",
+          "    assert_eq!(lazy.cell.get_mut(), Some(&mut TestStruct { value: 92 }));",
+          "    assert!(lazy.init.get().is_none());",
+          "    lazy.cell.take();",
+          "    assert_eq!(lazy.cell.get(), None);"
+        ],
+        "code": [
+          "{",
+          "    struct TestStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let mut lazy: Lazy<TestStruct, fn() -> TestStruct> = Lazy {",
+          "        cell: OnceCell::with_value(TestStruct { value: 92 }),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result, Some(&mut TestStruct { value: 92 }));",
+          "    assert_eq!(lazy.cell.get_mut(), Some(&mut TestStruct { value: 92 }));",
+          "    assert!(lazy.init.get().is_none());",
+          "    lazy.cell.take();",
+          "    assert_eq!(lazy.cell.get(), None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut lazy: Lazy<i32, fn() -> i32> = Lazy {",
+          "        cell: OnceCell::with_value(i32::MIN),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Some(&mut i32::MIN));",
+          "    assert_eq!(*lazy.cell.get_mut().unwrap(), i32::MIN);",
+          "    assert!(lazy.init.get().is_none());",
+          "    assert_eq!(Lazy::get_mut(&mut lazy), Some(&mut i32::MIN));",
+          "    lazy.cell.set(i32::MAX).unwrap();",
+          "    assert_eq!(Lazy::get_mut(&mut lazy), Some(&mut i32::MAX));",
+          "    assert!(Lazy::get_mut(&mut lazy).is_some());",
+          "    assert!(Lazy::get(&lazy).is_some());"
+        ],
+        "code": [
+          "{",
+          "    let mut lazy: Lazy<i32, fn() -> i32> = Lazy {",
+          "        cell: OnceCell::with_value(i32::MIN),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result, Some(&mut i32::MIN));",
+          "    assert_eq!(*lazy.cell.get_mut().unwrap(), i32::MIN);",
+          "    assert!(lazy.init.get().is_none());",
+          "    assert_eq!(Lazy::get_mut(&mut lazy), Some(&mut i32::MIN));",
+          "    lazy.cell.set(i32::MAX).unwrap();",
+          "    assert_eq!(Lazy::get_mut(&mut lazy), Some(&mut i32::MAX));",
+          "    assert!(Lazy::get_mut(&mut lazy).is_some());",
+          "    assert!(Lazy::get(&lazy).is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut lazy: Lazy<i32, fn() -> i32> = Lazy {",
+          "        cell: OnceCell::with_value(i32::MAX),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_some(), true);",
+          "    assert_eq!(*result.unwrap(), i32::MAX);",
+          "    lazy.cell.set(0).unwrap();",
+          "    assert_eq!(Lazy::get_mut(&mut lazy), Some(&mut 0));",
+          "    assert_eq!(Lazy::get_mut(&mut lazy).is_none(), false);",
+          "    assert_eq!(Lazy::get_mut(&mut lazy).as_mut().unwrap(), &mut 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut lazy: Lazy<i32, fn() -> i32> = Lazy {",
+          "        cell: OnceCell::with_value(i32::MAX),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result.is_some(), true);",
+          "    assert_eq!(*result.unwrap(), i32::MAX);",
+          "    lazy.cell.set(0).unwrap();",
+          "    assert_eq!(Lazy::get_mut(&mut lazy), Some(&mut 0));",
+          "    assert_eq!(Lazy::get_mut(&mut lazy).is_none(), false);",
+          "    assert_eq!(Lazy::get_mut(&mut lazy).as_mut().unwrap(), &mut 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut lazy: Lazy<String, fn() -> String> = Lazy {",
+          "        cell: OnceCell::with_value(String::new()),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Some(&mut String::new()));",
+          "    lazy.set(\"Hello\".to_string()).unwrap();",
+          "    let result_after_set = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result_after_set, Some(&mut \"Hello\".to_string()));",
+          "    let result_after_set_again = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result_after_set_again, Some(&mut \"Hello\".to_string()));",
+          "    lazy.take();",
+          "    let result_after_take = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result_after_take, None);",
+          "    let result_after_instantiate = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result_after_instantiate, None);"
+        ],
+        "code": [
+          "{",
+          "    let mut lazy: Lazy<String, fn() -> String> = Lazy {",
+          "        cell: OnceCell::with_value(String::new()),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result, Some(&mut String::new()));",
+          "    lazy.set(\"Hello\".to_string()).unwrap();",
+          "    let result_after_set = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result_after_set, Some(&mut \"Hello\".to_string()));",
+          "    let result_after_set_again = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result_after_set_again, Some(&mut \"Hello\".to_string()));",
+          "    lazy.take();",
+          "    let result_after_take = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result_after_take, None);",
+          "    let result_after_instantiate = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result_after_instantiate, None);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct CustomStruct {",
+          "        name: &'static str,",
+          "        value: f64,",
+          "    }",
+          "",
+          "    let mut lazy: Lazy<CustomStruct, fn() -> CustomStruct> = Lazy {",
+          "        cell: OnceCell::with_value(CustomStruct { name: \"Test\", value: 3.14 }),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_none(), true);",
+          "    lazy.force_mut();",
+          "    assert_eq!(result.is_some(), true);",
+          "    let value = result.unwrap();",
+          "    assert_eq!(value.name, \"Test\");",
+          "    assert_eq!(value.value, 3.14);",
+          "    assert_eq!(Lazy::get_mut(&mut lazy).is_some(), true);",
+          "    value.value = 6.28;",
+          "    assert_eq!(Lazy::get_mut(&mut lazy).unwrap().value, 6.28);",
+          "    assert_eq!(lazy.cell.get().unwrap().value, 6.28);"
+        ],
+        "code": [
+          "{",
+          "    struct CustomStruct {",
+          "        name: &'static str,",
+          "        value: f64,",
+          "    }",
+          "",
+          "    let mut lazy: Lazy<CustomStruct, fn() -> CustomStruct> = Lazy {",
+          "        cell: OnceCell::with_value(CustomStruct { name: \"Test\", value: 3.14 }),",
+          "        init: Cell::new(None),",
+          "    };",
+          "    ",
+          "    let result = Lazy::get_mut(&mut lazy);",
+          "    assert_eq!(result.is_none(), true);",
+          "    lazy.force_mut();",
+          "    assert_eq!(result.is_some(), true);",
+          "    let value = result.unwrap();",
+          "    assert_eq!(value.name, \"Test\");",
+          "    assert_eq!(value.value, 3.14);",
+          "    assert_eq!(Lazy::get_mut(&mut lazy).is_some(), true);",
+          "    value.value = 6.28;",
+          "    assert_eq!(Lazy::get_mut(&mut lazy).unwrap().value, 6.28);",
+          "    assert_eq!(lazy.cell.get().unwrap().value, 6.28);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

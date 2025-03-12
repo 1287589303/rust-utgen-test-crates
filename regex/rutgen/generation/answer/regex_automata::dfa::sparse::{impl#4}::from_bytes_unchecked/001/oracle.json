@@ -1,0 +1,148 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = &[0; 8]; // Does not match the expected label",
+          "    unsafe {",
+          "        let _ = DFA::from_bytes_unchecked(input);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(DFA::from_bytes_unchecked(&[0; 8]), Err(_)));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = &[0; 8]; // Does not match the expected label",
+          "    unsafe {",
+          "        let _ = DFA::from_bytes_unchecked(input);",
+          "    }",
+          "    assert!(matches!(DFA::from_bytes_unchecked(&[0; 8]), Err(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"invalid-label\\x00\\x00\\x00\\x00\"; // Incorrect label, non-matching",
+          "    unsafe {",
+          "        let _ = DFA::from_bytes_unchecked(input);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(std::panic::catch_unwind(|| { unsafe { DFA::from_bytes_unchecked(b\"invalid-label\\x00\\x00\\x00\\x00\") } }).is_err(), true);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"invalid-label\\x00\\x00\\x00\\x00\"; // Incorrect label, non-matching",
+          "    unsafe {",
+          "        let _ = DFA::from_bytes_unchecked(input);",
+          "    }",
+          "    assert_eq!(std::panic::catch_unwind(|| { unsafe { DFA::from_bytes_unchecked(b\"invalid-label\\x00\\x00\\x00\\x00\") } }).is_err(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"\"; // Empty slice, will result in label check failure",
+          "    unsafe {",
+          "        let _ = DFA::from_bytes_unchecked(input);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(DFA::from_bytes_unchecked(b\"\"), Err(DeserializeError::generic(\"could not find properly sized label at start of serialized object\")));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"\"; // Empty slice, will result in label check failure",
+          "    unsafe {",
+          "        let _ = DFA::from_bytes_unchecked(input);",
+          "    }",
+          "    assert_eq!(DFA::from_bytes_unchecked(b\"\"), Err(DeserializeError::generic(\"could not find properly sized label at start of serialized object\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"rust-regex\"; // Incomplete label without null terminator",
+          "    unsafe {",
+          "        let _ = DFA::from_bytes_unchecked(input);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(wire::read_label(&slice[0..], LABEL).is_err());",
+          "    assert!(wire::read_label(&slice[0..].is_none()));",
+          "    assert!(unsafe { DFA::from_bytes_unchecked(b\"rust-regex\").is_err() });"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"rust-regex\"; // Incomplete label without null terminator",
+          "    unsafe {",
+          "        let _ = DFA::from_bytes_unchecked(input);",
+          "    }",
+          "    assert!(wire::read_label(&slice[0..], LABEL).is_err());",
+          "    assert!(wire::read_label(&slice[0..].is_none()));",
+          "    assert!(unsafe { DFA::from_bytes_unchecked(b\"rust-regex\").is_err() });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = &[2, 3]; // Less than 8 bytes, will fail to read label",
+          "    unsafe {",
+          "        let _ = DFA::from_bytes_unchecked(input);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(wire::read_label(&[2, 3], LABEL), Err(DeserializeError::generic(\"could not find properly sized label at start of serialized object\")));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = &[2, 3]; // Less than 8 bytes, will fail to read label",
+          "    unsafe {",
+          "        let _ = DFA::from_bytes_unchecked(input);",
+          "    }",
+          "    assert_eq!(wire::read_label(&[2, 3], LABEL), Err(DeserializeError::generic(\"could not find properly sized label at start of serialized object\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

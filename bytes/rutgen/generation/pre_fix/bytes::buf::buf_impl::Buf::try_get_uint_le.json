@@ -1,0 +1,1334 @@
+{
+  "name": "bytes::buf::buf_impl::Buf::try_get_uint_le",
+  "mod_info": {
+    "name": "buf::buf_impl",
+    "loc": "src/buf/mod.rs:17:1:17:14"
+  },
+  "visible": true,
+  "loc": "src/buf/buf_impl.rs:2007:5:2009:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: buf.get_mut(..$len_to_read) matches Some(subslice) at line 50 is true\n",
+        "precondition: $this.try_copy_to_slice(subslice)? at line 55 is Err/None\n"
+      ],
+      "input_infer": "nbytes: 1 to 8 (inclusive) and remaining buffer length >= nbytes, or remaining buffer length < nbytes, and ensure nbytes is always valid (1 to 8) to avoid panic on exceeding limit\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            TestBuf { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn remaining(&self) -> usize {",
+                "            self.data.len() - self.position",
+                "        }",
+                "",
+                "        fn chunk(&self) -> &[u8] {",
+                "            &self.data[self.position..]",
+                "        }",
+                "        ",
+                "        fn advance(&mut self, cnt: usize) {",
+                "            self.position += cnt;",
+                "        }",
+                "        ",
+                "        fn try_get_uint_le(&mut self, nbytes: usize) -> Result<u64, TryGetError> {",
+                "            if nbytes > 8 {",
+                "                panic!(\"nbytes cannot be greater than 8\");",
+                "            }",
+                "            if self.remaining() < nbytes {",
+                "                return Err(TryGetError { requested: nbytes, available: self.remaining() });",
+                "            }",
+                "            let value = self.chunk()[..nbytes].iter().fold(0u64, |acc, &b| acc | (b as u64) << (8 * acc.count_ones() as usize));",
+                "            self.advance(nbytes);",
+                "            Ok(value)",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(vec![0x01]);",
+                "    let _ = buf.try_get_uint_le(1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x01_u64), buf.try_get_uint_le(1));",
+                "    assert_eq!(0, buf.remaining());",
+                "    assert_eq!(Err(TryGetError { requested: 2, available: 0 }), buf.try_get_uint_le(2));",
+                "    assert_eq!(Err(TryGetError { requested: 5, available: 1 }), buf.try_get_uint_le(5));",
+                "    let mut buf = TestBuf::new(vec![0x03, 0x02, 0x01]);",
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(3, buf.remaining());",
+                "    assert_eq!(Err(TryGetError { requested: 4, available: 3 }), buf.try_get_uint_le(4));",
+                "    let mut buf = TestBuf::new(vec![0x03, 0x02, 0x01, 0x04, 0x05]);",
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    buf.advance(2);",
+                "    assert_eq!(0, buf.remaining());",
+                "    assert_eq!(Err(TryGetError { requested: 1, available: 0 }), buf.try_get_uint_le(1));",
+                "    assert_eq!(Err(TryGetError { requested: 8, available: 3 }), buf.try_get_uint_le(8));",
+                "    assert_eq!(Err(TryGetError { requested: 5, available: 2 }), buf.try_get_uint_le(5));",
+                "    assert_eq!(Ok(0x0405_u64), buf.try_get_uint_le(2));"
+              ],
+              "code": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            TestBuf { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn remaining(&self) -> usize {",
+                "            self.data.len() - self.position",
+                "        }",
+                "",
+                "        fn chunk(&self) -> &[u8] {",
+                "            &self.data[self.position..]",
+                "        }",
+                "        ",
+                "        fn advance(&mut self, cnt: usize) {",
+                "            self.position += cnt;",
+                "        }",
+                "        ",
+                "        fn try_get_uint_le(&mut self, nbytes: usize) -> Result<u64, TryGetError> {",
+                "            if nbytes > 8 {",
+                "                panic!(\"nbytes cannot be greater than 8\");",
+                "            }",
+                "            if self.remaining() < nbytes {",
+                "                return Err(TryGetError { requested: nbytes, available: self.remaining() });",
+                "            }",
+                "            let value = self.chunk()[..nbytes].iter().fold(0u64, |acc, &b| acc | (b as u64) << (8 * acc.count_ones() as usize));",
+                "            self.advance(nbytes);",
+                "            Ok(value)",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(vec![0x01]);",
+                "    let _ = buf.try_get_uint_le(1);",
+                "    assert_eq!(Ok(0x01_u64), buf.try_get_uint_le(1));",
+                "    assert_eq!(0, buf.remaining());",
+                "    assert_eq!(Err(TryGetError { requested: 2, available: 0 }), buf.try_get_uint_le(2));",
+                "    assert_eq!(Err(TryGetError { requested: 5, available: 1 }), buf.try_get_uint_le(5));",
+                "    let mut buf = TestBuf::new(vec![0x03, 0x02, 0x01]);",
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(3, buf.remaining());",
+                "    assert_eq!(Err(TryGetError { requested: 4, available: 3 }), buf.try_get_uint_le(4));",
+                "    let mut buf = TestBuf::new(vec![0x03, 0x02, 0x01, 0x04, 0x05]);",
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    buf.advance(2);",
+                "    assert_eq!(0, buf.remaining());",
+                "    assert_eq!(Err(TryGetError { requested: 1, available: 0 }), buf.try_get_uint_le(1));",
+                "    assert_eq!(Err(TryGetError { requested: 8, available: 3 }), buf.try_get_uint_le(8));",
+                "    assert_eq!(Err(TryGetError { requested: 5, available: 2 }), buf.try_get_uint_le(5));",
+                "    assert_eq!(Ok(0x0405_u64), buf.try_get_uint_le(2));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            TestBuf { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn remaining(&self) -> usize {",
+                "            self.data.len() - self.position",
+                "        }",
+                "",
+                "        fn chunk(&self) -> &[u8] {",
+                "            &self.data[self.position..]",
+                "        }",
+                "        ",
+                "        fn advance(&mut self, cnt: usize) {",
+                "            self.position += cnt;",
+                "        }",
+                "        ",
+                "        fn try_get_uint_le(&mut self, nbytes: usize) -> Result<u64, TryGetError> {",
+                "            if nbytes > 8 {",
+                "                panic!(\"nbytes cannot be greater than 8\");",
+                "            }",
+                "            if self.remaining() < nbytes {",
+                "                return Err(TryGetError { requested: nbytes, available: self.remaining() });",
+                "            }",
+                "            let value = self.chunk()[..nbytes].iter().fold(0u64, |acc, &b| acc | (b as u64) << (8 * acc.count_ones() as usize));",
+                "            self.advance(nbytes);",
+                "            Ok(value)",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(vec![0x01, 0x02]);",
+                "    let _ = buf.try_get_uint_le(2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x0102_u64), buf.try_get_uint_le(2));",
+                "    assert_eq!(0, buf.remaining());",
+                "    assert_eq!(Err(TryGetError { requested: 3, available: 0 }), buf.try_get_uint_le(3));",
+                "    buf.advance(0); // Ensure advancing does not lead to unexpected behavior.",
+                "    let mut buf = TestBuf::new(vec![0x01, 0x02, 0x03, 0x04]);",
+                "    assert_eq!(Ok(0x04030201_u64), buf.try_get_uint_le(4));",
+                "    assert_eq!(2, buf.remaining());",
+                "    assert!(std::panic::catch_unwind(|| buf.try_get_uint_le(9)).is_err()); // nbytes > 8 should panic",
+                "    let mut buf = TestBuf::new(vec![0x01, 0x02, 0x03]);",
+                "    assert_eq!(Err(TryGetError { requested: 4, available: 3 }), buf.try_get_uint_le(4));",
+                "    assert_eq!(3, buf.remaining());"
+              ],
+              "code": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            TestBuf { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn remaining(&self) -> usize {",
+                "            self.data.len() - self.position",
+                "        }",
+                "",
+                "        fn chunk(&self) -> &[u8] {",
+                "            &self.data[self.position..]",
+                "        }",
+                "        ",
+                "        fn advance(&mut self, cnt: usize) {",
+                "            self.position += cnt;",
+                "        }",
+                "        ",
+                "        fn try_get_uint_le(&mut self, nbytes: usize) -> Result<u64, TryGetError> {",
+                "            if nbytes > 8 {",
+                "                panic!(\"nbytes cannot be greater than 8\");",
+                "            }",
+                "            if self.remaining() < nbytes {",
+                "                return Err(TryGetError { requested: nbytes, available: self.remaining() });",
+                "            }",
+                "            let value = self.chunk()[..nbytes].iter().fold(0u64, |acc, &b| acc | (b as u64) << (8 * acc.count_ones() as usize));",
+                "            self.advance(nbytes);",
+                "            Ok(value)",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(vec![0x01, 0x02]);",
+                "    let _ = buf.try_get_uint_le(2);",
+                "    assert_eq!(Ok(0x0102_u64), buf.try_get_uint_le(2));",
+                "    assert_eq!(0, buf.remaining());",
+                "    assert_eq!(Err(TryGetError { requested: 3, available: 0 }), buf.try_get_uint_le(3));",
+                "    buf.advance(0); // Ensure advancing does not lead to unexpected behavior.",
+                "    let mut buf = TestBuf::new(vec![0x01, 0x02, 0x03, 0x04]);",
+                "    assert_eq!(Ok(0x04030201_u64), buf.try_get_uint_le(4));",
+                "    assert_eq!(2, buf.remaining());",
+                "    assert!(std::panic::catch_unwind(|| buf.try_get_uint_le(9)).is_err()); // nbytes > 8 should panic",
+                "    let mut buf = TestBuf::new(vec![0x01, 0x02, 0x03]);",
+                "    assert_eq!(Err(TryGetError { requested: 4, available: 3 }), buf.try_get_uint_le(4));",
+                "    assert_eq!(3, buf.remaining());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            TestBuf { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn remaining(&self) -> usize {",
+                "            self.data.len() - self.position",
+                "        }",
+                "",
+                "        fn chunk(&self) -> &[u8] {",
+                "            &self.data[self.position..]",
+                "        }",
+                "        ",
+                "        fn advance(&mut self, cnt: usize) {",
+                "            self.position += cnt;",
+                "        }",
+                "        ",
+                "        fn try_get_uint_le(&mut self, nbytes: usize) -> Result<u64, TryGetError> {",
+                "            if nbytes > 8 {",
+                "                panic!(\"nbytes cannot be greater than 8\");",
+                "            }",
+                "            if self.remaining() < nbytes {",
+                "                return Err(TryGetError { requested: nbytes, available: self.remaining() });",
+                "            }",
+                "            let value = self.chunk()[..nbytes].iter().fold(0u64, |acc, &b| acc | (b as u64) << (8 * acc.count_ones() as usize));",
+                "            self.advance(nbytes);",
+                "            Ok(value)",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(vec![0x01, 0x02, 0x03]);",
+                "    let _ = buf.try_get_uint_le(3);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(buf.try_get_uint_le(3), Ok(0x010203_u64));",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    assert_eq!(buf.try_get_uint_le(4), Err(TryGetError { requested: 4, available: 0 }));",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    panic_does_not_fit(8, nbytes);"
+              ],
+              "code": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            TestBuf { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn remaining(&self) -> usize {",
+                "            self.data.len() - self.position",
+                "        }",
+                "",
+                "        fn chunk(&self) -> &[u8] {",
+                "            &self.data[self.position..]",
+                "        }",
+                "        ",
+                "        fn advance(&mut self, cnt: usize) {",
+                "            self.position += cnt;",
+                "        }",
+                "        ",
+                "        fn try_get_uint_le(&mut self, nbytes: usize) -> Result<u64, TryGetError> {",
+                "            if nbytes > 8 {",
+                "                panic!(\"nbytes cannot be greater than 8\");",
+                "            }",
+                "            if self.remaining() < nbytes {",
+                "                return Err(TryGetError { requested: nbytes, available: self.remaining() });",
+                "            }",
+                "            let value = self.chunk()[..nbytes].iter().fold(0u64, |acc, &b| acc | (b as u64) << (8 * acc.count_ones() as usize));",
+                "            self.advance(nbytes);",
+                "            Ok(value)",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(vec![0x01, 0x02, 0x03]);",
+                "    let _ = buf.try_get_uint_le(3);",
+                "    assert_eq!(buf.try_get_uint_le(3), Ok(0x010203_u64));",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    assert_eq!(buf.try_get_uint_le(4), Err(TryGetError { requested: 4, available: 0 }));",
+                "    assert_eq!(buf.remaining(), 0);",
+                "    panic_does_not_fit(8, nbytes);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            TestBuf { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn remaining(&self) -> usize {",
+                "            self.data.len() - self.position",
+                "        }",
+                "",
+                "        fn chunk(&self) -> &[u8] {",
+                "            &self.data[self.position..]",
+                "        }",
+                "        ",
+                "        fn advance(&mut self, cnt: usize) {",
+                "            self.position += cnt;",
+                "        }",
+                "        ",
+                "        fn try_get_uint_le(&mut self, nbytes: usize) -> Result<u64, TryGetError> {",
+                "            if nbytes > 8 {",
+                "                panic!(\"nbytes cannot be greater than 8\");",
+                "            }",
+                "            if self.remaining() < nbytes {",
+                "                return Err(TryGetError { requested: nbytes, available: self.remaining() });",
+                "            }",
+                "            let value = self.chunk()[..nbytes].iter().fold(0u64, |acc, &b| acc | (b as u64) << (8 * acc.count_ones() as usize));",
+                "            self.advance(nbytes);",
+                "            Ok(value)",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(vec![0x01, 0x02]);",
+                "    let _ = buf.try_get_uint_le(4);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(buf.remaining(), 2);",
+                "    assert_eq!(buf.try_get_uint_le(4), Err(TryGetError { requested: 4, available: 2 }));",
+                "    buf.advance(2);",
+                "    let mut buf2 = TestBuf::new(vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06]);",
+                "    assert_eq!(buf2.try_get_uint_le(3), Ok(0x04030201_u64));",
+                "    assert_eq!(buf2.remaining(), 3);",
+                "    assert_eq!(buf2.try_get_uint_le(4), Err(TryGetError { requested: 4, available: 3 }));",
+                "    assert_eq!(buf2.try_get_uint_le(8), Err(TryGetError { requested: 8, available: 3 }));",
+                "    let mut buf3 = TestBuf::new(vec![0x01, 0x02, 0x03, 0x04]);",
+                "    assert_eq!(buf3.try_get_uint_le(8), Err(TryGetError { requested: 8, available: 4 }));",
+                "    buf3.advance(4);",
+                "    assert_eq!(buf3.try_get_uint_le(2), Ok(0x0201_u64));"
+              ],
+              "code": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            TestBuf { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn remaining(&self) -> usize {",
+                "            self.data.len() - self.position",
+                "        }",
+                "",
+                "        fn chunk(&self) -> &[u8] {",
+                "            &self.data[self.position..]",
+                "        }",
+                "        ",
+                "        fn advance(&mut self, cnt: usize) {",
+                "            self.position += cnt;",
+                "        }",
+                "        ",
+                "        fn try_get_uint_le(&mut self, nbytes: usize) -> Result<u64, TryGetError> {",
+                "            if nbytes > 8 {",
+                "                panic!(\"nbytes cannot be greater than 8\");",
+                "            }",
+                "            if self.remaining() < nbytes {",
+                "                return Err(TryGetError { requested: nbytes, available: self.remaining() });",
+                "            }",
+                "            let value = self.chunk()[..nbytes].iter().fold(0u64, |acc, &b| acc | (b as u64) << (8 * acc.count_ones() as usize));",
+                "            self.advance(nbytes);",
+                "            Ok(value)",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(vec![0x01, 0x02]);",
+                "    let _ = buf.try_get_uint_le(4);",
+                "    assert_eq!(buf.remaining(), 2);",
+                "    assert_eq!(buf.try_get_uint_le(4), Err(TryGetError { requested: 4, available: 2 }));",
+                "    buf.advance(2);",
+                "    let mut buf2 = TestBuf::new(vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06]);",
+                "    assert_eq!(buf2.try_get_uint_le(3), Ok(0x04030201_u64));",
+                "    assert_eq!(buf2.remaining(), 3);",
+                "    assert_eq!(buf2.try_get_uint_le(4), Err(TryGetError { requested: 4, available: 3 }));",
+                "    assert_eq!(buf2.try_get_uint_le(8), Err(TryGetError { requested: 8, available: 3 }));",
+                "    let mut buf3 = TestBuf::new(vec![0x01, 0x02, 0x03, 0x04]);",
+                "    assert_eq!(buf3.try_get_uint_le(8), Err(TryGetError { requested: 8, available: 4 }));",
+                "    buf3.advance(4);",
+                "    assert_eq!(buf3.try_get_uint_le(2), Ok(0x0201_u64));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            TestBuf { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn remaining(&self) -> usize {",
+                "            self.data.len() - self.position",
+                "        }",
+                "",
+                "        fn chunk(&self) -> &[u8] {",
+                "            &self.data[self.position..]",
+                "        }",
+                "        ",
+                "        fn advance(&mut self, cnt: usize) {",
+                "            self.position += cnt;",
+                "        }",
+                "        ",
+                "        fn try_get_uint_le(&mut self, nbytes: usize) -> Result<u64, TryGetError> {",
+                "            if nbytes > 8 {",
+                "                panic!(\"nbytes cannot be greater than 8\");",
+                "            }",
+                "            if self.remaining() < nbytes {",
+                "                return Err(TryGetError { requested: nbytes, available: self.remaining() });",
+                "            }",
+                "            let value = self.chunk()[..nbytes].iter().fold(0u64, |acc, &b| acc | (b as u64) << (8 * acc.count_ones() as usize));",
+                "            self.advance(nbytes);",
+                "            Ok(value)",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(vec![0; 4]);",
+                "    let _ = buf.try_get_uint_le(9);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Err(TryGetError { requested: 9, available: 4 }), buf.try_get_uint_le(9));",
+                "    assert_eq!(4, buf.remaining());",
+                "    assert!(std::panic::catch_unwind(|| { buf.try_get_uint_le(9); }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    struct TestBuf {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl TestBuf {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            TestBuf { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn remaining(&self) -> usize {",
+                "            self.data.len() - self.position",
+                "        }",
+                "",
+                "        fn chunk(&self) -> &[u8] {",
+                "            &self.data[self.position..]",
+                "        }",
+                "        ",
+                "        fn advance(&mut self, cnt: usize) {",
+                "            self.position += cnt;",
+                "        }",
+                "        ",
+                "        fn try_get_uint_le(&mut self, nbytes: usize) -> Result<u64, TryGetError> {",
+                "            if nbytes > 8 {",
+                "                panic!(\"nbytes cannot be greater than 8\");",
+                "            }",
+                "            if self.remaining() < nbytes {",
+                "                return Err(TryGetError { requested: nbytes, available: self.remaining() });",
+                "            }",
+                "            let value = self.chunk()[..nbytes].iter().fold(0u64, |acc, &b| acc | (b as u64) << (8 * acc.count_ones() as usize));",
+                "            self.advance(nbytes);",
+                "            Ok(value)",
+                "        }",
+                "    }",
+                "",
+                "    let mut buf = TestBuf::new(vec![0; 4]);",
+                "    let _ = buf.try_get_uint_le(9);",
+                "    assert_eq!(Err(TryGetError { requested: 9, available: 4 }), buf.try_get_uint_le(9));",
+                "    assert_eq!(4, buf.remaining());",
+                "    assert!(std::panic::catch_unwind(|| { buf.try_get_uint_le(9); }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: buf.get_mut(..$len_to_read) matches Some(subslice) at line 50 is true\n",
+        "precondition: $this.try_copy_to_slice(subslice)? at line 55 is Ok/Some\n",
+        "expected return value/type: Ok($typ::from_le_bytes(buf))\n"
+      ],
+      "input_infer": "nbytes in range [1, 8], buf must have at least nbytes available and should be a subslice of a buffer with valid data for little-endian conversion\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut &b\"\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x01_u64), buf.try_get_uint_le(1));",
+                "    assert_eq!(5, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 2, available: 1}), buf.try_get_uint_le(2));",
+                "    assert_eq!(5, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 9, available: 6}), buf.try_get_uint_le(9));",
+                "    assert_eq!(6, buf.remaining());",
+                "    assert!(std::panic::catch_unwind(|| { buf.try_get_uint_le(9); }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut &b\"\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(1);",
+                "    assert_eq!(Ok(0x01_u64), buf.try_get_uint_le(1));",
+                "    assert_eq!(5, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 2, available: 1}), buf.try_get_uint_le(2));",
+                "    assert_eq!(5, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 9, available: 6}), buf.try_get_uint_le(9));",
+                "    assert_eq!(6, buf.remaining());",
+                "    assert!(std::panic::catch_unwind(|| { buf.try_get_uint_le(9); }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut &b\"\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x0102_u64), result);",
+                "    assert_eq!(5, buf.remaining());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut &b\"\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(2);",
+                "    assert_eq!(Ok(0x0102_u64), result);",
+                "    assert_eq!(5, buf.remaining());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut &b\"\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(3);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x010203_u64), result);",
+                "    assert_eq!(6, buf.remaining());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut &b\"\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(3);",
+                "    assert_eq!(Ok(0x010203_u64), result);",
+                "    assert_eq!(6, buf.remaining());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut &b\"\\x04\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(4);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Ok(0x01020304_u64));",
+                "    assert_eq!(buf.remaining(), 6);",
+                "    assert_eq!(buf.chunk(), &b\" hello\"[..]);",
+                "    assert!(buf.has_remaining());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut &b\"\\x04\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(4);",
+                "    assert_eq!(result, Ok(0x01020304_u64));",
+                "    assert_eq!(buf.remaining(), 6);",
+                "    assert_eq!(buf.chunk(), &b\" hello\"[..]);",
+                "    assert!(buf.has_remaining());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut &b\"\\x05\\x04\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(5);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x01020304_u64), buf.try_get_uint_le(5));",
+                "    assert_eq!(10, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 6, available: 5}), buf.try_get_uint_le(6));",
+                "    assert_eq!(5, buf.remaining());",
+                "    assert!(std::panic::catch_unwind(|| buf.try_get_uint_le(9)).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut &b\"\\x05\\x04\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(5);",
+                "    assert_eq!(Ok(0x01020304_u64), buf.try_get_uint_le(5));",
+                "    assert_eq!(10, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 6, available: 5}), buf.try_get_uint_le(6));",
+                "    assert_eq!(5, buf.remaining());",
+                "    assert!(std::panic::catch_unwind(|| buf.try_get_uint_le(9)).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut &b\"\\x06\\x05\\x04\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(6);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x010203040506_u64), result);",
+                "    assert_eq!(buf.remaining(), 6);",
+                "    assert!(buf.chunk() == b\" hello\");",
+                "    assert!(buf.remaining() == 6);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut &b\"\\x06\\x05\\x04\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(6);",
+                "    assert_eq!(Ok(0x010203040506_u64), result);",
+                "    assert_eq!(buf.remaining(), 6);",
+                "    assert!(buf.chunk() == b\" hello\");",
+                "    assert!(buf.remaining() == 6);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut &b\"\\x07\\x06\\x05\\x04\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(7);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x01020304050607_u64), buf.try_get_uint_le(7));",
+                "    assert_eq!(9, buf.remaining());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut &b\"\\x07\\x06\\x05\\x04\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(7);",
+                "    assert_eq!(Ok(0x01020304050607_u64), buf.try_get_uint_le(7));",
+                "    assert_eq!(9, buf.remaining());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut &b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(8);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x01020304050608_u64), buf.try_get_uint_le(8));",
+                "    assert_eq!(6, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 9, available: 8}), buf.try_get_uint_le(9));",
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(3, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 4, available: 3}), buf.try_get_uint_le(4));",
+                "    assert_eq!(Ok(0_u64), buf.try_get_uint_le(0));"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut &b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\\x01 hello\"[..];",
+                "    let result = buf.try_get_uint_le(8);",
+                "    assert_eq!(Ok(0x01020304050608_u64), buf.try_get_uint_le(8));",
+                "    assert_eq!(6, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 9, available: 8}), buf.try_get_uint_le(9));",
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(3, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 4, available: 3}), buf.try_get_uint_le(4));",
+                "    assert_eq!(Ok(0_u64), buf.try_get_uint_le(0));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut &b\"\\x01\\x02\\x03\"[..];",
+                "    let result = buf.try_get_uint_le(4);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Err(TryGetError { requested: 4, available: 3 }), result);",
+                "    assert_eq!(3, buf.remaining());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut &b\"\\x01\\x02\\x03\"[..];",
+                "    let result = buf.try_get_uint_le(4);",
+                "    assert_eq!(Err(TryGetError { requested: 4, available: 3 }), result);",
+                "    assert_eq!(3, buf.remaining());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: buf.get_mut(..$len_to_read) matches None at line 50 is true\n"
+      ],
+      "input_infer": "0 < nbytes <= 8, buf.remaining() >= nbytes for successful case, buf.remaining() < nbytes for error case\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(1);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(1_u64), buf.try_get_uint_le(1));",
+                "    assert_eq!(0, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 2, available: 0}), buf.try_get_uint_le(2));",
+                "    assert_eq!(1, buf.remaining());",
+                "    assert!(std::panic::catch_unwind(|| { buf.try_get_uint_le(9); }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(1);",
+                "    assert_eq!(Ok(1_u64), buf.try_get_uint_le(1));",
+                "    assert_eq!(0, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 2, available: 0}), buf.try_get_uint_le(2));",
+                "    assert_eq!(1, buf.remaining());",
+                "    assert!(std::panic::catch_unwind(|| { buf.try_get_uint_le(9); }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x0102_u64), buf.try_get_uint_le(2));",
+                "    assert_eq!(0, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 3, available: 0}), buf.try_get_uint_le(3));",
+                "    assert_eq!(1, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 5, available: 0}), buf.try_get_uint_le(5));",
+                "    assert!(std::panic::catch_unwind(|| { buf.try_get_uint_le(9); }).is_err());",
+                "    assert_eq!(buf.remaining(), 0);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(2);",
+                "    assert_eq!(Ok(0x0102_u64), buf.try_get_uint_le(2));",
+                "    assert_eq!(0, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 3, available: 0}), buf.try_get_uint_le(3));",
+                "    assert_eq!(1, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 5, available: 0}), buf.try_get_uint_le(5));",
+                "    assert!(std::panic::catch_unwind(|| { buf.try_get_uint_le(9); }).is_err());",
+                "    assert_eq!(buf.remaining(), 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(3);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(3, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 4, available: 3}), buf.try_get_uint_le(4));",
+                "    assert_eq!(3, buf.remaining());",
+                "    let mut buf_large = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\"[..];",
+                "    let result = buf_large.try_get_uint_le(9);",
+                "    assert!(result.is_err());",
+                "    panic_does_not_fit(8, 9);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(3);",
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(3, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 4, available: 3}), buf.try_get_uint_le(4));",
+                "    assert_eq!(3, buf.remaining());",
+                "    let mut buf_large = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\"[..];",
+                "    let result = buf_large.try_get_uint_le(9);",
+                "    assert!(result.is_err());",
+                "    panic_does_not_fit(8, 9);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x04\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(4);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(6, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 4, available: 3}), buf.try_get_uint_le(4));",
+                "    assert_eq!(3, buf.remaining());",
+                "    let mut buf_overflow = &mut b\"\\x01\\x02\\x03\"[..];",
+                "    assert_panics!(buf_overflow.try_get_uint_le(9));  // Expect panic for nbytes > 8",
+                "    let mut buf_zero = &mut b\"\"[..];",
+                "    assert_eq!(Err(TryGetError{requested: 1, available: 0}), buf_zero.try_get_uint_le(1));"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x04\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(4);",
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(6, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 4, available: 3}), buf.try_get_uint_le(4));",
+                "    assert_eq!(3, buf.remaining());",
+                "    let mut buf_overflow = &mut b\"\\x01\\x02\\x03\"[..];",
+                "    assert_panics!(buf_overflow.try_get_uint_le(9));  // Expect panic for nbytes > 8",
+                "    let mut buf_zero = &mut b\"\"[..];",
+                "    assert_eq!(Err(TryGetError{requested: 1, available: 0}), buf_zero.try_get_uint_le(1));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x05\\x04\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(5);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x01020304_u64), buf.try_get_uint_le(4));",
+                "    assert_eq!(Ok(0x0102030405_u64), buf.try_get_uint_le(5));",
+                "    assert_eq!(Err(TryGetError { requested: 6, available: 1 }), buf.try_get_uint_le(6));",
+                "    assert_eq!(Err(TryGetError { requested: 8, available: 5 }), buf.try_get_uint_le(8));",
+                "    assert_eq!(Err(TryGetError { requested: 9, available: 5 }), buf.try_get_uint_le(9));",
+                "    assert_eq!(Err(TryGetError { requested: 10, available: 5 }), buf.try_get_uint_le(10));",
+                "    assert!(panic::catch_unwind(|| buf.try_get_uint_le(9)).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x05\\x04\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(5);",
+                "    assert_eq!(Ok(0x01020304_u64), buf.try_get_uint_le(4));",
+                "    assert_eq!(Ok(0x0102030405_u64), buf.try_get_uint_le(5));",
+                "    assert_eq!(Err(TryGetError { requested: 6, available: 1 }), buf.try_get_uint_le(6));",
+                "    assert_eq!(Err(TryGetError { requested: 8, available: 5 }), buf.try_get_uint_le(8));",
+                "    assert_eq!(Err(TryGetError { requested: 9, available: 5 }), buf.try_get_uint_le(9));",
+                "    assert_eq!(Err(TryGetError { requested: 10, available: 5 }), buf.try_get_uint_le(10));",
+                "    assert!(panic::catch_unwind(|| buf.try_get_uint_le(9)).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x06\\x05\\x04\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(6);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(Err(TryGetError{requested: 4, available: 3}), buf.try_get_uint_le(4));",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\"[..];",
+                "    assert_eq!(Err(TryGetError{requested: 5, available: 3}), buf.try_get_uint_le(5));",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\"[..];",
+                "    assert_eq!(Ok(0x0807060504030201_u64), buf.try_get_uint_le(8));",
+                "    let mut buf = &mut b\"\\x01\"[..];",
+                "    let result = buf.try_get_uint_le(1);",
+                "    assert!(result.is_ok());",
+                "    let result = buf.try_get_uint_le(10);",
+                "    assert_eq!(Err(TryGetError{requested: 10, available: 1}), result);",
+                "    let mut buf = &mut b\"\"[..];",
+                "    assert_eq!(Err(TryGetError{requested: 1, available: 0}), buf.try_get_uint_le(1));",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x09\\x0A\"[..];",
+                "    assert_eq!(Ok(0x0A09080706050403_u64), buf.try_get_uint_le(8));",
+                "    assert_eq!(0, buf.remaining());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x06\\x05\\x04\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(6);",
+                "    assert_eq!(Ok(0x010203_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(Err(TryGetError{requested: 4, available: 3}), buf.try_get_uint_le(4));",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\"[..];",
+                "    assert_eq!(Err(TryGetError{requested: 5, available: 3}), buf.try_get_uint_le(5));",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\"[..];",
+                "    assert_eq!(Ok(0x0807060504030201_u64), buf.try_get_uint_le(8));",
+                "    let mut buf = &mut b\"\\x01\"[..];",
+                "    let result = buf.try_get_uint_le(1);",
+                "    assert!(result.is_ok());",
+                "    let result = buf.try_get_uint_le(10);",
+                "    assert_eq!(Err(TryGetError{requested: 10, available: 1}), result);",
+                "    let mut buf = &mut b\"\"[..];",
+                "    assert_eq!(Err(TryGetError{requested: 1, available: 0}), buf.try_get_uint_le(1));",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x09\\x0A\"[..];",
+                "    assert_eq!(Ok(0x0A09080706050403_u64), buf.try_get_uint_le(8));",
+                "    assert_eq!(0, buf.remaining());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x07\\x06\\x05\\x04\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(7);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Err(TryGetError{requested: 8, available: 7}), buf.try_get_uint_le(8));",
+                "    assert_eq!(Ok(0x010204_u64), buf.try_get_uint_le(5));",
+                "    assert_eq!(6, buf.remaining());",
+                "    assert_eq!(Ok(0x0304_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(3, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 2, available: 1}), buf.try_get_uint_le(2));",
+                "    assert_eq!(6, buf.remaining());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x07\\x06\\x05\\x04\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(7);",
+                "    assert_eq!(Err(TryGetError{requested: 8, available: 7}), buf.try_get_uint_le(8));",
+                "    assert_eq!(Ok(0x010204_u64), buf.try_get_uint_le(5));",
+                "    assert_eq!(6, buf.remaining());",
+                "    assert_eq!(Ok(0x0304_u64), buf.try_get_uint_le(3));",
+                "    assert_eq!(3, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 2, available: 1}), buf.try_get_uint_le(2));",
+                "    assert_eq!(6, buf.remaining());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(8);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Ok(0x01020304_u64), buf.try_get_uint_le(4));",
+                "    assert_eq!(Err(TryGetError { requested: 10, available: 8 }), buf.try_get_uint_le(10));",
+                "    assert_eq!(3, buf.remaining());",
+                "    assert_eq!(6, buf.try_get_uint_le(6).unwrap_err().available);",
+                "    assert!(std::panic::catch_unwind(|| buf.try_get_uint_le(9)).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x08\\x07\\x06\\x05\\x04\\x03\\x02\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(8);",
+                "    assert_eq!(Ok(0x01020304_u64), buf.try_get_uint_le(4));",
+                "    assert_eq!(Err(TryGetError { requested: 10, available: 8 }), buf.try_get_uint_le(10));",
+                "    assert_eq!(3, buf.remaining());",
+                "    assert_eq!(6, buf.try_get_uint_le(6).unwrap_err().available);",
+                "    assert!(std::panic::catch_unwind(|| buf.try_get_uint_le(9)).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(2);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(buf.get_mut(0..2).is_none());",
+                "    assert_eq!(buf.remaining(), 1);",
+                "    assert_eq!(buf.try_get_uint_le(2), Err(TryGetError { requested: 2, available: 1 }));",
+                "    assert_eq!(buf.remaining(), 1);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\"[..];",
+                "    let _ = buf.try_get_uint_le(2);",
+                "    assert!(buf.get_mut(0..2).is_none());",
+                "    assert_eq!(buf.remaining(), 1);",
+                "    assert_eq!(buf.try_get_uint_le(2), Err(TryGetError { requested: 2, available: 1 }));",
+                "    assert_eq!(buf.remaining(), 1);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\"[..];",
+                "    let _ = buf.try_get_uint_le(3);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Err(TryGetError{requested: 4, available: 2}), buf.try_get_uint_le(4));",
+                "    assert_eq!(Err(TryGetError{requested: 3, available: 2}), buf.try_get_uint_le(3));",
+                "    assert_eq!(Ok(0x0102_u64), buf.try_get_uint_le(2));",
+                "    assert_eq!(2, buf.remaining());",
+                "    assert_eq!(Ok(0x01_u64), buf.try_get_uint_le(1));",
+                "    assert_eq!(1, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 2, available: 0}), buf.try_get_uint_le(2));",
+                "    assert_eq!(Err(TryGetError{requested: 8, available: 0}), buf.try_get_uint_le(8));",
+                "    assert!(panic::catch_unwind(|| { buf.try_get_uint_le(9); }).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\"[..];",
+                "    let _ = buf.try_get_uint_le(3);",
+                "    assert_eq!(Err(TryGetError{requested: 4, available: 2}), buf.try_get_uint_le(4));",
+                "    assert_eq!(Err(TryGetError{requested: 3, available: 2}), buf.try_get_uint_le(3));",
+                "    assert_eq!(Ok(0x0102_u64), buf.try_get_uint_le(2));",
+                "    assert_eq!(2, buf.remaining());",
+                "    assert_eq!(Ok(0x01_u64), buf.try_get_uint_le(1));",
+                "    assert_eq!(1, buf.remaining());",
+                "    assert_eq!(Err(TryGetError{requested: 2, available: 0}), buf.try_get_uint_le(2));",
+                "    assert_eq!(Err(TryGetError{requested: 8, available: 0}), buf.try_get_uint_le(8));",
+                "    assert!(panic::catch_unwind(|| { buf.try_get_uint_le(9); }).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\"[..];",
+                "    let _ = buf.try_get_uint_le(4);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Err(TryGetError { requested: 4, available: 3 }), buf.try_get_uint_le(4));",
+                "    assert_eq!(3, buf.remaining());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\"[..];",
+                "    let _ = buf.try_get_uint_le(4);",
+                "    assert_eq!(Err(TryGetError { requested: 4, available: 3 }), buf.try_get_uint_le(4));",
+                "    assert_eq!(3, buf.remaining());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\"[..];",
+                "    let _ = buf.try_get_uint_le(5);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(panic_does_not_fit_called());",
+                "    assert_eq!(Err(TryGetError { requested: 5, available: 4 }), buf.try_get_uint_le(5));",
+                "    assert_eq!(4, buf.remaining());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\"[..];",
+                "    let _ = buf.try_get_uint_le(5);",
+                "    assert!(panic_does_not_fit_called());",
+                "    assert_eq!(Err(TryGetError { requested: 5, available: 4 }), buf.try_get_uint_le(5));",
+                "    assert_eq!(4, buf.remaining());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\"[..];",
+                "    let _ = buf.try_get_uint_le(6);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(matches!(buf.try_get_uint_le(6), Err(TryGetError { requested: 6, available: 5 })));",
+                "    assert_eq!(buf.remaining(), 5);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\"[..];",
+                "    let _ = buf.try_get_uint_le(6);",
+                "    assert!(matches!(buf.try_get_uint_le(6), Err(TryGetError { requested: 6, available: 5 })));",
+                "    assert_eq!(buf.remaining(), 5);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\"[..];",
+                "    let _ = buf.try_get_uint_le(7);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Err(TryGetError { requested: 8, available: 6 }), buf.try_get_uint_le(7));",
+                "    assert_eq!(6, buf.remaining());",
+                "    assert_eq!(Err(TryGetError { requested: 1, available: 0 }), buf.try_get_uint_le(1));",
+                "    assert_eq!(Ok(0x04030201_u64), buf.try_get_uint_le(4));",
+                "    assert_eq!(2, buf.remaining());"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\"[..];",
+                "    let _ = buf.try_get_uint_le(7);",
+                "    assert_eq!(Err(TryGetError { requested: 8, available: 6 }), buf.try_get_uint_le(7));",
+                "    assert_eq!(6, buf.remaining());",
+                "    assert_eq!(Err(TryGetError { requested: 1, available: 0 }), buf.try_get_uint_le(1));",
+                "    assert_eq!(Ok(0x04030201_u64), buf.try_get_uint_le(4));",
+                "    assert_eq!(2, buf.remaining());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\"[..];",
+                "    let _ = buf.try_get_uint_le(8);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(matches!(buf.try_get_uint_le(8), Err(TryGetError { requested: 8, available: 7 })));",
+                "    assert_eq!(buf.remaining(), 7);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\"[..];",
+                "    let _ = buf.try_get_uint_le(8);",
+                "    assert!(matches!(buf.try_get_uint_le(8), Err(TryGetError { requested: 8, available: 7 })));",
+                "    assert_eq!(buf.remaining(), 7);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\"[..];",
+                "    let _ = buf.try_get_uint_le(9);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Err(TryGetError { requested: 9, available: 8 }), buf.try_get_uint_le(9));"
+              ],
+              "code": [
+                "{",
+                "    let mut buf = &mut b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\"[..];",
+                "    let _ = buf.try_get_uint_le(9);",
+                "    assert_eq!(Err(TryGetError { requested: 9, available: 8 }), buf.try_get_uint_le(9));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

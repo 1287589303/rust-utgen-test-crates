@@ -1,0 +1,125 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = String::from(\"Hello, World!\");",
+          "    let output = Bytes::from(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(output.len(), 13);",
+          "    assert_eq!(output.into_vec(), b\"Hello, World!\".to_vec());",
+          "    assert!(output.is_unique());",
+          "    assert!(!output.data.load(Ordering::SeqCst).is_null());",
+          "    assert_eq!(output.ptr, output.data.load(Ordering::SeqCst) as *const u8);",
+          "    assert_eq!(output.vtable.clone, STATIC_VTABLE.clone);"
+        ],
+        "code": [
+          "{",
+          "    let input = String::from(\"Hello, World!\");",
+          "    let output = Bytes::from(input);",
+          "    assert_eq!(output.len(), 13);",
+          "    assert_eq!(output.into_vec(), b\"Hello, World!\".to_vec());",
+          "    assert!(output.is_unique());",
+          "    assert!(!output.data.load(Ordering::SeqCst).is_null());",
+          "    assert_eq!(output.ptr, output.data.load(Ordering::SeqCst) as *const u8);",
+          "    assert_eq!(output.vtable.clone, STATIC_VTABLE.clone);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = String::from(\"\");",
+          "    let output = Bytes::from(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(output.len(), 0);",
+          "    assert!(output.ptr.is_null());",
+          "    assert_eq!(output.data.load(Ordering::SeqCst), ptr::null_mut());",
+          "    assert_eq!(output.vtable, STATIC_VTABLE);"
+        ],
+        "code": [
+          "{",
+          "    let input = String::from(\"\");",
+          "    let output = Bytes::from(input);",
+          "    assert_eq!(output.len(), 0);",
+          "    assert!(output.ptr.is_null());",
+          "    assert_eq!(output.data.load(Ordering::SeqCst), ptr::null_mut());",
+          "    assert_eq!(output.vtable, STATIC_VTABLE);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = String::from(\"こんにちは\"); // Japanese characters",
+          "    let output = Bytes::from(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(output.len(), 15); // Validate length of Bytes from Japanese string",
+          "    assert!(output.ptr.is_non_null()); // Ensure pointer is not null",
+          "    assert_eq!(output.vtable, &STATIC_VTABLE); // Check that the correct vtable is used",
+          "    assert_eq!(unsafe { output.into_vec() }, b\"こんにちは\".to_vec()); // Verify conversion to Vec<u8>",
+          "    assert!(unsafe { output.is_unique() }); // Ensure the Bytes instance is unique after creation"
+        ],
+        "code": [
+          "{",
+          "    let input = String::from(\"こんにちは\"); // Japanese characters",
+          "    let output = Bytes::from(input);",
+          "    assert_eq!(output.len(), 15); // Validate length of Bytes from Japanese string",
+          "    assert!(output.ptr.is_non_null()); // Ensure pointer is not null",
+          "    assert_eq!(output.vtable, &STATIC_VTABLE); // Check that the correct vtable is used",
+          "    assert_eq!(unsafe { output.into_vec() }, b\"こんにちは\".to_vec()); // Verify conversion to Vec<u8>",
+          "    assert!(unsafe { output.is_unique() }); // Ensure the Bytes instance is unique after creation",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = String::from_utf8_lossy(&[0xFF, 0xFE, 0xFD]).to_string(); // Non-UTF-8 bytes",
+          "    let output = Bytes::from(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(output.len(), 3); // Check the length of the resulting Bytes",
+          "    assert_eq!(unsafe { slice::from_raw_parts(output.ptr, output.len) }, &[0xFF, 0xFE, 0xFD]); // Validate the contents of Bytes",
+          "    assert!(output.vtable.is_unique(&output.data)); // Ensure the Bytes instance is unique",
+          "    assert!(output.ptr.is_null() == false); // Confirm the pointer is not null",
+          "    assert_eq!(output.vtable.into_vec(&output.data, output.ptr, output.len), vec![0xFF, 0xFE, 0xFD]); // Test converting to Vec<u8>"
+        ],
+        "code": [
+          "{",
+          "    let input = String::from_utf8_lossy(&[0xFF, 0xFE, 0xFD]).to_string(); // Non-UTF-8 bytes",
+          "    let output = Bytes::from(input);",
+          "    assert_eq!(output.len(), 3); // Check the length of the resulting Bytes",
+          "    assert_eq!(unsafe { slice::from_raw_parts(output.ptr, output.len) }, &[0xFF, 0xFE, 0xFD]); // Validate the contents of Bytes",
+          "    assert!(output.vtable.is_unique(&output.data)); // Ensure the Bytes instance is unique",
+          "    assert!(output.ptr.is_null() == false); // Confirm the pointer is not null",
+          "    assert_eq!(output.vtable.into_vec(&output.data, output.ptr, output.len), vec![0xFF, 0xFE, 0xFD]); // Test converting to Vec<u8>",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

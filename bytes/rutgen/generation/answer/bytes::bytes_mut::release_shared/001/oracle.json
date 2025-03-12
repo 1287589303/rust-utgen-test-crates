@@ -1,0 +1,148 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: Vec::new(),",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(3), // ref_count initialized to a value greater than 1",
+          "    });",
+          "    ",
+          "    let ptr: *mut Shared = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr); // Call release_shared function",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(unsafe { (*ptr).ref_count.load(Ordering::Relaxed) }, 2);  // Ensure ref_count is decremented correctly",
+          "    assert!(unsafe { !ptr.is_null() });  // Ensure ptr is valid and not null after call",
+          "    assert_eq!(unsafe { (*ptr).original_capacity_repr }, 0);  // Ensure original_capacity_repr remains unchanged",
+          "    assert!(unsafe { (*ptr).vec.is_empty() });  // Ensure vec is still empty and valid",
+          "    unsafe { release_shared(ptr) };  // Call release_shared again to fully drop",
+          "    assert_eq!(unsafe { (*ptr).ref_count.load(Ordering::Relaxed) }, 1);  // Check ref_count for the next release",
+          "    unsafe { drop(Box::from_raw(ptr)); }  // Clean up the pointer after testing"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: Vec::new(),",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(3), // ref_count initialized to a value greater than 1",
+          "    });",
+          "    ",
+          "    let ptr: *mut Shared = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr); // Call release_shared function",
+          "    }",
+          "    assert_eq!(unsafe { (*ptr).ref_count.load(Ordering::Relaxed) }, 2);  // Ensure ref_count is decremented correctly",
+          "    assert!(unsafe { !ptr.is_null() });  // Ensure ptr is valid and not null after call",
+          "    assert_eq!(unsafe { (*ptr).original_capacity_repr }, 0);  // Ensure original_capacity_repr remains unchanged",
+          "    assert!(unsafe { (*ptr).vec.is_empty() });  // Ensure vec is still empty and valid",
+          "    unsafe { release_shared(ptr) };  // Call release_shared again to fully drop",
+          "    assert_eq!(unsafe { (*ptr).ref_count.load(Ordering::Relaxed) }, 1);  // Check ref_count for the next release",
+          "    unsafe { drop(Box::from_raw(ptr)); }  // Clean up the pointer after testing",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: Vec::new(),",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(5), // ref_count initialized to a value greater than 1",
+          "    });",
+          "    ",
+          "    let ptr: *mut Shared = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr); // Call release_shared function",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(ptr.read().ref_count.load(Ordering::Relaxed), 4);",
+          "    assert_ne!(ptr.read().ref_count.load(Ordering::Relaxed), 0);",
+          "    assert!(ptr.read().vec.is_empty());",
+          "    assert!(ptr.read().original_capacity_repr == 0);",
+          "    assert!(ptr.is_null() == false);",
+          "    unsafe { drop(Box::from_raw(ptr)); }"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: Vec::new(),",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(5), // ref_count initialized to a value greater than 1",
+          "    });",
+          "    ",
+          "    let ptr: *mut Shared = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr); // Call release_shared function",
+          "    }",
+          "    assert_eq!(ptr.read().ref_count.load(Ordering::Relaxed), 4);",
+          "    assert_ne!(ptr.read().ref_count.load(Ordering::Relaxed), 0);",
+          "    assert!(ptr.read().vec.is_empty());",
+          "    assert!(ptr.read().original_capacity_repr == 0);",
+          "    assert!(ptr.is_null() == false);",
+          "    unsafe { drop(Box::from_raw(ptr)); }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: vec![0u8; 1024], // initialized with data",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(10), // ref_count initialized to a value greater than 1",
+          "    });",
+          "    ",
+          "    let ptr: *mut Shared = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr); // Call release_shared function",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!((*ptr).ref_count.load(Ordering::Relaxed), 9);",
+          "    assert!(ptr.is_null() == false);",
+          "    assert_eq!(Box::from_raw(ptr).vec.len(), 1024);",
+          "    assert_eq!(Box::from_raw(ptr).original_capacity_repr, 0);"
+        ],
+        "code": [
+          "{",
+          "    let shared = Box::new(Shared {",
+          "        vec: vec![0u8; 1024], // initialized with data",
+          "        original_capacity_repr: 0,",
+          "        ref_count: AtomicUsize::new(10), // ref_count initialized to a value greater than 1",
+          "    });",
+          "    ",
+          "    let ptr: *mut Shared = Box::into_raw(shared);",
+          "    unsafe {",
+          "        release_shared(ptr); // Call release_shared function",
+          "    }",
+          "    assert_eq!((*ptr).ref_count.load(Ordering::Relaxed), 9);",
+          "    assert!(ptr.is_null() == false);",
+          "    assert_eq!(Box::from_raw(ptr).vec.len(), 1024);",
+          "    assert_eq!(Box::from_raw(ptr).original_capacity_repr, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

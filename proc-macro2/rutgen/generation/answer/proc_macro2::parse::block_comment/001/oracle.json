@@ -1,0 +1,245 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    let cursor = Cursor { rest: \"/*\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Err(Reject));",
+          "    let cursor = Cursor { rest: \"/* comment */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \"\" }, \"/* comment */\")));",
+          "    let cursor = Cursor { rest: \"/* nested /* comments */ end */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \"\" }, \"/* nested /* comments */ end */\")));",
+          "    let cursor = Cursor { rest: \"/* only opening\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Err(Reject));",
+          "    let cursor = Cursor { rest: \"/* invalid comment */ more text\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \" more text\" }, \"/* invalid comment */\")));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"\" };",
+          "    let result = block_comment(cursor);",
+          "    let cursor = Cursor { rest: \"/*\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Err(Reject));",
+          "    let cursor = Cursor { rest: \"/* comment */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \"\" }, \"/* comment */\")));",
+          "    let cursor = Cursor { rest: \"/* nested /* comments */ end */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \"\" }, \"/* nested /* comments */ end */\")));",
+          "    let cursor = Cursor { rest: \"/* only opening\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Err(Reject));",
+          "    let cursor = Cursor { rest: \"/* invalid comment */ more text\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Ok((Cursor { rest: \" more text\" }, \"/* invalid comment */\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* comment */\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    let cursor = Cursor { rest: \"/* comment */\" };",
+          "    let cursor_invalid_start = Cursor { rest: \" comment */\" };",
+          "    let cursor_invalid_bytes = Cursor { rest: \"/* comment *\" };",
+          "    let cursor_boundary_case = Cursor { rest: \"/*\" };",
+          "    let cursor_empty_comment = Cursor { rest: \"/* */\" };",
+          "    let cursor_multiple_comments = Cursor { rest: \"/* /* nested */ */\" };",
+          "    let cursor_unmatched_comment = Cursor { rest: \"/* /* unmatched */\" };",
+          "    assert_eq!(block_comment(cursor_invalid_start), Err(Reject));",
+          "    assert_eq!(block_comment(cursor_invalid_bytes), Err(Reject));",
+          "    assert_eq!(block_comment(cursor_boundary_case), Err(Reject));",
+          "    assert_eq!(block_comment(cursor_empty_comment), Ok((cursor_empty_comment.advance(4), \"/* */\")));",
+          "    assert_eq!(block_comment(cursor_multiple_comments), Ok((cursor_multiple_comments.advance(20), \"/* /* nested */ */\")));",
+          "    assert_eq!(block_comment(cursor_unmatched_comment), Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* comment */\" };",
+          "    let result = block_comment(cursor);",
+          "    let cursor = Cursor { rest: \"/* comment */\" };",
+          "    let cursor_invalid_start = Cursor { rest: \" comment */\" };",
+          "    let cursor_invalid_bytes = Cursor { rest: \"/* comment *\" };",
+          "    let cursor_boundary_case = Cursor { rest: \"/*\" };",
+          "    let cursor_empty_comment = Cursor { rest: \"/* */\" };",
+          "    let cursor_multiple_comments = Cursor { rest: \"/* /* nested */ */\" };",
+          "    let cursor_unmatched_comment = Cursor { rest: \"/* /* unmatched */\" };",
+          "    assert_eq!(block_comment(cursor_invalid_start), Err(Reject));",
+          "    assert_eq!(block_comment(cursor_invalid_bytes), Err(Reject));",
+          "    assert_eq!(block_comment(cursor_boundary_case), Err(Reject));",
+          "    assert_eq!(block_comment(cursor_empty_comment), Ok((cursor_empty_comment.advance(4), \"/* */\")));",
+          "    assert_eq!(block_comment(cursor_multiple_comments), Ok((cursor_multiple_comments.advance(20), \"/* /* nested */ */\")));",
+          "    assert_eq!(block_comment(cursor_unmatched_comment), Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* /* nested */ comment */\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    let cursor_empty = Cursor { rest: \"/* comment without end\" }; assert_eq!(block_comment(cursor_empty), Err(Reject));",
+          "    let cursor_single_nested = Cursor { rest: \"/* /* comment */\" }; assert_eq!(block_comment(cursor_single_nested), Err(Reject));",
+          "    let cursor_all_nested = Cursor { rest: \"/* /* nested */ /* comment */\" }; assert_eq!(block_comment(cursor_all_nested), Err(Reject));",
+          "    let cursor_no_end = Cursor { rest: \"/* start without end */\" }; assert_eq!(block_comment(cursor_no_end), Err(Reject));",
+          "    let cursor_multiple_starts = Cursor { rest: \"/* /* /* nested */ still */\" }; assert_eq!(block_comment(cursor_multiple_starts), Err(Reject));",
+          "    let cursor_with_trailing_data = Cursor { rest: \"/* comment */ extra data\" }; assert_eq!(block_comment(cursor_with_trailing_data), Ok((cursor_with_trailing_data.advance(15), \"/* comment */\")));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* /* nested */ comment */\" };",
+          "    let result = block_comment(cursor);",
+          "    let cursor_empty = Cursor { rest: \"/* comment without end\" }; assert_eq!(block_comment(cursor_empty), Err(Reject));",
+          "    let cursor_single_nested = Cursor { rest: \"/* /* comment */\" }; assert_eq!(block_comment(cursor_single_nested), Err(Reject));",
+          "    let cursor_all_nested = Cursor { rest: \"/* /* nested */ /* comment */\" }; assert_eq!(block_comment(cursor_all_nested), Err(Reject));",
+          "    let cursor_no_end = Cursor { rest: \"/* start without end */\" }; assert_eq!(block_comment(cursor_no_end), Err(Reject));",
+          "    let cursor_multiple_starts = Cursor { rest: \"/* /* /* nested */ still */\" }; assert_eq!(block_comment(cursor_multiple_starts), Err(Reject));",
+          "    let cursor_with_trailing_data = Cursor { rest: \"/* comment */ extra data\" }; assert_eq!(block_comment(cursor_with_trailing_data), Ok((cursor_with_trailing_data.advance(15), \"/* comment */\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* comment without ending\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* comment without ending\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* /* comment without ending */\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* /* comment without ending */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \" comment */\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), Reject);"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \" comment */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), Reject);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* a /* b /* c */ d */ e */\" };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), Reject);"
+        ],
+        "code": [
+          "{",
+          "    let cursor = Cursor { rest: \"/* a /* b /* c */ d */ e */\" };",
+          "    let result = block_comment(cursor);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), Reject);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let comment = \"/*\" + \" a \".repeat(500) + \" */\";",
+          "    let cursor = Cursor { rest: &comment };",
+          "    let result = block_comment(cursor);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Err(Reject));"
+        ],
+        "code": [
+          "{",
+          "    let comment = \"/*\" + \" a \".repeat(500) + \" */\";",
+          "    let cursor = Cursor { rest: &comment };",
+          "    let result = block_comment(cursor);",
+          "    assert_eq!(result, Err(Reject));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

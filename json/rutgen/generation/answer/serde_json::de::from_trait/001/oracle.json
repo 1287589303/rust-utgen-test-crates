@@ -1,0 +1,224 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct EmptyRead;",
+          "    ",
+          "    impl<'de> read::Read<'de> for EmptyRead {",
+          "        type Error = serde_json::Error;",
+          "        ",
+          "        fn next(&mut self) -> Result<Option<u8>, Self::Error> {",
+          "            Ok(None)",
+          "        }",
+          "    }",
+          "",
+          "    let result: Result<MyStruct> = from_trait(EmptyRead);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().is::<serde_json::Error>());",
+          "    assert_eq!(result.err().unwrap().to_string(), \"Expected input error description\");"
+        ],
+        "code": [
+          "{",
+          "    struct EmptyRead;",
+          "    ",
+          "    impl<'de> read::Read<'de> for EmptyRead {",
+          "        type Error = serde_json::Error;",
+          "        ",
+          "        fn next(&mut self) -> Result<Option<u8>, Self::Error> {",
+          "            Ok(None)",
+          "        }",
+          "    }",
+          "",
+          "    let result: Result<MyStruct> = from_trait(EmptyRead);",
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().is::<serde_json::Error>());",
+          "    assert_eq!(result.err().unwrap().to_string(), \"Expected input error description\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct MalformedJsonRead;",
+          "",
+          "    impl<'de> read::Read<'de> for MalformedJsonRead {",
+          "        type Error = serde_json::Error;",
+          "",
+          "        fn next(&mut self) -> Result<Option<u8>, Self::Error> {",
+          "            Ok(Some(b'{'))",
+          "        }",
+          "    }",
+          "",
+          "    let result: Result<MyStruct> = from_trait(MalformedJsonRead);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(result.unwrap_err().is_instance_of::<serde_json::Error>());",
+          "    assert!(result.unwrap_err().code() == ErrorCode::InvalidValue);"
+        ],
+        "code": [
+          "{",
+          "    struct MalformedJsonRead;",
+          "",
+          "    impl<'de> read::Read<'de> for MalformedJsonRead {",
+          "        type Error = serde_json::Error;",
+          "",
+          "        fn next(&mut self) -> Result<Option<u8>, Self::Error> {",
+          "            Ok(Some(b'{'))",
+          "        }",
+          "    }",
+          "",
+          "    let result: Result<MyStruct> = from_trait(MalformedJsonRead);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(result.unwrap_err().is_instance_of::<serde_json::Error>());",
+          "    assert!(result.unwrap_err().code() == ErrorCode::InvalidValue);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct UnexpectedCharacterRead;",
+          "",
+          "    impl<'de> read::Read<'de> for UnexpectedCharacterRead {",
+          "        type Error = serde_json::Error;",
+          "",
+          "        fn next(&mut self) -> Result<Option<u8>, Self::Error> {",
+          "            Ok(Some(b'!'))",
+          "        }",
+          "    }",
+          "",
+          "    let result: Result<MyStruct> = from_trait(UnexpectedCharacterRead);",
+          "}"
+        ],
+        "oracle": [
+          "    let result: Result<MyStruct> = from_trait(UnexpectedCharacterRead);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().code(), ErrorCode::UnexpectedCharacter);",
+          "    assert!(result.unwrap_err().to_string().contains(\"Unexpected character\"));"
+        ],
+        "code": [
+          "{",
+          "    struct UnexpectedCharacterRead;",
+          "",
+          "    impl<'de> read::Read<'de> for UnexpectedCharacterRead {",
+          "        type Error = serde_json::Error;",
+          "",
+          "        fn next(&mut self) -> Result<Option<u8>, Self::Error> {",
+          "            Ok(Some(b'!'))",
+          "        }",
+          "    }",
+          "",
+          "    let result: Result<MyStruct> = from_trait(UnexpectedCharacterRead);",
+          "    let result: Result<MyStruct> = from_trait(UnexpectedCharacterRead);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().code(), ErrorCode::UnexpectedCharacter);",
+          "    assert!(result.unwrap_err().to_string().contains(\"Unexpected character\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TrailingCharactersRead;",
+          "",
+          "    impl<'de> read::Read<'de> for TrailingCharactersRead {",
+          "        type Error = serde_json::Error;",
+          "",
+          "        fn next(&mut self) -> Result<Option<u8>, Self::Error> {",
+          "            Ok(Some(b'{')) // Start of valid JSON",
+          "        }",
+          "    }",
+          "",
+          "    let result: Result<MyStruct> = from_trait(TrailingCharactersRead);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind(), serde_json::ErrorCode::TrailingCharacters);"
+        ],
+        "code": [
+          "{",
+          "    struct TrailingCharactersRead;",
+          "",
+          "    impl<'de> read::Read<'de> for TrailingCharactersRead {",
+          "        type Error = serde_json::Error;",
+          "",
+          "        fn next(&mut self) -> Result<Option<u8>, Self::Error> {",
+          "            Ok(Some(b'{')) // Start of valid JSON",
+          "        }",
+          "    }",
+          "",
+          "    let result: Result<MyStruct> = from_trait(TrailingCharactersRead);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind(), serde_json::ErrorCode::TrailingCharacters);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct MissingFieldRead;",
+          "",
+          "    impl<'de> read::Read<'de> for MissingFieldRead {",
+          "        type Error = serde_json::Error;",
+          "",
+          "        fn next(&mut self) -> Result<Option<u8>, Self::Error> {",
+          "            Ok(Some(b'{')) // Valid JSON start",
+          "        }",
+          "    }",
+          "",
+          "    let result: Result<MyStruct> = from_trait(MissingFieldRead);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().is::<serde_json::Error>());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"expected a valid struct\");"
+        ],
+        "code": [
+          "{",
+          "    struct MissingFieldRead;",
+          "",
+          "    impl<'de> read::Read<'de> for MissingFieldRead {",
+          "        type Error = serde_json::Error;",
+          "",
+          "        fn next(&mut self) -> Result<Option<u8>, Self::Error> {",
+          "            Ok(Some(b'{')) // Valid JSON start",
+          "        }",
+          "    }",
+          "",
+          "    let result: Result<MyStruct> = from_trait(MissingFieldRead);",
+          "    assert!(result.is_err());",
+          "    assert!(result.unwrap_err().is::<serde_json::Error>());",
+          "    assert_eq!(result.unwrap_err().to_string(), \"expected a valid struct\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,1262 @@
+{
+  "name": "regex_automata::util::determinize::epsilon_closure",
+  "mod_info": {
+    "name": "util::determinize",
+    "loc": "regex-automata/src/util/mod.rs:49:1:49:28"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/util/determinize/mod.rs:369:1:428:2",
+  "doc": "/// Compute the epsilon closure for the given NFA state. The epsilon closure\n/// consists of all NFA state IDs, including `start_nfa_id`, that can be\n/// reached from `start_nfa_id` without consuming any input. These state IDs\n/// are written to `set` in the order they are visited, but only if they are\n/// not already in `set`. `start_nfa_id` must be a valid state ID for the NFA\n/// given.\n///\n/// `look_have` consists of the satisfied assertions at the current\n/// position. For conditional look-around epsilon transitions, these are\n/// only followed if they are satisfied by `look_have`.\n///\n/// `stack` must have length 0. It is used as scratch space for depth first\n/// traversal. After returning, it is guaranteed that `stack` will have length\n/// 0.\n",
+  "code": [
+    "pub(crate) fn epsilon_closure(",
+    "    nfa: &thompson::NFA,",
+    "    start_nfa_id: StateID,",
+    "    look_have: LookSet,",
+    "    stack: &mut Vec<StateID>,",
+    "    set: &mut SparseSet,",
+    ") {",
+    "    assert!(stack.is_empty());",
+    "    // If this isn't an epsilon state, then the epsilon closure is always just",
+    "    // itself, so there's no need to spin up the machinery below to handle it.",
+    "    if !nfa.state(start_nfa_id).is_epsilon() {",
+    "        set.insert(start_nfa_id);",
+    "        return;",
+    "    }",
+    "",
+    "    stack.push(start_nfa_id);",
+    "    while let Some(mut id) = stack.pop() {",
+    "        // In many cases, we can avoid stack operations when an NFA state only",
+    "        // adds one new state to visit. In that case, we just set our ID to",
+    "        // that state and mush on. We only use the stack when an NFA state",
+    "        // introduces multiple new states to visit.",
+    "        loop {",
+    "            // Insert this NFA state, and if it's already in the set and thus",
+    "            // already visited, then we can move on to the next one.",
+    "            if !set.insert(id) {",
+    "                break;",
+    "            }",
+    "            match *nfa.state(id) {",
+    "                thompson::State::ByteRange { .. }",
+    "                | thompson::State::Sparse { .. }",
+    "                | thompson::State::Dense { .. }",
+    "                | thompson::State::Fail",
+    "                | thompson::State::Match { .. } => break,",
+    "                thompson::State::Look { look, next } => {",
+    "                    if !look_have.contains(look) {",
+    "                        break;",
+    "                    }",
+    "                    id = next;",
+    "                }",
+    "                thompson::State::Union { ref alternates } => {",
+    "                    id = match alternates.get(0) {",
+    "                        None => break,",
+    "                        Some(&id) => id,",
+    "                    };",
+    "                    // We need to process our alternates in order to preserve",
+    "                    // match preferences, so put the earliest alternates closer",
+    "                    // to the top of the stack.",
+    "                    stack.extend(alternates[1..].iter().rev());",
+    "                }",
+    "                thompson::State::BinaryUnion { alt1, alt2 } => {",
+    "                    id = alt1;",
+    "                    stack.push(alt2);",
+    "                }",
+    "                thompson::State::Capture { next, .. } => {",
+    "                    id = next;",
+    "                }",
+    "            }",
+    "        }",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 15,
+    "contra": 4,
+    "min_set": 14
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Match { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Dense { .. } or thompson::State::ByteRange { .. } or thompson::State::Match { .. } or thompson::State::Fail or thompson::State::Sparse { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        26,
+        27,
+        45,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Fail",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Dense { .. } or thompson::State::ByteRange { .. } or thompson::State::Match { .. } or thompson::State::Fail or thompson::State::Sparse { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        26,
+        27,
+        45,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Capture { next, .. }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "false",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        25,
+        44,
+        15,
+        16,
+        17,
+        19,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::BinaryUnion { alt1, alt2 }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::BinaryUnion { alt1, alt2 }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "false",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        24,
+        42,
+        43,
+        44,
+        15,
+        16,
+        17,
+        19,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Union { ref alternates }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Union { ref alternates }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "alternates.get(0) matches Some(&id)",
+          "norm": null,
+          "value": "true",
+          "line": 409,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "false",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        23,
+        32,
+        33,
+        36,
+        38,
+        39,
+        40,
+        41,
+        44,
+        15,
+        16,
+        17,
+        19,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Union { ref alternates }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Union { ref alternates }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "alternates.get(0) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 409,
+          "bound": null
+        },
+        {
+          "cond": "alternates.get(0) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 409,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        23,
+        32,
+        33,
+        35,
+        37,
+        45,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Look { look, next }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Look { look, next }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "look_have.contains(look)",
+          "norm": null,
+          "value": "true",
+          "line": 403,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "false",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        22,
+        28,
+        29,
+        30,
+        44,
+        15,
+        16,
+        17,
+        19,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Look { look, next }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Look { look, next }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "look_have.contains(look)",
+          "norm": null,
+          "value": "false",
+          "line": 403,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        22,
+        28,
+        29,
+        31,
+        45,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Dense { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Dense { .. } or thompson::State::ByteRange { .. } or thompson::State::Match { .. } or thompson::State::Fail or thompson::State::Sparse { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        26,
+        27,
+        45,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Sparse { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Dense { .. } or thompson::State::ByteRange { .. } or thompson::State::Match { .. } or thompson::State::Fail or thompson::State::Sparse { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        26,
+        27,
+        45,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "true",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::ByteRange { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "*nfa.state(id) matches thompson::State::Dense { .. } or thompson::State::ByteRange { .. } or thompson::State::Match { .. } or thompson::State::Fail or thompson::State::Sparse { .. }",
+          "norm": null,
+          "value": "true",
+          "line": 396,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        26,
+        27,
+        45,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "true",
+          "line": 379,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        },
+        {
+          "cond": "set.insert(id)",
+          "norm": null,
+          "value": "false",
+          "line": 393,
+          "bound": null
+        },
+        {
+          "cond": "let Some(mut id) = stack.pop()",
+          "norm": null,
+          "value": "true",
+          "line": 385,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        46,
+        10,
+        11,
+        12,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 376,
+          "bound": null
+        },
+        {
+          "cond": "nfa.state(start_nfa_id).is_epsilon()",
+          "norm": null,
+          "value": "false",
+          "line": 379,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        8,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "stack.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 376,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        49
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

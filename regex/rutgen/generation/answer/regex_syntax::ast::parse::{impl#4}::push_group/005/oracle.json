@@ -1,0 +1,197 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let span = Span { start: Position { line: 0, column: 0 }, end: Position { line: 0, column: 10 } };",
+          "    let flags_item = FlagsItem { kind: FlagsItemKind::Flag(ast::Flag::IgnoreWhitespace) };",
+          "    let flags = Flags { span: span.clone(), items: vec![flags_item] };",
+          "    ",
+          "    let group = Group { span: span.clone(), kind: GroupKind::NonCapturing(flags.clone()), ast: Box::new(Ast::empty(span.clone())) };",
+          "    let concat = Concat { span: span.clone(), asts: vec![Ast::group(group.clone())] };",
+          "    ",
+          "    let parser = Parser { /*initialize necessary fields*/ };",
+          "",
+          "    let parser_i = ParserI::new(&parser, \"(?:\" );",
+          "    parser_i.push_group(concat).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parser_i.char(), '(')",
+          "    assert!(matches!(parser_i.push_group(concat).unwrap(), ast::Concat { span: _, asts: _ }))",
+          "    assert_eq!(parser_i.parser().ignore_whitespace.get(), true)",
+          "    assert_eq!(parser_i.parser().stack_group.borrow().len(), 1)",
+          "    assert!(matches!(parser_i.parser().stack_group.borrow()[0], GroupState::Group { concat: _, group: _, ignore_whitespace: _ }))"
+        ],
+        "code": [
+          "{",
+          "    let span = Span { start: Position { line: 0, column: 0 }, end: Position { line: 0, column: 10 } };",
+          "    let flags_item = FlagsItem { kind: FlagsItemKind::Flag(ast::Flag::IgnoreWhitespace) };",
+          "    let flags = Flags { span: span.clone(), items: vec![flags_item] };",
+          "    ",
+          "    let group = Group { span: span.clone(), kind: GroupKind::NonCapturing(flags.clone()), ast: Box::new(Ast::empty(span.clone())) };",
+          "    let concat = Concat { span: span.clone(), asts: vec![Ast::group(group.clone())] };",
+          "    ",
+          "    let parser = Parser { /*initialize necessary fields*/ };",
+          "",
+          "    let parser_i = ParserI::new(&parser, \"(?:\" );",
+          "    parser_i.push_group(concat).unwrap();",
+          "    assert_eq!(parser_i.char(), '(')",
+          "    assert!(matches!(parser_i.push_group(concat).unwrap(), ast::Concat { span: _, asts: _ }))",
+          "    assert_eq!(parser_i.parser().ignore_whitespace.get(), true)",
+          "    assert_eq!(parser_i.parser().stack_group.borrow().len(), 1)",
+          "    assert!(matches!(parser_i.parser().stack_group.borrow()[0], GroupState::Group { concat: _, group: _, ignore_whitespace: _ }))",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let span = Span { start: Position { line: 0, column: 0 }, end: Position { line: 0, column: 10 } };",
+          "    let group = Group { span: span.clone(), kind: GroupKind::Capturing, ast: Box::new(Ast::empty(span.clone())) };",
+          "    let concat = Concat { span: span.clone(), asts: vec![Ast::group(group.clone())] };",
+          "",
+          "    let parser = Parser { /*initialize necessary fields*/ };",
+          "",
+          "    let parser_i = ParserI::new(&parser, \"(abc\" );",
+          "    parser_i.push_group(concat).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parser_i.char(), '(');",
+          "    assert!(parser_i.push_group(concat).is_err());",
+          "    assert!(parser_i.parser().stack_group.borrow().is_empty());",
+          "    assert_eq!(parser_i.ignore_whitespace(), false);",
+          "    assert_eq!(parser_i.offset(), 0);",
+          "    assert_eq!(parser_i.line(), 0);",
+          "    assert_eq!(parser_i.column(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let span = Span { start: Position { line: 0, column: 0 }, end: Position { line: 0, column: 10 } };",
+          "    let group = Group { span: span.clone(), kind: GroupKind::Capturing, ast: Box::new(Ast::empty(span.clone())) };",
+          "    let concat = Concat { span: span.clone(), asts: vec![Ast::group(group.clone())] };",
+          "",
+          "    let parser = Parser { /*initialize necessary fields*/ };",
+          "",
+          "    let parser_i = ParserI::new(&parser, \"(abc\" );",
+          "    parser_i.push_group(concat).unwrap();",
+          "    assert_eq!(parser_i.char(), '(');",
+          "    assert!(parser_i.push_group(concat).is_err());",
+          "    assert!(parser_i.parser().stack_group.borrow().is_empty());",
+          "    assert_eq!(parser_i.ignore_whitespace(), false);",
+          "    assert_eq!(parser_i.offset(), 0);",
+          "    assert_eq!(parser_i.line(), 0);",
+          "    assert_eq!(parser_i.column(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let span = Span { start: Position { line: 0, column: 0 }, end: Position { line: 0, column: 1 } };",
+          "    let concat = Concat { span: span.clone(), asts: vec![] };",
+          "",
+          "    let parser = Parser { /*initialize necessary fields*/ };",
+          "",
+          "    let parser_i = ParserI::new(&parser, \"(\" );",
+          "    parser_i.push_group(concat).unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parser_i.ignore_whitespace(), false);",
+          "    assert_eq!(parser_i.parser().stack_group.borrow().len(), 1);",
+          "    assert_eq!(parser_i.parser().stack_group.borrow().last().map(|state| match state {",
+          "    GroupState::Group { concat, group, ignore_whitespace } => (concat == &concat, ignore_whitespace == &false),",
+          "    _ => (false, false),",
+          "    }), Some((true, true)));",
+          "    assert!(parser_i.parser().ignore_whitespace.get());",
+          "    assert!(matches!(parser_i.push_group(concat), Ok(ast::Concat { asts: vec![] })));"
+        ],
+        "code": [
+          "{",
+          "    let span = Span { start: Position { line: 0, column: 0 }, end: Position { line: 0, column: 1 } };",
+          "    let concat = Concat { span: span.clone(), asts: vec![] };",
+          "",
+          "    let parser = Parser { /*initialize necessary fields*/ };",
+          "",
+          "    let parser_i = ParserI::new(&parser, \"(\" );",
+          "    parser_i.push_group(concat).unwrap();",
+          "    assert_eq!(parser_i.ignore_whitespace(), false);",
+          "    assert_eq!(parser_i.parser().stack_group.borrow().len(), 1);",
+          "    assert_eq!(parser_i.parser().stack_group.borrow().last().map(|state| match state {",
+          "    GroupState::Group { concat, group, ignore_whitespace } => (concat == &concat, ignore_whitespace == &false),",
+          "    _ => (false, false),",
+          "    }), Some((true, true)));",
+          "    assert!(parser_i.parser().ignore_whitespace.get());",
+          "    assert!(matches!(parser_i.push_group(concat), Ok(ast::Concat { asts: vec![] })));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let span = Span { start: Position { line: 0, column: 0 }, end: Position { line: 0, column: 10 } };",
+          "    let concat = Concat { span: span.clone(), asts: vec![] };",
+          "",
+          "    let parser = Parser { /*initialize necessary fields*/ };",
+          "    ",
+          "    let parser_i = ParserI::new(&parser, \"abc\" );",
+          "    parser_i.push_group(concat);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(parser_i.push_group(concat).is_err(), true);",
+          "    assert_eq!(parser_i.character(), '(');",
+          "    assert_eq!(parser_i.ignore_whitespace(), false);",
+          "    assert_eq!(parser_i.pos().line, 0);",
+          "    assert_eq!(parser_i.pos().column, 0);",
+          "    assert_eq!(parser_i.pattern(), \"abc\");",
+          "    assert_eq!(parser_i.parser().stack_group.borrow().len(), 0);",
+          "    assert_eq!(parser_i.parser().ignore_whitespace.get(), false);",
+          "    assert_eq!(parser_i.span().start.line, 0);",
+          "    assert_eq!(parser_i.span().end.column, 10);"
+        ],
+        "code": [
+          "{",
+          "    let span = Span { start: Position { line: 0, column: 0 }, end: Position { line: 0, column: 10 } };",
+          "    let concat = Concat { span: span.clone(), asts: vec![] };",
+          "",
+          "    let parser = Parser { /*initialize necessary fields*/ };",
+          "    ",
+          "    let parser_i = ParserI::new(&parser, \"abc\" );",
+          "    parser_i.push_group(concat);",
+          "    assert_eq!(parser_i.push_group(concat).is_err(), true);",
+          "    assert_eq!(parser_i.character(), '(');",
+          "    assert_eq!(parser_i.ignore_whitespace(), false);",
+          "    assert_eq!(parser_i.pos().line, 0);",
+          "    assert_eq!(parser_i.pos().column, 0);",
+          "    assert_eq!(parser_i.pattern(), \"abc\");",
+          "    assert_eq!(parser_i.parser().stack_group.borrow().len(), 0);",
+          "    assert_eq!(parser_i.parser().ignore_whitespace.get(), false);",
+          "    assert_eq!(parser_i.span().start.line, 0);",
+          "    assert_eq!(parser_i.span().end.column, 10);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

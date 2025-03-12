@@ -1,0 +1,85 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[should_panic]",
+      "fn test_dynamic_bufmut_invalid() {",
+      "    struct InvalidBufMut;",
+      "    ",
+      "    // Invalid struct, does not implement BufMut.",
+      "    ",
+      "    let buf = InvalidBufMut;",
+      "    _assert_trait_object(&buf); // Expect this to panic.",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct ValidBufMut;",
+          "    ",
+          "    impl BufMut for ValidBufMut {",
+          "        // implement necessary methods",
+          "    }",
+          "",
+          "    let buf = ValidBufMut;",
+          "    _assert_trait_object(&buf);",
+          "}"
+        ],
+        "oracle": [
+          "    _assert_trait_object(&buf); // Expect to not panic with a valid BufMut implementation.",
+          "    _assert_trait_object(&InvalidBufMut); // Expect to panic with an invalid BufMut implementation.",
+          "    test_dynamic_bufmut_invalid(); // Checking the panic behavior when InvalidBufMut is used.",
+          "    test(); // Verifying that valid BufMut structures do not panic."
+        ],
+        "code": [
+          "{",
+          "    struct ValidBufMut;",
+          "    ",
+          "    impl BufMut for ValidBufMut {",
+          "        // implement necessary methods",
+          "    }",
+          "",
+          "    let buf = ValidBufMut;",
+          "    _assert_trait_object(&buf);",
+          "    _assert_trait_object(&buf); // Expect to not panic with a valid BufMut implementation.",
+          "    _assert_trait_object(&InvalidBufMut); // Expect to panic with an invalid BufMut implementation.",
+          "    test_dynamic_bufmut_invalid(); // Checking the panic behavior when InvalidBufMut is used.",
+          "    test(); // Verifying that valid BufMut structures do not panic.",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let buf: Option<&dyn BufMut> = None;",
+          "    if let Some(ref valid_buf) = buf {",
+          "        _assert_trait_object(valid_buf);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    _assert_trait_object(&InvalidBufMut); // Expect this to panic for invalid struct",
+          "    _assert_trait_object(&None as &dyn BufMut); // Expect no panic, as there is no object to assert"
+        ],
+        "code": [
+          "{",
+          "    let buf: Option<&dyn BufMut> = None;",
+          "    if let Some(ref valid_buf) = buf {",
+          "        _assert_trait_object(valid_buf);",
+          "    }",
+          "    _assert_trait_object(&InvalidBufMut); // Expect this to panic for invalid struct",
+          "    _assert_trait_object(&None as &dyn BufMut); // Expect no panic, as there is no object to assert",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

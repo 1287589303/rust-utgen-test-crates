@@ -1,0 +1,211 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(Some(42)) },",
+          "        init: Cell::new(Some(|| 42)),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(format!(\"{:?}\", lazy), \"Lazy { cell: OnceCell { inner: UnsafeCell { value: Some(42) } }, init: .. }\");"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(Some(42)) },",
+          "        init: Cell::new(Some(|| 42)),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "    assert_eq!(format!(\"{:?}\", lazy), \"Lazy { cell: OnceCell { inner: UnsafeCell { value: Some(42) } }, init: .. }\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(Some(\"Hello\".to_string())) },",
+          "        init: Cell::new(Some(|| \"Hello\".to_string())),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy.init.get().unwrap()(), \"Hello\".to_string());",
+          "    assert!(lazy.cell.inner.get().is_null() == false);",
+          "    assert_eq!(unsafe { &*lazy.cell.inner.get() }.as_ref(), Some(&\"Hello\".to_string()));",
+          "    assert!(format!(\"{:?}\", lazy).contains(\"Lazy\"));",
+          "    assert!(format!(\"{:?}\", lazy).contains(\"cell\"));",
+          "    assert!(format!(\"{:?}\", lazy).contains(\"..\"));"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(Some(\"Hello\".to_string())) },",
+          "        init: Cell::new(Some(|| \"Hello\".to_string())),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "    assert_eq!(lazy.init.get().unwrap()(), \"Hello\".to_string());",
+          "    assert!(lazy.cell.inner.get().is_null() == false);",
+          "    assert_eq!(unsafe { &*lazy.cell.inner.get() }.as_ref(), Some(&\"Hello\".to_string()));",
+          "    assert!(format!(\"{:?}\", lazy).contains(\"Lazy\"));",
+          "    assert!(format!(\"{:?}\", lazy).contains(\"cell\"));",
+          "    assert!(format!(\"{:?}\", lazy).contains(\"..\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+          "        init: Cell::new(Some(|| 42)),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "}"
+        ],
+        "oracle": [
+          "    let lazy = Lazy { cell: OnceCell { inner: UnsafeCell::new(None) }, init: Cell::new(Some(|| 42)) };",
+          "    let result = fmt::format(format_args!(\"{:?}\", lazy));",
+          "    assert!(result.contains(\"Lazy\"));",
+          "    assert!(result.contains(\"cell\"));",
+          "    assert!(result.contains(\"init\"));",
+          "    assert!(result.len() > 0);"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+          "        init: Cell::new(Some(|| 42)),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "    let lazy = Lazy { cell: OnceCell { inner: UnsafeCell::new(None) }, init: Cell::new(Some(|| 42)) };",
+          "    let result = fmt::format(format_args!(\"{:?}\", lazy));",
+          "    assert!(result.contains(\"Lazy\"));",
+          "    assert!(result.contains(\"cell\"));",
+          "    assert!(result.contains(\"init\"));",
+          "    assert!(result.len() > 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(Some(5)) },",
+          "        init: Cell::new(None),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(format!(\"{:?}\", lazy), \"Lazy { cell: OnceCell { inner: Some(5) }, init: .. }\");",
+          "    assert!(lazy.init.get().is_none());",
+          "    assert!(unsafe { (*lazy.cell.inner.get()).is_some() });",
+          "    assert_eq!(unsafe { (*lazy.cell.inner.get()).unwrap() }, Some(5));"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(Some(5)) },",
+          "        init: Cell::new(None),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "    assert_eq!(format!(\"{:?}\", lazy), \"Lazy { cell: OnceCell { inner: Some(5) }, init: .. }\");",
+          "    assert!(lazy.init.get().is_none());",
+          "    assert!(unsafe { (*lazy.cell.inner.get()).is_some() });",
+          "    assert_eq!(unsafe { (*lazy.cell.inner.get()).unwrap() }, Some(5));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    #[derive(Debug)]",
+          "    struct MyStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(Some(MyStruct { value: 10 })) },",
+          "        init: Cell::new(Some(|| MyStruct { value: 10 })),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(format!(\"{:?}\", lazy), \"Lazy { cell: OnceCell { inner: UnsafeCell { value: Some(MyStruct { value: 10 })} }, init: &.. }\");"
+        ],
+        "code": [
+          "{",
+          "    #[derive(Debug)]",
+          "    struct MyStruct {",
+          "        value: i32,",
+          "    }",
+          "",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(Some(MyStruct { value: 10 })) },",
+          "        init: Cell::new(Some(|| MyStruct { value: 10 })),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "    assert_eq!(format!(\"{:?}\", lazy), \"Lazy { cell: OnceCell { inner: UnsafeCell { value: Some(MyStruct { value: 10 })} }, init: &.. }\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+          "        init: Cell::new(None),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(lazy.cell.inner.get(), UnsafeCell::new(None).get());",
+          "    assert!(lazy.init.get().is_none());",
+          "    assert!(format!(\"{:?}\", lazy).contains(\"Lazy\"));"
+        ],
+        "code": [
+          "{",
+          "    let lazy = Lazy {",
+          "        cell: OnceCell { inner: UnsafeCell::new(None) },",
+          "        init: Cell::new(None),",
+          "    };",
+          "    let _ = fmt::format(format_args!(\"{:?}\", lazy));",
+          "    assert_eq!(lazy.cell.inner.get(), UnsafeCell::new(None).get());",
+          "    assert!(lazy.init.get().is_none());",
+          "    assert!(format!(\"{:?}\", lazy).contains(\"Lazy\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

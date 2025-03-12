@@ -1,0 +1,130 @@
+// Answer 0
+
+#[test]
+fn test_internal_encode_last_fast_index_zero() {
+    struct TestEngine {
+        config: GeneralPurposeConfig,
+        encode_table: [u8; 64],
+    }
+
+    impl Engine for TestEngine {
+        type Config = GeneralPurposeConfig;
+        type DecodeEstimate = GeneralPurposeEstimate;
+        
+        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {
+            let mut input_index: usize = 0;
+            const BLOCKS_PER_FAST_LOOP: usize = 4;
+            const LOW_SIX_BITS: u64 = 0x3F;
+            let last_fast_index = input.len().saturating_sub(BLOCKS_PER_FAST_LOOP * 6 + 2);
+            let mut output_index = 0;
+
+            if last_fast_index > 0 {
+                // Simulated encoding logic for actual encoding
+            }
+
+            let rem = input.len() % 3;
+            let start_of_rem = input.len() - rem;
+
+            while input_index < start_of_rem {
+                // Simulated encoding logic for remaining bytes
+                input_index += 3;
+                output_index += 4;
+            }
+
+            if rem == 2 {
+                // Simulated encoding logic for two remaining bytes
+                output_index += 3;
+            } else if rem == 1 {
+                // Simulated encoding logic for one remaining byte
+                output_index += 2;
+            }
+            output_index
+        }
+
+        fn internal_decoded_len_estimate(&self, _: usize) -> Self::DecodeEstimate {
+            GeneralPurposeEstimate { rem: 0, conservative_decoded_len: 0 }
+        }
+
+        fn internal_decode(&self, _: &[u8], _: &mut [u8], _: Self::DecodeEstimate) -> Result<DecodeMetadata, DecodeSliceError> {
+            Ok(DecodeMetadata { decoded_len: 0 }) // Dummy implementation
+        }
+
+        fn config(&self) -> &Self::Config {
+            &self.config
+        }
+    }
+
+    let engine = TestEngine {
+        config: GeneralPurposeConfig { encode_padding: true, decode_allow_trailing_bits: false, decode_padding_mode: DecodePaddingMode::Indifferent },
+        encode_table: [0; 64],
+    };
+
+    let input: &[u8] = &[];
+    let mut output: &[u8] = &[];
+    let output_index = engine.internal_encode(input, &mut output);
+}
+
+#[test]
+fn test_internal_encode_start_of_rem_index() {
+    struct TestEngine {
+        config: GeneralPurposeConfig,
+        encode_table: [u8; 64],
+    }
+
+    impl Engine for TestEngine {
+        type Config = GeneralPurposeConfig;
+        type DecodeEstimate = GeneralPurposeEstimate;
+        
+        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {
+            let mut input_index: usize = 0;
+            const BLOCKS_PER_FAST_LOOP: usize = 4;
+            const LOW_SIX_BITS: u64 = 0x3F;
+            let last_fast_index = input.len().saturating_sub(BLOCKS_PER_FAST_LOOP * 6 + 2);
+            let mut output_index = 0;
+
+            if last_fast_index > 0 {
+                // Simulated encoding logic for actual encoding
+            }
+
+            let rem = input.len() % 3;
+            let start_of_rem = input.len() - rem;
+
+            while input_index < start_of_rem {
+                // Simulated encoding logic for remaining bytes
+                input_index += 3;
+                output_index += 4;
+            }
+
+            if rem == 2 {
+                // Simulated encoding logic for two remaining bytes
+                output_index += 3;
+            } else if rem == 1 {
+                // Simulated encoding logic for one remaining byte
+                output_index += 2;
+            }
+            output_index
+        }
+
+        fn internal_decoded_len_estimate(&self, _: usize) -> Self::DecodeEstimate {
+            GeneralPurposeEstimate { rem: 0, conservative_decoded_len: 0 }
+        }
+
+        fn internal_decode(&self, _: &[u8], _: &mut [u8], _: Self::DecodeEstimate) -> Result<DecodeMetadata, DecodeSliceError> {
+            Ok(DecodeMetadata { decoded_len: 0 }) // Dummy implementation
+        }
+
+        fn config(&self) -> &Self::Config {
+            &self.config
+        }
+    }
+
+    let engine = TestEngine {
+        config: GeneralPurposeConfig { encode_padding: true, decode_allow_trailing_bits: false, decode_padding_mode: DecodePaddingMode::Indifferent },
+        encode_table: [0; 64],
+    };
+
+    let input: &[u8] = &[0u8; 1]; // Input with 1 byte
+    let mut output: [u8; 0] = []; // Output buffer is explicitly 0 length
+    let output_index = engine.internal_encode(input, &mut output);
+}
+

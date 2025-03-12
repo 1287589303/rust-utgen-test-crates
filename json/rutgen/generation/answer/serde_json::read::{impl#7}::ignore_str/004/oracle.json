@@ -1,0 +1,134 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut scratch = Vec::new();",
+          "    let valid_escape_slice = [b'\\\\', b'n', b'\"'];",
+          "    let mut reader = SliceRead::new(&valid_escape_slice);",
+          "    reader.index = 0;",
+          "",
+          "    let _ = reader.ignore_str(); // This should go through without any panics",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(reader.index == 1); // Check that the index is updated after processing a valid escape sequence.",
+          "    assert!(reader.slice[reader.index] == b'\"'); // Check that the next character is the closing double quote.",
+          "    assert!(reader.slice.len() == 3); // Check that the slice length remains unchanged after ignore_str() call.",
+          "    assert!(reader.index < reader.slice.len()); // Ensure the index does not exceed the slice length.",
+          "    assert!(matches!(reader.ignore_str(), Ok(()))); // Ensure ignore_str() returns Ok without panic.",
+          "    assert!(reader.index == 1); // Verify index position after valid escape is handled."
+        ],
+        "code": [
+          "{",
+          "    let mut scratch = Vec::new();",
+          "    let valid_escape_slice = [b'\\\\', b'n', b'\"'];",
+          "    let mut reader = SliceRead::new(&valid_escape_slice);",
+          "    reader.index = 0;",
+          "",
+          "    let _ = reader.ignore_str(); // This should go through without any panics",
+          "    assert!(reader.index == 1); // Check that the index is updated after processing a valid escape sequence.",
+          "    assert!(reader.slice[reader.index] == b'\"'); // Check that the next character is the closing double quote.",
+          "    assert!(reader.slice.len() == 3); // Check that the slice length remains unchanged after ignore_str() call.",
+          "    assert!(reader.index < reader.slice.len()); // Ensure the index does not exceed the slice length.",
+          "    assert!(matches!(reader.ignore_str(), Ok(()))); // Ensure ignore_str() returns Ok without panic.",
+          "    assert!(reader.index == 1); // Verify index position after valid escape is handled.",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut scratch = Vec::new();",
+          "    let multiple_escapes_slice = [b'\\\\', b'n', b'\\\\', b't', b'\"'];",
+          "    let mut reader = SliceRead::new(&multiple_escapes_slice);",
+          "    reader.index = 0;",
+          "",
+          "    let _ = reader.ignore_str(); // This should also go through without any panics",
+          "}"
+        ],
+        "oracle": [
+          "    let mut scratch = Vec::new();",
+          "    let multiple_escapes_slice = [b'\\\\', b'n', b'\\\\', b't', b'\"'];",
+          "    let mut reader = SliceRead::new(&multiple_escapes_slice);",
+          "    reader.index = 0;",
+          "    assert_eq!(reader.index, 0);",
+          "    let result = reader.ignore_str();",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(reader.index, 4);"
+        ],
+        "code": [
+          "{",
+          "    let mut scratch = Vec::new();",
+          "    let multiple_escapes_slice = [b'\\\\', b'n', b'\\\\', b't', b'\"'];",
+          "    let mut reader = SliceRead::new(&multiple_escapes_slice);",
+          "    reader.index = 0;",
+          "",
+          "    let _ = reader.ignore_str(); // This should also go through without any panics",
+          "    let mut scratch = Vec::new();",
+          "    let multiple_escapes_slice = [b'\\\\', b'n', b'\\\\', b't', b'\"'];",
+          "    let mut reader = SliceRead::new(&multiple_escapes_slice);",
+          "    reader.index = 0;",
+          "    assert_eq!(reader.index, 0);",
+          "    let result = reader.ignore_str();",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(reader.index, 4);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut scratch = Vec::new();",
+          "    let end_after_escape_slice = [b'\\\\', b'n', b'\\\\', b'\\0']; // Not a valid escape, but checks end condition",
+          "    let mut reader = SliceRead::new(&end_after_escape_slice);",
+          "    reader.index = 0;",
+          "",
+          "    let _ = reader.ignore_str(); // This should handle cases reaching end gracefully ",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(reader.index, 0);",
+          "    assert!(matches!(_ , Err(ErrorCode::ControlCharacterWhileParsingString)));",
+          "    assert!(reader.index == end_after_escape_slice.len());",
+          "    assert_eq!(reader.slice[reader.index.wrapping_sub(1)], b'\\\\');",
+          "    assert!(reader.index > 0);",
+          "    assert!(matches!(reader.ignore_str(), Err(ErrorCode::EofWhileParsingString)));",
+          "    assert!(reader.index == end_after_escape_slice.len() + 1);",
+          "    assert!(matches!(reader.ignore_str(), Err(ErrorCode::ControlCharacterWhileParsingString)));"
+        ],
+        "code": [
+          "{",
+          "    let mut scratch = Vec::new();",
+          "    let end_after_escape_slice = [b'\\\\', b'n', b'\\\\', b'\\0']; // Not a valid escape, but checks end condition",
+          "    let mut reader = SliceRead::new(&end_after_escape_slice);",
+          "    reader.index = 0;",
+          "",
+          "    let _ = reader.ignore_str(); // This should handle cases reaching end gracefully ",
+          "    assert_eq!(reader.index, 0);",
+          "    assert!(matches!(_ , Err(ErrorCode::ControlCharacterWhileParsingString)));",
+          "    assert!(reader.index == end_after_escape_slice.len());",
+          "    assert_eq!(reader.slice[reader.index.wrapping_sub(1)], b'\\\\');",
+          "    assert!(reader.index > 0);",
+          "    assert!(matches!(reader.ignore_str(), Err(ErrorCode::EofWhileParsingString)));",
+          "    assert!(reader.index == end_after_escape_slice.len() + 1);",
+          "    assert!(matches!(reader.ignore_str(), Err(ErrorCode::ControlCharacterWhileParsingString)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

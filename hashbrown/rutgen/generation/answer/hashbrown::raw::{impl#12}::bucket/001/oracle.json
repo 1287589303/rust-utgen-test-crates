@@ -1,0 +1,191 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let alloc = Global; // assuming Global is the allocator",
+          "    let table_layout = TableLayout::default(); // assuming default is provided",
+          "    let capacity = 2; // minimal positive power of two buckets",
+          "    let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    ",
+          "    unsafe {",
+          "        let bucket = raw_table.bucket::<u32>(0);",
+          "        assert!(!bucket.as_ptr().is_null());",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(raw_table.buckets(), 2);",
+          "    assert!(raw_table.bucket_mask > 0);",
+          "    assert!(raw_table.items == 0);",
+          "    assert!(raw_table.growth_left == bucket_mask_to_capacity(raw_table.bucket_mask));",
+          "    assert!(raw_table.ctrl_slice().iter().all(|&ctrl| ctrl == Tag::EMPTY));",
+          "    assert!(capacity_to_buckets(capacity).is_some());",
+          "    assert!(raw_table.data_end::<u32>().as_ptr() != ptr::null_mut());",
+          "    assert!(raw_table.bucket::<u32>(0).as_ptr() != ptr::null_mut());",
+          "    assert!(raw_table.bucket::<u32>(1).as_ptr() == ptr::null_mut());"
+        ],
+        "code": [
+          "{",
+          "    let alloc = Global; // assuming Global is the allocator",
+          "    let table_layout = TableLayout::default(); // assuming default is provided",
+          "    let capacity = 2; // minimal positive power of two buckets",
+          "    let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    ",
+          "    unsafe {",
+          "        let bucket = raw_table.bucket::<u32>(0);",
+          "        assert!(!bucket.as_ptr().is_null());",
+          "    }",
+          "    assert_eq!(raw_table.buckets(), 2);",
+          "    assert!(raw_table.bucket_mask > 0);",
+          "    assert!(raw_table.items == 0);",
+          "    assert!(raw_table.growth_left == bucket_mask_to_capacity(raw_table.bucket_mask));",
+          "    assert!(raw_table.ctrl_slice().iter().all(|&ctrl| ctrl == Tag::EMPTY));",
+          "    assert!(capacity_to_buckets(capacity).is_some());",
+          "    assert!(raw_table.data_end::<u32>().as_ptr() != ptr::null_mut());",
+          "    assert!(raw_table.bucket::<u32>(0).as_ptr() != ptr::null_mut());",
+          "    assert!(raw_table.bucket::<u32>(1).as_ptr() == ptr::null_mut());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let alloc = Global;",
+          "    let table_layout = TableLayout::default();",
+          "    let capacity = 2; ",
+          "    let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    ",
+          "    unsafe {",
+          "        let bucket = raw_table.bucket::<u32>(1);",
+          "        assert!(!bucket.as_ptr().is_null());",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    unsafe {",
+          "    assert_eq!(raw_table.buckets(), 2);",
+          "    assert!(raw_table.bucket_mask != 0);",
+          "    assert!(1 < raw_table.buckets());",
+          "    assert!(!bucket.as_ptr().is_null());",
+          "    assert_eq!(bucket.as_ptr(), raw_table.data_end::<u32>().as_ptr().sub(1));",
+          "    }"
+        ],
+        "code": [
+          "{",
+          "    let alloc = Global;",
+          "    let table_layout = TableLayout::default();",
+          "    let capacity = 2; ",
+          "    let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    ",
+          "    unsafe {",
+          "        let bucket = raw_table.bucket::<u32>(1);",
+          "        assert!(!bucket.as_ptr().is_null());",
+          "    }",
+          "    unsafe {",
+          "    assert_eq!(raw_table.buckets(), 2);",
+          "    assert!(raw_table.bucket_mask != 0);",
+          "    assert!(1 < raw_table.buckets());",
+          "    assert!(!bucket.as_ptr().is_null());",
+          "    assert_eq!(bucket.as_ptr(), raw_table.data_end::<u32>().as_ptr().sub(1));",
+          "    }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let alloc = Global;",
+          "    let table_layout = TableLayout::default();",
+          "    let capacity = 4; // use a larger bucket size",
+          "    let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    ",
+          "    unsafe {",
+          "        let bucket = raw_table.bucket::<u32>(3); // upper bound",
+          "        assert!(!bucket.as_ptr().is_null());",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(raw_table.buckets(), 4);",
+          "    assert!(!raw_table.bucket::<u32>(0).as_ptr().is_null());",
+          "    assert!(!raw_table.bucket::<u32>(1).as_ptr().is_null());",
+          "    assert!(!raw_table.bucket::<u32>(2).as_ptr().is_null());",
+          "    assert!(!raw_table.bucket::<u32>(3).as_ptr().is_null());",
+          "    assert!(std::panic::catch_unwind(|| { raw_table.bucket::<u32>(4); }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let alloc = Global;",
+          "    let table_layout = TableLayout::default();",
+          "    let capacity = 4; // use a larger bucket size",
+          "    let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    ",
+          "    unsafe {",
+          "        let bucket = raw_table.bucket::<u32>(3); // upper bound",
+          "        assert!(!bucket.as_ptr().is_null());",
+          "    }",
+          "    assert_eq!(raw_table.buckets(), 4);",
+          "    assert!(!raw_table.bucket::<u32>(0).as_ptr().is_null());",
+          "    assert!(!raw_table.bucket::<u32>(1).as_ptr().is_null());",
+          "    assert!(!raw_table.bucket::<u32>(2).as_ptr().is_null());",
+          "    assert!(!raw_table.bucket::<u32>(3).as_ptr().is_null());",
+          "    assert!(std::panic::catch_unwind(|| { raw_table.bucket::<u32>(4); }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let alloc = Global;",
+          "    let table_layout = TableLayout::default();",
+          "    let capacity = 4; ",
+          "    let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    ",
+          "    unsafe {",
+          "        let _bucket = raw_table.bucket::<u32>(4); // out of bounds",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    debug_assert_ne!(raw_table.bucket_mask, 0);",
+          "    assert!(4 < raw_table.buckets());",
+          "    panic!(\"Index out of bounds\");"
+        ],
+        "code": [
+          "{",
+          "    let alloc = Global;",
+          "    let table_layout = TableLayout::default();",
+          "    let capacity = 4; ",
+          "    let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+          "    ",
+          "    unsafe {",
+          "        let _bucket = raw_table.bucket::<u32>(4); // out of bounds",
+          "    }",
+          "    debug_assert_ne!(raw_table.bucket_mask, 0);",
+          "    assert!(4 < raw_table.buckets());",
+          "    panic!(\"Index out of bounds\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,147 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x33\\x33\\x33\\x33\\x33\\x33\\xF3\\x3F\"[..];",
+          "    let _ = buf.get_f64_le();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_f64_le(), 1.2f64);",
+          "    assert!(panic::catch_unwind(|| buf.get_f64_le()).is_err());",
+          "    buf.advance(8);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert!(panic::catch_unwind(|| buf.get_f64_le()).is_err());",
+          "    buf = &b\"\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\"[..];",
+          "    assert_eq!(buf.get_f64_le(), 0.0f64);",
+          "    buf = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\"[..];",
+          "    assert_eq!(buf.get_f64_le(), f64::from_bits(0xFFFFFFFFFFFFFFFF));"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x33\\x33\\x33\\x33\\x33\\x33\\xF3\\x3F\"[..];",
+          "    let _ = buf.get_f64_le();",
+          "    assert_eq!(buf.get_f64_le(), 1.2f64);",
+          "    assert!(panic::catch_unwind(|| buf.get_f64_le()).is_err());",
+          "    buf.advance(8);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert!(panic::catch_unwind(|| buf.get_f64_le()).is_err());",
+          "    buf = &b\"\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\"[..];",
+          "    assert_eq!(buf.get_f64_le(), 0.0f64);",
+          "    buf = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\"[..];",
+          "    assert_eq!(buf.get_f64_le(), f64::from_bits(0xFFFFFFFFFFFFFFFF));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x33\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    let _ = buf.get_f64_le();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(1.0f64, buf.get_f64_le());",
+          "    assert_eq!(1.2f64, buf.get_f64_le());",
+          "    assert!(buf.remaining() < 8);",
+          "    let mut buf: &[u8] = &b\"\\x33\\x33\\x33\\x33\\x33\\x33\\xF3\\x3F hello\"[..];",
+          "    let mut buf: &[u8] = &b\"\\x33\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    let _ = buf.get_f64_le();",
+          "    assert!(std::panic::catch_unwind(|| { buf.get_f64_le(); }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x33\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    let _ = buf.get_f64_le();",
+          "    assert_eq!(1.0f64, buf.get_f64_le());",
+          "    assert_eq!(1.2f64, buf.get_f64_le());",
+          "    assert!(buf.remaining() < 8);",
+          "    let mut buf: &[u8] = &b\"\\x33\\x33\\x33\\x33\\x33\\x33\\xF3\\x3F hello\"[..];",
+          "    let mut buf: &[u8] = &b\"\\x33\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    let _ = buf.get_f64_le();",
+          "    assert!(std::panic::catch_unwind(|| { buf.get_f64_le(); }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\"[..];",
+          "    let _ = buf.get_f64_le();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(1.2f64, buf.get_f64_le());",
+          "    #[should_panic] assert!(true, \"Expected panic when calling get_f64_le on an empty buffer\");",
+          "    assert!(buf.remaining() < 8, \"Buffer remaining must be less than 8 bytes for panic case\");"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\"[..];",
+          "    let _ = buf.get_f64_le();",
+          "    assert_eq!(1.2f64, buf.get_f64_le());",
+          "    #[should_panic] assert!(true, \"Expected panic when calling get_f64_le on an empty buffer\");",
+          "    assert!(buf.remaining() < 8, \"Buffer remaining must be less than 8 bytes for panic case\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x33\\x33\\x33\\x33\\x33\\x33\\xF3\\x3F hello\"[..];",
+          "    let _ = buf.get_f64_le();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.get_f64_le(), 1.2f64);",
+          "    assert_panics!(buf.get_f64_le());",
+          "    buf.advance(8);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert!(buf.has_remaining() == false);",
+          "    buf.copy_to_slice(&mut [0u8; 8]);",
+          "    assert_eq!(buf.try_get_f64_le(), Ok(1.2));",
+          "    assert_eq!(buf.try_get_f64_le(), Err(TryGetError::NotEnoughData));",
+          "    buf.advance(8);",
+          "    assert!(buf.get_f64_le().is_nan() || buf.get_f64_le().is_infinite());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = &b\"\\x33\\x33\\x33\\x33\\x33\\x33\\xF3\\x3F hello\"[..];",
+          "    let _ = buf.get_f64_le();",
+          "    assert_eq!(buf.get_f64_le(), 1.2f64);",
+          "    assert_panics!(buf.get_f64_le());",
+          "    buf.advance(8);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "    assert!(buf.has_remaining() == false);",
+          "    buf.copy_to_slice(&mut [0u8; 8]);",
+          "    assert_eq!(buf.try_get_f64_le(), Ok(1.2));",
+          "    assert_eq!(buf.try_get_f64_le(), Err(TryGetError::NotEnoughData));",
+          "    buf.advance(8);",
+          "    assert!(buf.get_f64_le().is_nan() || buf.get_f64_le().is_infinite());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

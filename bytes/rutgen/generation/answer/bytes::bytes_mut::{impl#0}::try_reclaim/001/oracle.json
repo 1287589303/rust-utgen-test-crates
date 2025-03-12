@@ -1,0 +1,117 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = BytesMut::with_capacity(64);",
+          "    buf.try_reclaim(64); // Initial state, the capacity should allow reclaim",
+          "",
+          "    assert_eq!(true, buf.try_reclaim(64)); // additional == rem, expect true",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(true, buf.try_reclaim(64)); // precondition: additional <= rem at line 837 is true, with bound additional == rem, expect true"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = BytesMut::with_capacity(64);",
+          "    buf.try_reclaim(64); // Initial state, the capacity should allow reclaim",
+          "",
+          "    assert_eq!(true, buf.try_reclaim(64)); // additional == rem, expect true",
+          "    assert_eq!(true, buf.try_reclaim(64)); // precondition: additional <= rem at line 837 is true, with bound additional == rem, expect true",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = BytesMut::new();",
+          "    assert_eq!(true, buf.try_reclaim(0)); // additional == rem (0), expect true",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(true, buf.try_reclaim(0)); // additional == rem (0), expect true",
+          "    assert_eq!(true, buf.try_reclaim(64)); // additional <= rem (64), expect true for newly allocated capacity",
+          "    assert_eq!(true, buf.try_reclaim(32)); // additional <= rem (32), expect true for available space",
+          "    assert_eq!(true, buf.try_reclaim(16)); // additional <= rem (16), expect true for available space",
+          "    assert_eq!(true, buf.try_reclaim(1));  // additional <= rem (1), expect true for available space"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = BytesMut::new();",
+          "    assert_eq!(true, buf.try_reclaim(0)); // additional == rem (0), expect true",
+          "    assert_eq!(true, buf.try_reclaim(0)); // additional == rem (0), expect true",
+          "    assert_eq!(true, buf.try_reclaim(64)); // additional <= rem (64), expect true for newly allocated capacity",
+          "    assert_eq!(true, buf.try_reclaim(32)); // additional <= rem (32), expect true for available space",
+          "    assert_eq!(true, buf.try_reclaim(16)); // additional <= rem (16), expect true for available space",
+          "    assert_eq!(true, buf.try_reclaim(1));  // additional <= rem (1), expect true for available space",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = BytesMut::with_capacity(64);",
+          "    buf.extend_from_slice(b\"abcd\");",
+          "    let split = buf.split(); // Now split is allocated, buf has remaining capacity",
+          "",
+          "    assert_eq!(true, buf.try_reclaim(60)); // additional == rem (60), expect true",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(true, buf.try_reclaim(60));  // additional == rem (60), expect true"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = BytesMut::with_capacity(64);",
+          "    buf.extend_from_slice(b\"abcd\");",
+          "    let split = buf.split(); // Now split is allocated, buf has remaining capacity",
+          "",
+          "    assert_eq!(true, buf.try_reclaim(60)); // additional == rem (60), expect true",
+          "    assert_eq!(true, buf.try_reclaim(60));  // additional == rem (60), expect true",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = BytesMut::new();",
+          "    buf.resize(64, 0); // Fill to capacity",
+          "    buf.truncate(0); // Clear it",
+          "",
+          "    assert_eq!(true, buf.try_reclaim(64)); // additional == rem (64), expect true",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(true, buf.try_reclaim(64));  // additional == rem (64), expect true"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = BytesMut::new();",
+          "    buf.resize(64, 0); // Fill to capacity",
+          "    buf.truncate(0); // Clear it",
+          "",
+          "    assert_eq!(true, buf.try_reclaim(64)); // additional == rem (64), expect true",
+          "    assert_eq!(true, buf.try_reclaim(64));  // additional == rem (64), expect true",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

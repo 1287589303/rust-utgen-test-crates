@@ -1,0 +1,94 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct VisitorImpl;",
+      "",
+      "impl<'de> serde::de::Visitor<'de> for VisitorImpl {",
+      "    type Value = ();",
+      "",
+      "    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {",
+      "        formatter.write_str(\"an enum\")",
+      "    }",
+      "",
+      "    fn visit_enum<V>(self, _value: V) -> Result<Self::Value, serde::de::Error>",
+      "    where",
+      "        V: serde::de::EnumAccess<'de>,",
+      "    {",
+      "        Ok(())",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let empty_object = Value::Object(Map::new());",
+          "    let result: Result<_, serde::de::Error> = empty_object.deserialize_enum(\"test\", &[\"variant\"], VisitorImpl);",
+          "}"
+        ],
+        "oracle": [
+          "    let empty_object = Value::Object(Map::new());",
+          "    let result: Result<_, serde::de::Error> = empty_object.deserialize_enum(\"test\", &[\"variant\"], VisitorImpl);",
+          "    assert!(result.is_err(), \"Expected an error but got Ok\");",
+          "    let error = result.unwrap_err();",
+          "    assert_eq!(error, serde::de::Error::invalid_value(Unexpected::Map, &\"map with a single key\"));"
+        ],
+        "code": [
+          "{",
+          "    let empty_object = Value::Object(Map::new());",
+          "    let result: Result<_, serde::de::Error> = empty_object.deserialize_enum(\"test\", &[\"variant\"], VisitorImpl);",
+          "    let empty_object = Value::Object(Map::new());",
+          "    let result: Result<_, serde::de::Error> = empty_object.deserialize_enum(\"test\", &[\"variant\"], VisitorImpl);",
+          "    assert!(result.is_err(), \"Expected an error but got Ok\");",
+          "    let error = result.unwrap_err();",
+          "    assert_eq!(error, serde::de::Error::invalid_value(Unexpected::Map, &\"map with a single key\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let multiple_entries_object = Value::Object(Map::from_iter(vec![",
+          "        (String::from(\"key1\"), Value::String(String::from(\"value1\"))),",
+          "        (String::from(\"key2\"), Value::String(String::from(\"value2\"))),",
+          "    ]));",
+          "    let result: Result<_, serde::de::Error> = multiple_entries_object.deserialize_enum(\"test\", &[\"variant\"], VisitorImpl);",
+          "}"
+        ],
+        "oracle": [
+          "    let multiple_entries_object = Value::Object(Map::from_iter(vec![",
+          "    (String::from(\"key1\"), Value::String(String::from(\"value1\"))),",
+          "    (String::from(\"key2\"), Value::String(String::from(\"value2\"))),",
+          "    ]));",
+          "    let result: Result<_, serde::de::Error> = multiple_entries_object.deserialize_enum(\"test\", &[\"variant\"], VisitorImpl);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), serde::de::Error::invalid_value(Unexpected::Map, &\"map with a single key\"));"
+        ],
+        "code": [
+          "{",
+          "    let multiple_entries_object = Value::Object(Map::from_iter(vec![",
+          "        (String::from(\"key1\"), Value::String(String::from(\"value1\"))),",
+          "        (String::from(\"key2\"), Value::String(String::from(\"value2\"))),",
+          "    ]));",
+          "    let result: Result<_, serde::de::Error> = multiple_entries_object.deserialize_enum(\"test\", &[\"variant\"], VisitorImpl);",
+          "    let multiple_entries_object = Value::Object(Map::from_iter(vec![",
+          "    (String::from(\"key1\"), Value::String(String::from(\"value1\"))),",
+          "    (String::from(\"key2\"), Value::String(String::from(\"value2\"))),",
+          "    ]));",
+          "    let result: Result<_, serde::de::Error> = multiple_entries_object.deserialize_enum(\"test\", &[\"variant\"], VisitorImpl);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err(), serde::de::Error::invalid_value(Unexpected::Map, &\"map with a single key\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,184 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x01\\x02\\x03\\x04\";",
+          "    let value = buf.get_u32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value, 0x01020304);",
+          "    assert!(buf.remaining() == 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x01\\x02\\x03\\x04\";",
+          "    let value = buf.get_u32_ne();",
+          "    assert_eq!(value, 0x01020304);",
+          "    assert!(buf.remaining() == 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x01\\x02\\x03\";",
+          "    let value = buf.get_u32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(1, buf.remaining());",
+          "    assert_eq!(0, buf.has_remaining());",
+          "    assert_eq!(3, buf.chunk().len());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_u32_ne()).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x01\\x02\\x03\";",
+          "    let value = buf.get_u32_ne();",
+          "    assert_eq!(1, buf.remaining());",
+          "    assert_eq!(0, buf.has_remaining());",
+          "    assert_eq!(3, buf.chunk().len());",
+          "    assert!(std::panic::catch_unwind(|| buf.get_u32_ne()).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x05\\x06\\x07\\x08 hello\";",
+          "    let value = buf.get_u32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(value, 0x05060708);",
+          "    ",
+          "    let mut buf_empty: &[u8] = b\"\";",
+          "    let result_empty = std::panic::catch_unwind(|| buf_empty.get_u32_ne());",
+          "    assert!(result_empty.is_err());",
+          "    ",
+          "    let mut buf_short: &[u8] = b\"\\x01\\x02\\x03\";",
+          "    let result_short = std::panic::catch_unwind(|| buf_short.get_u32_ne());",
+          "    assert!(result_short.is_err());",
+          "    ",
+          "    let mut buf_correct: &[u8] = b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\";",
+          "    let value_correct = buf_correct.get_u32_ne();",
+          "    assert_eq!(value_correct, 0x01020304);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = b\"\\x05\\x06\\x07\\x08 hello\";",
+          "    let value = buf.get_u32_ne();",
+          "    assert_eq!(value, 0x05060708);",
+          "    ",
+          "    let mut buf_empty: &[u8] = b\"\";",
+          "    let result_empty = std::panic::catch_unwind(|| buf_empty.get_u32_ne());",
+          "    assert!(result_empty.is_err());",
+          "    ",
+          "    let mut buf_short: &[u8] = b\"\\x01\\x02\\x03\";",
+          "    let result_short = std::panic::catch_unwind(|| buf_short.get_u32_ne());",
+          "    assert!(result_short.is_err());",
+          "    ",
+          "    let mut buf_correct: &[u8] = b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\";",
+          "    let value_correct = buf_correct.get_u32_ne();",
+          "    assert_eq!(value_correct, 0x01020304);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = match cfg!(target_endian = \"big\") {",
+          "        true => b\"\\x08\\x09\\xA0\\xA1\",",
+          "        false => b\"\\xA1\\xA0\\x09\\x08\",",
+          "    };",
+          "    let value = buf.get_u32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(0x0809A0A1, buf.get_u32_ne());",
+          "    assert_eq!(0xA1A00908, buf.get_u32_ne());",
+          "    let mut buf_underflow: &[u8] = b\"\\xA1\\xA0\";",
+          "    panic::catch_unwind(|| { buf_underflow.get_u32_ne(); })",
+          "    let mut buf_exact: &[u8] = b\"\\x08\\x09\\xA0\\xA1 hello\";",
+          "    assert_eq!(0x0809A0A1, buf_exact.get_u32_ne());",
+          "    let mut buf_empty: &[u8] = b\"\";",
+          "    panic::catch_unwind(|| { buf_empty.get_u32_ne(); })"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = match cfg!(target_endian = \"big\") {",
+          "        true => b\"\\x08\\x09\\xA0\\xA1\",",
+          "        false => b\"\\xA1\\xA0\\x09\\x08\",",
+          "    };",
+          "    let value = buf.get_u32_ne();",
+          "    assert_eq!(0x0809A0A1, buf.get_u32_ne());",
+          "    assert_eq!(0xA1A00908, buf.get_u32_ne());",
+          "    let mut buf_underflow: &[u8] = b\"\\xA1\\xA0\";",
+          "    panic::catch_unwind(|| { buf_underflow.get_u32_ne(); })",
+          "    let mut buf_exact: &[u8] = b\"\\x08\\x09\\xA0\\xA1 hello\";",
+          "    assert_eq!(0x0809A0A1, buf_exact.get_u32_ne());",
+          "    let mut buf_empty: &[u8] = b\"\";",
+          "    panic::catch_unwind(|| { buf_empty.get_u32_ne(); })",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf: &[u8] = match cfg!(target_endian = \"little\") {",
+          "        true => b\"\\xA1\\xA0\\x09\\x08\",",
+          "        false => b\"\\x08\\x09\\xA0\\xA1\",",
+          "    };",
+          "    let value = buf.get_u32_ne();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(0xA009A1A1, buf.get_u32_ne());",
+          "    assert_eq!(0x0809A0A1, buf.get_u32_ne());",
+          "    panic::catch_unwind(|| { buf.advance(4); buf.get_u32_ne(); }).is_err();",
+          "    buf.advance(4);",
+          "    assert!(buf.has_remaining() == false);",
+          "    assert_eq!(buf.remaining(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: &[u8] = match cfg!(target_endian = \"little\") {",
+          "        true => b\"\\xA1\\xA0\\x09\\x08\",",
+          "        false => b\"\\x08\\x09\\xA0\\xA1\",",
+          "    };",
+          "    let value = buf.get_u32_ne();",
+          "    assert_eq!(0xA009A1A1, buf.get_u32_ne());",
+          "    assert_eq!(0x0809A0A1, buf.get_u32_ne());",
+          "    panic::catch_unwind(|| { buf.advance(4); buf.get_u32_ne(); }).is_err();",
+          "    buf.advance(4);",
+          "    assert!(buf.has_remaining() == false);",
+          "    assert_eq!(buf.remaining(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

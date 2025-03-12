@@ -1,0 +1,71 @@
+// Answer 0
+
+#[test]
+fn test_rfold_with_left_variant() {
+    struct TestIterator {
+        values: Vec<i32>,
+        index: usize,
+    }
+
+    impl DoubleEndedIterator for TestIterator {
+        type Item = i32;
+
+        fn next_back(&mut self) -> Option<Self::Item> {
+            if self.index < self.values.len() {
+                self.index += 1;
+                Some(self.values[self.values.len() - self.index])
+            } else {
+                None
+            }
+        }
+
+        fn rfold<Acc, G>(self, init: Acc, f: G) -> Acc 
+        where
+            G: FnMut(Acc, Self::Item) -> Acc,
+        {
+            self.values.iter().rev().fold(init, f)
+        }
+    }
+
+    let inner = Either::Left(TestIterator {
+        values: vec![1, 2, 3],
+        index: 0,
+    });
+
+    let iter_either = IterEither { inner };
+
+    let result = iter_either.rfold(0, |acc, x| acc + x);
+}
+
+#[test]
+fn test_rfold_with_empty_left_variant() {
+    struct EmptyIterator {
+        values: Vec<i32>,
+        index: usize,
+    }
+
+    impl DoubleEndedIterator for EmptyIterator {
+        type Item = i32;
+
+        fn next_back(&mut self) -> Option<Self::Item> {
+            None
+        }
+
+        fn rfold<Acc, G>(self, init: Acc, f: G) -> Acc 
+        where
+            G: FnMut(Acc, Self::Item) -> Acc,
+        {
+            init
+        }
+    }
+
+    let inner = Either::Left(EmptyIterator {
+        values: vec![],
+        index: 0,
+    });
+
+    let iter_either = IterEither { inner };
+
+    let result = iter_either.rfold(0, |acc, _x| acc + 1);
+}
+

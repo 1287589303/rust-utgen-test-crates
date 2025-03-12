@@ -1,0 +1,125 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut left: Either<&mut [&str], Vec<u8>> = Left(&mut [\"hello\"]);",
+          "    left.factor_iter_mut().for_each(|x| *x.unwrap_left() = \"goodbye\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(left, Left(&mut [\"goodbye\"]));",
+          "    let mut right: Either<[&str; 2], _> = Right(vec![0, 1, 2]);",
+          "    right.factor_iter_mut().for_each(|x| if let Right(r) = x { *r = -*r; });",
+          "    assert_eq!(right, Right(vec![0, -1, -2]));"
+        ],
+        "code": [
+          "{",
+          "    let mut left: Either<&mut [&str], Vec<u8>> = Left(&mut [\"hello\"]);",
+          "    left.factor_iter_mut().for_each(|x| *x.unwrap_left() = \"goodbye\");",
+          "    assert_eq!(left, Left(&mut [\"goodbye\"]));",
+          "    let mut right: Either<[&str; 2], _> = Right(vec![0, 1, 2]);",
+          "    right.factor_iter_mut().for_each(|x| if let Right(r) = x { *r = -*r; });",
+          "    assert_eq!(right, Right(vec![0, -1, -2]));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut left: Either<&mut [&str; 3], Vec<u8>> = Left(&mut [\"one\", \"two\", \"three\"]);",
+          "    left.factor_iter_mut().for_each(|x| *x.unwrap_left() = \"changed\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(left, Left(&mut [\"changed\", \"changed\", \"changed\"]));",
+          "    let mut right: Either<_, Vec<u8>> = Right(vec![1, 2, 3]);",
+          "    right.factor_iter_mut().for_each(|x| if let Right(r) = x { *r += 1; });",
+          "    assert_eq!(right, Right(vec![2, 3, 4]));",
+          "    let mut left_empty: Either<&mut [&str; 0], Vec<u8>> = Left(&mut []);",
+          "    left_empty.factor_iter_mut().for_each(|x| *x.unwrap_left() = \"should not change\");",
+          "    assert_eq!(left_empty, Left(&mut []));",
+          "    let mut right_empty: Either<_, Vec<u8>> = Right(vec![]);",
+          "    right_empty.factor_iter_mut().for_each(|x| if let Right(r) = x { *r += 1; });",
+          "    assert_eq!(right_empty, Right(vec![]));"
+        ],
+        "code": [
+          "{",
+          "    let mut left: Either<&mut [&str; 3], Vec<u8>> = Left(&mut [\"one\", \"two\", \"three\"]);",
+          "    left.factor_iter_mut().for_each(|x| *x.unwrap_left() = \"changed\");",
+          "    assert_eq!(left, Left(&mut [\"changed\", \"changed\", \"changed\"]));",
+          "    let mut right: Either<_, Vec<u8>> = Right(vec![1, 2, 3]);",
+          "    right.factor_iter_mut().for_each(|x| if let Right(r) = x { *r += 1; });",
+          "    assert_eq!(right, Right(vec![2, 3, 4]));",
+          "    let mut left_empty: Either<&mut [&str; 0], Vec<u8>> = Left(&mut []);",
+          "    left_empty.factor_iter_mut().for_each(|x| *x.unwrap_left() = \"should not change\");",
+          "    assert_eq!(left_empty, Left(&mut []));",
+          "    let mut right_empty: Either<_, Vec<u8>> = Right(vec![]);",
+          "    right_empty.factor_iter_mut().for_each(|x| if let Right(r) = x { *r += 1; });",
+          "    assert_eq!(right_empty, Right(vec![]));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut left: Either<&mut Vec<u32>, Vec<u8>> = Left(&mut vec![1; 1000]);",
+          "    left.factor_iter_mut().for_each(|x| *x.unwrap_left() += 1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(left, Left(ref l) if l == &mut vec![2; 1000]));"
+        ],
+        "code": [
+          "{",
+          "    let mut left: Either<&mut Vec<u32>, Vec<u8>> = Left(&mut vec![1; 1000]);",
+          "    left.factor_iter_mut().for_each(|x| *x.unwrap_left() += 1);",
+          "    assert!(matches!(left, Left(ref l) if l == &mut vec![2; 1000]));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut right: Either<&str, Vec<u8>> = Right(vec![0, 1, 2]);",
+          "    right.factor_iter_mut(); // This should panic as we expect Left",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let mut right: Either<&str, Vec<u8>> = Right(vec![0, 1, 2]);",
+          "    right.factor_iter_mut();",
+          "    }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let mut right: Either<&str, Vec<u8>> = Right(vec![0, 1, 2]);",
+          "    right.factor_iter_mut(); // This should panic as we expect Left",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    let mut right: Either<&str, Vec<u8>> = Right(vec![0, 1, 2]);",
+          "    right.factor_iter_mut();",
+          "    }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

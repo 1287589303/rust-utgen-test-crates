@@ -1,0 +1,198 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label = \"\";",
+          "    let nwrite = write_label_len(label);",
+          "    let mut dst = vec![0u8; nwrite];",
+          "    let _ = write_label(label, &mut dst);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(dst.len(), nwrite);",
+          "    assert_eq!(dst[nwrite - 1], 0);",
+          "    assert_eq!(dst.len() % 4, 0);",
+          "    assert!(write_label_len(label) <= 256);",
+          "    assert!(!label.as_bytes().iter().any(|&b| b == 0));"
+        ],
+        "code": [
+          "{",
+          "    let label = \"\";",
+          "    let nwrite = write_label_len(label);",
+          "    let mut dst = vec![0u8; nwrite];",
+          "    let _ = write_label(label, &mut dst);",
+          "    assert_eq!(dst.len(), nwrite);",
+          "    assert_eq!(dst[nwrite - 1], 0);",
+          "    assert_eq!(dst.len() % 4, 0);",
+          "    assert!(write_label_len(label) <= 256);",
+          "    assert!(!label.as_bytes().iter().any(|&b| b == 0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label = \"test\";",
+          "    let nwrite = write_label_len(label);",
+          "    let mut dst = vec![0u8; nwrite];",
+          "    let _ = write_label(label, &mut dst);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(write_label(\"short\", &mut [0u8; 4]).is_ok());",
+          "    assert_eq!(write_label(\"test\", &mut [0u8; 4]).unwrap(), 4);",
+          "    assert!(write_label(\"long_label_that_exceeds_255_bytes..........................................\", &mut [0u8; 260]).is_err());",
+          "    assert!(write_label(\"label_with\\0nul\", &mut [0u8; 4]).is_err());",
+          "    assert_eq!(write_label(\"label\", &mut [0u8; 8]).unwrap(), 8);",
+          "    assert_eq!(write_label(\"lbl\", &mut [0u8; 4]).unwrap(), 4);",
+          "    assert_eq!(write_label(\"padding_test\", &mut [0u8; 16]).unwrap(), 16);"
+        ],
+        "code": [
+          "{",
+          "    let label = \"test\";",
+          "    let nwrite = write_label_len(label);",
+          "    let mut dst = vec![0u8; nwrite];",
+          "    let _ = write_label(label, &mut dst);",
+          "    assert!(write_label(\"short\", &mut [0u8; 4]).is_ok());",
+          "    assert_eq!(write_label(\"test\", &mut [0u8; 4]).unwrap(), 4);",
+          "    assert!(write_label(\"long_label_that_exceeds_255_bytes..........................................\", &mut [0u8; 260]).is_err());",
+          "    assert!(write_label(\"label_with\\0nul\", &mut [0u8; 4]).is_err());",
+          "    assert_eq!(write_label(\"label\", &mut [0u8; 8]).unwrap(), 8);",
+          "    assert_eq!(write_label(\"lbl\", &mut [0u8; 4]).unwrap(), 4);",
+          "    assert_eq!(write_label(\"padding_test\", &mut [0u8; 16]).unwrap(), 16);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let label = \"a\".repeat(255);",
+          "    let nwrite = write_label_len(&label);",
+          "    let mut dst = vec![0u8; nwrite];",
+          "    let _ = write_label(&label, &mut dst);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(dst.len(), nwrite);",
+          "    assert!(write_label(&label, &mut dst).is_ok());",
+          "    assert!(dst[nwrite - 1] == 0);",
+          "    assert!(dst.iter().all(|&b| b != 0));",
+          "    assert_eq!(nwrite % 4, 0);"
+        ],
+        "code": [
+          "{",
+          "    let label = \"a\".repeat(255);",
+          "    let nwrite = write_label_len(&label);",
+          "    let mut dst = vec![0u8; nwrite];",
+          "    let _ = write_label(&label, &mut dst);",
+          "    assert_eq!(dst.len(), nwrite);",
+          "    assert!(write_label(&label, &mut dst).is_ok());",
+          "    assert!(dst[nwrite - 1] == 0);",
+          "    assert!(dst.iter().all(|&b| b != 0));",
+          "    assert_eq!(nwrite % 4, 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let label = \"a\".repeat(256); // this exceeds the max length",
+          "    let _ = write_label_len(&label);",
+          "}"
+        ],
+        "oracle": [
+          "    write_label_len(\"a\".repeat(256)) -> panic",
+          "    write_label(\"a\".repeat(256), &mut [0u8; 4]) -> Err(SerializeError { what: \"label\" })",
+          "    write_label(\"valid_label\", &mut [0u8; 15]) -> Ok(16)",
+          "    write_label(\"label_with_NUL\\0\", &mut [0u8; 20]) -> panic",
+          "    write_label(\"short\", &mut [0u8; 5]) -> Ok(8)"
+        ],
+        "code": [
+          "{",
+          "    let label = \"a\".repeat(256); // this exceeds the max length",
+          "    let _ = write_label_len(&label);",
+          "    write_label_len(\"a\".repeat(256)) -> panic",
+          "    write_label(\"a\".repeat(256), &mut [0u8; 4]) -> Err(SerializeError { what: \"label\" })",
+          "    write_label(\"valid_label\", &mut [0u8; 15]) -> Ok(16)",
+          "    write_label(\"label_with_NUL\\0\", &mut [0u8; 20]) -> panic",
+          "    write_label(\"short\", &mut [0u8; 5]) -> Ok(8)",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let label = \"test\\0label\"; // this contains a NUL byte",
+          "    let _ = write_label_len(label);",
+          "}"
+        ],
+        "oracle": [
+          "    write_label_len(\"test\\0label\");  // Should panic due to NUL byte in label",
+          "    ",
+          "    let label = \"\";",
+          "    let mut dst = [0u8; 4];",
+          "    let _ = write_label(label, &mut dst);  // Should return Ok(4) with padding",
+          "    ",
+          "    let label = \"a\";",
+          "    let mut dst = [0u8; 3];",
+          "    let result = write_label(label, &mut dst);  // Should return Err(SerializeError) as dst is too small",
+          "    ",
+          "    let label = \"abc\";",
+          "    let mut dst = [0u8; 8];",
+          "    let result = write_label(label, &mut dst);  // Should return Ok(8) with padding",
+          "    ",
+          "    let label = \"long_label_test\";",
+          "    let mut dst = [0u8; 15];",
+          "    let _ = write_label(label, &mut dst);  // Should return Ok(16) with padding"
+        ],
+        "code": [
+          "{",
+          "    let label = \"test\\0label\"; // this contains a NUL byte",
+          "    let _ = write_label_len(label);",
+          "    write_label_len(\"test\\0label\");  // Should panic due to NUL byte in label",
+          "    ",
+          "    let label = \"\";",
+          "    let mut dst = [0u8; 4];",
+          "    let _ = write_label(label, &mut dst);  // Should return Ok(4) with padding",
+          "    ",
+          "    let label = \"a\";",
+          "    let mut dst = [0u8; 3];",
+          "    let result = write_label(label, &mut dst);  // Should return Err(SerializeError) as dst is too small",
+          "    ",
+          "    let label = \"abc\";",
+          "    let mut dst = [0u8; 8];",
+          "    let result = write_label(label, &mut dst);  // Should return Ok(8) with padding",
+          "    ",
+          "    let label = \"long_label_test\";",
+          "    let mut dst = [0u8; 15];",
+          "    let _ = write_label(label, &mut dst);  // Should return Ok(16) with padding",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,146 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let valid_slice: [u8; 256] = [0; 256];",
+          "    let result = ByteClasses::from_bytes(&valid_slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let result = ByteClasses::from_bytes(&[]); // test with empty slice, expecting Err",
+          "    let result = ByteClasses::from_bytes(&[0; 255]); // test with slice of length 255, expecting Err",
+          "    let result = ByteClasses::from_bytes(&[0; 254]); // test with slice of length 254, expecting Err",
+          "    let result = ByteClasses::from_bytes(&[0; 257]); // test with slice of length 257, expecting Ok",
+          "    let result = ByteClasses::from_bytes(&[0; 256][..255].to_vec()); // test with slice with excessive elements in class, expecting Err",
+          "    let result = ByteClasses::from_bytes(&[0; 256][..].to_vec()); // test with valid slice, expecting Ok",
+          "    let result = ByteClasses::from_bytes(&[1; 256]); // test with invalid class value, expecting Err due to alphabet length check"
+        ],
+        "code": [
+          "{",
+          "    let valid_slice: [u8; 256] = [0; 256];",
+          "    let result = ByteClasses::from_bytes(&valid_slice);",
+          "    let result = ByteClasses::from_bytes(&[]); // test with empty slice, expecting Err",
+          "    let result = ByteClasses::from_bytes(&[0; 255]); // test with slice of length 255, expecting Err",
+          "    let result = ByteClasses::from_bytes(&[0; 254]); // test with slice of length 254, expecting Err",
+          "    let result = ByteClasses::from_bytes(&[0; 257]); // test with slice of length 257, expecting Ok",
+          "    let result = ByteClasses::from_bytes(&[0; 256][..255].to_vec()); // test with slice with excessive elements in class, expecting Err",
+          "    let result = ByteClasses::from_bytes(&[0; 256][..].to_vec()); // test with valid slice, expecting Ok",
+          "    let result = ByteClasses::from_bytes(&[1; 256]); // test with invalid class value, expecting Err due to alphabet length check",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let insufficient_slice: [u8; 255] = [0; 255];",
+          "    let result = ByteClasses::from_bytes(&insufficient_slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::BufferTooSmall);"
+        ],
+        "code": [
+          "{",
+          "    let insufficient_slice: [u8; 255] = [0; 255];",
+          "    let result = ByteClasses::from_bytes(&insufficient_slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::BufferTooSmall);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let out_of_bounds_slice: [u8; 257] = [0; 257];",
+          "    let result = ByteClasses::from_bytes(&out_of_bounds_slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(matches!(result.err(), Some(DeserializeError::buffer_too_small(\"byte class map\"))));",
+          "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::Generic { msg: \"found equivalence class greater than alphabet len\" });"
+        ],
+        "code": [
+          "{",
+          "    let out_of_bounds_slice: [u8; 257] = [0; 257];",
+          "    let result = ByteClasses::from_bytes(&out_of_bounds_slice);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert!(matches!(result.err(), Some(DeserializeError::buffer_too_small(\"byte class map\"))));",
+          "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::Generic { msg: \"found equivalence class greater than alphabet len\" });",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut invalid_class_slice: [u8; 256] = [0; 256];",
+          "    invalid_class_slice[0] = 256; // Setting a value out of the allowed range",
+          "    let result = ByteClasses::from_bytes(&invalid_class_slice);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, DeserializeError::buffer_too_small(\"byte class map\"));"
+        ],
+        "code": [
+          "{",
+          "    let mut invalid_class_slice: [u8; 256] = [0; 256];",
+          "    invalid_class_slice[0] = 256; // Setting a value out of the allowed range",
+          "    let result = ByteClasses::from_bytes(&invalid_class_slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().0, DeserializeError::buffer_too_small(\"byte class map\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut mixed_slice: [u8; 256] = [0; 256];",
+          "    mixed_slice[0] = 1; // valid class",
+          "    mixed_slice[1] = 255; // valid class",
+          "    mixed_slice[2] = 256; // invalid class",
+          "    let result = ByteClasses::from_bytes(&mixed_slice);",
+          "}"
+        ],
+        "oracle": [
+          "    let result = ByteClasses::from_bytes(&mixed_slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().0, DeserializeError::generic(\"found equivalence class greater than alphabet len\"));"
+        ],
+        "code": [
+          "{",
+          "    let mut mixed_slice: [u8; 256] = [0; 256];",
+          "    mixed_slice[0] = 1; // valid class",
+          "    mixed_slice[1] = 255; // valid class",
+          "    mixed_slice[2] = 256; // invalid class",
+          "    let result = ByteClasses::from_bytes(&mixed_slice);",
+          "    let result = ByteClasses::from_bytes(&mixed_slice);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().0, DeserializeError::generic(\"found equivalence class greater than alphabet len\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

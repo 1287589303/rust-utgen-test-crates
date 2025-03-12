@@ -1,0 +1,176 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"key=value\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap().0, decode(b\"key\"));",
+          "    assert_eq!(result.unwrap().1, decode(b\"value\"));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"key=value\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap().0, decode(b\"key\"));",
+          "    assert_eq!(result.unwrap().1, decode(b\"value\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"key1=value1&key2=value2\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    let result2 = parser.next();",
+          "}"
+        ],
+        "oracle": [
+          "    let input: &[u8] = b\"key1=value1&key2=value2\";",
+          "    let mut parser = Parse { input };",
+          "    let expected_first = Some((Cow::Borrowed(\"key1\"), Cow::Borrowed(\"value1\")));",
+          "    let expected_second = Some((Cow::Borrowed(\"key2\"), Cow::Borrowed(\"value2\")));",
+          "    assert_eq!(parser.next(), expected_first);",
+          "    assert_eq!(parser.next(), expected_second);"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"key1=value1&key2=value2\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    let result2 = parser.next();",
+          "    let input: &[u8] = b\"key1=value1&key2=value2\";",
+          "    let mut parser = Parse { input };",
+          "    let expected_first = Some((Cow::Borrowed(\"key1\"), Cow::Borrowed(\"value1\")));",
+          "    let expected_second = Some((Cow::Borrowed(\"key2\"), Cow::Borrowed(\"value2\")));",
+          "    assert_eq!(parser.next(), expected_first);",
+          "    assert_eq!(parser.next(), expected_second);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"key=&key2=value2\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap(), (decode(b\"key\"), decode(b\"\")));",
+          "    let input: &[u8] = b\"key=value&key2=value2\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap(), (decode(b\"key\"), decode(b\"value\")));",
+          "    let input: &[u8] = b\"key=value&\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap(), (decode(b\"key\"), decode(b\"value\")));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"key=&key2=value2\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap(), (decode(b\"key\"), decode(b\"\")));",
+          "    let input: &[u8] = b\"key=value&key2=value2\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap(), (decode(b\"key\"), decode(b\"value\")));",
+          "    let input: &[u8] = b\"key=value&\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap(), (decode(b\"key\"), decode(b\"value\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"key1=value1&key2=\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap().0, Cow::Borrowed(\"key1\"));",
+          "    assert_eq!(result.unwrap().1, Cow::Borrowed(\"value1\"));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"key1=value1&key2=\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    assert!(result.is_some());",
+          "    assert_eq!(result.unwrap().0, Cow::Borrowed(\"key1\"));",
+          "    assert_eq!(result.unwrap().1, Cow::Borrowed(\"value1\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input: &[u8] = b\"key1=value1&&key2=value2\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    let result2 = parser.next();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_some(), \"Expected Some((decode(name), decode(value))) but got None\");",
+          "    assert_eq!(result, Some((Cow::Borrowed(\"key1\"), Cow::Borrowed(\"value1\"))));",
+          "    ",
+          "    assert!(result2.is_some(), \"Expected Some((decode(name), decode(value))) but got None\");",
+          "    assert_eq!(result2, Some((Cow::Borrowed(\"key2\"), Cow::Borrowed(\"value2\"))));"
+        ],
+        "code": [
+          "{",
+          "    let input: &[u8] = b\"key1=value1&&key2=value2\";",
+          "    let mut parser = Parse { input };",
+          "    let result = parser.next();",
+          "    let result2 = parser.next();",
+          "    assert!(result.is_some(), \"Expected Some((decode(name), decode(value))) but got None\");",
+          "    assert_eq!(result, Some((Cow::Borrowed(\"key1\"), Cow::Borrowed(\"value1\"))));",
+          "    ",
+          "    assert!(result2.is_some(), \"Expected Some((decode(name), decode(value))) but got None\");",
+          "    assert_eq!(result2, Some((Cow::Borrowed(\"key2\"), Cow::Borrowed(\"value2\"))));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#8}::unicode_word_boundary",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:3277:5:3284:6",
+  "doc": "/// Heuristically enable Unicode word boundaries.\n///\n/// When set, this will attempt to implement Unicode word boundaries as if\n/// they were ASCII word boundaries. This only works when the search input\n/// is ASCII only. If a non-ASCII byte is observed while searching, then a\n/// [`MatchError::quit`] error is returned.\n///\n/// A possible alternative to enabling this option is to simply use an\n/// ASCII word boundary, e.g., via `(?-u:\\b)`. The main reason to use this\n/// option is if you absolutely need Unicode support. This option lets one\n/// use a fast search implementation (a DFA) for some potentially very\n/// common cases, while providing the option to fall back to some other\n/// regex engine to handle the general case when an error is returned.\n///\n/// If the pattern provided has no Unicode word boundary in it, then this\n/// option has no effect. (That is, quitting on a non-ASCII byte only\n/// occurs when this option is enabled _and_ a Unicode word boundary is\n/// present in the pattern.)\n///\n/// This is almost equivalent to setting all non-ASCII bytes to be quit\n/// bytes. The only difference is that this will cause non-ASCII bytes to\n/// be quit bytes _only_ when a Unicode word boundary is present in the\n/// pattern.\n///\n/// When enabling this option, callers _must_ be prepared to\n/// handle a [`MatchError`] error during search. When using a\n/// [`Regex`](crate::hybrid::regex::Regex), this corresponds to using the\n/// `try_` suite of methods. Alternatively, if callers can guarantee that\n/// their input is ASCII only, then a [`MatchError::quit`] error will never\n/// be returned while searching.\n///\n/// This is disabled by default.\n///\n/// # Example\n///\n/// This example shows how to heuristically enable Unicode word boundaries\n/// in a pattern. It also shows what happens when a search comes across a\n/// non-ASCII byte.\n///\n/// ```\n/// use regex_automata::{\n///     hybrid::dfa::DFA,\n///     HalfMatch, Input, MatchError,\n/// };\n///\n/// let dfa = DFA::builder()\n///     .configure(DFA::config().unicode_word_boundary(true))\n///     .build(r\"\\b[0-9]+\\b\")?;\n/// let mut cache = dfa.create_cache();\n///\n/// // The match occurs before the search ever observes the snowman\n/// // character, so no error occurs.\n/// let haystack = \"foo 123  ☃\";\n/// let expected = Some(HalfMatch::must(0, 7));\n/// let got = dfa.try_search_fwd(&mut cache, &Input::new(haystack))?;\n/// assert_eq!(expected, got);\n///\n/// // Notice that this search fails, even though the snowman character\n/// // occurs after the ending match offset. This is because search\n/// // routines read one byte past the end of the search to account for\n/// // look-around, and indeed, this is required here to determine whether\n/// // the trailing \\b matches.\n/// let haystack = \"foo 123 ☃\";\n/// let expected = MatchError::quit(0xE2, 8);\n/// let got = dfa.try_search_fwd(&mut cache, &Input::new(haystack));\n/// assert_eq!(Err(expected), got);\n///\n/// // Another example is executing a search where the span of the haystack\n/// // we specify is all ASCII, but there is non-ASCII just before it. This\n/// // correctly also reports an error.\n/// let input = Input::new(\"β123\").range(2..);\n/// let expected = MatchError::quit(0xB2, 1);\n/// let got = dfa.try_search_fwd(&mut cache, &input);\n/// assert_eq!(Err(expected), got);\n///\n/// // And similarly for the trailing word boundary.\n/// let input = Input::new(\"123β\").range(..3);\n/// let expected = MatchError::quit(0xCE, 3);\n/// let got = dfa.try_search_fwd(&mut cache, &input);\n/// assert_eq!(Err(expected), got);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn unicode_word_boundary(mut self, yes: bool) -> Config {",
+    "    // We have a separate option for this instead of just setting the",
+    "    // appropriate quit bytes here because we don't want to set quit bytes",
+    "    // for every regex. We only want to set them when the regex contains a",
+    "    // Unicode word boundary.",
+    "    self.unicode_word_boundary = Some(yes);",
+    "    self",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": "self",
+      "path": [
+        0,
+        1
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

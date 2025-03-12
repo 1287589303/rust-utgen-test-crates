@@ -1,0 +1,146 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let data = AtomicPtr::new(NonNull::new(Box::into_raw(Box::new(0u8))) as *mut ());",
+          "    let ptr = NonNull::new(Box::into_raw(Box::new([0u8; 1]))).unwrap().as_ptr();",
+          "    let len = 1;",
+          "",
+          "    unsafe {",
+          "        promotable_odd_drop(&mut data, ptr, len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(data.load(Ordering::SeqCst).is_null());",
+          "    assert_eq!(len, 1);",
+          "    assert_eq!(ptr, NonNull::new(Box::into_raw(Box::new([0u8; 1]))).unwrap().as_ptr());",
+          "    assert!(unsafe { Box::from_raw(ptr) }[0] == 0u8);",
+          "    assert!(data.load(Ordering::SeqCst) as usize & KIND_MASK == KIND_VEC);",
+          "    assert!(data.load(Ordering::SeqCst) as usize & KIND_MASK == KIND_ARC);"
+        ],
+        "code": [
+          "{",
+          "    let data = AtomicPtr::new(NonNull::new(Box::into_raw(Box::new(0u8))) as *mut ());",
+          "    let ptr = NonNull::new(Box::into_raw(Box::new([0u8; 1]))).unwrap().as_ptr();",
+          "    let len = 1;",
+          "",
+          "    unsafe {",
+          "        promotable_odd_drop(&mut data, ptr, len);",
+          "    }",
+          "    assert!(data.load(Ordering::SeqCst).is_null());",
+          "    assert_eq!(len, 1);",
+          "    assert_eq!(ptr, NonNull::new(Box::into_raw(Box::new([0u8; 1]))).unwrap().as_ptr());",
+          "    assert!(unsafe { Box::from_raw(ptr) }[0] == 0u8);",
+          "    assert!(data.load(Ordering::SeqCst) as usize & KIND_MASK == KIND_VEC);",
+          "    assert!(data.load(Ordering::SeqCst) as usize & KIND_MASK == KIND_ARC);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let data = AtomicPtr::new(NonNull::new(Box::into_raw(Box::new(1u8))) as *mut ());",
+          "    let ptr = NonNull::new(Box::into_raw(Box::new([1u8; 2]))).unwrap().as_ptr();",
+          "    let len = 2;",
+          "",
+          "    unsafe {",
+          "        promotable_odd_drop(&mut data, ptr, len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(data.load(Ordering::SeqCst) as usize & KIND_MASK, KIND_VEC);",
+          "    assert_eq!(ptr, NonNull::new(Box::into_raw(Box::new([1u8; 2]))).unwrap().as_ptr());",
+          "    assert_eq!(len, 2);",
+          "    assert!(data.load(Ordering::SeqCst).is_null() == false);",
+          "    let initial_data = data.load(Ordering::SeqCst);",
+          "    assert_ne!(initial_data, NonNull::new(Box::into_raw(Box::new(1u8))).unwrap().as_ptr());",
+          "    unsafe {",
+          "    promotable_odd_drop(&mut data, ptr, len);",
+          "    }",
+          "    assert_eq!(data.load(Ordering::SeqCst), initial_data);",
+          "    assert!(data.load(Ordering::SeqCst) == NonNull::new(Box::into_raw(Box::new([1u8; 2]))).unwrap().as_ptr());",
+          "    dbg!(data.load(Ordering::SeqCst));"
+        ],
+        "code": [
+          "{",
+          "    let data = AtomicPtr::new(NonNull::new(Box::into_raw(Box::new(1u8))) as *mut ());",
+          "    let ptr = NonNull::new(Box::into_raw(Box::new([1u8; 2]))).unwrap().as_ptr();",
+          "    let len = 2;",
+          "",
+          "    unsafe {",
+          "        promotable_odd_drop(&mut data, ptr, len);",
+          "    }",
+          "    assert_eq!(data.load(Ordering::SeqCst) as usize & KIND_MASK, KIND_VEC);",
+          "    assert_eq!(ptr, NonNull::new(Box::into_raw(Box::new([1u8; 2]))).unwrap().as_ptr());",
+          "    assert_eq!(len, 2);",
+          "    assert!(data.load(Ordering::SeqCst).is_null() == false);",
+          "    let initial_data = data.load(Ordering::SeqCst);",
+          "    assert_ne!(initial_data, NonNull::new(Box::into_raw(Box::new(1u8))).unwrap().as_ptr());",
+          "    unsafe {",
+          "    promotable_odd_drop(&mut data, ptr, len);",
+          "    }",
+          "    assert_eq!(data.load(Ordering::SeqCst), initial_data);",
+          "    assert!(data.load(Ordering::SeqCst) == NonNull::new(Box::into_raw(Box::new([1u8; 2]))).unwrap().as_ptr());",
+          "    dbg!(data.load(Ordering::SeqCst));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let data = AtomicPtr::new(NonNull::new(Box::into_raw(Box::new(0u8))) as *mut ());",
+          "    let ptr = NonNull::new(Box::into_raw(Box::new([0u8; 1]))).unwrap().as_ptr();",
+          "    let len = 0;",
+          "",
+          "    unsafe {",
+          "        promotable_odd_drop(&mut data, ptr, len);",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(data.load(Ordering::SeqCst), NonNull::new(ptr).unwrap().as_ptr() as *mut ());",
+          "    assert_eq!(len, 0);",
+          "    assert!(data.load(Ordering::SeqCst) as usize & KIND_MASK == KIND_VEC);",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    unsafe { promotable_odd_drop(&mut data, ptr, len) }",
+          "    }).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let data = AtomicPtr::new(NonNull::new(Box::into_raw(Box::new(0u8))) as *mut ());",
+          "    let ptr = NonNull::new(Box::into_raw(Box::new([0u8; 1]))).unwrap().as_ptr();",
+          "    let len = 0;",
+          "",
+          "    unsafe {",
+          "        promotable_odd_drop(&mut data, ptr, len);",
+          "    }",
+          "    assert_eq!(data.load(Ordering::SeqCst), NonNull::new(ptr).unwrap().as_ptr() as *mut ());",
+          "    assert_eq!(len, 0);",
+          "    assert!(data.load(Ordering::SeqCst) as usize & KIND_MASK == KIND_VEC);",
+          "    assert!(std::panic::catch_unwind(|| {",
+          "    unsafe { promotable_odd_drop(&mut data, ptr, len) }",
+          "    }).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

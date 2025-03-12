@@ -1,0 +1,229 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = BytesMut::from(&b\"abc\"[..]);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    mutable_ref.advance(1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(mutable_ref.is_empty() == false);",
+          "    assert_eq!(mutable_ref.len(), 2);",
+          "    assert_eq!(*mutable_ref.get(..1).unwrap(), b\"b\");",
+          "    assert_eq!(iter.next(), Some(b'b'));",
+          "    assert_eq!(iter.get_mut().len(), 2);",
+          "    assert_eq!(mutable_ref.get_mut().len(), 2);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = BytesMut::from(&b\"abc\"[..]);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    mutable_ref.advance(1);",
+          "    assert!(mutable_ref.is_empty() == false);",
+          "    assert_eq!(mutable_ref.len(), 2);",
+          "    assert_eq!(*mutable_ref.get(..1).unwrap(), b\"b\");",
+          "    assert_eq!(iter.next(), Some(b'b'));",
+          "    assert_eq!(iter.get_mut().len(), 2);",
+          "    assert_eq!(mutable_ref.get_mut().len(), 2);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = BytesMut::new();",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    mutable_ref.extend_from_slice(&b\"abc\"[..]);",
+          "}"
+        ],
+        "oracle": [
+          "    let mut buf = BytesMut::new();",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    assert_eq!(mutable_ref.len(), 0);",
+          "    mutable_ref.extend_from_slice(&b\"abc\"[..]);",
+          "    assert_eq!(mutable_ref.len(), 3);",
+          "    assert_eq!(mutable_ref.as_ref(), &b\"abc\"[..]);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = BytesMut::new();",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    mutable_ref.extend_from_slice(&b\"abc\"[..]);",
+          "    let mut buf = BytesMut::new();",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    assert_eq!(mutable_ref.len(), 0);",
+          "    mutable_ref.extend_from_slice(&b\"abc\"[..]);",
+          "    assert_eq!(mutable_ref.len(), 3);",
+          "    assert_eq!(mutable_ref.as_ref(), &b\"abc\"[..]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = BytesMut::from(&b\"content\"[..]);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    mutable_ref.advance(3);",
+          "    let result = mutable_ref.remaining();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut buf = BytesMut::from(&b\"content\"[..]);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    assert!(mutable_ref.remaining() == 7);",
+          "    mutable_ref.advance(3);",
+          "    assert!(mutable_ref.remaining() == 4);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = BytesMut::from(&b\"content\"[..]);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    mutable_ref.advance(3);",
+          "    let result = mutable_ref.remaining();",
+          "    let mut buf = BytesMut::from(&b\"content\"[..]);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    assert!(mutable_ref.remaining() == 7);",
+          "    mutable_ref.advance(3);",
+          "    assert!(mutable_ref.remaining() == 4);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = BytesMut::from(&b\"large_buffer_data\"[..]);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    mutable_ref.advance(5);",
+          "}"
+        ],
+        "oracle": [
+          "    mutable_ref = iter.get_mut();",
+          "    assert!(mutable_ref as *mut _ != std::ptr::null_mut());",
+          "    assert_eq!(mutable_ref.len(), 12);",
+          "    let mut temp_buf = mutable_ref.clone();",
+          "    assert!(temp_buf.advance(5).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = BytesMut::from(&b\"large_buffer_data\"[..]);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    mutable_ref.advance(5);",
+          "    mutable_ref = iter.get_mut();",
+          "    assert!(mutable_ref as *mut _ != std::ptr::null_mut());",
+          "    assert_eq!(mutable_ref.len(), 12);",
+          "    let mut temp_buf = mutable_ref.clone();",
+          "    assert!(temp_buf.advance(5).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = BytesMut::from(&b\"a\"[..]);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    let initial = mutable_ref.get(0);",
+          "    mutable_ref.advance(1);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(mutable_ref.get(0).is_some());",
+          "    assert_eq!(mutable_ref.get(0), Some(b'a'));",
+          "    assert_eq!(mutable_ref, &mut iter.inner);",
+          "    assert!(mutable_ref.is_empty() == false);",
+          "    assert_eq!(initial, Some(b'a'));",
+          "    assert!(mutable_ref.len() == 1);",
+          "    assert!(mutable_ref.get(1).is_none());",
+          "    assert!(iter.get_mut() != &mut iter.inner);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = BytesMut::from(&b\"a\"[..]);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    let initial = mutable_ref.get(0);",
+          "    mutable_ref.advance(1);",
+          "    assert!(mutable_ref.get(0).is_some());",
+          "    assert_eq!(mutable_ref.get(0), Some(b'a'));",
+          "    assert_eq!(mutable_ref, &mut iter.inner);",
+          "    assert!(mutable_ref.is_empty() == false);",
+          "    assert_eq!(initial, Some(b'a'));",
+          "    assert!(mutable_ref.len() == 1);",
+          "    assert!(mutable_ref.get(1).is_none());",
+          "    assert!(iter.get_mut() != &mut iter.inner);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut buf: BytesMut = BytesMut::with_capacity(0);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    mutable_ref.pop(); // This should panic due to empty buffer",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(std::ptr::eq(mutable_ref, &mut iter.inner));",
+          "    assert_eq!(iter.inner.len(), 0);",
+          "    assert!(std::mem::size_of_val(mutable_ref) == std::mem::size_of::<BytesMut>());",
+          "    assert!(mutable_ref.is_empty());",
+          "    assert!(std::panic::catch_unwind(|| mutable_ref.pop()).is_err());",
+          "    assert!(iter.inner.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf: BytesMut = BytesMut::with_capacity(0);",
+          "    let mut iter = IntoIter::new(buf);",
+          "    let mutable_ref = iter.get_mut();",
+          "    mutable_ref.pop(); // This should panic due to empty buffer",
+          "    assert!(std::ptr::eq(mutable_ref, &mut iter.inner));",
+          "    assert_eq!(iter.inner.len(), 0);",
+          "    assert!(std::mem::size_of_val(mutable_ref) == std::mem::size_of::<BytesMut>());",
+          "    assert!(mutable_ref.is_empty());",
+          "    assert!(std::panic::catch_unwind(|| mutable_ref.pop()).is_err());",
+          "    assert!(iter.inner.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

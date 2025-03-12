@@ -1,0 +1,243 @@
+{
+  "name": "bytes::bytes::{impl#5}::advance",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": true,
+  "loc": "src/bytes.rs:710:5:721:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: cnt <= self.len() at line 712 is true, with bound cnt == self.len()\n"
+      ],
+      "input_infer": "cnt: 0 to self.len(), inclusive\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes = Bytes::from_static(b\"test\");",
+                "    let length = bytes.len();",
+                "    bytes.advance(length);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes.len(), 0);",
+                "    assert!(bytes.is_empty());",
+                "    assert!(bytes.ptr == bytes.ptr.wrapping_add(length));",
+                "    assert!(bytes.data.load(Ordering::SeqCst).is_null());"
+              ],
+              "code": [
+                "{",
+                "    let mut bytes = Bytes::from_static(b\"test\");",
+                "    let length = bytes.len();",
+                "    bytes.advance(length);",
+                "    assert_eq!(bytes.len(), 0);",
+                "    assert!(bytes.is_empty());",
+                "    assert!(bytes.ptr == bytes.ptr.wrapping_add(length));",
+                "    assert!(bytes.data.load(Ordering::SeqCst).is_null());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes = Bytes::from_static(b\"test\");",
+                "    bytes.advance(0);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(bytes.len() == 4, \"Length after advancing by 0 should be 4\");",
+                "    assert!(bytes.as_slice() == b\"test\", \"Slice should remain unchanged after advancing by 0\");",
+                "    ",
+                "    let mut bytes = Bytes::from_static(b\"hello\");",
+                "    bytes.advance(5);",
+                "    assert!(bytes.len() == 0, \"Length after advancing by 5 should be 0\");",
+                "    assert!(bytes.as_slice().is_empty(), \"Slice should be empty after advancing by 5\");",
+                "    ",
+                "    let mut bytes = Bytes::from_static(b\"example\");",
+                "    bytes.advance(3);",
+                "    assert!(bytes.len() == 5, \"Length after advancing by 3 should be 5\");",
+                "    assert!(bytes.as_slice() == b\"ple\", \"Slice should equal 'ple' after advancing by 3\");"
+              ],
+              "code": [
+                "{",
+                "    let mut bytes = Bytes::from_static(b\"test\");",
+                "    bytes.advance(0);",
+                "    assert!(bytes.len() == 4, \"Length after advancing by 0 should be 4\");",
+                "    assert!(bytes.as_slice() == b\"test\", \"Slice should remain unchanged after advancing by 0\");",
+                "    ",
+                "    let mut bytes = Bytes::from_static(b\"hello\");",
+                "    bytes.advance(5);",
+                "    assert!(bytes.len() == 0, \"Length after advancing by 5 should be 0\");",
+                "    assert!(bytes.as_slice().is_empty(), \"Slice should be empty after advancing by 5\");",
+                "    ",
+                "    let mut bytes = Bytes::from_static(b\"example\");",
+                "    bytes.advance(3);",
+                "    assert!(bytes.len() == 5, \"Length after advancing by 3 should be 5\");",
+                "    assert!(bytes.as_slice() == b\"ple\", \"Slice should equal 'ple' after advancing by 3\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: cnt <= self.len() at line 712 is false\n"
+      ],
+      "input_infer": "cnt must be greater than self.len() with values ranging from (self.len() + 1) to usize::MAX.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes = Bytes::new(); // Represents an empty Bytes instance, so len() is 0",
+                "    let cnt = 1; // cnt > len(), as len() is 0",
+                "    bytes.advance(cnt);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(bytes.len(), 0);",
+                "    assert_panic!(|| bytes.advance(cnt));"
+              ],
+              "code": [
+                "{",
+                "    let mut bytes = Bytes::new(); // Represents an empty Bytes instance, so len() is 0",
+                "    let cnt = 1; // cnt > len(), as len() is 0",
+                "    bytes.advance(cnt);",
+                "    assert_eq!(bytes.len(), 0);",
+                "    assert_panic!(|| bytes.advance(cnt));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"test\"); // len() is 4",
+                "    let cnt = 5; // cnt > len(), len() is 4",
+                "    bytes.advance(cnt);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let bytes = Bytes::from_static(b\"test\");",
+                "    let cnt = 5;",
+                "    bytes.advance(cnt);",
+                "    }).is_err());"
+              ],
+              "code": [
+                "{",
+                "   let mut bytes = Bytes::from_static(b\"test\"); // len() is 4  ",
+                "   let cnt = 5; // cnt > len(), len() is 4  ",
+                "   bytes.advance(cnt);  ",
+                "   assert!(std::panic::catch_unwind(|| {  ",
+                "   let mut bytes = Bytes::from_static(b\"test\");  ",
+                "   let cnt = 5;  ",
+                "   bytes.advance(cnt);  ",
+                "   }).is_err());  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"bytes\"); // len() is 5",
+                "    let cnt = 6; // cnt > len(), len() is 5",
+                "    bytes.advance(cnt);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(std::panic::catch_unwind(|| {",
+                "    let bytes = Bytes::from_static(b\"bytes\");",
+                "    let cnt = 6; // cnt > len(), len() is 5",
+                "    bytes.advance(cnt);",
+                "    }).is_err());"
+              ],
+              "code": [
+                "{",
+                "   let mut bytes = Bytes::from_static(b\"bytes\"); // len() is 5",
+                "   let cnt = 6; // cnt > len(), len() is 5",
+                "   bytes.advance(cnt);",
+                "   assert!(std::panic::catch_unwind(|| {",
+                "   let mut bytes = Bytes::from_static(b\"bytes\");",
+                "   let cnt = 6; // cnt > len(), len() is 5",
+                "   bytes.advance(cnt);",
+                "    }).is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let bytes = Bytes::from_static(b\"max\"); // len() is 3",
+                "    let cnt = usize::MAX; // cnt is greater than len(), len() is 3",
+                "    bytes.advance(cnt);",
+                "}"
+              ],
+              "oracle": [
+                "    #[should_panic]",
+                "    #[test]",
+                "    fn test_bytes_advance_panic_on_over_advance() {",
+                "    let bytes = Bytes::from_static(b\"max\"); // len() is 3",
+                "    let cnt = 4; // cnt is greater than len(), len() is 3",
+                "    bytes.advance(cnt);",
+                "    }"
+              ],
+              "code": [
+                "{",
+                "   let mut bytes = Bytes::from_static(b\"max\"); // len() is 3  ",
+                "   let cnt = usize::MAX; // cnt is greater than len(), len() is 3  ",
+                "   bytes.advance(cnt);  ",
+                "   #[should_panic]  ",
+                "   #[test]  ",
+                "   fn test_bytes_advance_panic_on_over_advance() {  ",
+                "   let mut bytes = Bytes::from_static(b\"max\"); // len() is 3  ",
+                "   let cnt = 4; // cnt is greater than len(), len() is 3  ",
+                "   bytes.advance(cnt);  ",
+                "    }",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

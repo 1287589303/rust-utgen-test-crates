@@ -1,0 +1,110 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let invalid_length_bytes: Vec<u8> = vec![0; ACCEL_TY_SIZE + ACCEL_CAP - 1]; // Invalid length, less than ACCEL_CAP",
+          "    let accels = Accels { accels: &invalid_length_bytes };",
+          "    let _ = accels.validate();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(accels.validate().is_err());",
+          "    assert_eq!(accels.validate().unwrap_err().0, DeserializeErrorKind::BufferTooSmall);",
+          "    assert_eq!(accels.validate().unwrap_err().1, \"accelerator\");",
+          "    assert!(accels.validate().is_err());"
+        ],
+        "code": [
+          "{",
+          "    let invalid_length_bytes: Vec<u8> = vec![0; ACCEL_TY_SIZE + ACCEL_CAP - 1]; // Invalid length, less than ACCEL_CAP",
+          "    let accels = Accels { accels: &invalid_length_bytes };",
+          "    let _ = accels.validate();",
+          "    assert!(accels.validate().is_err());",
+          "    assert_eq!(accels.validate().unwrap_err().0, DeserializeErrorKind::BufferTooSmall);",
+          "    assert_eq!(accels.validate().unwrap_err().1, \"accelerator\");",
+          "    assert!(accels.validate().is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let invalid_chunk_bytes: Vec<u8> = vec![0; ACCEL_TY_SIZE + 3 * ACCEL_CAP]; // Create length to include 3 chunks",
+          "    // Modify the last chunk to be invalid (not enough bytes for Accel)",
+          "    invalid_chunk_bytes[ACCEL_TY_SIZE + 2 * ACCEL_CAP..ACCEL_TY_SIZE + 3 * ACCEL_CAP].fill(0); // Assuming this doesn't form a valid structure",
+          "    let accels = Accels { accels: &invalid_chunk_bytes };",
+          "    let _ = accels.validate();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(accels.validate().is_err());",
+          "    assert!(matches!(accels.validate(), Err(DeserializeError(_))));",
+          "    assert_eq!(accels.validate().unwrap_err().0, DeserializeErrorKind::BufferTooSmall);",
+          "    assert!(accels.as_bytes().len() >= ACCEL_TY_SIZE + ACCEL_CAP);",
+          "    assert!(accels.as_bytes()[ACCEL_TY_SIZE..].len() % ACCEL_CAP == 0);"
+        ],
+        "code": [
+          "{",
+          "    let invalid_chunk_bytes: Vec<u8> = vec![0; ACCEL_TY_SIZE + 3 * ACCEL_CAP]; // Create length to include 3 chunks",
+          "    // Modify the last chunk to be invalid (not enough bytes for Accel)",
+          "    invalid_chunk_bytes[ACCEL_TY_SIZE + 2 * ACCEL_CAP..ACCEL_TY_SIZE + 3 * ACCEL_CAP].fill(0); // Assuming this doesn't form a valid structure",
+          "    let accels = Accels { accels: &invalid_chunk_bytes };",
+          "    let _ = accels.validate();",
+          "    assert!(accels.validate().is_err());",
+          "    assert!(matches!(accels.validate(), Err(DeserializeError(_))));",
+          "    assert_eq!(accels.validate().unwrap_err().0, DeserializeErrorKind::BufferTooSmall);",
+          "    assert!(accels.as_bytes().len() >= ACCEL_TY_SIZE + ACCEL_CAP);",
+          "    assert!(accels.as_bytes()[ACCEL_TY_SIZE..].len() % ACCEL_CAP == 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut invalid_chunks_bytes: Vec<u8> = vec![0; ACCEL_TY_SIZE + 2 * ACCEL_CAP]; // Create 2 valid chunks",
+          "    // Create a larger invalid chunk",
+          "    invalid_chunks_bytes.extend_from_slice(&[0; ACCEL_CAP - 1]); // Invalid last chunk",
+          "",
+          "    let accels = Accels { accels: &invalid_chunks_bytes };",
+          "    let _ = accels.validate();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(accels.validate(), Err(DeserializeError::buffer_too_small(\"accelerator\")));",
+          "    assert!(accels.as_bytes().len() > ACCEL_TY_SIZE);",
+          "    assert!(accels.as_bytes()[ACCEL_TY_SIZE..].chunks(ACCEL_CAP).count() == 2);",
+          "    assert!(accels.as_bytes()[ACCEL_TY_SIZE..].ends_with(&[0; ACCEL_CAP - 1]));",
+          "    assert!(accels.as_bytes().len() % ACCEL_CAP == 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut invalid_chunks_bytes: Vec<u8> = vec![0; ACCEL_TY_SIZE + 2 * ACCEL_CAP]; // Create 2 valid chunks",
+          "    // Create a larger invalid chunk",
+          "    invalid_chunks_bytes.extend_from_slice(&[0; ACCEL_CAP - 1]); // Invalid last chunk",
+          "",
+          "    let accels = Accels { accels: &invalid_chunks_bytes };",
+          "    let _ = accels.validate();",
+          "    assert_eq!(accels.validate(), Err(DeserializeError::buffer_too_small(\"accelerator\")));",
+          "    assert!(accels.as_bytes().len() > ACCEL_TY_SIZE);",
+          "    assert!(accels.as_bytes()[ACCEL_TY_SIZE..].chunks(ACCEL_CAP).count() == 2);",
+          "    assert!(accels.as_bytes()[ACCEL_TY_SIZE..].ends_with(&[0; ACCEL_CAP - 1]));",
+          "    assert!(accels.as_bytes().len() % ACCEL_CAP == 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

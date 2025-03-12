@@ -1,0 +1,168 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cell = OnceCell::with_value(42);",
+          "    let cloned_cell = cell.clone();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(cell.get(), Some(&42));",
+          "    assert_eq!(cloned_cell.get(), Some(&42));",
+          "    assert!(cloned_cell.get() != cell);",
+          "    assert!(std::ptr::eq(cloned_cell.get().unwrap(), cell.get().unwrap()));"
+        ],
+        "code": [
+          "{",
+          "    let cell = OnceCell::with_value(42);",
+          "    let cloned_cell = cell.clone();",
+          "    assert_eq!(cell.get(), Some(&42));",
+          "    assert_eq!(cloned_cell.get(), Some(&42));",
+          "    assert!(cloned_cell.get() != cell);",
+          "    assert!(std::ptr::eq(cloned_cell.get().unwrap(), cell.get().unwrap()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cell = OnceCell::with_value(String::from(\"Hello\"));",
+          "    let cloned_cell = cell.clone();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(cloned_cell.get() == Some(&String::from(\"Hello\")));",
+          "    assert!(cell.get() == Some(&String::from(\"Hello\")));",
+          "    assert!(cell.get() as *const _ != cloned_cell.get() as *const _);",
+          "    assert!(cloned_cell.get() != cell);"
+        ],
+        "code": [
+          "{",
+          "    let cell = OnceCell::with_value(String::from(\"Hello\"));",
+          "    let cloned_cell = cell.clone();",
+          "    assert!(cloned_cell.get() == Some(&String::from(\"Hello\")));",
+          "    assert!(cell.get() == Some(&String::from(\"Hello\")));",
+          "    assert!(cell.get() as *const _ != cloned_cell.get() as *const _);",
+          "    assert!(cloned_cell.get() != cell);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    #[derive(Clone)]",
+          "    struct MyStruct {",
+          "        data: i32,",
+          "    }",
+          "    let cell = OnceCell::with_value(MyStruct { data: 10 });",
+          "    let cloned_cell = cell.clone();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(cloned_cell.get().unwrap().data, 10);",
+          "    assert!(cloned_cell.get().is_some());",
+          "    assert_ne!(cell as *const _, cloned_cell as *const _);",
+          "    assert_eq!(cell.get().as_ref().unwrap().data, cloned_cell.get().as_ref().unwrap().data);"
+        ],
+        "code": [
+          "{",
+          "    #[derive(Clone)]",
+          "    struct MyStruct {",
+          "        data: i32,",
+          "    }",
+          "    let cell = OnceCell::with_value(MyStruct { data: 10 });",
+          "    let cloned_cell = cell.clone();",
+          "    assert_eq!(cloned_cell.get().unwrap().data, 10);",
+          "    assert!(cloned_cell.get().is_some());",
+          "    assert_ne!(cell as *const _, cloned_cell as *const _);",
+          "    assert_eq!(cell.get().as_ref().unwrap().data, cloned_cell.get().as_ref().unwrap().data);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    #[derive(Clone)]",
+          "    struct EmptyStruct;",
+          "    let cell = OnceCell::with_value(EmptyStruct);",
+          "    let cloned_cell = cell.clone();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(cloned_cell.get().is_some());",
+          "    assert!(cloned_cell.get() == cell.get());",
+          "    assert!(cloned_cell.get().as_ref().unwrap().clone() == cell.get().as_ref().unwrap().clone());"
+        ],
+        "code": [
+          "{",
+          "    #[derive(Clone)]",
+          "    struct EmptyStruct;",
+          "    let cell = OnceCell::with_value(EmptyStruct);",
+          "    let cloned_cell = cell.clone();",
+          "    assert!(cloned_cell.get().is_some());",
+          "    assert!(cloned_cell.get() == cell.get());",
+          "    assert!(cloned_cell.get().as_ref().unwrap().clone() == cell.get().as_ref().unwrap().clone());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    #[derive(Clone)]",
+          "    struct Outer {",
+          "        inner: Inner,",
+          "    }",
+          "    #[derive(Clone)]",
+          "    struct Inner {",
+          "        value: i32,",
+          "    }",
+          "    let cell = OnceCell::with_value(Outer { inner: Inner { value: 20 } });",
+          "    let cloned_cell = cell.clone();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(cloned_cell.get().is_some());",
+          "    assert_eq!(cloned_cell.get().unwrap().inner.value, 20);",
+          "    assert_ne!(cell as *const OnceCell<Outer>, cloned_cell as *const OnceCell<Outer>);"
+        ],
+        "code": [
+          "{",
+          "    #[derive(Clone)]",
+          "    struct Outer {",
+          "        inner: Inner,",
+          "    }",
+          "    #[derive(Clone)]",
+          "    struct Inner {",
+          "        value: i32,",
+          "    }",
+          "    let cell = OnceCell::with_value(Outer { inner: Inner { value: 20 } });",
+          "    let cloned_cell = cell.clone();",
+          "    assert!(cloned_cell.get().is_some());",
+          "    assert_eq!(cloned_cell.get().unwrap().inner.value, 20);",
+          "    assert_ne!(cell as *const OnceCell<Outer>, cloned_cell as *const OnceCell<Outer>);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,256 @@
+{
+  "name": "bytes::bytes::{impl#3}::drop",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": true,
+  "loc": "src/bytes.rs:686:5:688:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "Validating a `Bytes` instance with non-null pointer, positive length, and appropriate vtable assigned: `ptr` != null, `len` >= 1, `vtable` in {OWNED_VTABLE, PROMOTABLE_EVEN_VTABLE, PROMOTABLE_ODD_VTABLE, SHARED_VTABLE, STATIC_VTABLE}.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let ptr: *const u8 = &42u8; // Non-null pointer",
+                "    let len: usize = 1; // Positive length",
+                "    let data = AtomicPtr::new(ptr as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr,",
+                "        len,",
+                "        data,",
+                "        vtable: &OWNED_VTABLE,",
+                "    };",
+                "    drop(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(unsafe { (OWNED_VTABLE.drop)(&mut bytes.data, bytes.ptr, bytes.len) }, ());",
+                "    assert!(bytes.data.load(Ordering::SeqCst).is_null());",
+                "    assert_eq!(bytes.len, 0);",
+                "    assert_eq!(bytes.ptr, std::ptr::null());"
+              ],
+              "code": [
+                "{",
+                "   let ptr: *const u8 = &42u8; // Non-null pointer",
+                "   let len: usize = 1; // Positive length",
+                "   let data = AtomicPtr::new(ptr as *mut ());",
+                "   let mut bytes = Bytes {",
+                "       ptr,",
+                "       len,",
+                "       data,",
+                "       vtable: &OWNED_VTABLE,",
+                "   };",
+                "   let bytes_copy = bytes; // Create a copy for dropping",
+                "   drop(bytes_copy);",
+                "   assert_eq!(unsafe { (OWNED_VTABLE.drop)(&mut bytes.data, bytes.ptr, bytes.len) }, ());",
+                "   assert!(bytes.data.load(Ordering::SeqCst).is_null());",
+                "   assert_eq!(bytes.len, 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let ptr: *const u8 = &24u8; // Non-null pointer",
+                "    let len: usize = 1; // Positive length",
+                "    let data = AtomicPtr::new(ptr as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr,",
+                "        len,",
+                "        data,",
+                "        vtable: &PROMOTABLE_EVEN_VTABLE,",
+                "    };",
+                "    drop(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(ptr, bytes.ptr);",
+                "    assert_eq!(len, bytes.len);",
+                "    assert!(bytes.data.load(Ordering::SeqCst).is_null());",
+                "    assert_eq!(unsafe { (PROMOTABLE_EVEN_VTABLE.is_unique)(&bytes.data) }, false);"
+              ],
+              "code": [
+                "{",
+                "   let ptr: *const u8 = &24u8; // Non-null pointer",
+                "   let len: usize = 1; // Positive length",
+                "   let data = AtomicPtr::new(ptr as *mut ());",
+                "   let bytes = Bytes {",
+                "       ptr,",
+                "       len,",
+                "       data,",
+                "       vtable: &PROMOTABLE_EVEN_VTABLE,",
+                "   };",
+                "   drop(bytes.clone());",
+                "   assert_eq!(ptr, bytes.ptr);",
+                "   assert_eq!(len, bytes.len);",
+                "   assert!(bytes.data.load(Ordering::SeqCst).is_null());",
+                "   assert_eq!(unsafe { (PROMOTABLE_EVEN_VTABLE.is_unique)(&bytes.data) }, false);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let ptr: *const u8 = &99u8; // Non-null pointer",
+                "    let len: usize = 1; // Positive length",
+                "    let data = AtomicPtr::new(ptr as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr,",
+                "        len,",
+                "        data,",
+                "        vtable: &PROMOTABLE_ODD_VTABLE,",
+                "    };",
+                "    drop(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(unsafe { (PROMOTABLE_ODD_VTABLE.is_unique)(&bytes.data) }, false); // Ensure we cannot check uniqueness after drop",
+                "    assert_eq!(unsafe { bytes.ptr }, ptr); // Pointer should remain the same",
+                "    assert_eq!(bytes.len, 1); // Length should be 1",
+                "    assert_eq!(bytes.data.load(Ordering::Relaxed), ptr as *mut ()); // Data atomic pointer should match ptr",
+                "    assert!(unsafe { bytes.data.load(Ordering::Relaxed) }.is_null() == false); // Data pointer should not be null after drop",
+                "    assert!(!ptr.is_null()); // Original pointer should be non-null"
+              ],
+              "code": [
+                "{",
+                "   let ptr: *const u8 = &99u8; // Non-null pointer  ",
+                "   let len: usize = 1; // Positive length  ",
+                "   let data = AtomicPtr::new(ptr as *mut ());  ",
+                "   let bytes = Bytes {  ",
+                "       ptr,  ",
+                "       len,  ",
+                "       data,  ",
+                "       vtable: &PROMOTABLE_ODD_VTABLE,  ",
+                "   };  ",
+                "   let bytes_clone = bytes.clone();  ",
+                "   drop(bytes);  ",
+                "   assert_eq!(unsafe { (PROMOTABLE_ODD_VTABLE.is_unique)(&bytes_clone.data) }, false); // Ensure we cannot check uniqueness after drop  ",
+                "   assert_eq!(unsafe { bytes_clone.ptr }, ptr); // Pointer should remain the same  ",
+                "   assert_eq!(bytes_clone.len, 1); // Length should be 1  ",
+                "   assert_eq!(bytes_clone.data.load(Ordering::Relaxed), ptr as *mut ()); // Data atomic pointer should match ptr  ",
+                "   assert!(unsafe { bytes_clone.data.load(Ordering::Relaxed) }.is_null() == false); // Data pointer should not be null after drop  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let ptr: *const u8 = &15u8; // Non-null pointer",
+                "    let len: usize = 1; // Positive length",
+                "    let data = AtomicPtr::new(ptr as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr,",
+                "        len,",
+                "        data,",
+                "        vtable: &SHARED_VTABLE,",
+                "    };",
+                "    drop(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    unsafe {",
+                "    assert_eq!(bytes.data.load(Ordering::SeqCst).is_null(), false);",
+                "    }",
+                "    assert_eq!(bytes.len, 1);",
+                "    assert_eq!(bytes.ptr, &15u8);",
+                "    assert_eq!(bytes.vtable, &SHARED_VTABLE);",
+                "    assert!(!bytes.data.is_null());"
+              ],
+              "code": [
+                "{",
+                "    let ptr: *const u8 = &15u8; // Non-null pointer",
+                "    let len: usize = 1; // Positive length",
+                "    let data = AtomicPtr::new(ptr as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr,",
+                "        len,",
+                "        data,",
+                "        vtable: &SHARED_VTABLE,",
+                "    };",
+                "    drop(bytes);",
+                "    unsafe {",
+                "    assert_eq!(bytes.data.load(Ordering::SeqCst).is_null(), false);",
+                "    }",
+                "    assert_eq!(bytes.len, 1);",
+                "    assert_eq!(bytes.ptr, &15u8);",
+                "    assert_eq!(bytes.vtable, &SHARED_VTABLE);",
+                "   assert!(!bytes.data.load(Ordering::SeqCst).is_null());  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let ptr: *const u8 = &7u8; // Non-null pointer",
+                "    let len: usize = 1; // Positive length",
+                "    let data = AtomicPtr::new(ptr as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr,",
+                "        len,",
+                "        data,",
+                "        vtable: &STATIC_VTABLE,",
+                "    };",
+                "    drop(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(bytes.data.load(Ordering::SeqCst) == ptr as *mut ());",
+                "    assert_eq!(bytes.len, 1);",
+                "    assert_eq!(bytes.ptr, ptr);",
+                "    assert!(ptr.is_null() == false);",
+                "    assert!(len > 0);",
+                "    assert!(bytes.vtable == &STATIC_VTABLE);",
+                "    assert!(bytes.data.is_unique());"
+              ],
+              "code": [
+                "{",
+                "    let ptr: *const u8 = &7u8; // Non-null pointer",
+                "    let len: usize = 1; // Positive length",
+                "    let data = AtomicPtr::new(ptr as *mut ());",
+                "    let bytes = Bytes {",
+                "        ptr,",
+                "        len,",
+                "        data,",
+                "        vtable: &STATIC_VTABLE,",
+                "    };",
+                "    drop(bytes);",
+                "    assert!(bytes.data.load(Ordering::SeqCst) == ptr as *mut ());",
+                "    assert_eq!(bytes.len, 1);",
+                "    assert_eq!(bytes.ptr, ptr);",
+                "    assert!(ptr.is_null() == false);",
+                "    assert!(len > 0);",
+                "    assert!(bytes.vtable == &STATIC_VTABLE);",
+                "   assert!(bytes.data.load(Ordering::SeqCst) == ptr as *mut ());  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

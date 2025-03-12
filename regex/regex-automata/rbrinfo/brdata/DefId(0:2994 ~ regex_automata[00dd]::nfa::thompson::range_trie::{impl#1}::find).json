@@ -1,0 +1,64 @@
+{
+  "name": "regex_automata::nfa::thompson::range_trie::{impl#1}::find",
+  "mod_info": {
+    "name": "nfa::thompson::range_trie",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:70:1:70:16"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/nfa/thompson/range_trie.rs:567:5:599:6",
+  "doc": "/// Find the position at which the given range should be inserted in this\n/// state.\n///\n/// The position returned is always in the inclusive range\n/// [0, transitions.len()]. If 'transitions.len()' is returned, then the\n/// given range overlaps with no other range in this state *and* is greater\n/// than all of them.\n///\n/// For all other possible positions, the given range either overlaps\n/// with the transition at that position or is otherwise less than it\n/// with no overlap (and is greater than the previous transition). In the\n/// former case, careful attention must be paid to inserting this range\n/// as a new transition. In the latter case, the range can be inserted as\n/// a new transition at the given position without disrupting any other\n/// transitions.\n",
+  "code": [
+    "fn find(&self, range: Utf8Range) -> usize {",
+    "    /// Returns the position `i` at which `pred(xs[i])` first returns true",
+    "    /// such that for all `j >= i`, `pred(xs[j]) == true`. If `pred` never",
+    "    /// returns true, then `xs.len()` is returned.",
+    "    ///",
+    "    /// We roll our own binary search because it doesn't seem like the",
+    "    /// standard library's binary search can be used here. Namely, if",
+    "    /// there is an overlapping range, then we want to find the first such",
+    "    /// occurrence, but there may be many. Or at least, it's not quite",
+    "    /// clear to me how to do it.",
+    "    fn binary_search<T, F>(xs: &[T], mut pred: F) -> usize",
+    "    where",
+    "        F: FnMut(&T) -> bool,",
+    "    {",
+    "        let (mut left, mut right) = (0, xs.len());",
+    "        while left < right {",
+    "            // Overflow is impossible because xs.len() <= 256.",
+    "            let mid = (left + right) / 2;",
+    "            if pred(&xs[mid]) {",
+    "                right = mid;",
+    "            } else {",
+    "                left = mid + 1;",
+    "            }",
+    "        }",
+    "        left",
+    "    }",
+    "",
+    "    // Benchmarks suggest that binary search is just a bit faster than",
+    "    // straight linear search. Specifically when using the debug tool:",
+    "    //",
+    "    //   hyperfine \"regex-cli debug thompson -qr --captures none '\\w{90} ecurB'\"",
+    "    binary_search(&self.transitions, |t| range.start <= t.range.end)",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

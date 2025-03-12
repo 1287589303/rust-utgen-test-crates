@@ -1,0 +1,106 @@
+use core::cell::{Cell, RefCell};
+use alloc::{
+    boxed::Box, string::{String, ToString},
+    vec, vec::Vec,
+};
+use crate::{error::Error, hir::{self, Config, Flags, Hir, HirKind}};
+const ERR_TOO_MUCH_NESTING: &str = "pattern has too much nesting";
+const ERR_TOO_MANY_CAPTURES: &str = "too many capture groups";
+const ERR_DUPLICATE_CAPTURE_NAME: &str = "duplicate capture group name";
+const ERR_UNCLOSED_GROUP: &str = "found open group without closing ')'";
+const ERR_UNCLOSED_GROUP_QUESTION: &str = "expected closing ')', but got end of pattern";
+const ERR_UNOPENED_GROUP: &str = "found closing ')' without matching '('";
+const ERR_LOOK_UNSUPPORTED: &str = "look-around is not supported";
+const ERR_EMPTY_FLAGS: &str = "empty flag directive '(?)' is not allowed";
+const ERR_MISSING_GROUP_NAME: &str = "expected capture group name, but got end of pattern";
+const ERR_INVALID_GROUP_NAME: &str = "invalid group name";
+const ERR_UNCLOSED_GROUP_NAME: &str = "expected end of capture group name, but got end of pattern";
+const ERR_EMPTY_GROUP_NAME: &str = "empty capture group names are not allowed";
+const ERR_FLAG_UNRECOGNIZED: &str = "unrecognized inline flag";
+const ERR_FLAG_REPEATED_NEGATION: &str = "inline flag negation cannot be repeated";
+const ERR_FLAG_DUPLICATE: &str = "duplicate inline flag is not allowed";
+const ERR_FLAG_UNEXPECTED_EOF: &str = "expected ':' or ')' to end inline flags, but got end of pattern";
+const ERR_FLAG_DANGLING_NEGATION: &str = "inline flags cannot end with negation directive";
+const ERR_DECIMAL_NO_DIGITS: &str = "expected decimal number, but found no digits";
+const ERR_DECIMAL_INVALID: &str = "got invalid decimal number";
+const ERR_HEX_BRACE_INVALID_DIGIT: &str = "expected hexadecimal number in braces, but got non-hex digit";
+const ERR_HEX_BRACE_UNEXPECTED_EOF: &str = "expected hexadecimal number, but saw end of pattern before closing brace";
+const ERR_HEX_BRACE_EMPTY: &str = "expected hexadecimal number in braces, but got no digits";
+const ERR_HEX_BRACE_INVALID: &str = "got invalid hexadecimal number in braces";
+const ERR_HEX_FIXED_UNEXPECTED_EOF: &str = "expected fixed length hexadecimal number, but saw end of pattern first";
+const ERR_HEX_FIXED_INVALID_DIGIT: &str = "expected fixed length hexadecimal number, but got non-hex digit";
+const ERR_HEX_FIXED_INVALID: &str = "got invalid fixed length hexadecimal number";
+const ERR_HEX_UNEXPECTED_EOF: &str = "expected hexadecimal number, but saw end of pattern first";
+const ERR_ESCAPE_UNEXPECTED_EOF: &str = "saw start of escape sequence, but saw end of pattern before it finished";
+const ERR_BACKREF_UNSUPPORTED: &str = "backreferences are not supported";
+const ERR_UNICODE_CLASS_UNSUPPORTED: &str = "Unicode character classes are not supported";
+const ERR_ESCAPE_UNRECOGNIZED: &str = "unrecognized escape sequence";
+const ERR_POSIX_CLASS_UNRECOGNIZED: &str = "unrecognized POSIX character class";
+const ERR_UNCOUNTED_REP_SUB_MISSING: &str = "uncounted repetition operator must be applied to a sub-expression";
+const ERR_COUNTED_REP_SUB_MISSING: &str = "counted repetition operator must be applied to a sub-expression";
+const ERR_COUNTED_REP_UNCLOSED: &str = "found unclosed counted repetition operator";
+const ERR_COUNTED_REP_MIN_UNCLOSED: &str = "found incomplete and unclosed counted repetition operator";
+const ERR_COUNTED_REP_COMMA_UNCLOSED: &str = "found counted repetition operator with a comma that is unclosed";
+const ERR_COUNTED_REP_MIN_MAX_UNCLOSED: &str = "found counted repetition with min and max that is unclosed";
+const ERR_COUNTED_REP_INVALID: &str = "expected closing brace for counted repetition, but got something else";
+const ERR_COUNTED_REP_INVALID_RANGE: &str = "found counted repetition with a min bigger than its max";
+const ERR_CLASS_UNCLOSED_AFTER_ITEM: &str = "non-empty character class has no closing bracket";
+const ERR_CLASS_INVALID_RANGE_ITEM: &str = "character class ranges must start and end with a single character";
+const ERR_CLASS_INVALID_ITEM: &str = "invalid escape sequence in character class";
+const ERR_CLASS_UNCLOSED_AFTER_DASH: &str = "non-empty character class has no closing bracket after dash";
+const ERR_CLASS_UNCLOSED_AFTER_NEGATION: &str = "negated character class has no closing bracket";
+const ERR_CLASS_UNCLOSED_AFTER_CLOSING: &str = "character class begins with literal ']' but has no closing bracket";
+const ERR_CLASS_INVALID_RANGE: &str = "invalid range in character class";
+const ERR_CLASS_UNCLOSED: &str = "found unclosed character class";
+const ERR_CLASS_NEST_UNSUPPORTED: &str = "nested character classes are not supported";
+const ERR_CLASS_INTERSECTION_UNSUPPORTED: &str = "character class intersection is not supported";
+const ERR_CLASS_DIFFERENCE_UNSUPPORTED: &str = "character class difference is not supported";
+const ERR_CLASS_SYMDIFFERENCE_UNSUPPORTED: &str = "character class symmetric difference is not supported";
+const ERR_SPECIAL_WORD_BOUNDARY_UNCLOSED: &str = "special word boundary assertion is unclosed or has an invalid character";
+const ERR_SPECIAL_WORD_BOUNDARY_UNRECOGNIZED: &str = "special word boundary assertion is unrecognized";
+const ERR_SPECIAL_WORD_OR_REP_UNEXPECTED_EOF: &str = "found start of special word boundary or repetition without an end";
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Error {
+    msg: &'static str,
+}
+impl Error {
+    pub(crate) fn new(msg: &'static str) -> Error {
+        Error { msg }
+    }
+}
+fn posix_class(kind: &str) -> Result<impl Iterator<Item = hir::ClassRange>, Error> {
+    let slice: &'static [(u8, u8)] = match kind {
+        "alnum" => &[(b'0', b'9'), (b'A', b'Z'), (b'a', b'z')],
+        "alpha" => &[(b'A', b'Z'), (b'a', b'z')],
+        "ascii" => &[(b'\x00', b'\x7F')],
+        "blank" => &[(b'\t', b'\t'), (b' ', b' ')],
+        "cntrl" => &[(b'\x00', b'\x1F'), (b'\x7F', b'\x7F')],
+        "digit" => &[(b'0', b'9')],
+        "graph" => &[(b'!', b'~')],
+        "lower" => &[(b'a', b'z')],
+        "print" => &[(b' ', b'~')],
+        "punct" => &[(b'!', b'/'), (b':', b'@'), (b'[', b'`'), (b'{', b'~')],
+        "space" => {
+            &[
+                (b'\t', b'\t'),
+                (b'\n', b'\n'),
+                (b'\x0B', b'\x0B'),
+                (b'\x0C', b'\x0C'),
+                (b'\r', b'\r'),
+                (b' ', b' '),
+            ]
+        }
+        "upper" => &[(b'A', b'Z')],
+        "word" => &[(b'0', b'9'), (b'A', b'Z'), (b'_', b'_'), (b'a', b'z')],
+        "xdigit" => &[(b'0', b'9'), (b'A', b'F'), (b'a', b'f')],
+        _ => return Err(Error::new(ERR_POSIX_CLASS_UNRECOGNIZED)),
+    };
+    Ok(
+        slice
+            .iter()
+            .map(|&(start, end)| hir::ClassRange {
+                start: char::from(start),
+                end: char::from(end),
+            }),
+    )
+}

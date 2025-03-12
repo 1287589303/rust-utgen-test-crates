@@ -1,0 +1,165 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes {",
+          "        ptr: std::ptr::null(),",
+          "        len: 0,",
+          "        data: AtomicPtr::new(std::ptr::null_mut()),",
+          "        vtable: &OWNED_VTABLE,",
+          "    };",
+          "    let _iter = bytes.into_iter();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(std::mem::size_of::<IntoIter<Bytes>>(), expected_size);",
+          "    assert!(std::ptr::eq(_iter.get_ref() as *const _, &bytes as *const _));",
+          "    assert!(std::ptr::eq(_iter.get_mut() as *mut _, &mut bytes as *mut _));"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes {",
+          "        ptr: std::ptr::null(),",
+          "        len: 0,",
+          "        data: AtomicPtr::new(std::ptr::null_mut()),",
+          "        vtable: &OWNED_VTABLE,",
+          "    };",
+          "    let _iter = bytes.into_iter();",
+          "    assert_eq!(std::mem::size_of::<IntoIter<Bytes>>(), expected_size);",
+          "    assert!(std::ptr::eq(_iter.get_ref() as *const _, &bytes as *const _));",
+          "    assert!(std::ptr::eq(_iter.get_mut() as *mut _, &mut bytes as *mut _));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let data = [0u8; 1];",
+          "    let bytes = Bytes {",
+          "        ptr: data.as_ptr(),",
+          "        len: 1,",
+          "        data: AtomicPtr::new(std::ptr::null_mut()),",
+          "        vtable: &OWNED_VTABLE,",
+          "    };",
+          "    let _iter = bytes.into_iter();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_iter.get_ref().len(), 1);",
+          "    assert_eq!(_iter.get_mut().len(), 1);",
+          "    assert!(_iter.into_inner().len() > 0);",
+          "    assert_eq!(unsafe { _iter.get_ref().is_unique() }, true);"
+        ],
+        "code": [
+          "{",
+          "    let data = [0u8; 1];",
+          "    let bytes = Bytes {",
+          "        ptr: data.as_ptr(),",
+          "        len: 1,",
+          "        data: AtomicPtr::new(std::ptr::null_mut()),",
+          "        vtable: &OWNED_VTABLE,",
+          "    };",
+          "    let _iter = bytes.into_iter();",
+          "    assert_eq!(_iter.get_ref().len(), 1);",
+          "    assert_eq!(_iter.get_mut().len(), 1);",
+          "    assert!(_iter.into_inner().len() > 0);",
+          "    assert_eq!(unsafe { _iter.get_ref().is_unique() }, true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let size = std::usize::MAX;",
+          "    let vec = vec![0u8; size];",
+          "    let bytes = Bytes {",
+          "        ptr: vec.as_ptr(),",
+          "        len: size,",
+          "        data: AtomicPtr::new(std::ptr::null_mut()),",
+          "        vtable: &OWNED_VTABLE,",
+          "    };",
+          "    let _iter = bytes.into_iter();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(std::mem::size_of::<IntoIter<Bytes>>(), size);",
+          "    assert_eq!(_iter.get_ref().len(), size);",
+          "    assert!(!_iter.get_mut().is_empty());",
+          "    assert_eq!(_iter.into_inner().len(), size);",
+          "    assert!(_iter.get_mut() as *mut _ as *const _ != std::ptr::null());"
+        ],
+        "code": [
+          "{",
+          "    let size = std::usize::MAX;",
+          "    let vec = vec![0u8; size];",
+          "    let bytes = Bytes {",
+          "        ptr: vec.as_ptr(),",
+          "        len: size,",
+          "        data: AtomicPtr::new(std::ptr::null_mut()),",
+          "        vtable: &OWNED_VTABLE,",
+          "    };",
+          "    let _iter = bytes.into_iter();",
+          "    assert_eq!(std::mem::size_of::<IntoIter<Bytes>>(), size);",
+          "    assert_eq!(_iter.get_ref().len(), size);",
+          "    assert!(!_iter.get_mut().is_empty());",
+          "    assert_eq!(_iter.into_inner().len(), size);",
+          "    assert!(_iter.get_mut() as *mut _ as *const _ != std::ptr::null());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let bytes = Bytes {",
+          "        ptr: std::ptr::null_mut(),",
+          "        len: 1,",
+          "        data: AtomicPtr::new(std::ptr::null_mut()),",
+          "        vtable: &OWNED_VTABLE,",
+          "    };",
+          "    let _iter = bytes.into_iter();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes.len, 1);",
+          "    assert!(bytes.ptr.is_null());",
+          "    assert!(bytes.data.load(Ordering::SeqCst).is_null());",
+          "    assert_eq!(bytes.vtable, &OWNED_VTABLE);"
+        ],
+        "code": [
+          "{",
+          "    let bytes = Bytes {",
+          "        ptr: std::ptr::null_mut(),",
+          "        len: 1,",
+          "        data: AtomicPtr::new(std::ptr::null_mut()),",
+          "        vtable: &OWNED_VTABLE,",
+          "    };",
+          "    let _iter = bytes.into_iter();",
+          "    assert_eq!(bytes.len, 1);",
+          "    assert!(bytes.ptr.is_null());",
+          "    assert!(bytes.data.load(Ordering::SeqCst).is_null());",
+          "    assert_eq!(bytes.vtable, &OWNED_VTABLE);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

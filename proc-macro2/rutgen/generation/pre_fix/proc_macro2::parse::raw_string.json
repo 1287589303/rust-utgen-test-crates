@@ -1,0 +1,906 @@
+{
+  "name": "proc_macro2::parse::raw_string",
+  "mod_info": {
+    "name": "parse",
+    "loc": "src/lib.rs:142:1:142:11"
+  },
+  "visible": false,
+  "loc": "src/parse.rs:414:1:431:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: delimiter_of_raw_string(input)? at line 415 is Err/None\n"
+      ],
+      "input_infer": "Input: Cursor with an empty string, Cursor with a single character string not starting with a delimiter, Cursor with a string containing a delimiter beyond 255 bytes, Cursor with a string of 256 bytes or more containing a valid delimiter.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let cursor = Cursor { rest: \"\" };",
+                "    let _ = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(raw_string(Cursor { rest: \"\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"#\\\"example\\\"\"}), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"###\\\"text\\\"\"}), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"\\\"unmatched\"}), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"normal string\"}), Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let cursor = Cursor { rest: \"\" };",
+                "    let _ = raw_string(cursor);",
+                "    assert_eq!(raw_string(Cursor { rest: \"\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"#\\\"example\\\"\"}), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"###\\\"text\\\"\"}), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"\\\"unmatched\"}), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"normal string\"}), Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let cursor = Cursor { rest: \"a\" };",
+                "    let _ = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(raw_string(Cursor { rest: \"a\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"\\\"abc\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"#\\\"abc\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"##\\\"abc\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"###\\\"abc\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"\\\"\\\"not_raw\\\"\\\"\"}), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"normal string\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"#\" }), Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let cursor = Cursor { rest: \"a\" };",
+                "    let _ = raw_string(cursor);",
+                "    assert_eq!(raw_string(Cursor { rest: \"a\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"\\\"abc\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"#\\\"abc\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"##\\\"abc\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"###\\\"abc\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"\\\"\\\"not_raw\\\"\\\"\"}), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"normal string\" }), Err(Reject));",
+                "    assert_eq!(raw_string(Cursor { rest: \"#\" }), Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let long_string = std::iter::repeat('x').take(260).collect::<String>() + \"###\";",
+                "    let cursor = Cursor { rest: &long_string };",
+                "    let _ = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(raw_string(Cursor { rest: &std::iter::repeat('x').take(260).collect::<String>() + \"###\" }), Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let long_string = std::iter::repeat('x').take(260).collect::<String>() + \"###\";",
+                "    let cursor = Cursor { rest: &long_string };",
+                "    let _ = raw_string(cursor);",
+                "    assert_eq!(raw_string(Cursor { rest: &std::iter::repeat('x').take(260).collect::<String>() + \"###\" }), Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let long_string = std::iter::repeat('x').take(256).collect::<String>() + \"###\";",
+                "    let cursor = Cursor { rest: &long_string };",
+                "    let _ = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    let long_string = std::iter::repeat('x').take(256).collect::<String>() + \"###\";",
+                "    let cursor = Cursor { rest: &long_string };",
+                "    assert_eq!(raw_string(cursor).is_err(), true);",
+                "    assert!(matches!(raw_string(cursor), Err(Reject)));",
+                "    assert!(raw_string(cursor).unwrap_err() == Reject);",
+                "    assert_eq!(long_string.len(), 259);",
+                "    assert!(long_string.starts_with(\"x\"));"
+              ],
+              "code": [
+                "{",
+                "    let long_string = std::iter::repeat('x').take(256).collect::<String>() + \"###\";",
+                "    let cursor = Cursor { rest: &long_string };",
+                "    let _ = raw_string(cursor);",
+                "    let long_string = std::iter::repeat('x').take(256).collect::<String>() + \"###\";",
+                "    let cursor = Cursor { rest: &long_string };",
+                "    assert_eq!(raw_string(cursor).is_err(), true);",
+                "    assert!(matches!(raw_string(cursor), Err(Reject)));",
+                "    assert!(raw_string(cursor).unwrap_err() == Reject);",
+                "    assert_eq!(long_string.len(), 259);",
+                "    assert!(long_string.starts_with(\"x\"));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: delimiter_of_raw_string(input)? at line 415 is Ok/Some\n",
+        "precondition: let Some((i, byte)) = bytes.next() at line 417 is true\n",
+        "precondition: byte matches b'\\r' at line 423 is true\n",
+        "precondition: byte matches b'\"' at line 419 is true\n",
+        "precondition: byte matches _ at line 427 is true\n",
+        "precondition: let Some((i, byte)) = bytes.next() at line 417 is true\n",
+        "expected return value/type: Err(Reject)\n"
+      ],
+      "input_infer": "Cursor input with a non-empty rest string that includes both carriage return (b'\\r') and characters leading to a case where delimiter check fails or does not exist, ensuring length exceeds 255 characters for the delimiter scenario.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"Hello\\rWorld\\\"Extra\"; // This includes a carriage return followed by a quote.",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap().is_empty(), true);",
+                "    assert!(matches!(result, Err(Reject)));",
+                "    assert!(cursor.rest == \"World\\\"Extra\");",
+                "    assert!(cursor.rest.contains('\\r'));",
+                "    assert!(cursor.rest.contains('\"'));"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"Hello\\rWorld\\\"Extra\"; // This includes a carriage return followed by a quote.",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap().is_empty(), true);",
+                "    assert!(matches!(result, Err(Reject)));",
+                "    assert!(cursor.rest == \"World\\\"Extra\");",
+                "    assert!(cursor.rest.contains('\\r'));",
+                "    assert!(cursor.rest.contains('\"'));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"#This is a very long delimiter that exceeds the expected length which will trigger the Reject. Hello\\rWorld\\\"Extra\"; // Delimiter exceeds 255 characters.",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"#This is a very long delimiter that exceeds the expected length which will trigger the Reject. Hello\\rWorld\\\"Extra\"; // Delimiter exceeds 255 characters.",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"SomeText\\r\\n\\\"NotTheExpectedDelimiter\"; // The expected delimiter doesn't match.",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), Reject);"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"SomeText\\r\\n\\\"NotTheExpectedDelimiter\"; // The expected delimiter doesn't match.",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), Reject);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"#InvalidDelimiter\\rAnythingAfter\\\"Invalid\"; // Includes carriage return with a potential invalid delimiter.",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"#InvalidDelimiter\\rAnythingAfter\\\"Invalid\"; // Includes carriage return with a potential invalid delimiter.",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "precondition: delimiter_of_raw_string(input)? at line 415 is Ok/Some\n",
+        "precondition: let Some((i, byte)) = bytes.next() at line 417 is true\n",
+        "precondition: byte matches b'\\r' at line 423 is true\n",
+        "precondition: byte matches b'\\r' at line 418 is true\n",
+        "precondition: bytes.next() matches Some((_, b'\\n')) at line 423 is true\n",
+        "precondition: bytes.next() matches Some((_, b'\\n')) at line 424 is false\n",
+        "precondition: bytes.next() matches _ at line 425 is true\n",
+        "expected return value/type: Err(Reject)\n"
+      ],
+      "input_infer": "Cursor input with rest containing at least one '\\r', then a '\\n', followed by any character excluding another '\\n' after 256 bytes in total with 0-255 characters before '\\r'\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"a\".repeat(255) + \"\\r\\nx\";",
+                "    let cursor = Cursor { rest: &input_str };",
+                "",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().get_type_id(), Reject::get_type_id());"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"a\".repeat(255) + \"\\r\\nx\";",
+                "    let cursor = Cursor { rest: &input_str };",
+                "",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().get_type_id(), Reject::get_type_id());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"a\".repeat(255) + \"\\r\\n\";",
+                "    let cursor = Cursor { rest: &input_str };",
+                "",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    let input_str = \"a\".repeat(255) + \"\\r\\n\";",
+                "    let cursor = Cursor { rest: &input_str };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), Reject);"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"a\".repeat(255) + \"\\r\\n\";",
+                "    let cursor = Cursor { rest: &input_str };",
+                "",
+                "    let result = raw_string(cursor);",
+                "    let input_str = \"a\".repeat(255) + \"\\r\\n\";",
+                "    let cursor = Cursor { rest: &input_str };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), Reject);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"a\".repeat(255) + \"\\r\\nx\";",
+                "    let cursor = Cursor { rest: &input_str };",
+                "",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"a\".repeat(255) + \"\\r\\nx\";",
+                "    let cursor = Cursor { rest: &input_str };",
+                "",
+                "    let result = raw_string(cursor);",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"a\".repeat(255) + \"\\r\\r\\nx\";",
+                "    let cursor = Cursor { rest: &input_str };",
+                "",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"a\".repeat(255) + \"\\r\\r\\nx\";",
+                "    let cursor = Cursor { rest: &input_str };",
+                "",
+                "    let result = raw_string(cursor);",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "precondition: delimiter_of_raw_string(input)? at line 415 is Ok/Some\n",
+        "precondition: let Some((i, byte)) = bytes.next() at line 417 is true\n",
+        "precondition: byte matches b'\\r' at line 423 is true\n",
+        "precondition: byte matches b'\\r' at line 418 is true\n",
+        "precondition: bytes.next() matches Some((_, b'\\n')) at line 423 is true\n",
+        "precondition: bytes.next() matches  at line 423 is true\n",
+        "precondition: bytes.next() matches Some((_, b'\\n')) at line 423 is true\n",
+        "precondition: let Some((i, byte)) = bytes.next() at line 417 is true\n",
+        "expected return value/type: Err(Reject)\n"
+      ],
+      "input_infer": "Cursor with a rest string containing less than 256 bytes, with at least one occurrence of b'\\r' followed immediately by b'\\n', and not starting with a valid delimiter string.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"\\r\\n\"; // Input containing '\\r' followed by '\\n'",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"\\r\\n\"; // Input containing '\\r' followed by '\\n'",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"\\r\\n\\r\\n\"; // Multiple occurrences of '\\r' followed by '\\n'",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"\\r\\n\\r\\n\"; // Multiple occurrences of '\\r' followed by '\\n'",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"test\\r\\n\"; // Valid string with '\\r' followed by '\\n'",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    cursor = Cursor { rest: \"test\\r\\n\" };",
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"test\\r\\n\"; // Valid string with '\\r' followed by '\\n'",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "    cursor = Cursor { rest: \"test\\r\\n\" };",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"##\\r\\n\"; // No valid delimiter, but has '\\r' followed by '\\n'",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), Reject);",
+                "    assert!(cursor.rest == \"##\\r\\n\");",
+                "    assert!(cursor.rest.len() == 6);",
+                "    assert!(cursor.rest.bytes().next() == Some(b'#'));",
+                "    assert!(cursor.rest.contains('\\r'));",
+                "    assert!(cursor.rest.contains('\\n'));",
+                "    assert!(cursor.rest.chars().count() == 5);"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"##\\r\\n\"; // No valid delimiter, but has '\\r' followed by '\\n'",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), Reject);",
+                "    assert!(cursor.rest == \"##\\r\\n\");",
+                "    assert!(cursor.rest.len() == 6);",
+                "    assert!(cursor.rest.bytes().next() == Some(b'#'));",
+                "    assert!(cursor.rest.contains('\\r'));",
+                "    assert!(cursor.rest.contains('\\n'));",
+                "    assert!(cursor.rest.chars().count() == 5);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"A very long string that is well below 256 bytes but includes a carriage return followed by a newline\\r\\n\"; ",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"A very long string that is well below 256 bytes but includes a carriage return followed by a newline\\r\\n\"; ",
+                "    let cursor = Cursor { rest: input_str };",
+                "    let result = raw_string(cursor);",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "precondition: delimiter_of_raw_string(input)? at line 415 is Ok/Some\n",
+        "precondition: let Some((i, byte)) = bytes.next() at line 417 is true\n",
+        "precondition: byte matches b'\"' at line 419 is true\n",
+        "precondition: byte matches b'\"' at line 418 is true\n",
+        "precondition: input.rest[i + 1..].starts_with(delimiter) at line 419 is true\n",
+        "expected return value/type: Ok(literal_suffix(rest))\n"
+      ],
+      "input_infer": "input.rest must be a non-empty string with at least one double quote followed by the delimiter within the first 256 bytes, and delimiter must be a non-empty string.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"##this is a raw string \\\"##\\\"\";",
+                "    let cursor = Cursor {",
+                "        rest: input_str,",
+                "        #[cfg(span_locations)]",
+                "        off: 0,",
+                "    };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(matches!(result, Ok(_)));",
+                "    assert!(result.as_ref().unwrap().rest == \"##\\\"\");",
+                "    assert!(result.as_ref().unwrap().len() == 3);",
+                "    assert!(result.is_ok());",
+                "    assert!(input_str.starts_with(\"##this is a raw string \\\"##\\\"\"));",
+                "    assert!(cursor.rest.contains(\"\\\"##\\\"\"));",
+                "    assert!(result.unwrap().starts_with_char('\"'));",
+                "    assert!(result.unwrap().is_empty() == false);",
+                "    assert!(result.unwrap().len() > 0);",
+                "    assert!(result.unwrap().rest.contains(\"##\"));"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"##this is a raw string \\\"##\\\"\";",
+                "    let cursor = Cursor {",
+                "        rest: input_str,",
+                "        #[cfg(span_locations)]",
+                "        off: 0,",
+                "    };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "    assert!(matches!(result, Ok(_)));",
+                "    assert!(result.as_ref().unwrap().rest == \"##\\\"\");",
+                "    assert!(result.as_ref().unwrap().len() == 3);",
+                "    assert!(result.is_ok());",
+                "    assert!(input_str.starts_with(\"##this is a raw string \\\"##\\\"\"));",
+                "    assert!(cursor.rest.contains(\"\\\"##\\\"\"));",
+                "    assert!(result.unwrap().starts_with_char('\"'));",
+                "    assert!(result.unwrap().is_empty() == false);",
+                "    assert!(result.unwrap().len() > 0);",
+                "    assert!(result.unwrap().rest.contains(\"##\"));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"##another raw string \\\"###\\\"\";",
+                "    let cursor = Cursor {",
+                "        rest: input_str,",
+                "        #[cfg(span_locations)]",
+                "        off: 0,",
+                "    };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let (cursor_after, _) = result.unwrap();",
+                "    assert_eq!(cursor_after.rest, \"\");",
+                "    assert_eq!(cursor_after.off, 0);",
+                "    assert!(raw_string(cursor).is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"##another raw string \\\"###\\\"\";",
+                "    let cursor = Cursor {",
+                "        rest: input_str,",
+                "        #[cfg(span_locations)]",
+                "        off: 0,",
+                "    };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_ok());",
+                "    let (cursor_after, _) = result.unwrap();",
+                "    assert_eq!(cursor_after.rest, \"\");",
+                "    assert_eq!(cursor_after.off, 0);",
+                "    assert!(raw_string(cursor).is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"##string with backslashes \\\\\\\"##\\\"\";",
+                "    let cursor = Cursor {",
+                "        rest: input_str,",
+                "        #[cfg(span_locations)]",
+                "        off: 0,",
+                "    };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let (rest_cursor, _) = result.unwrap();",
+                "    assert_eq!(rest_cursor.rest, \"##\\\"\");  // Checks the rest after parsing",
+                "    assert!(rest_cursor.is_empty());  // Ensures the cursor is empty after parsing",
+                "    assert_eq!(rest_cursor.bytes().count(), 0);  // Verifies there are no remaining bytes",
+                "    assert!(rest_cursor.starts_with(\"\\\"\"));  // Ensures it starts with the correct delimiter",
+                "    assert!(rest_cursor.starts_with(\"##\"));  // Checks that it starts with the raw string delimiter"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"##string with backslashes \\\\\\\"##\\\"\";",
+                "    let cursor = Cursor {",
+                "        rest: input_str,",
+                "        #[cfg(span_locations)]",
+                "        off: 0,",
+                "    };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_ok());",
+                "    let (rest_cursor, _) = result.unwrap();",
+                "    assert_eq!(rest_cursor.rest, \"##\\\"\");  // Checks the rest after parsing",
+                "    assert!(rest_cursor.is_empty());  // Ensures the cursor is empty after parsing",
+                "    assert_eq!(rest_cursor.bytes().count(), 0);  // Verifies there are no remaining bytes",
+                "    assert!(rest_cursor.starts_with(\"\\\"\"));  // Ensures it starts with the correct delimiter",
+                "    assert!(rest_cursor.starts_with(\"##\"));  // Checks that it starts with the raw string delimiter",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"##string with nested ## \\\"##\\\"\";",
+                "    let cursor = Cursor {",
+                "        rest: input_str,",
+                "        #[cfg(span_locations)]",
+                "        off: 0,",
+                "    };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let (rest_cursor) = result.unwrap();",
+                "    assert_eq!(rest_cursor.rest, \"string with nested ## \"); // Expected remaining string",
+                "    assert!(rest_cursor.rest.starts_with(\"##\")); // Expected delimiter to be found",
+                "    assert!(rest_cursor.is_empty() == false); // Cursor should not be empty after parsing",
+                "    assert!(rest_cursor.len() > 0); // Length should be greater than 0 after parsing",
+                "    assert!(rest_cursor.starts_with(\"string\")); // Should start with the expected content"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"##string with nested ## \\\"##\\\"\";",
+                "    let cursor = Cursor {",
+                "        rest: input_str,",
+                "        #[cfg(span_locations)]",
+                "        off: 0,",
+                "    };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_ok());",
+                "    let (rest_cursor) = result.unwrap();",
+                "    assert_eq!(rest_cursor.rest, \"string with nested ## \"); // Expected remaining string",
+                "    assert!(rest_cursor.rest.starts_with(\"##\")); // Expected delimiter to be found",
+                "    assert!(rest_cursor.is_empty() == false); // Cursor should not be empty after parsing",
+                "    assert!(rest_cursor.len() > 0); // Length should be greater than 0 after parsing",
+                "    assert!(rest_cursor.starts_with(\"string\")); // Should start with the expected content",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_str = \"#\\\"#\\\"\";",
+                "    let cursor = Cursor {",
+                "        rest: input_str,",
+                "        #[cfg(span_locations)]",
+                "        off: 0,",
+                "    };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().rest, \"\");",
+                "    assert_eq!(result.unwrap().off, 0);",
+                "    assert!(result.unwrap().starts_with(\"\"));",
+                "    assert!(result.unwrap().is_empty());",
+                "    assert!(result.unwrap().len() == 0);",
+                "    assert!(result.unwrap().bytes().len() == 0);"
+              ],
+              "code": [
+                "{",
+                "    let input_str = \"#\\\"#\\\"\";",
+                "    let cursor = Cursor {",
+                "        rest: input_str,",
+                "        #[cfg(span_locations)]",
+                "        off: 0,",
+                "    };",
+                "    ",
+                "    let result = raw_string(cursor);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().rest, \"\");",
+                "    assert_eq!(result.unwrap().off, 0);",
+                "    assert!(result.unwrap().starts_with(\"\"));",
+                "    assert!(result.unwrap().is_empty());",
+                "    assert!(result.unwrap().len() == 0);",
+                "    assert!(result.unwrap().bytes().len() == 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 8,
+      "prompt_conds": [
+        "precondition: delimiter_of_raw_string(input)? at line 415 is Ok/Some\n",
+        "precondition: let Some((i, byte)) = bytes.next() at line 417 is true\n",
+        "precondition: byte matches b'\"' at line 419 is true\n",
+        "precondition: byte matches b'\"' at line 418 is true\n",
+        "precondition: input.rest[i + 1..].starts_with(delimiter) at line 419 is false\n",
+        "precondition: let Some((i, byte)) = bytes.next() at line 417 is true\n",
+        "expected return value/type: Err(Reject)\n"
+      ],
+      "input_infer": "Cursor with rest starting with '#' followed by 256 characters, no double quotes, and ends with an extra byte after a CR character.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_rest = \"#\" + &\"a\".repeat(256); // 256 characters after '#'",
+                "    let input = Cursor { rest: &input_rest, off: 0 };",
+                "    let result = raw_string(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_rest = \"#\" + &\"a\".repeat(256); // 256 characters after '#'",
+                "    let input = Cursor { rest: &input_rest, off: 0 };",
+                "    let result = raw_string(input);",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_rest = \"#\" + &\"a\".repeat(255) + \"\\r\" + \"extra_byte\"; // ends with CR and an extra byte",
+                "    let input = Cursor { rest: &input_rest, off: 0 };",
+                "    let result = raw_string(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_rest = \"#\" + &\"a\".repeat(255) + \"\\r\" + \"extra_byte\"; // ends with CR and an extra byte",
+                "    let input = Cursor { rest: &input_rest, off: 0 };",
+                "    let result = raw_string(input);",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input_rest = \"#\" + &\"a\".repeat(255) + \"\\r\\n\"; // ends with CR and LF",
+                "    let input = Cursor { rest: &input_rest, off: 0 };",
+                "    let result = raw_string(input);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(Reject));"
+              ],
+              "code": [
+                "{",
+                "    let input_rest = \"#\" + &\"a\".repeat(255) + \"\\r\\n\"; // ends with CR and LF",
+                "    let input = Cursor { rest: &input_rest, off: 0 };",
+                "    let result = raw_string(input);",
+                "    assert_eq!(result, Err(Reject));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

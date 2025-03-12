@@ -1,0 +1,238 @@
+[
+  {
+    "uses": [
+      "use hashbrown::hash_set::Entry;",
+      "use std::collections::hash_map::RandomState;",
+      "use hashbrown::HashSet;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_set::Entry;",
+          "    use hashbrown::HashSet;",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut set: HashSet<&str, RandomState> = HashSet::new();",
+          "",
+          "    if let Entry::Vacant(o) = set.entry(\"poneyland\") {",
+          "        let occupied_entry = o.insert();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    occupied_entry.inner.insert_entry(());"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_set::Entry;",
+          "    use hashbrown::HashSet;",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut set: HashSet<&str, RandomState> = HashSet::new();",
+          "",
+          "    if let Entry::Vacant(o) = set.entry(\"poneyland\") {",
+          "        let occupied_entry = o.insert();",
+          "    }",
+          "    occupied_entry.inner.insert_entry(());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_set::Entry;",
+          "    use hashbrown::HashSet;",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut set: HashSet<&str, RandomState> = HashSet::new();",
+          "",
+          "    if let Entry::Vacant(o) = set.entry(\"first_entry\") {",
+          "        let occupied_entry = o.insert();",
+          "    }",
+          "    if let Entry::Vacant(o) = set.entry(\"second_entry\") {",
+          "        let occupied_entry = o.insert();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(set.len(), 2);",
+          "    assert!(set.contains(\"first_entry\"));",
+          "    assert!(set.contains(\"second_entry\"));",
+          "    assert!(matches!(set.entry(\"first_entry\"), Entry::Occupied(_)));",
+          "    assert!(matches!(set.entry(\"second_entry\"), Entry::Occupied(_)));",
+          "    assert!(matches!(set.entry(\"non_existent_entry\"), Entry::Vacant(_)));"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_set::Entry;",
+          "    use hashbrown::HashSet;",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut set: HashSet<&str, RandomState> = HashSet::new();",
+          "",
+          "    if let Entry::Vacant(o) = set.entry(\"first_entry\") {",
+          "        let occupied_entry = o.insert();",
+          "    }",
+          "    if let Entry::Vacant(o) = set.entry(\"second_entry\") {",
+          "        let occupied_entry = o.insert();",
+          "    }",
+          "    assert_eq!(set.len(), 2);",
+          "    assert!(set.contains(\"first_entry\"));",
+          "    assert!(set.contains(\"second_entry\"));",
+          "    assert!(matches!(set.entry(\"first_entry\"), Entry::Occupied(_)));",
+          "    assert!(matches!(set.entry(\"second_entry\"), Entry::Occupied(_)));",
+          "    assert!(matches!(set.entry(\"non_existent_entry\"), Entry::Vacant(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_set::Entry;",
+          "    use hashbrown::HashSet;",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut set: HashSet<&str, RandomState> = HashSet::new();",
+          "    ",
+          "    {",
+          "        if let Entry::Vacant(o) = set.entry(\"unique_key\") {",
+          "            let occupied_entry = o.insert();",
+          "        }",
+          "    }",
+          "",
+          "    if let Entry::Occupied(_) = set.entry(\"unique_key\") {",
+          "        // Attempting to insert again should not panic",
+          "        let entry_result = set.entry(\"unique_key\");",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    let occupied_entry = o.insert();  // Verify that 'occupied_entry' has type OccupiedEntry",
+          "    assert!(set.contains(\"unique_key\"));  // Ensure that the \"unique_key\" is indeed present in the set",
+          "    let entry_result = set.entry(\"unique_key\");  // Confirm that re-inserting does not panic",
+          "    assert!(matches!(entry_result, Entry::Occupied(_)));  // Ensure entry_result is of type Entry::Occupied",
+          "    assert_eq!(entry_result.key(), &\"unique_key\");  // Validate that the key is \"unique_key\" in Entry::Occupied"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_set::Entry;",
+          "    use hashbrown::HashSet;",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut set: HashSet<&str, RandomState> = HashSet::new();",
+          "    ",
+          "    {",
+          "        if let Entry::Vacant(o) = set.entry(\"unique_key\") {",
+          "            let occupied_entry = o.insert();",
+          "        }",
+          "    }",
+          "",
+          "    if let Entry::Occupied(_) = set.entry(\"unique_key\") {",
+          "        // Attempting to insert again should not panic",
+          "        let entry_result = set.entry(\"unique_key\");",
+          "    }",
+          "    let occupied_entry = o.insert();  // Verify that 'occupied_entry' has type OccupiedEntry",
+          "    assert!(set.contains(\"unique_key\"));  // Ensure that the \"unique_key\" is indeed present in the set",
+          "    let entry_result = set.entry(\"unique_key\");  // Confirm that re-inserting does not panic",
+          "    assert!(matches!(entry_result, Entry::Occupied(_)));  // Ensure entry_result is of type Entry::Occupied",
+          "    assert_eq!(entry_result.key(), &\"unique_key\");  // Validate that the key is \"unique_key\" in Entry::Occupied",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_set::Entry;",
+          "    use hashbrown::HashSet;",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut set: HashSet<&str, RandomState> = HashSet::new();",
+          "",
+          "    if let Entry::Vacant(o) = set.entry(\"new_key\") {",
+          "        let occupied_entry = o.insert();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    occupied_entry.inner.is_some();",
+          "    occupied_entry.inner == o.inner.insert_entry(());",
+          "    set.contains(\"new_key\");"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_set::Entry;",
+          "    use hashbrown::HashSet;",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut set: HashSet<&str, RandomState> = HashSet::new();",
+          "",
+          "    if let Entry::Vacant(o) = set.entry(\"new_key\") {",
+          "        let occupied_entry = o.insert();",
+          "    }",
+          "    occupied_entry.inner.is_some();",
+          "    occupied_entry.inner == o.inner.insert_entry(());",
+          "    set.contains(\"new_key\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use hashbrown::hash_set::Entry;",
+          "    use hashbrown::HashSet;",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut set: HashSet<&str, RandomState> = HashSet::with_capacity(1);",
+          "    let _ = set.insert(\"existing_key\");",
+          "",
+          "    if let Entry::Vacant(o) = set.entry(\"new_key\") {",
+          "        let occupied_entry = o.insert();",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(set.contains(\"new_key\"));",
+          "    assert!(matches!(occupied_entry, OccupiedEntry { inner: _ }));",
+          "    assert_ne!(occupied_entry.inner, o.inner);",
+          "    assert_eq!(occupied_entry.inner.insert_entry(()), o.inner.insert_entry(()));"
+        ],
+        "code": [
+          "{",
+          "    use hashbrown::hash_set::Entry;",
+          "    use hashbrown::HashSet;",
+          "    use std::collections::hash_map::RandomState;",
+          "",
+          "    let mut set: HashSet<&str, RandomState> = HashSet::with_capacity(1);",
+          "    let _ = set.insert(\"existing_key\");",
+          "",
+          "    if let Entry::Vacant(o) = set.entry(\"new_key\") {",
+          "        let occupied_entry = o.insert();",
+          "    }",
+          "    assert!(set.contains(\"new_key\"));",
+          "    assert!(matches!(occupied_entry, OccupiedEntry { inner: _ }));",
+          "    assert_ne!(occupied_entry.inner, o.inner);",
+          "    assert_eq!(occupied_entry.inner.insert_entry(()), o.inner.insert_entry(()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

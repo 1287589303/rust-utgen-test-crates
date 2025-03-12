@@ -1,0 +1,12 @@
+pub(crate) fn new() -> Special {
+        Special {
+            max: DEAD,
+            quit_id: DEAD,
+            min_match: DEAD,
+            max_match: DEAD,
+            min_accel: DEAD,
+            max_accel: DEAD,
+            min_start: DEAD,
+            max_start: DEAD,
+        }
+    }

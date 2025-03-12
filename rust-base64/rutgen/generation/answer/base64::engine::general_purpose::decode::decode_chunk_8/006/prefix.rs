@@ -1,0 +1,21 @@
+// Answer 0
+
+#[test]
+fn test_decode_chunk_8_invalid_byte_6th() {
+    let decode_table: [u8; 256] = {
+        let mut table = [INVALID_VALUE; 256];
+        table[b'A' as usize] = 0; // Valid value
+        table[b'B' as usize] = 1; // Valid value
+        table[b'C' as usize] = 2; // Valid value
+        table[b'D' as usize] = 3; // Valid value
+        table[b'E' as usize] = 4; // Valid value
+        table // Other values remain INVALID_VALUE
+    };
+    
+    let input: [u8; 8] = [b'A', b'B', b'C', b'D', b'E', b'!', b'F', b'G']; // 6th byte is '!' which is invalid
+    let index_at_start_of_input: usize = 0;
+    let mut output: [u8; 6] = [0; 6];
+    
+    let _result = decode_chunk_8(&input, index_at_start_of_input, &decode_table, &mut output);
+}
+

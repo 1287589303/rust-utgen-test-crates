@@ -1,0 +1,154 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut translator = Translator {",
+          "        stack: RefCell::new(vec![",
+          "            HirFrame::Literal(vec![1, 2, 3]), // Existing literal byte",
+          "        ]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    ",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "    ",
+          "    translator_i.push_byte(4); // Appending byte to an existing literal",
+          "}"
+        ],
+        "oracle": [
+          "    let mut stack = translator.stack.borrow_mut(); assert_eq!(stack.len(), 1); assert_eq!(if let Some(HirFrame::Literal(ref literal)) = stack.last() { literal } else { &vec![] }, &vec![1, 2, 3, 4]);"
+        ],
+        "code": [
+          "{",
+          "    let mut translator = Translator {",
+          "        stack: RefCell::new(vec![",
+          "            HirFrame::Literal(vec![1, 2, 3]), // Existing literal byte",
+          "        ]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    ",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "    ",
+          "    translator_i.push_byte(4); // Appending byte to an existing literal",
+          "    let mut stack = translator.stack.borrow_mut(); assert_eq!(stack.len(), 1); assert_eq!(if let Some(HirFrame::Literal(ref literal)) = stack.last() { literal } else { &vec![] }, &vec![1, 2, 3, 4]);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut translator = Translator {",
+          "        stack: RefCell::new(vec![",
+          "            HirFrame::Literal(vec![255]), // Existing literal byte with max value",
+          "        ]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    ",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "",
+          "    translator_i.push_byte(128); // Appending byte",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(translator.stack.borrow().last().unwrap(), &HirFrame::Literal(vec![255, 128]));",
+          "    assert!(translator.stack.borrow().len() == 1);",
+          "    assert!(matches!(translator.stack.borrow().last().unwrap(), HirFrame::Literal(_)));"
+        ],
+        "code": [
+          "{",
+          "    let mut translator = Translator {",
+          "        stack: RefCell::new(vec![",
+          "            HirFrame::Literal(vec![255]), // Existing literal byte with max value",
+          "        ]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "    ",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "",
+          "    translator_i.push_byte(128); // Appending byte",
+          "    assert_eq!(translator.stack.borrow().last().unwrap(), &HirFrame::Literal(vec![255, 128]));",
+          "    assert!(translator.stack.borrow().len() == 1);",
+          "    assert!(matches!(translator.stack.borrow().last().unwrap(), HirFrame::Literal(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut translator = Translator {",
+          "        stack: RefCell::new(vec![",
+          "            HirFrame::Literal(vec![10]), // Existing literal byte",
+          "        ]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "",
+          "    translator_i.push_byte(20); // Appending first byte",
+          "    translator_i.push_byte(30); // Appending second byte",
+          "    translator_i.push_byte(40); // Appending third byte",
+          "}"
+        ],
+        "oracle": [
+          "    translator_i.trans().stack.borrow().last().unwrap().as_literal().unwrap() == &vec![10, 20, 30, 40]",
+          "    translator_i.trans().stack.borrow().len() == 1",
+          "    translator_i.trans().stack.borrow_mut().last_mut().unwrap().as_literal().unwrap().len() == 4",
+          "    translator_i.trans().stack.borrow().last().unwrap().is_literal() == true",
+          "    translator_i.trans().stack.borrow().last().unwrap().as_literal().unwrap()[3] == 40",
+          "    translator_i.trans().stack.borrow().last().unwrap().as_literal().unwrap()[2] == 30",
+          "    translator_i.trans().stack.borrow().last().unwrap().as_literal().unwrap()[1] == 20",
+          "    translator_i.trans().stack.borrow().last().unwrap().as_literal().unwrap()[0] == 10"
+        ],
+        "code": [
+          "{",
+          "    let mut translator = Translator {",
+          "        stack: RefCell::new(vec![",
+          "            HirFrame::Literal(vec![10]), // Existing literal byte",
+          "        ]),",
+          "        flags: Cell::new(Flags::default()),",
+          "        utf8: true,",
+          "        line_terminator: b'\\n',",
+          "    };",
+          "",
+          "    let translator_i = TranslatorI::new(&translator, \"test_pattern\");",
+          "",
+          "    translator_i.push_byte(20); // Appending first byte",
+          "    translator_i.push_byte(30); // Appending second byte",
+          "    translator_i.push_byte(40); // Appending third byte",
+          "    translator_i.trans().stack.borrow().last().unwrap().as_literal().unwrap() == &vec![10, 20, 30, 40]",
+          "    translator_i.trans().stack.borrow().len() == 1",
+          "    translator_i.trans().stack.borrow_mut().last_mut().unwrap().as_literal().unwrap().len() == 4",
+          "    translator_i.trans().stack.borrow().last().unwrap().is_literal() == true",
+          "    translator_i.trans().stack.borrow().last().unwrap().as_literal().unwrap()[3] == 40",
+          "    translator_i.trans().stack.borrow().last().unwrap().as_literal().unwrap()[2] == 30",
+          "    translator_i.trans().stack.borrow().last().unwrap().as_literal().unwrap()[1] == 20",
+          "    translator_i.trans().stack.borrow().last().unwrap().as_literal().unwrap()[0] == 10",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

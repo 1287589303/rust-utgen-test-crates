@@ -1,0 +1,191 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let uts46 = Uts46::new();",
+          "    let domain_name: &[u8] = b\"example.com\";",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 }; // Default deny list",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::Verify;",
+          "",
+          "    let result = uts46.to_ascii(domain_name, ascii_deny_list, hyphens, dns_length);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), Cow::Borrowed(\"example.com\"));",
+          "    assert!(self.process(domain_name, ascii_deny_list, hyphens, ErrorPolicy::FailFast, |_, _, _| false, &mut s, None).is_ok());",
+          "    assert!(dns_length != DnsLength::Ignore);",
+          "    assert!(verify_dns_length(\"example.com\", false));"
+        ],
+        "code": [
+          "{",
+          "    let uts46 = Uts46::new();",
+          "    let domain_name: &[u8] = b\"example.com\";",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 }; // Default deny list",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::Verify;",
+          "",
+          "    let result = uts46.to_ascii(domain_name, ascii_deny_list, hyphens, dns_length);",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), Cow::Borrowed(\"example.com\"));",
+          "    assert!(self.process(domain_name, ascii_deny_list, hyphens, ErrorPolicy::FailFast, |_, _, _| false, &mut s, None).is_ok());",
+          "    assert!(dns_length != DnsLength::Ignore);",
+          "    assert!(verify_dns_length(\"example.com\", false));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let uts46 = Uts46::new();",
+          "    let domain_name: &[u8] = b\"valid-dns-name\";",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 }; // Default deny list",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::Verify;",
+          "",
+          "    let result = uts46.to_ascii(domain_name, ascii_deny_list, hyphens, dns_length);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(Cow::Borrowed(\"valid-dns-name\")));",
+          "    assert!(verify_dns_length(\"valid-dns-name\", false));",
+          "    assert!(self.process(domain_name, ascii_deny_list, hyphens, ErrorPolicy::FailFast, |_, _, _| false, &mut s, None).is_ok());",
+          "    assert!(self.process(domain_name, ascii_deny_list, hyphens, ErrorPolicy::FailFast, |_, _, _| false, &mut s, None).matches(Ok(ProcessingSuccess::Passthrough) || Ok(ProcessingSuccess::WroteToSink));",
+          "    assert!(dns_length != DnsLength::Ignore);",
+          "    assert!(verify_dns_length(&Cow::Borrowed(\"valid-dns-name\"), dns_length == DnsLength::VerifyAllowRootDot));"
+        ],
+        "code": [
+          "{",
+          "    let uts46 = Uts46::new();",
+          "    let domain_name: &[u8] = b\"valid-dns-name\";",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 }; // Default deny list",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::Verify;",
+          "",
+          "    let result = uts46.to_ascii(domain_name, ascii_deny_list, hyphens, dns_length);",
+          "    assert_eq!(result, Ok(Cow::Borrowed(\"valid-dns-name\")));",
+          "    assert!(verify_dns_length(\"valid-dns-name\", false));",
+          "    assert!(self.process(domain_name, ascii_deny_list, hyphens, ErrorPolicy::FailFast, |_, _, _| false, &mut s, None).is_ok());",
+          "    assert!(self.process(domain_name, ascii_deny_list, hyphens, ErrorPolicy::FailFast, |_, _, _| false, &mut s, None).matches(Ok(ProcessingSuccess::Passthrough) || Ok(ProcessingSuccess::WroteToSink));",
+          "    assert!(dns_length != DnsLength::Ignore);",
+          "    assert!(verify_dns_length(&Cow::Borrowed(\"valid-dns-name\"), dns_length == DnsLength::VerifyAllowRootDot));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let uts46 = Uts46::new();",
+          "    let domain_name: &[u8] = b\"invalid_domain_name_with_too_many_labels_exceeding_the_dns_limit\"; // Exceeds DNS limit",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 }; // Default deny list",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::Verify;",
+          "",
+          "    let result = uts46.to_ascii(domain_name, ascii_deny_list, hyphens, dns_length);",
+          "}"
+        ],
+        "oracle": [
+          "    let domain_name = b\"invalid_domain_name_with_too_many_labels_exceeding_the_dns_limit\";",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 };",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::Verify;",
+          "    assert_eq!(uts46.to_ascii(domain_name, ascii_deny_list, hyphens, dns_length).is_err(), true);",
+          "    let domain_name_valid = b\"valid.domain.name\";",
+          "    let result = uts46.to_ascii(domain_name_valid, ascii_deny_list, hyphens, dns_length);",
+          "    assert!(result.is_ok());",
+          "    let ascii_deny_list_non_default = AsciiDenyList { bits: 1 };",
+          "    let result = uts46.to_ascii(domain_name_valid, ascii_deny_list_non_default, hyphens, dns_length);",
+          "    assert!(result.is_ok());",
+          "    let dns_length_allow_root_dot = DnsLength::VerifyAllowRootDot;",
+          "    let result = uts46.to_ascii(domain_name_valid, ascii_deny_list, hyphens, dns_length_allow_root_dot);",
+          "    assert!(result.is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let uts46 = Uts46::new();",
+          "    let domain_name: &[u8] = b\"invalid_domain_name_with_too_many_labels_exceeding_the_dns_limit\"; // Exceeds DNS limit",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 }; // Default deny list",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::Verify;",
+          "",
+          "    let result = uts46.to_ascii(domain_name, ascii_deny_list, hyphens, dns_length);",
+          "    let domain_name = b\"invalid_domain_name_with_too_many_labels_exceeding_the_dns_limit\";",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 };",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::Verify;",
+          "    assert_eq!(uts46.to_ascii(domain_name, ascii_deny_list, hyphens, dns_length).is_err(), true);",
+          "    let domain_name_valid = b\"valid.domain.name\";",
+          "    let result = uts46.to_ascii(domain_name_valid, ascii_deny_list, hyphens, dns_length);",
+          "    assert!(result.is_ok());",
+          "    let ascii_deny_list_non_default = AsciiDenyList { bits: 1 };",
+          "    let result = uts46.to_ascii(domain_name_valid, ascii_deny_list_non_default, hyphens, dns_length);",
+          "    assert!(result.is_ok());",
+          "    let dns_length_allow_root_dot = DnsLength::VerifyAllowRootDot;",
+          "    let result = uts46.to_ascii(domain_name_valid, ascii_deny_list, hyphens, dns_length_allow_root_dot);",
+          "    assert!(result.is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let uts46 = Uts46::new();",
+          "    let domain_name: &[u8] = b\"example.com.\";",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 }; // Default deny list",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::VerifyAllowRootDot;",
+          "",
+          "    let result = uts46.to_ascii(domain_name, ascii_deny_list, hyphens, dns_length);",
+          "}"
+        ],
+        "oracle": [
+          "    let uts46 = Uts46::new();",
+          "    let domain_name: &[u8] = b\"example.com.\";",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 };",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::VerifyAllowRootDot;",
+          "    ",
+          "    assert_eq!(result, Ok(Cow::Borrowed(\"example.com.\")));"
+        ],
+        "code": [
+          "{",
+          "    let uts46 = Uts46::new();",
+          "    let domain_name: &[u8] = b\"example.com.\";",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 }; // Default deny list",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::VerifyAllowRootDot;",
+          "",
+          "    let result = uts46.to_ascii(domain_name, ascii_deny_list, hyphens, dns_length);",
+          "    let uts46 = Uts46::new();",
+          "    let domain_name: &[u8] = b\"example.com.\";",
+          "    let ascii_deny_list = AsciiDenyList { bits: 0 };",
+          "    let hyphens = Hyphens::Allow;",
+          "    let dns_length = DnsLength::VerifyAllowRootDot;",
+          "    ",
+          "    assert_eq!(result, Ok(Cow::Borrowed(\"example.com.\")));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,306 @@
+{
+  "name": "once_cell::sync::{impl#11}::force",
+  "mod_info": {
+    "name": "sync",
+    "loc": "src/lib.rs:863:1:1409:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:1308:9:1313:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "expected return value/type: this.cell.get_or_init(|| match this.init.take() {\n                Some(f) => f(),\n                None => panic!(\"Lazy instance has previously been poisoned\"),\n            })\n"
+      ],
+      "input_infer": "test input conditions or ranges: valid Lazy instances with initialized function, Lazy instances with uninitialized function, Lazy instances with poisoned state, boundary cases with minimum value returned by the function, and maximum value depending on the type of T (e.g., i32::MAX).\n",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::Once;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::sync::Once;",
+                "    ",
+                "    let init_fn = || 42;",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "    ",
+                "    let result = Lazy::force(&lazy);",
+                "    let expected = 42;",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Lazy::force(&lazy), &expected);",
+                "    assert_eq!(lazy.cell.get().is_none(), true);",
+                "    assert!(lazy.init.get().is_some());",
+                "    lazy.init.set(None);",
+                "    let result_after_poison = std::panic::catch_unwind(|| Lazy::force(&lazy));",
+                "    assert!(result_after_poison.is_err());"
+              ],
+              "code": [
+                "{",
+                "    use std::sync::Once;",
+                "    ",
+                "    let init_fn = || 42;",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "    ",
+                "    let result = Lazy::force(&lazy);",
+                "    let expected = 42;",
+                "    assert_eq!(Lazy::force(&lazy), &expected);",
+                "    assert_eq!(lazy.cell.get().is_none(), true);",
+                "    assert!(lazy.init.get().is_some());",
+                "    lazy.init.set(None);",
+                "    let result_after_poison = std::panic::catch_unwind(|| Lazy::force(&lazy));",
+                "    assert!(result_after_poison.is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Lazy instance has previously been poisoned\")]"
+              ],
+              "prefix": [
+                "{",
+                "    use std::sync::Once;",
+                "    ",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(None),",
+                "    };",
+                "    ",
+                "    let _result = Lazy::force(&lazy);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(Lazy::force(&lazy), &92);",
+                "    assert_eq!(&*lazy, &92);",
+                "    assert!(Lazy::get(&lazy).is_none());",
+                "    assert!(Lazy::get_mut(&mut lazy).is_none());",
+                "    let lazy_with_init = Lazy {",
+                "    cell: OnceCell::new(),",
+                "    init: Cell::new(Some(|| 42)),",
+                "    };",
+                "    assert_eq!(Lazy::force(&lazy_with_init), &42);",
+                "    assert_eq!(Lazy::get(&lazy_with_init), Some(&42));",
+                "    assert!(Lazy::get_mut(&mut lazy_with_init).is_some());",
+                "    #[should_panic(expected = \"Lazy instance has previously been poisoned\")]",
+                "    assert!(Lazy::get(&lazy).is_none());",
+                "    assert!(Lazy::get_mut(&mut lazy).is_none());"
+              ],
+              "code": [
+                "{",
+                "    use std::sync::Once;",
+                "    ",
+                "   let mut lazy: Lazy<i32, fn() -> i32> = Lazy {",
+                "      cell: OnceCell::new(),",
+                "      init: Cell::new(None),",
+                "  };",
+                "    ",
+                "    let _result = Lazy::force(&lazy);",
+                "    assert_eq!(Lazy::force(&lazy), &92);",
+                "    assert_eq!(&*lazy, &92);",
+                "    assert!(Lazy::get(&lazy).is_none());",
+                "    assert!(Lazy::get_mut(&mut lazy).is_none());",
+                "   let mut lazy_with_init = Lazy {  ",
+                "   cell: OnceCell::new(),  ",
+                "   init: Cell::new(Some(|| 42)),  ",
+                "   };  ",
+                "   assert_eq!(Lazy::force(&lazy_with_init), &42);  ",
+                "   assert_eq!(Lazy::get(&lazy_with_init), Some(&42));  ",
+                "   assert!(Lazy::get_mut(&mut lazy_with_init).is_some());  ",
+                "    #[should_panic(expected = \"Lazy instance has previously been poisoned\")]",
+                "    assert!(Lazy::get(&lazy).is_none());",
+                "    assert!(Lazy::get_mut(&mut lazy).is_none());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let init_fn = || i32::MIN;",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "    ",
+                "    let result = Lazy::force(&lazy);",
+                "    let expected = i32::MIN;",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, &expected);",
+                "    assert_eq!(lazy.cell.get(), None);",
+                "    assert!(lazy.init.get().is_none());",
+                "    let init_fn_2 = || 0;",
+                "    let lazy_2 = Lazy {",
+                "    cell: OnceCell::new(),",
+                "    init: Cell::new(Some(init_fn_2)),",
+                "    };",
+                "    let result_2 = Lazy::force(&lazy_2);",
+                "    let expected_2 = 0;",
+                "    assert_eq!(result_2, &expected_2);",
+                "    assert!(lazy_2.cell.get().is_some());",
+                "    assert!(lazy_2.init.get().is_none());",
+                "    let lazy_poisoned = Lazy {",
+                "    cell: OnceCell::new(),",
+                "    init: Cell::new(None),",
+                "    };",
+                "    panic::catch_unwind(|| {",
+                "    Lazy::force(&lazy_poisoned);",
+                "    }).unwrap_err();"
+              ],
+              "code": [
+                "{",
+                "    let init_fn = || i32::MIN;",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "    ",
+                "    let result = Lazy::force(&lazy);",
+                "    let expected = i32::MIN;",
+                "    assert_eq!(result, &expected);",
+                "    assert_eq!(lazy.cell.get(), None);",
+                "    assert!(lazy.init.get().is_none());",
+                "    let init_fn_2 = || 0;",
+                "    let lazy_2 = Lazy {",
+                "    cell: OnceCell::new(),",
+                "    init: Cell::new(Some(init_fn_2)),",
+                "    };",
+                "    let result_2 = Lazy::force(&lazy_2);",
+                "    let expected_2 = 0;",
+                "    assert_eq!(result_2, &expected_2);",
+                "    assert!(lazy_2.cell.get().is_some());",
+                "    assert!(lazy_2.init.get().is_none());",
+                "    let lazy_poisoned = Lazy {",
+                "    cell: OnceCell::new(),",
+                "    init: Cell::new(None),",
+                "    };",
+                "    panic::catch_unwind(|| {",
+                "    Lazy::force(&lazy_poisoned);",
+                "    }).unwrap_err();",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let init_fn = || i32::MAX;",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "",
+                "    let result = Lazy::force(&lazy);",
+                "    let expected = i32::MAX;",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, &expected);",
+                "    assert_eq!(*result, expected);",
+                "    assert!(lazy.init.get().is_none());",
+                "    assert_eq!(lazy.cell.get().is_some(), true);",
+                "    let result_after_force = Lazy::force(&lazy);",
+                "    assert_eq!(result_after_force, &expected);",
+                "    assert_eq!(*result_after_force, expected);"
+              ],
+              "code": [
+                "{",
+                "    let init_fn = || i32::MAX;",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "",
+                "    let result = Lazy::force(&lazy);",
+                "    let expected = i32::MAX;",
+                "    assert_eq!(result, &expected);",
+                "    assert_eq!(*result, expected);",
+                "    assert!(lazy.init.get().is_none());",
+                "    assert_eq!(lazy.cell.get().is_some(), true);",
+                "    let result_after_force = Lazy::force(&lazy);",
+                "    assert_eq!(result_after_force, &expected);",
+                "    assert_eq!(*result_after_force, expected);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let init_fn = || {",
+                "        static mut VALUE: i32 = 0;",
+                "        unsafe {",
+                "            VALUE += 1;",
+                "            VALUE",
+                "        }",
+                "    };",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "",
+                "    let result1 = Lazy::force(&lazy);",
+                "    let result2 = Lazy::force(&lazy);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result1, &1);",
+                "    assert_eq!(result2, &1);",
+                "    assert_eq!(lazy.cell.get_mut().is_some(), true);",
+                "    assert_eq!(lazy.init.get(), None);",
+                "    assert!(std::panic::catch_unwind(|| Lazy::force(&lazy)).is_err());"
+              ],
+              "code": [
+                "{",
+                "   let init_fn = || {",
+                "       static mut VALUE: i32 = 0;",
+                "       unsafe {",
+                "           VALUE += 1;",
+                "           VALUE",
+                "       }",
+                "   };",
+                "   let lazy = Lazy {",
+                "       cell: OnceCell::new(),",
+                "       init: Cell::new(Some(init_fn)),",
+                "   };",
+                "",
+                "   let result1 = Lazy::force(&lazy);",
+                "   let result2 = Lazy::force(&lazy);",
+                "   assert_eq!(result1, 1);",
+                "   assert_eq!(result2, 1);",
+                "   assert_eq!(lazy.cell.get_mut().is_some(), true);",
+                "   assert!(lazy.init.get().is_none());",
+                "   assert!(std::panic::catch_unwind(|| Lazy::force(&lazy)).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,255 @@
+[
+  {
+    "uses": [
+      "use regex_lite::NoExpand;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"\\d+\").unwrap();",
+          "    let result = re.replace(\"\", \"replacement\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, \"\");",
+          "    assert_eq!(result, Cow::Borrowed(\"\"));"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"\\d+\").unwrap();",
+          "    let result = re.replace(\"\", \"replacement\");",
+          "    assert_eq!(result, \"\");",
+          "    assert_eq!(result, Cow::Borrowed(\"\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"\\d+\").unwrap();",
+          "    let result = re.replace(\"abcdef\", \"replacement\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, \"abcdef\");",
+          "    assert_eq!(result, Cow::Borrowed(\"abcdef\"));"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"\\d+\").unwrap();",
+          "    let result = re.replace(\"abcdef\", \"replacement\");",
+          "    assert_eq!(result, \"abcdef\");",
+          "    assert_eq!(result, Cow::Borrowed(\"abcdef\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"\\d+\").unwrap();",
+          "    let result = re.replace(\"abc123xyz\", \"number\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, \"abcnumberxyz\")",
+          "    assert!(matches!(result, Cow::Owned(_)))"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"\\d+\").unwrap();",
+          "    let result = re.replace(\"abc123xyz\", \"number\");",
+          "    assert_eq!(result, \"abcnumberxyz\")",
+          "    assert!(matches!(result, Cow::Owned(_)))",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"\\d+\").unwrap();",
+          "    let result = re.replace(\"123abc456def\", \"num\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, \"numabcnumdef\");",
+          "    assert_eq!(result, re.replacen(\"123abc456def\", 1, \"num\"));",
+          "    assert_eq!(result, Cow::Owned(\"numabcnumdef\".to_string()));",
+          "    assert_ne!(result, \"123abc456def\");",
+          "    assert_eq!(result.len(), 12);"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"\\d+\").unwrap();",
+          "    let result = re.replace(\"123abc456def\", \"num\");",
+          "    assert_eq!(result, \"numabcnumdef\");",
+          "    assert_eq!(result, re.replacen(\"123abc456def\", 1, \"num\"));",
+          "    assert_eq!(result, Cow::Owned(\"numabcnumdef\".to_string()));",
+          "    assert_ne!(result, \"123abc456def\");",
+          "    assert_eq!(result.len(), 12);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"(?<first>\\w+)\\s+(?<second>\\w+)\").unwrap();",
+          "    let result = re.replace(\"John Doe\", \"$first $second\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, \"John Doe\");",
+          "    assert_eq!(re.replace(\"NoMatchHere\", \"$first $second\"), \"NoMatchHere\");",
+          "    assert_eq!(re.replace(\"Alice Wonderland\", \"${first}_${second}\"), \"Alice_Wonderland\");",
+          "    assert_eq!(re.replace(\"Bob\", \"$first\"), \"Bob\");",
+          "    assert_eq!(re.replace(\"Charlie Brown\", NoExpand(\"$2 $first\")), \"$2 Charlie\");"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"(?<first>\\w+)\\s+(?<second>\\w+)\").unwrap();",
+          "    let result = re.replace(\"John Doe\", \"$first $second\");",
+          "    assert_eq!(result, \"John Doe\");",
+          "    assert_eq!(re.replace(\"NoMatchHere\", \"$first $second\"), \"NoMatchHere\");",
+          "    assert_eq!(re.replace(\"Alice Wonderland\", \"${first}_${second}\"), \"Alice_Wonderland\");",
+          "    assert_eq!(re.replace(\"Bob\", \"$first\"), \"Bob\");",
+          "    assert_eq!(re.replace(\"Charlie Brown\", NoExpand(\"$2 $first\")), \"$2 Charlie\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use regex_lite::NoExpand;",
+          "    let re = Regex::new(r\"(?<last>[^,\\s]+),\\s+(\\S+)\").unwrap();",
+          "    let result = re.replace(\"Springsteen, Bruce\", NoExpand(\"$2 $last\"));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, \"$2 $last\");",
+          "    assert_eq!(result.len(), 7);",
+          "    assert_eq!(result.as_ref(), \"$2 $last\");",
+          "    assert!(result.is_borrowed());",
+          "    assert!(result.contains(\"$\"));"
+        ],
+        "code": [
+          "{",
+          "    use regex_lite::NoExpand;",
+          "    let re = Regex::new(r\"(?<last>[^,\\s]+),\\s+(\\S+)\").unwrap();",
+          "    let result = re.replace(\"Springsteen, Bruce\", NoExpand(\"$2 $last\"));",
+          "    assert_eq!(result, \"$2 $last\");",
+          "    assert_eq!(result.len(), 7);",
+          "    assert_eq!(result.as_ref(), \"$2 $last\");",
+          "    assert!(result.is_borrowed());",
+          "    assert!(result.contains(\"$\"));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"(?<name>\\w+)\").unwrap();",
+          "    let result = re.replace(\"Alice\", \"$invalid\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, \"Alice\");"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"(?<name>\\w+)\").unwrap();",
+          "    let result = re.replace(\"Alice\", \"$invalid\");",
+          "    assert_eq!(result, \"Alice\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"(?<number>\\d+)\").unwrap();",
+          "    let result = re.replace(\"Number 42\", \"${number} is the answer\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, \"42 is the answer\");"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"(?<number>\\d+)\").unwrap();",
+          "    let result = re.replace(\"Number 42\", \"${number} is the answer\");",
+          "    assert_eq!(result, \"42 is the answer\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"(\\d+)\").unwrap();",
+          "    let result = re.replace(\"1 2 3 4\", \"number\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, \"number number number number\");"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"(\\d+)\").unwrap();",
+          "    let result = re.replace(\"1 2 3 4\", \"number\");",
+          "    assert_eq!(result, \"number number number number\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let re = Regex::new(r\"xyz\").unwrap();",
+          "    let result = re.replace(\"abc\", \"\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, \"abc\");",
+          "    assert_eq!(Cow::Borrowed(result.as_ref()), result);"
+        ],
+        "code": [
+          "{",
+          "    let re = Regex::new(r\"xyz\").unwrap();",
+          "    let result = re.replace(\"abc\", \"\");",
+          "    assert_eq!(result, \"abc\");",
+          "    assert_eq!(Cow::Borrowed(result.as_ref()), result);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,171 @@
+[
+  {
+    "uses": [
+      "use std::path::Component;",
+      "use std::path::Path;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::path::{Path, Component};",
+          "",
+          "    let mut serialization = String::new();",
+          "    let path = Path::new(r\"\\\\server\\share\\folder%20name\");",
+          "    let result = path_to_file_url_segments_windows(path, &mut serialization);",
+          "",
+          "    // method call",
+          "    result.unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    let mut serialization = String::new();",
+          "    let path = Path::new(r\"\\\\server\\share\\folder%20name\");",
+          "    assert!(path.is_absolute());",
+          "    assert!(path.components().next().is_some());",
+          "    if let Some(Component::Prefix(_)) = path.components().next() {",
+          "    assert!(true); // Check valid prefix",
+          "    }",
+          "    let result = path_to_file_url_segments_windows(path, &mut serialization);",
+          "    assert!(result.is_ok());",
+          "    let (host_end, host_internal) = result.unwrap();",
+          "    assert!(host_internal == HostInternal::None || host_internal == HostInternal::Domain || host_internal == HostInternal::Ipv4(Ipv4Addr::new(127, 0, 0, 1)) || host_internal == HostInternal::Ipv6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)));"
+        ],
+        "code": [
+          "{",
+          "    use std::path::{Path, Component};",
+          "",
+          "    let mut serialization = String::new();",
+          "    let path = Path::new(r\"\\\\server\\share\\folder%20name\");",
+          "    let result = path_to_file_url_segments_windows(path, &mut serialization);",
+          "",
+          "    // method call",
+          "    result.unwrap();",
+          "    let mut serialization = String::new();",
+          "    let path = Path::new(r\"\\\\server\\share\\folder%20name\");",
+          "    assert!(path.is_absolute());",
+          "    assert!(path.components().next().is_some());",
+          "    if let Some(Component::Prefix(_)) = path.components().next() {",
+          "    assert!(true); // Check valid prefix",
+          "    }",
+          "    let result = path_to_file_url_segments_windows(path, &mut serialization);",
+          "    assert!(result.is_ok());",
+          "    let (host_end, host_internal) = result.unwrap();",
+          "    assert!(host_internal == HostInternal::None || host_internal == HostInternal::Domain || host_internal == HostInternal::Ipv4(Ipv4Addr::new(127, 0, 0, 1)) || host_internal == HostInternal::Ipv6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::path::{Path, Component};",
+          "",
+          "    let mut serialization = String::new();",
+          "    let path = Path::new(r\"\\\\server\\\");",
+          "    let result = path_to_file_url_segments_windows(path, &mut serialization);",
+          "",
+          "    // method call",
+          "    result.unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    serialization.is_empty() == false",
+          "    serialization.starts_with('/') == true",
+          "    serialization.contains(\"server\") == true",
+          "    result.is_ok() == true",
+          "    let (host_end, host_internal) = result.unwrap();",
+          "    host_internal == HostInternal::None",
+          "    host_end > 0",
+          "    serialization.ends_with('/') == true",
+          "    serialization.contains('%') == false"
+        ],
+        "code": [
+          "{",
+          "    use std::path::{Path, Component};",
+          "",
+          "    let mut serialization = String::new();",
+          "    let path = Path::new(r\"\\\\server\\\");",
+          "    let result = path_to_file_url_segments_windows(path, &mut serialization);",
+          "",
+          "    // method call",
+          "    result.unwrap();",
+          "    serialization.is_empty() == false",
+          "    serialization.starts_with('/') == true",
+          "    serialization.contains(\"server\") == true",
+          "    result.is_ok() == true",
+          "    let (host_end, host_internal) = result.unwrap();",
+          "    host_internal == HostInternal::None",
+          "    host_end > 0",
+          "    serialization.ends_with('/') == true",
+          "    serialization.contains('%') == false",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::path::{Path, Component};",
+          "",
+          "    let mut serialization = String::new();",
+          "    let path = Path::new(r\"\\\\server\\share\\folder_with_space\");",
+          "    let result = path_to_file_url_segments_windows(path, &mut serialization);",
+          "",
+          "    // method call",
+          "    result.unwrap();",
+          "}"
+        ],
+        "oracle": [
+          "    let path = Path::new(r\"\\\\server\\share\\folder_with_space\");",
+          "    assert_eq!(path.is_absolute(), true);",
+          "    let components: Vec<Component> = path.components().collect();",
+          "    assert!(components.next().is_some());",
+          "    match components[0] {",
+          "    Component::Prefix(ref p) => assert!(matches!(p.kind(), Prefix::VerbatimUNC(_, _))),",
+          "    _ => panic!(\"First component is not a prefix\"),",
+          "    }",
+          "    assert_eq!(components.len(), 3);",
+          "    assert_eq!(serialization.len(), 0);",
+          "    assert!(Host::parse(r\"server\").is_ok());",
+          "    assert!(Host::parse(r\"invalid_server\\\").is_err());",
+          "    assert!(Host::parse(r\"\").is_err());"
+        ],
+        "code": [
+          "{",
+          "    use std::path::{Path, Component};",
+          "",
+          "    let mut serialization = String::new();",
+          "    let path = Path::new(r\"\\\\server\\share\\folder_with_space\");",
+          "    let result = path_to_file_url_segments_windows(path, &mut serialization);",
+          "",
+          "    // method call",
+          "    result.unwrap();",
+          "    let path = Path::new(r\"\\\\server\\share\\folder_with_space\");",
+          "    assert_eq!(path.is_absolute(), true);",
+          "    let components: Vec<Component> = path.components().collect();",
+          "    assert!(components.next().is_some());",
+          "    match components[0] {",
+          "    Component::Prefix(ref p) => assert!(matches!(p.kind(), Prefix::VerbatimUNC(_, _))),",
+          "    _ => panic!(\"First component is not a prefix\"),",
+          "    }",
+          "    assert_eq!(components.len(), 3);",
+          "    assert_eq!(serialization.len(), 0);",
+          "    assert!(Host::parse(r\"server\").is_ok());",
+          "    assert!(Host::parse(r\"invalid_server\\\").is_err());",
+          "    assert!(Host::parse(r\"\").is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

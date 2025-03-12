@@ -1,0 +1,203 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64; // Simple hashing based on string length",
+          "    table.insert_unique(hasher(\"a\"), \"a\", hasher);",
+          "    table.insert_unique(hasher(\"b\"), \"b\", hasher);",
+          "    ",
+          "    let mut iter = table.iter_hash(hasher(\"a\"));",
+          "    while let Some(item) = iter.next() {",
+          "        // No assertion, just to ensure the loop runs",
+          "        let _ = item;",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(table.len(), 2);",
+          "    assert!(table.is_empty() == false);",
+          "    assert!(table.iter_hash(hasher(\"a\")).next().is_some());",
+          "    assert!(table.iter_hash(hasher(\"b\")).next().is_some());",
+          "    assert!(table.iter_hash(hasher(\"c\")).next().is_none());",
+          "    assert_eq!(iter.count(), 2);  // Assuming both \"a\" and \"b\" are retrieved from the hash iteration"
+        ],
+        "code": [
+          "{",
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64; // Simple hashing based on string length",
+          "    table.insert_unique(hasher(\"a\"), \"a\", hasher);",
+          "    table.insert_unique(hasher(\"b\"), \"b\", hasher);",
+          "    ",
+          "    let mut iter = table.iter_hash(hasher(\"a\"));",
+          "    while let Some(item) = iter.next() {",
+          "        // No assertion, just to ensure the loop runs",
+          "        let _ = item;",
+          "    }",
+          "    assert_eq!(table.len(), 2);",
+          "    assert!(table.is_empty() == false);",
+          "    assert!(table.iter_hash(hasher(\"a\")).next().is_some());",
+          "    assert!(table.iter_hash(hasher(\"b\")).next().is_some());",
+          "    assert!(table.iter_hash(hasher(\"c\")).next().is_none());",
+          "    assert_eq!(iter.count(), 2);  // Assuming both \"a\" and \"b\" are retrieved from the hash iteration",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64; ",
+          "    table.insert_unique(hasher(\"x\"), \"x\", hasher);",
+          "    ",
+          "    let mut iter = table.iter_hash(hasher(\"a\")); // Hash that does not exist",
+          "    while let Some(item) = iter.next() {",
+          "        // No assertion, should not yield any items",
+          "        let _ = item;",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(table.iter_hash(hasher(\"a\")).next().is_none());"
+        ],
+        "code": [
+          "{",
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64; ",
+          "    table.insert_unique(hasher(\"x\"), \"x\", hasher);",
+          "    ",
+          "    let mut iter = table.iter_hash(hasher(\"a\")); // Hash that does not exist",
+          "    while let Some(item) = iter.next() {",
+          "        // No assertion, should not yield any items",
+          "        let _ = item;",
+          "    }",
+          "    assert!(table.iter_hash(hasher(\"a\")).next().is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64; ",
+          "    table.insert_unique(0, \"zero\", hasher); // Insert entry with hash 0",
+          "    ",
+          "    let mut iter = table.iter_hash(0);",
+          "    while let Some(item) = iter.next() {",
+          "        // No assertion, should yield \"zero\"",
+          "        let _ = item;",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64;",
+          "    assert_eq!(table.len(), 0);",
+          "    table.insert_unique(0, \"zero\", hasher);",
+          "    assert_eq!(table.len(), 1);",
+          "    assert!(table.iter_hash(0).next().is_some());",
+          "    let mut iter = table.iter_hash(0);",
+          "    let item = iter.next().unwrap();",
+          "    assert_eq!(item, \"zero\");",
+          "    assert!(iter.next().is_none());"
+        ],
+        "code": [
+          "{",
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64; ",
+          "    table.insert_unique(0, \"zero\", hasher); // Insert entry with hash 0",
+          "    ",
+          "    let mut iter = table.iter_hash(0);",
+          "    while let Some(item) = iter.next() {",
+          "        // No assertion, should yield \"zero\"",
+          "        let _ = item;",
+          "    }",
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64;",
+          "    assert_eq!(table.len(), 0);",
+          "    table.insert_unique(0, \"zero\", hasher);",
+          "    assert_eq!(table.len(), 1);",
+          "    assert!(table.iter_hash(0).next().is_some());",
+          "    let mut iter = table.iter_hash(0);",
+          "    let item = iter.next().unwrap();",
+          "    assert_eq!(item, \"zero\");",
+          "    assert!(iter.next().is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64; ",
+          "    table.insert_unique(u64::MAX, \"max\", hasher); // Insert entry with maximum hash",
+          "    ",
+          "    let mut iter = table.iter_hash(u64::MAX);",
+          "    while let Some(item) = iter.next() {",
+          "        // No assertion, should yield \"max\"",
+          "        let _ = item;",
+          "    }",
+          "}"
+        ],
+        "oracle": [
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64;",
+          "    table.insert_unique(u64::MAX, \"max\", hasher);",
+          "    let iter = table.iter_hash(u64::MAX);",
+          "    assert_eq!(iter.inner.next(), Some(&\"max\"));",
+          "    assert!(iter.inner.next().is_none());",
+          "    table.insert_unique(u64::MAX - 1, \"second\", hasher);",
+          "    let iter = table.iter_hash(u64::MAX - 1);",
+          "    assert_eq!(iter.inner.next(), Some(&\"second\"));",
+          "    assert!(iter.inner.next().is_none());",
+          "    table.clear();",
+          "    let iter = table.iter_hash(u64::MAX);",
+          "    assert!(iter.inner.next().is_none());"
+        ],
+        "code": [
+          "{",
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64; ",
+          "    table.insert_unique(u64::MAX, \"max\", hasher); // Insert entry with maximum hash",
+          "    ",
+          "    let mut iter = table.iter_hash(u64::MAX);",
+          "    while let Some(item) = iter.next() {",
+          "        // No assertion, should yield \"max\"",
+          "        let _ = item;",
+          "    }",
+          "    let mut table = HashTable::new_in(Global);",
+          "    let hasher = |val: &str| val.len() as u64;",
+          "    table.insert_unique(u64::MAX, \"max\", hasher);",
+          "    let iter = table.iter_hash(u64::MAX);",
+          "    assert_eq!(iter.inner.next(), Some(&\"max\"));",
+          "    assert!(iter.inner.next().is_none());",
+          "    table.insert_unique(u64::MAX - 1, \"second\", hasher);",
+          "    let iter = table.iter_hash(u64::MAX - 1);",
+          "    assert_eq!(iter.inner.next(), Some(&\"second\"));",
+          "    assert!(iter.inner.next().is_none());",
+          "    table.clear();",
+          "    let iter = table.iter_hash(u64::MAX);",
+          "    assert!(iter.inner.next().is_none());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

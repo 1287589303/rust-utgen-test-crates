@@ -1,0 +1,165 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut seq = Seq { literals: Some(vec![]) };",
+          "    let mut formatter = core::fmt::Formatter::default();",
+          "    let _ = seq.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    let seq_empty = Seq { literals: Some(vec![]) };",
+          "    let seq_infinite = Seq { literals: None };",
+          "    let mut formatter = core::fmt::Formatter::default();",
+          "    assert_eq!(seq_empty.fmt(&mut formatter), Ok(()));",
+          "    assert_eq!(seq_infinite.fmt(&mut formatter), Ok(()));",
+          "    let seq_with_literals = Seq { literals: Some(vec![Literal::default()]) };",
+          "    assert_eq!(seq_with_literals.fmt(&mut formatter), Ok(()));",
+          "    formatter = core::fmt::Formatter::default();",
+          "    assert!(seq_empty.fmt(&mut formatter).is_ok());",
+          "    assert!(seq_infinite.fmt(&mut formatter).is_ok());",
+          "    formatter = core::fmt::Formatter::default();",
+          "    seq_empty.literals = None;",
+          "    assert!(seq_empty.fmt(&mut formatter).is_ok());",
+          "    formatter = core::fmt::Formatter::default();",
+          "    seq_with_literals.literals = Some(vec![]);",
+          "    assert!(seq_with_literals.fmt(&mut formatter).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let mut seq = Seq { literals: Some(vec![]) };",
+          "    let mut formatter = core::fmt::Formatter::default();",
+          "    let _ = seq.fmt(&mut formatter);",
+          "    let seq_empty = Seq { literals: Some(vec![]) };",
+          "    let seq_infinite = Seq { literals: None };",
+          "    let mut formatter = core::fmt::Formatter::default();",
+          "    assert_eq!(seq_empty.fmt(&mut formatter), Ok(()));",
+          "    assert_eq!(seq_infinite.fmt(&mut formatter), Ok(()));",
+          "    let seq_with_literals = Seq { literals: Some(vec![Literal::default()]) };",
+          "    assert_eq!(seq_with_literals.fmt(&mut formatter), Ok(()));",
+          "    formatter = core::fmt::Formatter::default();",
+          "    assert!(seq_empty.fmt(&mut formatter).is_ok());",
+          "    assert!(seq_infinite.fmt(&mut formatter).is_ok());",
+          "    formatter = core::fmt::Formatter::default();",
+          "    seq_empty.literals = None;",
+          "    assert!(seq_empty.fmt(&mut formatter).is_ok());",
+          "    formatter = core::fmt::Formatter::default();",
+          "    seq_with_literals.literals = Some(vec![]);",
+          "    assert!(seq_with_literals.fmt(&mut formatter).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let literal = Literal { bytes: vec![b'a'], exact: true };",
+          "    let mut seq = Seq { literals: Some(vec![literal]) };",
+          "    let mut formatter = core::fmt::Formatter::default();",
+          "    let _ = seq.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(seq.literals(), Some(&[Literal { bytes: vec![b'a'], exact: true }]));",
+          "    assert!(formatter.fill().is_err());",
+          "    assert!(formatter.write_str(\"Seq\").is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let literal = Literal { bytes: vec![b'a'], exact: true };",
+          "    let mut seq = Seq { literals: Some(vec![literal]) };",
+          "    let mut formatter = core::fmt::Formatter::default();",
+          "    let _ = seq.fmt(&mut formatter);",
+          "    assert_eq!(seq.literals(), Some(&[Literal { bytes: vec![b'a'], exact: true }]));",
+          "    assert!(formatter.fill().is_err());",
+          "    assert!(formatter.write_str(\"Seq\").is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let literals = vec![",
+          "        Literal { bytes: vec![b'a'], exact: true },",
+          "        Literal { bytes: vec![b'b'], exact: false },",
+          "    ];",
+          "    let mut seq = Seq { literals: Some(literals) };",
+          "    let mut formatter = core::fmt::Formatter::default();",
+          "    let _ = seq.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(seq.fmt(&mut formatter).is_ok());",
+          "    assert_eq!(formatter.output(), \"Seq\\n[a, b]\");",
+          "    ",
+          "    seq.literals = None;",
+          "    assert!(seq.fmt(&mut formatter).is_ok());",
+          "    assert_eq!(formatter.output(), \"Seq\\n[∞]\");"
+        ],
+        "code": [
+          "{",
+          "    let literals = vec![",
+          "        Literal { bytes: vec![b'a'], exact: true },",
+          "        Literal { bytes: vec![b'b'], exact: false },",
+          "    ];",
+          "    let mut seq = Seq { literals: Some(literals) };",
+          "    let mut formatter = core::fmt::Formatter::default();",
+          "    let _ = seq.fmt(&mut formatter);",
+          "    assert!(seq.fmt(&mut formatter).is_ok());",
+          "    assert_eq!(formatter.output(), \"Seq\\n[a, b]\");",
+          "    ",
+          "    seq.literals = None;",
+          "    assert!(seq.fmt(&mut formatter).is_ok());",
+          "    assert_eq!(formatter.output(), \"Seq\\n[∞]\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut seq = Seq { literals: None };",
+          "    let mut formatter = core::fmt::Formatter::default();",
+          "    let _ = seq.fmt(&mut formatter);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(formatter.to_string(), \"Seq[∞]\");",
+          "    assert!(formatter.to_string().is_err());",
+          "    seq.literals = Some(vec![Literal { bytes: vec![b'a'], exact: true }]);",
+          "    assert_eq!(formatter.to_string(), \"Seq[ a ]\");",
+          "    seq.literals = None;",
+          "    assert_eq!(formatter.to_string(), \"Seq[∞]\");"
+        ],
+        "code": [
+          "{",
+          "    let mut seq = Seq { literals: None };",
+          "    let mut formatter = core::fmt::Formatter::default();",
+          "    let _ = seq.fmt(&mut formatter);",
+          "    assert_eq!(formatter.to_string(), \"Seq[∞]\");",
+          "    assert!(formatter.to_string().is_err());",
+          "    seq.literals = Some(vec![Literal { bytes: vec![b'a'], exact: true }]);",
+          "    assert_eq!(formatter.to_string(), \"Seq[ a ]\");",
+          "    seq.literals = None;",
+          "    assert_eq!(formatter.to_string(), \"Seq[∞]\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

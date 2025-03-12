@@ -1,0 +1,456 @@
+{
+  "name": "regex_automata::dfa::automaton::Automaton::try_search_overlapping_rev",
+  "mod_info": {
+    "name": "dfa::automaton",
+    "loc": "regex-automata/src/dfa/mod.rs:348:1:348:15"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/automaton.rs:1719:5:1737:6",
+  "doc": "/// Executes a reverse overlapping forward search. Matches, if one exists,\n/// can be obtained via the [`OverlappingState::get_match`] method.\n///\n/// When using this routine to implement an iterator of overlapping\n/// matches, the `start` of the search should remain invariant throughout\n/// iteration. The `OverlappingState` given to the search will keep track\n/// of the current position of the search. (This is because multiple\n/// matches may be reported at the same position, so only the search\n/// implementation itself knows when to advance the position.)\n///\n/// If for some reason you want the search to forget about its previous\n/// state and restart the search at a particular position, then setting the\n/// state to [`OverlappingState::start`] will accomplish that.\n///\n/// # Errors\n///\n/// This routine errors if the search could not complete. This can occur\n/// in a number of circumstances:\n///\n/// * The configuration of the DFA may permit it to \"quit\" the search.\n/// For example, setting quit bytes or enabling heuristic support for\n/// Unicode word boundaries. The default configuration does not enable any\n/// option that could result in the DFA quitting.\n/// * When the provided `Input` configuration is not supported. For\n/// example, by providing an unsupported anchor mode.\n///\n/// When a search returns an error, callers cannot know whether a match\n/// exists or not.\n///\n/// # Example: UTF-8 mode\n///\n/// This examples demonstrates that UTF-8 mode applies to reverse\n/// DFAs. When UTF-8 mode is enabled in the underlying NFA, then all\n/// matches reported must correspond to valid UTF-8 spans. This includes\n/// prohibiting zero-width matches that split a codepoint.\n///\n/// UTF-8 mode is enabled by default. Notice below how the only zero-width\n/// matches reported are those at UTF-8 boundaries:\n///\n/// ```\n/// use regex_automata::{\n///     dfa::{dense::DFA, Automaton, OverlappingState},\n///     nfa::thompson,\n///     HalfMatch, Input, MatchKind,\n/// };\n///\n/// let dfa = DFA::builder()\n///     .configure(DFA::config().match_kind(MatchKind::All))\n///     .thompson(thompson::Config::new().reverse(true))\n///     .build_many(&[r\"\", r\"☃\"])?;\n///\n/// // Run the reverse DFA to collect all matches.\n/// let input = Input::new(\"☃\");\n/// let mut state = OverlappingState::start();\n/// let mut matches = vec![];\n/// loop {\n///     dfa.try_search_overlapping_rev(&input, &mut state)?;\n///     match state.get_match() {\n///         None => break,\n///         Some(hm) => matches.push(hm),\n///     }\n/// }\n///\n/// // No matches split a codepoint.\n/// let expected = vec![\n///     HalfMatch::must(0, 3),\n///     HalfMatch::must(1, 0),\n///     HalfMatch::must(0, 0),\n/// ];\n/// assert_eq!(expected, matches);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n///\n/// Now let's look at the same example, but with UTF-8 mode on the\n/// original NFA disabled (which results in disabling UTF-8 mode on the\n/// DFA):\n///\n/// ```\n/// use regex_automata::{\n///     dfa::{dense::DFA, Automaton, OverlappingState},\n///     nfa::thompson,\n///     HalfMatch, Input, MatchKind,\n/// };\n///\n/// let dfa = DFA::builder()\n///     .configure(DFA::config().match_kind(MatchKind::All))\n///     .thompson(thompson::Config::new().reverse(true).utf8(false))\n///     .build_many(&[r\"\", r\"☃\"])?;\n///\n/// // Run the reverse DFA to collect all matches.\n/// let input = Input::new(\"☃\");\n/// let mut state = OverlappingState::start();\n/// let mut matches = vec![];\n/// loop {\n///     dfa.try_search_overlapping_rev(&input, &mut state)?;\n///     match state.get_match() {\n///         None => break,\n///         Some(hm) => matches.push(hm),\n///     }\n/// }\n///\n/// // Now *all* positions match, even within a codepoint,\n/// // because we lifted the requirement that matches\n/// // correspond to valid UTF-8 spans.\n/// let expected = vec![\n///     HalfMatch::must(0, 3),\n///     HalfMatch::must(0, 2),\n///     HalfMatch::must(0, 1),\n///     HalfMatch::must(1, 0),\n///     HalfMatch::must(0, 0),\n/// ];\n/// assert_eq!(expected, matches);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "fn try_search_overlapping_rev(",
+    "    &self,",
+    "    input: &Input<'_>,",
+    "    state: &mut OverlappingState,",
+    ") -> Result<(), MatchError> {",
+    "    let utf8empty = self.has_empty() && self.is_utf8();",
+    "    search::find_overlapping_rev(self, input, state)?;",
+    "    match state.get_match() {",
+    "        None => Ok(()),",
+    "        Some(_) if !utf8empty => Ok(()),",
+    "        Some(_) => skip_empty_utf8_splits_overlapping(",
+    "            input,",
+    "            state,",
+    "            |input, state| {",
+    "                search::find_overlapping_rev(self, input, state)",
+    "            },",
+    "        ),",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 8,
+    "contra": 0,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1724,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_rev(self, input, state)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1725,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        12,
+        25,
+        26,
+        27
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1724,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_rev(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1725,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1728,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        17,
+        20,
+        21,
+        18,
+        23,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1724,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_rev(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1725,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 1728,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        17,
+        20,
+        22,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1724,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_rev(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1725,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        16,
+        19,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1724,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_rev(self, input, state)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 1725,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        9,
+        11,
+        12,
+        25,
+        26,
+        27
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1724,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_rev(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1725,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "true",
+          "line": 1728,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        17,
+        20,
+        21,
+        18,
+        23,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1724,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_rev(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1725,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_) or Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches Some(_)",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        },
+        {
+          "cond": "utf8empty",
+          "norm": null,
+          "value": "false",
+          "line": 1728,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        17,
+        20,
+        22,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.has_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1724,
+          "bound": null
+        },
+        {
+          "cond": "search::find_overlapping_rev(self, input, state)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 1725,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        },
+        {
+          "cond": "state.get_match() matches None",
+          "norm": null,
+          "value": "true",
+          "line": 1726,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        10,
+        13,
+        14,
+        16,
+        19,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

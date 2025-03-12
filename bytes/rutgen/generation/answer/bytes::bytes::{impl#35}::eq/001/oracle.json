@@ -1,0 +1,199 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[should_panic]",
+      "fn test_eq_bytes_null_reference() {",
+      "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+      "    let bytes2: *const Bytes = ptr::null();",
+      "    let _ = bytes1.eq(unsafe { &*bytes2 }); // This should panic due to dereferencing a null pointer",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let _ = bytes1.eq(&bytes2);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(bytes1.eq(&*bytes2), true);",
+          "    assert!(std::ptr::null::<Bytes>() == std::ptr::null());"
+        ],
+        "code": [
+          "{",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let _ = bytes1.eq(&bytes2);",
+          "    assert_eq!(bytes1.eq(&*bytes2), true);",
+          "    assert!(std::ptr::null::<Bytes>() == std::ptr::null());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let _ = bytes1.eq(&bytes2);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2: *const Bytes = ptr::null();",
+          "    let _ = bytes1.eq(unsafe { &*bytes2 }); // Expected to panic due to null reference",
+          "    ",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    assert!(bytes1.eq(&bytes2)); // Expected to return true for equality"
+        ],
+        "code": [
+          "{",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let _ = bytes1.eq(&bytes2);",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2: *const Bytes = ptr::null();",
+          "    let _ = bytes1.eq(unsafe { &*bytes2 }); // Expected to panic due to null reference",
+          "    ",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    assert!(bytes1.eq(&bytes2)); // Expected to return true for equality",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 3, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let _ = bytes1.eq(&bytes2);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2: *const Bytes = ptr::null();",
+          "    let _ = bytes1.eq(unsafe { &*bytes2 });  // should panic due to dereferencing null pointer",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 3, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let result = bytes1.eq(&bytes2);",
+          "    assert_eq!(result, false);  // expected result should be false as lengths are different",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let result = bytes1.eq(&bytes2);",
+          "    assert_eq!(result, true);  // expected result should be true as both are empty",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let result = bytes1.eq(&bytes2);",
+          "    assert_eq!(result, true);  // expected result should be true as lengths are the same"
+        ],
+        "code": [
+          "{",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 3, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let _ = bytes1.eq(&bytes2);",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2: *const Bytes = ptr::null();",
+          "    let _ = bytes1.eq(unsafe { &*bytes2 });  // should panic due to dereferencing null pointer",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 3, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let result = bytes1.eq(&bytes2);",
+          "    assert_eq!(result, false);  // expected result should be false as lengths are different",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let result = bytes1.eq(&bytes2);",
+          "    assert_eq!(result, true);  // expected result should be true as both are empty",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let result = bytes1.eq(&bytes2);",
+          "    assert_eq!(result, true);  // expected result should be true as lengths are the same",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 3, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let _ = bytes1.eq(&bytes2);",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2: *const Bytes = ptr::null();",
+          "    let result = std::panic::catch_unwind(|| { bytes1.eq(unsafe { &*bytes2 }) });",
+          "    assert!(result.is_err());",
+          "    ",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 3, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let result = bytes1.eq(&bytes2);",
+          "    assert!(result == false);"
+        ],
+        "code": [
+          "{",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 3, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let _ = bytes1.eq(&bytes2);",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 5, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2: *const Bytes = ptr::null();",
+          "    let result = std::panic::catch_unwind(|| { bytes1.eq(unsafe { &*bytes2 }) });",
+          "    assert!(result.is_err());",
+          "    ",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 3, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let result = bytes1.eq(&bytes2);",
+          "    assert!(result == false);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 3, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let _ = bytes1.eq(&bytes2);",
+          "}"
+        ],
+        "oracle": [
+          "    _assert_eq!(bytes1.eq(unsafe { &*bytes2 }), false);",
+          "    _assert_eq!(bytes1.len, 3);",
+          "    _assert_eq!(bytes2.len, 0);",
+          "    _bytes1.eq(unsafe { &*bytes2 }); // expecting false due to different lengths",
+          "    _bytes1.eq(unsafe { &*bytes1 }); // expecting true, comparing to itself",
+          "    assert!(std::panic::catch_unwind(|| bytes1.eq(unsafe { &*(ptr::null()) })).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let bytes1 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 3, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let bytes2 = Bytes { ptr: NonNull::dangling().as_ptr(), len: 0, data: AtomicPtr::new(ptr::null_mut()), vtable: &SHARED_VTABLE };",
+          "    let _ = bytes1.eq(&bytes2);",
+          "    _assert_eq!(bytes1.eq(unsafe { &*bytes2 }), false);",
+          "    _assert_eq!(bytes1.len, 3);",
+          "    _assert_eq!(bytes2.len, 0);",
+          "    _bytes1.eq(unsafe { &*bytes2 }); // expecting false due to different lengths",
+          "    _bytes1.eq(unsafe { &*bytes1 }); // expecting true, comparing to itself",
+          "    assert!(std::panic::catch_unwind(|| bytes1.eq(unsafe { &*(ptr::null()) })).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

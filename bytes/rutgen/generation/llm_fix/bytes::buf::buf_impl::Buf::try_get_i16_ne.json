@@ -1,0 +1,210 @@
+{
+  "name": "bytes::buf::buf_impl::Buf::try_get_i16_ne",
+  "mod_info": {
+    "name": "buf::buf_impl",
+    "loc": "src/buf/mod.rs:17:1:17:14"
+  },
+  "visible": true,
+  "loc": "src/buf/buf_impl.rs:1421:5:1423:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: $this.remaining() < SIZE at line 17 is true\n",
+        "expected return value/type: Err(TryGetError {\n                requested: SIZE,\n                available: $this.remaining(),\n            })\n"
+      ],
+      "input_infer": "remaining = 0 to 1, expected output: Err(TryGetError { requested: 2, available: remaining })\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\"[..];",
+                "    let result = buf.try_get_i16_ne();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(TryGetError { requested: 2, available: 0 }));"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\"[..];",
+                "    let result = buf.try_get_i16_ne();",
+                "    assert_eq!(result, Err(TryGetError { requested: 2, available: 0 }));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x08\"[..];",
+                "    let result = buf.try_get_i16_ne();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(TryGetError { requested: 2, available: 1 }));"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = &b\"\\x08\"[..];",
+                "    let result = buf.try_get_i16_ne();",
+                "    assert_eq!(result, Err(TryGetError { requested: 2, available: 1 }));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: $this.remaining() < SIZE at line 17 is false, with bound $this.remaining() == SIZE\n",
+        "precondition: let Some(ret) = ret at line 32 is true\n",
+        "expected return value/type: Ok(ret)\n"
+      ],
+      "input_infer": "remaining() == 2 and remaining() >= 1; test with buffer of size 1 and size 2 as edge cases\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = b\"\\x01\\x02\";",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Ok(0x0001_i16));",
+                "    assert_eq!(remaining, 0);",
+                "    ",
+                "    let mut buf_short: &[u8] = b\"\\x01\";",
+                "    let result_short = buf_short.try_get_i16_ne();",
+                "    let remaining_short = buf_short.remaining();",
+                "    assert_eq!(result_short, Err(TryGetError { requested: 2, available: 1 }));",
+                "    assert_eq!(remaining_short, 1);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = b\"\\x01\\x02\";",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Ok(0x0001_i16));",
+                "    assert_eq!(remaining, 0);",
+                "    ",
+                "    let mut buf_short: &[u8] = b\"\\x01\";",
+                "    let result_short = buf_short.try_get_i16_ne();",
+                "    let remaining_short = buf_short.remaining();",
+                "    assert_eq!(result_short, Err(TryGetError { requested: 2, available: 1 }));",
+                "    assert_eq!(remaining_short, 1);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut buf: &[u8] = b\"\\x01\"; // less than 2 bytes",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Err(TryGetError { requested: 2, available: 1 }));",
+                "    assert_eq!(remaining, 1);",
+                "    ",
+                "    let mut buf: &[u8] = b\"\\x01\\x02\"; // exactly 2 bytes",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Ok(0x0001_i16));",
+                "    assert_eq!(remaining, 0);",
+                "    ",
+                "    let mut buf: &[u8] = b\"\\x01\\x02\\x03\\x04\"; // more than 2 bytes",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Ok(0x0001_i16));",
+                "    assert_eq!(remaining, 2);",
+                "    ",
+                "    let mut buf: &[u8] = b\"\\x00\\x01\"; // testing exact boundary condition",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Ok(0x0000_i16));",
+                "    assert_eq!(remaining, 0);",
+                "    ",
+                "    let mut buf: &[u8] = b\"\\xFF\\xFF\"; // testing negative value",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Ok(-1_i16));",
+                "    assert_eq!(remaining, 0);",
+                "    ",
+                "    let mut buf: &[u8] = &b\"\\xFF\"; // less than 2 bytes",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Err(TryGetError { requested: 2, available: 1 }));",
+                "    assert_eq!(remaining, 1);"
+              ],
+              "code": [
+                "{",
+                "    let mut buf: &[u8] = b\"\\x01\"; // less than 2 bytes",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Err(TryGetError { requested: 2, available: 1 }));",
+                "    assert_eq!(remaining, 1);",
+                "    ",
+                "    let mut buf: &[u8] = b\"\\x01\\x02\"; // exactly 2 bytes",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Ok(0x0001_i16));",
+                "    assert_eq!(remaining, 0);",
+                "    ",
+                "    let mut buf: &[u8] = b\"\\x01\\x02\\x03\\x04\"; // more than 2 bytes",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Ok(0x0001_i16));",
+                "    assert_eq!(remaining, 2);",
+                "    ",
+                "    let mut buf: &[u8] = b\"\\x00\\x01\"; // testing exact boundary condition",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Ok(0x0000_i16));",
+                "    assert_eq!(remaining, 0);",
+                "    ",
+                "    let mut buf: &[u8] = b\"\\xFF\\xFF\"; // testing negative value",
+                "    let result = buf.try_get_i16_ne();",
+                "    let remaining = buf.remaining();",
+                "    assert_eq!(result, Ok(-1_i16));",
+                "    assert_eq!(remaining, 0);",
+                "    ",
+                "   let mut buf: &[u8] = b\"\\xFF\"; // less than 2 bytes  ",
+                "   let result = buf.try_get_i16_ne();  ",
+                "   let remaining = buf.remaining();  ",
+                "   assert_eq!(result, Err(TryGetError { requested: 2, available: 1 }));  ",
+                "   assert_eq!(remaining, 1);  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

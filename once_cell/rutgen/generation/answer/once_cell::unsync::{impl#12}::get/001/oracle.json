@@ -1,0 +1,158 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct IntLazy;",
+          "    let lazy: Lazy<i32, fn() -> i32> = Lazy::new(|| 42);",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::get(&lazy), None);",
+          "    let _value: &i32 = &*lazy;",
+          "    assert_eq!(Lazy::get(&lazy), Some(&_value));"
+        ],
+        "code": [
+          "{",
+          "    struct IntLazy;",
+          "    let lazy: Lazy<i32, fn() -> i32> = Lazy::new(|| 42);",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), None);",
+          "    let _value: &i32 = &*lazy;",
+          "    assert_eq!(Lazy::get(&lazy), Some(&_value));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct IntLazy;",
+          "    let mut lazy: Lazy<i32, fn() -> i32> = Lazy::new(|| 42);",
+          "    lazy.force_mut(); // Explicitly initialize to call the closure",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::get(&lazy), Some(&42));",
+          "    assert_eq!(lazy.cell.get().is_some(), true);",
+          "    assert!(lazy.cell.get().unwrap() == &42);",
+          "    assert!(Lazy::get(&lazy).is_some());",
+          "    assert_eq!(result, Some(&42));"
+        ],
+        "code": [
+          "{",
+          "    struct IntLazy;",
+          "    let mut lazy: Lazy<i32, fn() -> i32> = Lazy::new(|| 42);",
+          "    lazy.force_mut(); // Explicitly initialize to call the closure",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), Some(&42));",
+          "    assert_eq!(lazy.cell.get().is_some(), true);",
+          "    assert!(lazy.cell.get().unwrap() == &42);",
+          "    assert!(Lazy::get(&lazy).is_some());",
+          "    assert_eq!(result, Some(&42));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct LargeNumberLazy;",
+          "    let lazy: Lazy<i64, fn() -> i64> = Lazy::new(|| 1_000_000_000);",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, None);",
+          "    let _value = &*lazy;",
+          "    let result_after_initialization = Lazy::get(&lazy);",
+          "    assert_eq!(result_after_initialization, Some(&1_000_000_000));",
+          "    assert!(lazy.cell.get().is_some());"
+        ],
+        "code": [
+          "{",
+          "    struct LargeNumberLazy;",
+          "    let lazy: Lazy<i64, fn() -> i64> = Lazy::new(|| 1_000_000_000);",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(result, None);",
+          "    let _value = &*lazy;",
+          "    let result_after_initialization = Lazy::get(&lazy);",
+          "    assert_eq!(result_after_initialization, Some(&1_000_000_000));",
+          "    assert!(lazy.cell.get().is_some());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct ComplexLazy;",
+          "    let lazy: Lazy<Vec<i32>, fn() -> Vec<i32>> = Lazy::new(|| vec![1, 2, 3]);",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::get(&lazy), None);",
+          "    assert!(result.is_none());",
+          "    let _ = &*lazy; // forcing initialization",
+          "    let result_after_init = Lazy::get(&lazy);",
+          "    assert_eq!(result_after_init, Some(&vec![1, 2, 3]));"
+        ],
+        "code": [
+          "{",
+          "    struct ComplexLazy;",
+          "    let lazy: Lazy<Vec<i32>, fn() -> Vec<i32>> = Lazy::new(|| vec![1, 2, 3]);",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), None);",
+          "    assert!(result.is_none());",
+          "    let _ = &*lazy; // forcing initialization",
+          "    let result_after_init = Lazy::get(&lazy);",
+          "    assert_eq!(result_after_init, Some(&vec![1, 2, 3]));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct StringLazy;",
+          "    let lazy: Lazy<String, fn() -> String> = Lazy::new(|| \"Hello, world!\".to_string());",
+          "    let result = Lazy::get(&lazy);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Lazy::get(&lazy), None);",
+          "    let _ = Lazy::force(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), Some(&\"Hello, world!\".to_string()));"
+        ],
+        "code": [
+          "{",
+          "    struct StringLazy;",
+          "    let lazy: Lazy<String, fn() -> String> = Lazy::new(|| \"Hello, world!\".to_string());",
+          "    let result = Lazy::get(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), None);",
+          "    let _ = Lazy::force(&lazy);",
+          "    assert_eq!(Lazy::get(&lazy), Some(&\"Hello, world!\".to_string()));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

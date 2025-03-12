@@ -1,0 +1,376 @@
+{
+  "name": "regex_automata::hybrid::dfa::{impl#9}::build_from_nfa",
+  "mod_info": {
+    "name": "hybrid::dfa",
+    "loc": "regex-automata/src/hybrid/mod.rs:140:1:140:13"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/hybrid/dfa.rs:4055:5:4114:6",
+  "doc": "/// Build a DFA from the given NFA.\n///\n/// Note that this requires owning a `thompson::NFA`. While this may force\n/// you to clone the NFA, such a clone is not a deep clone. Namely, NFAs\n/// are defined internally to support shared ownership such that cloning is\n/// very cheap.\n///\n/// # Example\n///\n/// This example shows how to build a lazy DFA if you already have an NFA\n/// in hand.\n///\n/// ```\n/// use regex_automata::{\n///     hybrid::dfa::DFA,\n///     nfa::thompson,\n///     HalfMatch, Input,\n/// };\n///\n/// let haystack = \"foo123bar\";\n///\n/// // This shows how to set non-default options for building an NFA.\n/// let nfa = thompson::Compiler::new()\n///     .configure(thompson::Config::new().shrink(true))\n///     .build(r\"[0-9]+\")?;\n/// let dfa = DFA::builder().build_from_nfa(nfa)?;\n/// let mut cache = dfa.create_cache();\n/// let expected = Some(HalfMatch::must(0, 6));\n/// let got = dfa.try_search_fwd(&mut cache, &Input::new(haystack))?;\n/// assert_eq!(expected, got);\n///\n/// # Ok::<(), Box<dyn std::error::Error>>(())\n/// ```\n",
+  "code": [
+    "pub fn build_from_nfa(",
+    "    &self,",
+    "    nfa: thompson::NFA,",
+    ") -> Result<DFA, BuildError> {",
+    "    let quitset = self.config.quit_set_from_nfa(&nfa)?;",
+    "    let classes = self.config.byte_classes_from_nfa(&nfa, &quitset);",
+    "    // Check that we can fit at least a few states into our cache,",
+    "    // otherwise it's pretty senseless to use the lazy DFA. This does have",
+    "    // a possible failure mode though. This assumes the maximum size of a",
+    "    // state in powerset space (so, the total number of NFA states), which",
+    "    // may never actually materialize, and could be quite a bit larger",
+    "    // than the actual biggest state. If this turns out to be a problem,",
+    "    // we could expose a knob that disables this check. But if so, we have",
+    "    // to be careful not to panic in other areas of the code (the cache",
+    "    // clearing and init code) that tend to assume some minimum useful",
+    "    // cache capacity.",
+    "    let min_cache = minimum_cache_capacity(",
+    "        &nfa,",
+    "        &classes,",
+    "        self.config.get_starts_for_each_pattern(),",
+    "    );",
+    "    let mut cache_capacity = self.config.get_cache_capacity();",
+    "    if cache_capacity < min_cache {",
+    "        // When the caller has asked us to skip the cache capacity check,",
+    "        // then we simply force the cache capacity to its minimum amount",
+    "        // and mush on.",
+    "        if self.config.get_skip_cache_capacity_check() {",
+    "            debug!(",
+    "                \"given capacity ({}) is too small, \\",
+    "                 since skip_cache_capacity_check is enabled, \\",
+    "                 setting cache capacity to minimum ({})\",",
+    "                cache_capacity, min_cache,",
+    "            );",
+    "            cache_capacity = min_cache;",
+    "        } else {",
+    "            return Err(BuildError::insufficient_cache_capacity(",
+    "                min_cache,",
+    "                cache_capacity,",
+    "            ));",
+    "        }",
+    "    }",
+    "    // We also need to check that we can fit at least some small number",
+    "    // of states in our state ID space. This is unlikely to trigger in",
+    "    // >=32-bit systems, but 16-bit systems have a pretty small state ID",
+    "    // space since a number of bits are used up as sentinels.",
+    "    if let Err(err) = minimum_lazy_state_id(&classes) {",
+    "        return Err(BuildError::insufficient_state_id_capacity(err));",
+    "    }",
+    "    let stride2 = classes.stride2();",
+    "    let start_map = StartByteMap::new(nfa.look_matcher());",
+    "    Ok(DFA {",
+    "        config: self.config.clone(),",
+    "        nfa,",
+    "        stride2,",
+    "        start_map,",
+    "        classes,",
+    "        quitset,",
+    "        cache_capacity,",
+    "    })",
+    "}"
+  ],
+  "size": {
+    "chain": 6,
+    "contra": 0,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.config.quit_set_from_nfa(&nfa)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 4059,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        6,
+        7,
+        35,
+        36,
+        37,
+        38
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.config.quit_set_from_nfa(&nfa)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 4059,
+          "bound": null
+        },
+        {
+          "cond": "cache_capacity < min_cache",
+          "norm": null,
+          "value": "true",
+          "line": 4077,
+          "bound": null
+        },
+        {
+          "cond": "self.config.get_skip_cache_capacity_check()",
+          "norm": null,
+          "value": "true",
+          "line": 4081,
+          "bound": null
+        },
+        {
+          "cond": "let Err(err) = minimum_lazy_state_id(&classes)",
+          "norm": null,
+          "value": "true",
+          "line": 4100,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(DFA {\n            config: self.config.clone(),\n            nfa,\n            stride2,\n            start_map,\n            classes,\n            quitset,\n            cache_capacity,\n        })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        20,
+        21,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        38
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.config.quit_set_from_nfa(&nfa)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 4059,
+          "bound": null
+        },
+        {
+          "cond": "cache_capacity < min_cache",
+          "norm": null,
+          "value": "true",
+          "line": 4077,
+          "bound": null
+        },
+        {
+          "cond": "self.config.get_skip_cache_capacity_check()",
+          "norm": null,
+          "value": "true",
+          "line": 4081,
+          "bound": null
+        },
+        {
+          "cond": "let Err(err) = minimum_lazy_state_id(&classes)",
+          "norm": null,
+          "value": "true",
+          "line": 4100,
+          "bound": null
+        }
+      ],
+      "ret": "Err(BuildError::insufficient_state_id_capacity(err))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        34,
+        37,
+        38
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.config.quit_set_from_nfa(&nfa)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 4059,
+          "bound": null
+        },
+        {
+          "cond": "cache_capacity < min_cache",
+          "norm": null,
+          "value": "true",
+          "line": 4077,
+          "bound": null
+        },
+        {
+          "cond": "self.config.get_skip_cache_capacity_check()",
+          "norm": null,
+          "value": "false",
+          "line": 4081,
+          "bound": null
+        }
+      ],
+      "ret": "Err(BuildError::insufficient_cache_capacity(\n                    min_cache,\n                    cache_capacity,\n                ))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        34,
+        37,
+        38
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.config.quit_set_from_nfa(&nfa)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 4059,
+          "bound": null
+        },
+        {
+          "cond": "cache_capacity < min_cache",
+          "norm": null,
+          "value": "false",
+          "line": 4077,
+          "bound": "cache_capacity == min_cache"
+        },
+        {
+          "cond": "let Err(err) = minimum_lazy_state_id(&classes)",
+          "norm": null,
+          "value": "true",
+          "line": 4100,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(DFA {\n            config: self.config.clone(),\n            nfa,\n            stride2,\n            start_map,\n            classes,\n            quitset,\n            cache_capacity,\n        })",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        19,
+        20,
+        21,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        38
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.config.quit_set_from_nfa(&nfa)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 4059,
+          "bound": null
+        },
+        {
+          "cond": "cache_capacity < min_cache",
+          "norm": null,
+          "value": "false",
+          "line": 4077,
+          "bound": "cache_capacity == min_cache"
+        },
+        {
+          "cond": "let Err(err) = minimum_lazy_state_id(&classes)",
+          "norm": null,
+          "value": "true",
+          "line": 4100,
+          "bound": null
+        }
+      ],
+      "ret": "Err(BuildError::insufficient_state_id_capacity(err))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        34,
+        37,
+        38
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

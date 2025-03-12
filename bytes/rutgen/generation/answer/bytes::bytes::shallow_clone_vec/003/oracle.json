@@ -1,0 +1,120 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let buf: *mut u8 = unsafe { alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(10, 1).unwrap()) };",
+          "    let offset: *const u8 = unsafe { buf.add(1) };",
+          "    let len: usize = 5;",
+          "    let atom: AtomicPtr<()> = AtomicPtr::new((buf as usize + 100) as *mut ());",
+          "",
+          "    let shared: Bytes = unsafe { shallow_clone_vec(&atom, buf as *const (), buf, offset, len) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(0 != (shared.data.load(Ordering::Relaxed) as usize & KIND_MASK));",
+          "    assert!(shared.ptr == offset);",
+          "    assert!(shared.len == len);",
+          "    assert!(shared.data.load(Ordering::Relaxed) as *mut u8 == buf);",
+          "    assert!(shared.vtable == &SHARED_VTABLE);",
+          "    assert!(shared.data.load(Ordering::Relaxed).as_ref().unwrap().ref_cnt.load(Ordering::Relaxed) == 2);"
+        ],
+        "code": [
+          "{",
+          "    let buf: *mut u8 = unsafe { alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(10, 1).unwrap()) };",
+          "    let offset: *const u8 = unsafe { buf.add(1) };",
+          "    let len: usize = 5;",
+          "    let atom: AtomicPtr<()> = AtomicPtr::new((buf as usize + 100) as *mut ());",
+          "",
+          "    let shared: Bytes = unsafe { shallow_clone_vec(&atom, buf as *const (), buf, offset, len) };",
+          "    assert!(0 != (shared.data.load(Ordering::Relaxed) as usize & KIND_MASK));",
+          "    assert!(shared.ptr == offset);",
+          "    assert!(shared.len == len);",
+          "    assert!(shared.data.load(Ordering::Relaxed) as *mut u8 == buf);",
+          "    assert!(shared.vtable == &SHARED_VTABLE);",
+          "    assert!(shared.data.load(Ordering::Relaxed).as_ref().unwrap().ref_cnt.load(Ordering::Relaxed) == 2);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let buf: *mut u8 = unsafe { alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(20, 1).unwrap()) };",
+          "    let offset: *const u8 = unsafe { buf.add(2) };",
+          "    let len: usize = 10;",
+          "    let atom: AtomicPtr<()> = AtomicPtr::new((buf as usize + 200) as *mut ());",
+          "",
+          "    let shared: Bytes = unsafe { shallow_clone_vec(&atom, buf as *const (), buf, offset, len) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(0 != (shared.data.get() as usize & KIND_MASK), \"Expected shared pointer alignment precondition to be false.\");",
+          "    assert!(atom.compare_exchange(buf as _, shared.data.get(), Ordering::AcqRel, Ordering::Acquire).is_ok(), \"Expected compare_exchange to match Ok(actual).\");",
+          "    assert!(atom.compare_exchange(buf as _, shared.data.get(), Ordering::AcqRel, Ordering::Acquire).is_ok(), \"Expected compare_exchange to match Ok(actual).\");",
+          "    assert!(actual as usize != buf as usize, \"Expected actual pointer not to match ptr.\");"
+        ],
+        "code": [
+          "{",
+          "    let buf: *mut u8 = unsafe { alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(20, 1).unwrap()) };",
+          "    let offset: *const u8 = unsafe { buf.add(2) };",
+          "    let len: usize = 10;",
+          "    let atom: AtomicPtr<()> = AtomicPtr::new((buf as usize + 200) as *mut ());",
+          "",
+          "    let shared: Bytes = unsafe { shallow_clone_vec(&atom, buf as *const (), buf, offset, len) };",
+          "    assert!(0 != (shared.data.get() as usize & KIND_MASK), \"Expected shared pointer alignment precondition to be false.\");",
+          "    assert!(atom.compare_exchange(buf as _, shared.data.get(), Ordering::AcqRel, Ordering::Acquire).is_ok(), \"Expected compare_exchange to match Ok(actual).\");",
+          "    assert!(atom.compare_exchange(buf as _, shared.data.get(), Ordering::AcqRel, Ordering::Acquire).is_ok(), \"Expected compare_exchange to match Ok(actual).\");",
+          "    assert!(actual as usize != buf as usize, \"Expected actual pointer not to match ptr.\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let buf: *mut u8 = unsafe { alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(30, 1).unwrap()) };",
+          "    let offset: *const u8 = unsafe { buf.add(3) };",
+          "    let len: usize = 15;",
+          "    let atom: AtomicPtr<()> = AtomicPtr::new(buf);",
+          "",
+          "    let shared: Bytes = unsafe { shallow_clone_vec(&atom, buf as *const (), buf, offset, len) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(0 != (shared as usize & KIND_MASK), \"Expected shared pointer alignment condition to be false\");",
+          "    assert!(atom.compare_exchange(buf as _, shared as _, Ordering::AcqRel, Ordering::Acquire).is_ok(), \"Expected compare_exchange to succeed and return Ok(actual)\");",
+          "    assert!(atom.compare_exchange(buf as _, shared as _, Ordering::AcqRel, Ordering::Acquire).is_ok(), \"Expected compare_exchange to succeed and return Ok(actual) again\");",
+          "    assert!(actual as usize != buf as usize, \"Expected actual pointer comparison to be false\");"
+        ],
+        "code": [
+          "{",
+          "    let buf: *mut u8 = unsafe { alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(30, 1).unwrap()) };",
+          "    let offset: *const u8 = unsafe { buf.add(3) };",
+          "    let len: usize = 15;",
+          "    let atom: AtomicPtr<()> = AtomicPtr::new(buf);",
+          "",
+          "    let shared: Bytes = unsafe { shallow_clone_vec(&atom, buf as *const (), buf, offset, len) };",
+          "    assert!(0 != (shared as usize & KIND_MASK), \"Expected shared pointer alignment condition to be false\");",
+          "    assert!(atom.compare_exchange(buf as _, shared as _, Ordering::AcqRel, Ordering::Acquire).is_ok(), \"Expected compare_exchange to succeed and return Ok(actual)\");",
+          "    assert!(atom.compare_exchange(buf as _, shared as _, Ordering::AcqRel, Ordering::Acquire).is_ok(), \"Expected compare_exchange to succeed and return Ok(actual) again\");",
+          "    assert!(actual as usize != buf as usize, \"Expected actual pointer comparison to be false\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

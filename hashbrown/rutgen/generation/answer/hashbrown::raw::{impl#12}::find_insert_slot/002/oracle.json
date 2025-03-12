@@ -1,0 +1,119 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestAllocator;",
+          "    struct TestTableLayout;",
+          "    ",
+          "    impl Allocator for TestAllocator { /* Implement necessary methods */ }",
+          "    impl TableLayout for TestTableLayout { /* Implement necessary methods */ }",
+          "",
+          "    let allocator = TestAllocator;",
+          "    let table_layout = TestTableLayout;",
+          "    let capacity = 8; // must be a power of two",
+          "    let table = unsafe { RawTableInner::new_uninitialized(&allocator, table_layout, capacity, Fallibility::Infallible) }.unwrap();",
+          "    ",
+          "    let hash: u64 = 12345; // any valid u64",
+          "    let insert_slot = unsafe { table.find_insert_slot(hash) };",
+          "    // The insert_slot should not be valid as there are no empty/deleted buckets",
+          "}"
+        ],
+        "oracle": [
+          "    unsafe { assert_eq!(insert_slot.index, table.bucket_mask + 1); }",
+          "    unsafe { assert!(!table.is_empty_singleton()); }",
+          "    unsafe { assert!(table.find_insert_slot_in_group(&group, &probe_seq).is_none()); }"
+        ],
+        "code": [
+          "{",
+          "    struct TestAllocator;",
+          "    struct TestTableLayout;",
+          "    ",
+          "    impl Allocator for TestAllocator { /* Implement necessary methods */ }",
+          "    impl TableLayout for TestTableLayout { /* Implement necessary methods */ }",
+          "",
+          "    let allocator = TestAllocator;",
+          "    let table_layout = TestTableLayout;",
+          "    let capacity = 8; // must be a power of two",
+          "    let table = unsafe { RawTableInner::new_uninitialized(&allocator, table_layout, capacity, Fallibility::Infallible) }.unwrap();",
+          "    ",
+          "    let hash: u64 = 12345; // any valid u64",
+          "    let insert_slot = unsafe { table.find_insert_slot(hash) };",
+          "    // The insert_slot should not be valid as there are no empty/deleted buckets",
+          "    unsafe { assert_eq!(insert_slot.index, table.bucket_mask + 1); }",
+          "    unsafe { assert!(!table.is_empty_singleton()); }",
+          "    unsafe { assert!(table.find_insert_slot_in_group(&group, &probe_seq).is_none()); }",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestAllocator;",
+          "    struct TestTableLayout;",
+          "    ",
+          "    impl Allocator for TestAllocator { /* Implement necessary methods */ }",
+          "    impl TableLayout for TestTableLayout { /* Implement necessary methods */ }",
+          "",
+          "    let allocator = TestAllocator;",
+          "    let table_layout = TestTableLayout;",
+          "    let capacity = 8; // must be a power of two",
+          "    let mut table = unsafe { RawTableInner::new_uninitialized(&allocator, table_layout, capacity, Fallibility::Infallible) }.unwrap();",
+          "",
+          "    // Simulate having at least one empty or deleted bucket",
+          "    unsafe { table.ctrl_slice().fill_empty(); }",
+          "",
+          "    let hash: u64 = 67890; // any valid u64",
+          "    let insert_slot = unsafe { table.find_insert_slot(hash) };",
+          "    // The insert_slot should now point to a valid index in the table",
+          "}"
+        ],
+        "oracle": [
+          "    unsafe { table.ctrl_slice().fill_empty(); }",
+          "    let insert_slot = unsafe { table.find_insert_slot(hash) };",
+          "    assert!(insert_slot.index < table.buckets());",
+          "    assert!(insert_slot.index <= table.bucket_mask);",
+          "    assert!(likely(index.is_some()) == false); // Ensure that index is not found",
+          "    assert!(likely(index.is_some()) == true); // Ensure that index is found"
+        ],
+        "code": [
+          "{",
+          "    struct TestAllocator;",
+          "    struct TestTableLayout;",
+          "    ",
+          "    impl Allocator for TestAllocator { /* Implement necessary methods */ }",
+          "    impl TableLayout for TestTableLayout { /* Implement necessary methods */ }",
+          "",
+          "    let allocator = TestAllocator;",
+          "    let table_layout = TestTableLayout;",
+          "    let capacity = 8; // must be a power of two",
+          "    let mut table = unsafe { RawTableInner::new_uninitialized(&allocator, table_layout, capacity, Fallibility::Infallible) }.unwrap();",
+          "",
+          "    // Simulate having at least one empty or deleted bucket",
+          "    unsafe { table.ctrl_slice().fill_empty(); }",
+          "",
+          "    let hash: u64 = 67890; // any valid u64",
+          "    let insert_slot = unsafe { table.find_insert_slot(hash) };",
+          "    // The insert_slot should now point to a valid index in the table",
+          "    unsafe { table.ctrl_slice().fill_empty(); }",
+          "    let insert_slot = unsafe { table.find_insert_slot(hash) };",
+          "    assert!(insert_slot.index < table.buckets());",
+          "    assert!(insert_slot.index <= table.bucket_mask);",
+          "    assert!(likely(index.is_some()) == false); // Ensure that index is not found",
+          "    assert!(likely(index.is_some()) == true); // Ensure that index is found",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

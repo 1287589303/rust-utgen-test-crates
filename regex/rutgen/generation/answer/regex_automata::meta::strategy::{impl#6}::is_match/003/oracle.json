@@ -1,0 +1,152 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let core = Core::new(RegexInfo::default(), None, &[]).unwrap();",
+          "    let strategy = ReverseAnchored::new(core).unwrap();",
+          "    let mut cache = strategy.create_cache();",
+          "    let input = Input::new(b\"test input\").anchored(Anchored::No);",
+          "    ",
+          "    strategy.is_match(&mut cache, &input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(strategy.is_match(&mut cache, &input), false);",
+          "    ",
+          "    let input_anchored_yes = input.clone().anchored(Anchored::Yes);",
+          "    assert_eq!(strategy.is_match(&mut cache, &input_anchored_yes), self.core.is_match(&mut cache, &input_anchored_yes));",
+          "    ",
+          "    let input_half_match = input.clone();",
+          "    self.try_search_half_anchored_rev(&mut cache, &input_half_match).unwrap();",
+          "    ",
+          "    let input_half_none = input.clone();",
+          "    assert_eq!(self.try_search_half_anchored_rev(&mut cache, &input_half_none), Ok(None));",
+          "    ",
+          "    let input_half_err = input.clone();",
+          "    assert!(self.try_search_half_anchored_rev(&mut cache, &input_half_err).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let core = Core::new(RegexInfo::default(), None, &[]).unwrap();",
+          "    let strategy = ReverseAnchored::new(core).unwrap();",
+          "    let mut cache = strategy.create_cache();",
+          "    let input = Input::new(b\"test input\").anchored(Anchored::No);",
+          "    ",
+          "    strategy.is_match(&mut cache, &input);",
+          "    assert_eq!(strategy.is_match(&mut cache, &input), false);",
+          "    ",
+          "    let input_anchored_yes = input.clone().anchored(Anchored::Yes);",
+          "    assert_eq!(strategy.is_match(&mut cache, &input_anchored_yes), self.core.is_match(&mut cache, &input_anchored_yes));",
+          "    ",
+          "    let input_half_match = input.clone();",
+          "    self.try_search_half_anchored_rev(&mut cache, &input_half_match).unwrap();",
+          "    ",
+          "    let input_half_none = input.clone();",
+          "    assert_eq!(self.try_search_half_anchored_rev(&mut cache, &input_half_none), Ok(None));",
+          "    ",
+          "    let input_half_err = input.clone();",
+          "    assert!(self.try_search_half_anchored_rev(&mut cache, &input_half_err).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let core = Core::new(RegexInfo::default(), None, &[]).unwrap();",
+          "    let strategy = ReverseAnchored::new(core).unwrap();",
+          "    let mut cache = strategy.create_cache();",
+          "    let input = Input::new(b\"another test input\").anchored(Anchored::Pattern(PatternID::new(1)));",
+          "",
+          "    strategy.is_match(&mut cache, &input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(strategy.is_match(&mut cache, &input), false);",
+          "    let input_half_match = Input::new(b\"part of another test input\").anchored(Anchored::No);",
+          "    assert_eq!(strategy.try_search_half_anchored_rev(&mut cache, &input_half_match).is_ok(), true);",
+          "    let input_error_match = Input::new(b\"error case input\").anchored(Anchored::No);",
+          "    assert!(strategy.try_search_half_anchored_rev(&mut cache, &input_error_match).is_err());",
+          "    let mut cache_with_error = strategy.create_cache();",
+          "    assert_eq!(strategy.is_match(&mut cache_with_error, &input_error_match), true);"
+        ],
+        "code": [
+          "{",
+          "    let core = Core::new(RegexInfo::default(), None, &[]).unwrap();",
+          "    let strategy = ReverseAnchored::new(core).unwrap();",
+          "    let mut cache = strategy.create_cache();",
+          "    let input = Input::new(b\"another test input\").anchored(Anchored::Pattern(PatternID::new(1)));",
+          "",
+          "    strategy.is_match(&mut cache, &input);",
+          "    assert_eq!(strategy.is_match(&mut cache, &input), false);",
+          "    let input_half_match = Input::new(b\"part of another test input\").anchored(Anchored::No);",
+          "    assert_eq!(strategy.try_search_half_anchored_rev(&mut cache, &input_half_match).is_ok(), true);",
+          "    let input_error_match = Input::new(b\"error case input\").anchored(Anchored::No);",
+          "    assert!(strategy.try_search_half_anchored_rev(&mut cache, &input_error_match).is_err());",
+          "    let mut cache_with_error = strategy.create_cache();",
+          "    assert_eq!(strategy.is_match(&mut cache_with_error, &input_error_match), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let core = Core::new(RegexInfo::default(), None, &[]).unwrap();",
+          "    let strategy = ReverseAnchored::new(core).unwrap();",
+          "    let mut cache = strategy.create_cache();",
+          "    let input = Input::new(b\"invalid input\").anchored(Anchored::No);",
+          "    ",
+          "    // Simulate an error scenario by modifying the state as necessary to trigger the error",
+          "    strategy.is_match(&mut cache, &input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(strategy.is_match(&mut cache, &input), true);",
+          "    input.set_anchored(Anchored::No);",
+          "    assert!(matches!(strategy.try_search_half_anchored_rev(&mut cache, &input), Err(_)));",
+          "    input.set_anchored(Anchored::No);",
+          "    assert_eq!(strategy.is_match(&mut cache, &input), true);",
+          "    input.set_anchored(Anchored::No);",
+          "    assert!(matches!(strategy.try_search_half_anchored_rev(&mut cache, &input), Ok(Some(_))));",
+          "    input.set_anchored(Anchored::No);",
+          "    assert_eq!(strategy.is_match(&mut cache, &input), true);"
+        ],
+        "code": [
+          "{",
+          "    let core = Core::new(RegexInfo::default(), None, &[]).unwrap();",
+          "    let strategy = ReverseAnchored::new(core).unwrap();",
+          "    let mut cache = strategy.create_cache();",
+          "    let input = Input::new(b\"invalid input\").anchored(Anchored::No);",
+          "    ",
+          "    // Simulate an error scenario by modifying the state as necessary to trigger the error",
+          "    strategy.is_match(&mut cache, &input);",
+          "    assert_eq!(strategy.is_match(&mut cache, &input), true);",
+          "    input.set_anchored(Anchored::No);",
+          "    assert!(matches!(strategy.try_search_half_anchored_rev(&mut cache, &input), Err(_)));",
+          "    input.set_anchored(Anchored::No);",
+          "    assert_eq!(strategy.is_match(&mut cache, &input), true);",
+          "    input.set_anchored(Anchored::No);",
+          "    assert!(matches!(strategy.try_search_half_anchored_rev(&mut cache, &input), Ok(Some(_))));",
+          "    input.set_anchored(Anchored::No);",
+          "    assert_eq!(strategy.is_match(&mut cache, &input), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

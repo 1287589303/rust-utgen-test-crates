@@ -1,0 +1,33 @@
+{
+  "name": "regex_syntax::hir::literal::{impl#4}::optimize_for_prefix_by_preference",
+  "mod_info": {
+    "name": "hir::literal",
+    "loc": "regex-syntax/src/hir/mod.rs:42:1:42:17"
+  },
+  "visible": true,
+  "loc": "regex-syntax/src/hir/literal.rs:1819:5:1821:6",
+  "doc": "/// Optimizes this seq while treating its literals as prefixes and\n/// respecting the preference order of its literals.\n///\n/// The specific way \"optimization\" works is meant to be an implementation\n/// detail, as it essentially represents a set of heuristics. The goal\n/// that optimization tries to accomplish is to make the literals in this\n/// set reflect inputs that will result in a more effective prefilter.\n/// Principally by reducing the false positive rate of candidates found by\n/// the literals in this sequence. That is, when a match of a literal is\n/// found, we would like it to be a strong predictor of the overall match\n/// of the regex. If it isn't, then much time will be spent starting and\n/// stopping the prefilter search and attempting to confirm the match only\n/// to have it fail.\n///\n/// Some of those heuristics might be:\n///\n/// * Identifying a common prefix from a larger sequence of literals, and\n/// shrinking the sequence down to that single common prefix.\n/// * Rejecting the sequence entirely if it is believed to result in very\n/// high false positive rate. When this happens, the sequence is made\n/// infinite.\n/// * Shrinking the sequence to a smaller number of literals representing\n/// prefixes, but not shrinking it so much as to make literals too short.\n/// (A sequence with very short literals, of 1 or 2 bytes, will typically\n/// result in a higher false positive rate.)\n///\n/// Optimization should only be run once extraction is complete. Namely,\n/// optimization may make assumptions that do not compose with other\n/// operations in the middle of extraction. For example, optimization will\n/// reduce `[E(sam), E(samwise)]` to `[E(sam)]`, but such a transformation\n/// is only valid if no other extraction will occur. If other extraction\n/// may occur, then the correct transformation would be to `[I(sam)]`.\n///\n/// The [`Seq::optimize_for_suffix_by_preference`] does the same thing, but\n/// for suffixes.\n///\n/// # Example\n///\n/// This shows how optimization might transform a sequence. Note that\n/// the specific behavior is not a documented guarantee. The heuristics\n/// used are an implementation detail and may change over time in semver\n/// compatible releases.\n///\n/// ```\n/// use regex_syntax::hir::literal::{Seq, Literal};\n///\n/// let mut seq = Seq::new(&[\n///     \"samantha\",\n///     \"sam\",\n///     \"samwise\",\n///     \"frodo\",\n/// ]);\n/// seq.optimize_for_prefix_by_preference();\n/// assert_eq!(Seq::from_iter([\n///     Literal::exact(\"samantha\"),\n///     // Kept exact even though 'samwise' got pruned\n///     // because optimization assumes literal extraction\n///     // has finished.\n///     Literal::exact(\"sam\"),\n///     Literal::exact(\"frodo\"),\n/// ]), seq);\n/// ```\n///\n/// # Example: optimization may make the sequence infinite\n///\n/// If the heuristics deem that the sequence could cause a very high false\n/// positive rate, then it may make the sequence infinite, effectively\n/// disabling its use as a prefilter.\n///\n/// ```\n/// use regex_syntax::hir::literal::{Seq, Literal};\n///\n/// let mut seq = Seq::new(&[\n///     \"samantha\",\n///     // An empty string matches at every position,\n///     // thus rendering the prefilter completely\n///     // ineffective.\n///     \"\",\n///     \"sam\",\n///     \"samwise\",\n///     \"frodo\",\n/// ]);\n/// seq.optimize_for_prefix_by_preference();\n/// assert!(!seq.is_finite());\n/// ```\n///\n/// Do note that just because there is a `\" \"` in the sequence, that\n/// doesn't mean the sequence will always be made infinite after it is\n/// optimized. Namely, if the sequence is considered exact (any match\n/// corresponds to an overall match of the original regex), then any match\n/// is an overall match, and so the false positive rate is always `0`.\n///\n/// To demonstrate this, we remove `samwise` from our sequence. This\n/// results in no optimization happening and all literals remain exact.\n/// Thus the entire sequence is exact, and it is kept as-is, even though\n/// one is an ASCII space:\n///\n/// ```\n/// use regex_syntax::hir::literal::{Seq, Literal};\n///\n/// let mut seq = Seq::new(&[\n///     \"samantha\",\n///     \" \",\n///     \"sam\",\n///     \"frodo\",\n/// ]);\n/// seq.optimize_for_prefix_by_preference();\n/// assert!(seq.is_finite());\n/// ```\n",
+  "code": [
+    "pub fn optimize_for_prefix_by_preference(&mut self) {",
+    "    self.optimize_by_preference(true);",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": null,
+      "path": [
+        0,
+        1
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

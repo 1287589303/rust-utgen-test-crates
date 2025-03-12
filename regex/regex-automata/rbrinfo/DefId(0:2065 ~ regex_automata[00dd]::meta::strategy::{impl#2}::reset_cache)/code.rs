@@ -1,0 +1,1 @@
+fn reset_cache(&self, _cache: &mut Cache) {}

@@ -1,0 +1,189 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Ok(1.2), buf.try_get_f64());",
+          "    assert_eq!(6, buf.remaining());",
+          "    ",
+          "    let mut buf_err = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    assert_eq!(Err(TryGetError { requested: 8, available: 7 }), buf_err.try_get_f64());",
+          "    assert_eq!(7, buf_err.remaining());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "    assert_eq!(Ok(1.2), buf.try_get_f64());",
+          "    assert_eq!(6, buf.remaining());",
+          "    ",
+          "    let mut buf_err = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    assert_eq!(Err(TryGetError { requested: 8, available: 7 }), buf_err.try_get_f64());",
+          "    assert_eq!(7, buf_err.remaining());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result, Ok(1.0));",
+          "    assert_eq!(buf.remaining(), 7);",
+          "    buf.advance(8);",
+          "    assert!(!buf.has_remaining());",
+          "    assert_eq!(buf.try_get_f64(), Err(TryGetError{requested: 8, available: 7}));"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "    assert_eq!(_result, Ok(1.0));",
+          "    assert_eq!(buf.remaining(), 7);",
+          "    buf.advance(8);",
+          "    assert!(!buf.has_remaining());",
+          "    assert_eq!(buf.try_get_f64(), Err(TryGetError{requested: 8, available: 7}));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = &b\"\\x3F\\x80\\x00\\x00\\x00\\x00\\x00\\x00\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result, Ok(1.0));",
+          "    assert_eq!(buf.remaining(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = &b\"\\x3F\\x80\\x00\\x00\\x00\\x00\\x00\\x00\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "    assert_eq!(_result, Ok(1.0));",
+          "    assert_eq!(buf.remaining(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result, Ok(1.2f64));",
+          "    assert_eq!(buf.remaining(), 7);",
+          "    let mut buf_err = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    assert_eq!(buf_err.try_get_f64(), Err(TryGetError{requested: 8, available: 7}));",
+          "    assert_eq!(buf_err.remaining(), 7);"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "    assert_eq!(_result, Ok(1.2f64));",
+          "    assert_eq!(buf.remaining(), 7);",
+          "    let mut buf_err = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    assert_eq!(buf_err.try_get_f64(), Err(TryGetError{requested: 8, available: 7}));",
+          "    assert_eq!(buf_err.remaining(), 7);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = &b\"\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(buf.try_get_f64(), Ok(0.0)); // Ensure default value when buffer is empty",
+          "    buf = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\\x33 hello\"[..];",
+          "    assert_eq!(buf.try_get_f64(), Ok(1.2)); // Valid complete 8-byte read",
+          "    assert_eq!(buf.remaining(), 6); // Check remaining bytes after read",
+          "    buf = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    assert_eq!(buf.try_get_f64(), Err(TryGetError { requested: 8, available: 7 })); // Insufficient bytes for read",
+          "    assert_eq!(buf.remaining(), 7); // Check remaining bytes after error"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = &b\"\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "    assert_eq!(buf.try_get_f64(), Ok(0.0)); // Ensure default value when buffer is empty",
+          "    buf = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\\x33 hello\"[..];",
+          "    assert_eq!(buf.try_get_f64(), Ok(1.2)); // Valid complete 8-byte read",
+          "    assert_eq!(buf.remaining(), 6); // Check remaining bytes after read",
+          "    buf = &b\"\\x3F\\xF3\\x33\\x33\\x33\\x33\\x33\"[..];",
+          "    assert_eq!(buf.try_get_f64(), Err(TryGetError { requested: 8, available: 7 })); // Insufficient bytes for read",
+          "    assert_eq!(buf.remaining(), 7); // Check remaining bytes after error",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut buf = &b\"\\x3F\\x80\\x00\\x00\\x00\\x00\\x00\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(Ok(1.0), buf.try_get_f64());",
+          "    assert_eq!(8, buf.remaining());",
+          "    buf.try_get_u64 = || Ok(0x3F80000000000000);",
+          "    assert_eq!(Ok(f64::from_bits(0x3F80000000000000)), buf.try_get_f64());",
+          "    assert_eq!(0, buf.remaining());",
+          "    buf.try_get_u64 = || Err(TryGetError { requested: 8, available: 7 });",
+          "    assert_eq!(Err(TryGetError { requested: 8, available: 7 }), buf.try_get_f64());",
+          "    assert_eq!(7, buf.remaining());"
+        ],
+        "code": [
+          "{",
+          "    let mut buf = &b\"\\x3F\\x80\\x00\\x00\\x00\\x00\\x00\"[..];",
+          "    let _result = buf.try_get_f64();",
+          "    assert_eq!(Ok(1.0), buf.try_get_f64());",
+          "    assert_eq!(8, buf.remaining());",
+          "    buf.try_get_u64 = || Ok(0x3F80000000000000);",
+          "    assert_eq!(Ok(f64::from_bits(0x3F80000000000000)), buf.try_get_f64());",
+          "    assert_eq!(0, buf.remaining());",
+          "    buf.try_get_u64 = || Err(TryGetError { requested: 8, available: 7 });",
+          "    assert_eq!(Err(TryGetError { requested: 8, available: 7 }), buf.try_get_f64());",
+          "    assert_eq!(7, buf.remaining());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

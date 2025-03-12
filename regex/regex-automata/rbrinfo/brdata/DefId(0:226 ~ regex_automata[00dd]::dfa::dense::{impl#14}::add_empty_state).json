@@ -1,0 +1,122 @@
+{
+  "name": "regex_automata::dfa::dense::{impl#14}::add_empty_state",
+  "mod_info": {
+    "name": "dfa::dense",
+    "loc": "regex-automata/src/dfa/mod.rs:337:1:337:15"
+  },
+  "visible": false,
+  "loc": "regex-automata/src/dfa/dense.rs:3460:5:3505:6",
+  "doc": "/// Add an empty state (a state where all transitions lead to a dead state)\n/// and return its identifier. The identifier returned is guaranteed to\n/// not point to any other existing state.\n///\n/// If adding a state would exhaust the state identifier space, then this\n/// returns an error.\n",
+  "code": [
+    "fn add_empty_state(&mut self) -> Result<StateID, BuildError> {",
+    "    // Normally, to get a fresh state identifier, we would just",
+    "    // take the index of the next state added to the transition",
+    "    // table. However, we actually perform an optimization here",
+    "    // that premultiplies state IDs by the stride, such that they",
+    "    // point immediately at the beginning of their transitions in",
+    "    // the transition table. This avoids an extra multiplication",
+    "    // instruction for state lookup at search time.",
+    "    //",
+    "    // Premultiplied identifiers means that instead of your matching",
+    "    // loop looking something like this:",
+    "    //",
+    "    //   state = dfa.start",
+    "    //   for byte in haystack:",
+    "    //       next = dfa.transitions[state * stride + byte]",
+    "    //       if dfa.is_match(next):",
+    "    //           return true",
+    "    //   return false",
+    "    //",
+    "    // it can instead look like this:",
+    "    //",
+    "    //   state = dfa.start",
+    "    //   for byte in haystack:",
+    "    //       next = dfa.transitions[state + byte]",
+    "    //       if dfa.is_match(next):",
+    "    //           return true",
+    "    //   return false",
+    "    //",
+    "    // In other words, we save a multiplication instruction in the",
+    "    // critical path. This turns out to be a decent performance win.",
+    "    // The cost of using premultiplied state ids is that they can",
+    "    // require a bigger state id representation. (And they also make",
+    "    // the code a bit more complex, especially during minimization and",
+    "    // when reshuffling states, as one needs to convert back and forth",
+    "    // between state IDs and state indices.)",
+    "    //",
+    "    // To do this, we simply take the index of the state into the",
+    "    // entire transition table, rather than the index of the state",
+    "    // itself. e.g., If the stride is 64, then the ID of the 3rd state",
+    "    // is 192, not 2.",
+    "    let next = self.table.len();",
+    "    let id =",
+    "        StateID::new(next).map_err(|_| BuildError::too_many_states())?;",
+    "    self.table.extend(iter::repeat(0).take(self.stride()));",
+    "    Ok(id)",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "StateID::new(next).map_err(|_| BuildError::too_many_states())?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 3502,
+          "bound": null
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        9,
+        15,
+        16,
+        17
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "StateID::new(next).map_err(|_| BuildError::too_many_states())?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 3502,
+          "bound": null
+        }
+      ],
+      "ret": "Ok(id)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

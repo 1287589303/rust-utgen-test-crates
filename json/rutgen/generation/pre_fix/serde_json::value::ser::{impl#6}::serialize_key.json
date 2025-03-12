@@ -1,0 +1,306 @@
+{
+  "name": "serde_json::value::ser::{impl#6}::serialize_key",
+  "mod_info": {
+    "name": "value::ser",
+    "loc": "src/value/mod.rs:931:1:931:9"
+  },
+  "visible": true,
+  "loc": "src/value/ser.rs:401:5:415:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: key.serialize(MapKeySerializer) matches core::result::Result::Err(err) at line 407 is true\n",
+        "expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "SerializeMap must be in state SerializeMap::Map, and key must be an unsized type that fails serialization with MapKeySerializer, such as a struct that does not implement Serialize or an invalid key type.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct InvalidKey;",
+                "",
+                "    let mut serialize_map = SerializeMap::Map {",
+                "        map: Map::new(),",
+                "        next_key: None,",
+                "    };",
+                "",
+                "    let result = serialize_map.serialize_key(&InvalidKey);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert!(matches!(result, Err(_)));"
+              ],
+              "code": [
+                "{",
+                "    struct InvalidKey;",
+                "",
+                "    let mut serialize_map = SerializeMap::Map {",
+                "        map: Map::new(),",
+                "        next_key: None,",
+                "    };",
+                "",
+                "    let result = serialize_map.serialize_key(&InvalidKey);",
+                "    assert!(result.is_err());",
+                "    assert!(matches!(result, Err(_)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(Debug)]",
+                "    struct NoSerialize;",
+                "",
+                "    let mut serialize_map = SerializeMap::Map {",
+                "        map: Map::new(),",
+                "        next_key: None,",
+                "    };",
+                "",
+                "    let result = serialize_map.serialize_key(&NoSerialize);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().should_match(expected_error));"
+              ],
+              "code": [
+                "{",
+                "    #[derive(Debug)]",
+                "    struct NoSerialize;",
+                "",
+                "    let mut serialize_map = SerializeMap::Map {",
+                "        map: Map::new(),",
+                "        next_key: None,",
+                "    };",
+                "",
+                "    let result = serialize_map.serialize_key(&NoSerialize);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().should_match(expected_error));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut serialize_map = SerializeMap::Map {",
+                "        map: Map::new(),",
+                "        next_key: None,",
+                "    };",
+                "",
+                "    let result = serialize_map.serialize_key(&Value::Null);",
+                "}"
+              ],
+              "oracle": [
+                "    let mut serialize_map = SerializeMap::Map { map: Map::new(), next_key: None };",
+                "    let result = serialize_map.serialize_key(&Value::Null);",
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let mut serialize_map = SerializeMap::Map {",
+                "        map: Map::new(),",
+                "        next_key: None,",
+                "    };",
+                "",
+                "    let result = serialize_map.serialize_key(&Value::Null);",
+                "    let mut serialize_map = SerializeMap::Map { map: Map::new(), next_key: None };",
+                "    let result = serialize_map.serialize_key(&Value::Null);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: key.serialize(MapKeySerializer) matches core::result::Result::Ok(val) at line 407 is true\n",
+        "precondition: key.serialize(MapKeySerializer) matches core::result::Result::Ok(val) at line 407 is true\n",
+        "expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "SerializeMap::Map with a valid key implementing Serialize trait that returns Result::Ok when serialized.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct StringKey(String);",
+                "    impl Serialize for StringKey {",
+                "        fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>",
+                "        where",
+                "            S: serde::Serializer,",
+                "        {",
+                "            serializer.serialize_str(&self.0)",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = SerializeMap::Map {",
+                "        map: Map { map: Default::default() },",
+                "        next_key: None,",
+                "    };",
+                "    let key = StringKey(\"test_key\".to_string());",
+                "    let _ = map.serialize_key(&key);",
+                "}"
+              ],
+              "oracle": [
+                "    let key = StringKey(\"test_key\".to_string());",
+                "    assert_eq!(map.next_key, Some(\"test_key\".to_string()));",
+                "    assert!(map.serialize_key(&key).is_ok());"
+              ],
+              "code": [
+                "{",
+                "    struct StringKey(String);",
+                "    impl Serialize for StringKey {",
+                "        fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>",
+                "        where",
+                "            S: serde::Serializer,",
+                "        {",
+                "            serializer.serialize_str(&self.0)",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = SerializeMap::Map {",
+                "        map: Map { map: Default::default() },",
+                "        next_key: None,",
+                "    };",
+                "    let key = StringKey(\"test_key\".to_string());",
+                "    let _ = map.serialize_key(&key);",
+                "    let key = StringKey(\"test_key\".to_string());",
+                "    assert_eq!(map.next_key, Some(\"test_key\".to_string()));",
+                "    assert!(map.serialize_key(&key).is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct IntKey(i32);",
+                "    impl Serialize for IntKey {",
+                "        fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>",
+                "        where",
+                "            S: serde::Serializer,",
+                "        {",
+                "            serializer.serialize_i32(self.0)",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = SerializeMap::Map {",
+                "        map: Map { map: Default::default() },",
+                "        next_key: None,",
+                "    };",
+                "    let key = IntKey(42);",
+                "    let _ = map.serialize_key(&key);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(map.next_key, Some(\"42\".to_string()));",
+                "    assert!(matches!(_ , Ok(())));"
+              ],
+              "code": [
+                "{",
+                "    struct IntKey(i32);",
+                "    impl Serialize for IntKey {",
+                "        fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>",
+                "        where",
+                "            S: serde::Serializer,",
+                "        {",
+                "            serializer.serialize_i32(self.0)",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = SerializeMap::Map {",
+                "        map: Map { map: Default::default() },",
+                "        next_key: None,",
+                "    };",
+                "    let key = IntKey(42);",
+                "    let _ = map.serialize_key(&key);",
+                "    assert_eq!(map.next_key, Some(\"42\".to_string()));",
+                "    assert!(matches!(_ , Ok(())));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct BoolKey(bool);",
+                "    impl Serialize for BoolKey {",
+                "        fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>",
+                "        where",
+                "            S: serde::Serializer,",
+                "        {",
+                "            serializer.serialize_bool(self.0)",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = SerializeMap::Map {",
+                "        map: Map { map: Default::default() },",
+                "        next_key: None,",
+                "    };",
+                "    let key = BoolKey(true);",
+                "    let _ = map.serialize_key(&key);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(map.next_key.is_some(), true);",
+                "    assert!(matches!(map.serialize_key(&key), Ok(())));"
+              ],
+              "code": [
+                "{",
+                "    struct BoolKey(bool);",
+                "    impl Serialize for BoolKey {",
+                "        fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>",
+                "        where",
+                "            S: serde::Serializer,",
+                "        {",
+                "            serializer.serialize_bool(self.0)",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = SerializeMap::Map {",
+                "        map: Map { map: Default::default() },",
+                "        next_key: None,",
+                "    };",
+                "    let key = BoolKey(true);",
+                "    let _ = map.serialize_key(&key);",
+                "    assert_eq!(map.next_key.is_some(), true);",
+                "    assert!(matches!(map.serialize_key(&key), Ok(())));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

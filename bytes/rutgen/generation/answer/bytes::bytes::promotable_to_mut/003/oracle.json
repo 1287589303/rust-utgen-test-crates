@@ -1,0 +1,170 @@
+[
+  {
+    "uses": [
+      "use std::ptr;"
+    ],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::ptr;",
+          "",
+          "    struct Dummy;",
+          "",
+          "    let mut data = AtomicPtr::new(ptr::null_mut());",
+          "    let ptr: *const u8 = ptr::null(); // This will simulate an invalid pointer",
+          "    let len: usize = 1; // This is a valid size greater than 0",
+          "    let f: fn(*mut ()) -> *mut u8 = |_| ptr::null_mut(); // A valid function pointer",
+          "",
+          "    // Invoke the function under test",
+          "    let _result = unsafe { promotable_to_mut(&data, ptr, len, f) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.kind(), KIND_VEC);",
+          "    assert!(result.len() > 0);",
+          "    assert!(result.capacity() >= result.len());",
+          "    assert!(result.as_slice().is_empty());",
+          "    assert!(data.load(Ordering::Acquire).is_null());",
+          "    assert_eq!(result.ptr.as_ptr(), ptr);",
+          "    assert_eq!(result.len(), len);",
+          "    assert!(result.data.is_null());",
+          "    assert!(result.as_slice_mut().len() == 0);",
+          "    assert!(result.is_empty());"
+        ],
+        "code": [
+          "{",
+          "    use std::ptr;",
+          "",
+          "    struct Dummy;",
+          "",
+          "    let mut data = AtomicPtr::new(ptr::null_mut());",
+          "    let ptr: *const u8 = ptr::null(); // This will simulate an invalid pointer",
+          "    let len: usize = 1; // This is a valid size greater than 0",
+          "    let f: fn(*mut ()) -> *mut u8 = |_| ptr::null_mut(); // A valid function pointer",
+          "",
+          "    // Invoke the function under test",
+          "    let _result = unsafe { promotable_to_mut(&data, ptr, len, f) };",
+          "    assert_eq!(result.kind(), KIND_VEC);",
+          "    assert!(result.len() > 0);",
+          "    assert!(result.capacity() >= result.len());",
+          "    assert!(result.as_slice().is_empty());",
+          "    assert!(data.load(Ordering::Acquire).is_null());",
+          "    assert_eq!(result.ptr.as_ptr(), ptr);",
+          "    assert_eq!(result.len(), len);",
+          "    assert!(result.data.is_null());",
+          "    assert!(result.as_slice_mut().len() == 0);",
+          "    assert!(result.is_empty());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    use std::ptr;",
+          "",
+          "    struct Dummy;",
+          "",
+          "    let mut data = AtomicPtr::new(ptr::null_mut());",
+          "    let ptr: *const u8 = ptr::null(); // This will simulate an invalid pointer",
+          "    let len: usize = 0; // This is an invalid size (should be greater than 0)",
+          "    let f: fn(*mut ()) -> *mut u8 = |_| ptr::null_mut(); // A valid function pointer",
+          "",
+          "    // Invoke the function under test",
+          "    let _result = unsafe { promotable_to_mut(&data, ptr, len, f) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(shared_to_mut_impl(shared.cast(), ptr, len), Err(ExpectedError));",
+          "    assert!(data.load(Ordering::Acquire).is_null());",
+          "    assert!(len == 0);",
+          "    assert!(kind & KIND_MASK != KIND_ARC);",
+          "    assert!(off + len > cap);"
+        ],
+        "code": [
+          "{",
+          "    use std::ptr;",
+          "",
+          "    struct Dummy;",
+          "",
+          "    let mut data = AtomicPtr::new(ptr::null_mut());",
+          "    let ptr: *const u8 = ptr::null(); // This will simulate an invalid pointer",
+          "    let len: usize = 0; // This is an invalid size (should be greater than 0)",
+          "    let f: fn(*mut ()) -> *mut u8 = |_| ptr::null_mut(); // A valid function pointer",
+          "",
+          "    // Invoke the function under test",
+          "    let _result = unsafe { promotable_to_mut(&data, ptr, len, f) };",
+          "    assert_eq!(shared_to_mut_impl(shared.cast(), ptr, len), Err(ExpectedError));",
+          "    assert!(data.load(Ordering::Acquire).is_null());",
+          "    assert!(len == 0);",
+          "    assert!(kind & KIND_MASK != KIND_ARC);",
+          "    assert!(off + len > cap);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    use std::ptr;",
+          "",
+          "    struct Dummy;",
+          "",
+          "    let mut data = AtomicPtr::new(ptr::null_mut());",
+          "    let ptr: *const u8 = ptr::null(); // This will simulate an invalid pointer",
+          "    let len: usize = usize::MAX; // This is the maximum possible value for length",
+          "    let f: fn(*mut ()) -> *mut u8 = |_| ptr::null_mut(); // A valid function pointer",
+          "",
+          "    // Invoke the function under test",
+          "    let _result = unsafe { promotable_to_mut(&data, ptr, len, f) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(_result.is_empty(), true);",
+          "    assert_eq!(_result.len(), 0);",
+          "    assert_eq!(_result.capacity(), 0);",
+          "    assert!(std::ptr::null() == _result.as_slice().as_ptr());",
+          "    assert!(std::ptr::null_mut() == _result.spare_capacity_mut().as_mut_ptr());",
+          "    assert!(data.load(Ordering::Acquire).is_null());",
+          "    assert!(data.load(Ordering::Acquire) as usize & KIND_MASK == KIND_VEC);",
+          "    assert!(_result.kind() == KIND_VEC);"
+        ],
+        "code": [
+          "{",
+          "    use std::ptr;",
+          "",
+          "    struct Dummy;",
+          "",
+          "    let mut data = AtomicPtr::new(ptr::null_mut());",
+          "    let ptr: *const u8 = ptr::null(); // This will simulate an invalid pointer",
+          "    let len: usize = usize::MAX; // This is the maximum possible value for length",
+          "    let f: fn(*mut ()) -> *mut u8 = |_| ptr::null_mut(); // A valid function pointer",
+          "",
+          "    // Invoke the function under test",
+          "    let _result = unsafe { promotable_to_mut(&data, ptr, len, f) };",
+          "    assert_eq!(_result.is_empty(), true);",
+          "    assert_eq!(_result.len(), 0);",
+          "    assert_eq!(_result.capacity(), 0);",
+          "    assert!(std::ptr::null() == _result.as_slice().as_ptr());",
+          "    assert!(std::ptr::null_mut() == _result.spare_capacity_mut().as_mut_ptr());",
+          "    assert!(data.load(Ordering::Acquire).is_null());",
+          "    assert!(data.load(Ordering::Acquire) as usize & KIND_MASK == KIND_VEC);",
+          "    assert!(_result.kind() == KIND_VEC);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

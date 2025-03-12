@@ -1,0 +1,189 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut inner = [1, 2, 3];",
+          "    let mut right: Either<Vec<u32>, _> = Right(&mut inner[..]);",
+          "    for r in right.iter_mut() {",
+          "        *r += 1;",
+          "    }",
+          "    // The expected value of `inner` would now be [2, 3, 4], hence we'll check that directly later",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(right, Right(&mut [2, 3, 4]));"
+        ],
+        "code": [
+          "{",
+          "    let mut inner = [1, 2, 3];",
+          "    let mut right: Either<Vec<u32>, _> = Right(&mut inner[..]);",
+          "    for r in right.iter_mut() {",
+          "        *r += 1;",
+          "    }",
+          "    // The expected value of `inner` would now be [2, 3, 4], hence we'll check that directly later",
+          "    assert_eq!(right, Right(&mut [2, 3, 4]));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut inner = [5];",
+          "    let mut right: Either<Vec<u32>, _> = Right(&mut inner[..]);",
+          "    for r in right.iter_mut() {",
+          "        *r *= 2;",
+          "    }",
+          "    // Expected value of `inner` would now be [10]",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(inner, [10]);",
+          "    assert!(matches!(right, Right(ref result) if result.iter().copied().collect::<Vec<_>>() == vec![10]));",
+          "    let result = right.iter_mut();",
+          "    assert!(matches!(result, Either::Right(_)));",
+          "    assert!(right.is_right());",
+          "    assert!(!right.is_left());",
+          "    assert_eq!(right.right().unwrap(), &mut inner[..]);",
+          "    assert_eq!(right.left_or_else(|_| vec![]), vec![]);",
+          "    assert_eq!(right.right_or_else(|_| 0), 10);",
+          "    assert_eq!(right.right_or_default(), 10);",
+          "    assert!(right.right().is_some());",
+          "    assert!(right.left().is_none());",
+          "    assert!(right.expect_right(\"error\").len() == 1);",
+          "    assert!(right.expect_right(\"error\") == &mut inner[..]);",
+          "    assert!(right.unwrap_right() == &mut inner[..]);",
+          "    assert!(right.either(|_| 0, |_| 10) == 10);",
+          "    assert!(right.either_with(0, |_, _| 0, |_, _| 10) == 10);",
+          "    assert!(right.flip() == Left(vec![]));",
+          "    assert!(right.map_right(|&x| x * 2) == Right(vec![20]));",
+          "    assert!(right.map_either(|x| x * 2, |_| 0) == Right(vec![20]));"
+        ],
+        "code": [
+          "{",
+          "    let mut inner = [5];",
+          "    let mut right: Either<Vec<u32>, _> = Right(&mut inner[..]);",
+          "    for r in right.iter_mut() {",
+          "        *r *= 2;",
+          "    }",
+          "    // Expected value of `inner` would now be [10]",
+          "    assert_eq!(inner, [10]);",
+          "    assert!(matches!(right, Right(ref result) if result.iter().copied().collect::<Vec<_>>() == vec![10]));",
+          "    let result = right.iter_mut();",
+          "    assert!(matches!(result, Either::Right(_)));",
+          "    assert!(right.is_right());",
+          "    assert!(!right.is_left());",
+          "    assert_eq!(right.right().unwrap(), &mut inner[..]);",
+          "    assert_eq!(right.left_or_else(|_| vec![]), vec![]);",
+          "    assert_eq!(right.right_or_else(|_| 0), 10);",
+          "    assert_eq!(right.right_or_default(), 10);",
+          "    assert!(right.right().is_some());",
+          "    assert!(right.left().is_none());",
+          "    assert!(right.expect_right(\"error\").len() == 1);",
+          "    assert!(right.expect_right(\"error\") == &mut inner[..]);",
+          "    assert!(right.unwrap_right() == &mut inner[..]);",
+          "    assert!(right.either(|_| 0, |_| 10) == 10);",
+          "    assert!(right.either_with(0, |_, _| 0, |_, _| 10) == 10);",
+          "    assert!(right.flip() == Left(vec![]));",
+          "    assert!(right.map_right(|&x| x * 2) == Right(vec![20]));",
+          "    assert!(right.map_either(|x| x * 2, |_| 0) == Right(vec![20]));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut inner = [6, 7, 8, 9, 10];",
+          "    let mut right: Either<Vec<u32>, _> = Right(&mut inner[..]);",
+          "    for r in right.iter_mut() {",
+          "        *r -= 1;",
+          "    }",
+          "    // Expected value of `inner` would now be [5, 6, 7, 8, 9]",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(inner, [5, 6, 7, 8, 9]);",
+          "    assert!(matches!(right, Right(_)));",
+          "    assert!(right.is_right());",
+          "    assert_eq!(right.unwrap_right(), &mut [5, 6, 7, 8, 9]);",
+          "    assert_eq!(right.as_mut().right().unwrap(), &mut [5, 6, 7, 8, 9]);",
+          "    assert!(right.map_right(|x| x.iter().sum::<u32>()).unwrap_right() == 35);",
+          "    assert!(right.map_either(|_| 0, |x| x.iter().sum::<u32>()) == Right(35));",
+          "    assert!(right.left_or_else(|x| x.iter().sum::<u32>()) == 35);"
+        ],
+        "code": [
+          "{",
+          "    let mut inner = [6, 7, 8, 9, 10];",
+          "    let mut right: Either<Vec<u32>, _> = Right(&mut inner[..]);",
+          "    for r in right.iter_mut() {",
+          "        *r -= 1;",
+          "    }",
+          "    // Expected value of `inner` would now be [5, 6, 7, 8, 9]",
+          "    assert_eq!(inner, [5, 6, 7, 8, 9]);",
+          "    assert!(matches!(right, Right(_)));",
+          "    assert!(right.is_right());",
+          "    assert_eq!(right.unwrap_right(), &mut [5, 6, 7, 8, 9]);",
+          "    assert_eq!(right.as_mut().right().unwrap(), &mut [5, 6, 7, 8, 9]);",
+          "    assert!(right.map_right(|x| x.iter().sum::<u32>()).unwrap_right() == 35);",
+          "    assert!(right.map_either(|_| 0, |x| x.iter().sum::<u32>()) == Right(35));",
+          "    assert!(right.left_or_else(|x| x.iter().sum::<u32>()) == 35);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut inner: &mut [u32] = &mut [];",
+          "    let mut right: Either<Vec<u32>, _> = Right(inner);",
+          "    for r in right.iter_mut() {",
+          "        *r += 1; // This won't modify anything since the array is empty",
+          "    }",
+          "    // Expected value is still an empty array",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(right, Right(&mut []));",
+          "    assert!(right.is_right());",
+          "    assert!(!right.is_left());",
+          "    assert_eq!(right.left_or(vec![0]), vec![0]);",
+          "    assert_eq!(right.right_or(vec![10]), vec![10]);",
+          "    assert_eq!(right.right_or_default(), (&mut []).to_vec());",
+          "    assert_eq!(right.right_or_else(|_| 0), (&mut []).to_vec());"
+        ],
+        "code": [
+          "{",
+          "    let mut inner: &mut [u32] = &mut [];",
+          "    let mut right: Either<Vec<u32>, _> = Right(inner);",
+          "    for r in right.iter_mut() {",
+          "        *r += 1; // This won't modify anything since the array is empty",
+          "    }",
+          "    // Expected value is still an empty array",
+          "    assert_eq!(right, Right(&mut []));",
+          "    assert!(right.is_right());",
+          "    assert!(!right.is_left());",
+          "    assert_eq!(right.left_or(vec![0]), vec![0]);",
+          "    assert_eq!(right.right_or(vec![10]), vec![10]);",
+          "    assert_eq!(right.right_or_default(), (&mut []).to_vec());",
+          "    assert_eq!(right.right_or_else(|_| 0), (&mut []).to_vec());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

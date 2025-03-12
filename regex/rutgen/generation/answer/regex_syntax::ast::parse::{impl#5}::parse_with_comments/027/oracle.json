@@ -1,0 +1,218 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let pattern = \"[a-b]*\"; // A simple pattern with a character class",
+          "    parser.parse(pattern).unwrap(); // ensure parser state is initialized",
+          "",
+          "    let result = parser.parse_with_comments(pattern);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(matches!(result, Ok(ast::WithComments { ast, comments: vec![] })));",
+          "    assert!(!parser.is_eof());",
+          "    assert_eq!(parser.char(), '[');",
+          "    assert!(parser.parse_set_class().is_ok());",
+          "    assert!(matches!(parser.pop_group_end(concat), Ok(_)));",
+          "    assert!(matches!(NestLimiter::new(&parser).check(&ast), Ok(_)));"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let pattern = \"[a-b]*\"; // A simple pattern with a character class",
+          "    parser.parse(pattern).unwrap(); // ensure parser state is initialized",
+          "",
+          "    let result = parser.parse_with_comments(pattern);",
+          "    assert!(matches!(result, Ok(ast::WithComments { ast, comments: vec![] })));",
+          "    assert!(!parser.is_eof());",
+          "    assert_eq!(parser.char(), '[');",
+          "    assert!(parser.parse_set_class().is_ok());",
+          "    assert!(matches!(parser.pop_group_end(concat), Ok(_)));",
+          "    assert!(matches!(NestLimiter::new(&parser).check(&ast), Ok(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let pattern = \"[]\"; // Testing an empty character class",
+          "    parser.parse(pattern).unwrap();",
+          "",
+          "    let result = parser.parse_with_comments(pattern);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(result.as_ref().unwrap().comments.len(), 0);",
+          "    assert!(matches!(result.unwrap().ast, Ast::ClassBracketed(_)));",
+          "    assert!(parser.comments.borrow().is_empty());",
+          "    assert!(parser.stack_group.borrow().is_empty());",
+          "    assert!(parser.stack_class.borrow().is_empty());",
+          "    assert!(parser.pos.get().offset == 0);",
+          "    assert_eq!(parser.pos.get().line, 1);",
+          "    assert_eq!(parser.pos.get().column, 1);"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let pattern = \"[]\"; // Testing an empty character class",
+          "    parser.parse(pattern).unwrap();",
+          "",
+          "    let result = parser.parse_with_comments(pattern);",
+          "    assert_eq!(result.is_ok(), true);",
+          "    assert_eq!(result.as_ref().unwrap().comments.len(), 0);",
+          "    assert!(matches!(result.unwrap().ast, Ast::ClassBracketed(_)));",
+          "    assert!(parser.comments.borrow().is_empty());",
+          "    assert!(parser.stack_group.borrow().is_empty());",
+          "    assert!(parser.stack_class.borrow().is_empty());",
+          "    assert!(parser.pos.get().offset == 0);",
+          "    assert_eq!(parser.pos.get().line, 1);",
+          "    assert_eq!(parser.pos.get().column, 1);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let pattern = \"[[a-z]]\"; // Nested character classes",
+          "    parser.parse(pattern).unwrap();",
+          "",
+          "    let result = parser.parse_with_comments(pattern);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(ast::WithComments { ast: ..., comments: vec![] }));",
+          "    assert!(parser.parser().comments.borrow().is_empty());",
+          "    assert!(self.is_eof());",
+          "    assert_eq!(self.char(), ']');",
+          "    assert!(self.pop_group_end(concat).is_ok());",
+          "    assert!(NestLimiter::new(self).check(&ast).is_ok());",
+          "    assert!(self.parse_set_class().is_ok());",
+          "    assert_eq!(self.offset(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let pattern = \"[[a-z]]\"; // Nested character classes",
+          "    parser.parse(pattern).unwrap();",
+          "",
+          "    let result = parser.parse_with_comments(pattern);",
+          "    assert_eq!(result, Ok(ast::WithComments { ast: ..., comments: vec![] }));",
+          "    assert!(parser.parser().comments.borrow().is_empty());",
+          "    assert!(self.is_eof());",
+          "    assert_eq!(self.char(), ']');",
+          "    assert!(self.pop_group_end(concat).is_ok());",
+          "    assert!(NestLimiter::new(self).check(&ast).is_ok());",
+          "    assert!(self.parse_set_class().is_ok());",
+          "    assert_eq!(self.offset(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let pattern = \"[abc][def]\"; // Two consecutive character classes",
+          "    parser.parse(pattern).unwrap();",
+          "",
+          "    let result = parser.parse_with_comments(pattern);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let with_comments = result.unwrap();",
+          "    assert_eq!(with_comments.comments.len(), 0);",
+          "    assert!(matches!(with_comments.ast, Ast::Concat(_)));",
+          "    assert!(with_comments.ast.has_subexprs());",
+          "    assert!(with_comments.ast.is_empty() == false);",
+          "    assert!(self.is_eof() == true);",
+          "    assert!(self.char() == '[');",
+          "    assert!(self.parse_set_class().is_ok());",
+          "    assert!(self.pop_group_end(concat).is_ok());",
+          "    assert!(NestLimiter::new(self).check(&with_comments.ast).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let pattern = \"[abc][def]\"; // Two consecutive character classes",
+          "    parser.parse(pattern).unwrap();",
+          "",
+          "    let result = parser.parse_with_comments(pattern);",
+          "    assert!(result.is_ok());",
+          "    let with_comments = result.unwrap();",
+          "    assert_eq!(with_comments.comments.len(), 0);",
+          "    assert!(matches!(with_comments.ast, Ast::Concat(_)));",
+          "    assert!(with_comments.ast.has_subexprs());",
+          "    assert!(with_comments.ast.is_empty() == false);",
+          "    assert!(self.is_eof() == true);",
+          "    assert!(self.char() == '[');",
+          "    assert!(self.parse_set_class().is_ok());",
+          "    assert!(self.pop_group_end(concat).is_ok());",
+          "    assert!(NestLimiter::new(self).check(&with_comments.ast).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let pattern = \"[abc\"; // An incomplete character class",
+          "    parser.parse(pattern).unwrap();",
+          "",
+          "    let result = parser.parse_with_comments(pattern);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result, Ok(ast::WithComments { ast: expected_ast, comments: vec![] }));",
+          "    assert!(matches!(result, Err(ast::Error { kind: ast::ErrorKind::RepetitionCountUnclosed, .. })));",
+          "    assert!(self.is_eof());",
+          "    assert!(self.char() == '[');",
+          "    assert!(self.parse_set_class().is_ok());",
+          "    assert!(self.pop_group_end(concat).is_ok());",
+          "    assert!(NestLimiter::new(self).check(&ast).is_ok());"
+        ],
+        "code": [
+          "{",
+          "    let mut parser = Parser::new();",
+          "    let pattern = \"[abc\"; // An incomplete character class",
+          "    parser.parse(pattern).unwrap();",
+          "",
+          "    let result = parser.parse_with_comments(pattern);",
+          "    assert_eq!(result, Ok(ast::WithComments { ast: expected_ast, comments: vec![] }));",
+          "    assert!(matches!(result, Err(ast::Error { kind: ast::ErrorKind::RepetitionCountUnclosed, .. })));",
+          "    assert!(self.is_eof());",
+          "    assert!(self.char() == '[');",
+          "    assert!(self.parse_set_class().is_ok());",
+          "    assert!(self.pop_group_end(concat).is_ok());",
+          "    assert!(NestLimiter::new(self).check(&ast).is_ok());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

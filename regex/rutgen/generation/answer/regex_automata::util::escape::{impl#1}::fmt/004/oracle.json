@@ -1,0 +1,226 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = &[];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    let bytes: &[u8] = &[0x80];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind(), std::fmt::Error);",
+          "    ",
+          "    let bytes: &[u8] = &[0x01];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let bytes: &[u8] = &[0x0b];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let bytes: &[u8] = &[0x0c];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let bytes: &[u8] = &[0x7f];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let bytes: &[u8] = &[0xe0, 0xa0, 0x80];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), \"\\\"\\\\xe0\\\\xa0\\\\x80\\\"\");",
+          "    ",
+          "    let bytes: &[u8] = &[0xff];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind(), std::fmt::Error);"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = &[];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    let bytes: &[u8] = &[0x80];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind(), std::fmt::Error);",
+          "    ",
+          "    let bytes: &[u8] = &[0x01];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let bytes: &[u8] = &[0x0b];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let bytes: &[u8] = &[0x0c];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let bytes: &[u8] = &[0x7f];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_ok());",
+          "    ",
+          "    let bytes: &[u8] = &[0xe0, 0xa0, 0x80];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap(), \"\\\"\\\\xe0\\\\xa0\\\\x80\\\"\");",
+          "    ",
+          "    let bytes: &[u8] = &[0xff];",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let result = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err().unwrap().kind(), std::fmt::Error);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = &[0x80]; // Invalid UTF-8 byte",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").expect(\"Failed to write initial quote\")",
+          "    let result = utf8::decode(bytes);",
+          "    assert!(result.is_some(), \"utf8::decode should return Some result\");",
+          "    let ch = result.unwrap();",
+          "    assert!(matches!(ch, Err(byte) if byte == 0x80), \"Expected decode error for byte 0x80\");",
+          "    let write_result = write!(f, r\"\\x{:02x}\", 0x80);",
+          "    assert!(write_result.is_err(), \"Expected an error while writing invalid byte\");"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = &[0x80]; // Invalid UTF-8 byte",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    write!(f, \"\\\"\").expect(\"Failed to write initial quote\")",
+          "    let result = utf8::decode(bytes);",
+          "    assert!(result.is_some(), \"utf8::decode should return Some result\");",
+          "    let ch = result.unwrap();",
+          "    assert!(matches!(ch, Err(byte) if byte == 0x80), \"Expected decode error for byte 0x80\");",
+          "    let write_result = write!(f, r\"\\x{:02x}\", 0x80);",
+          "    assert!(write_result.is_err(), \"Expected an error while writing invalid byte\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = &[0x01, 0x02, 0x03, 0x04, 0x08, 0x0b, 0x0c, 0x0e, 0x7f]; // ASCII control characters",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    write!(f, \"\\\"\").is_ok();",
+          "    utf8::decode(bytes).is_some();",
+          "    matches!(result, Err(byte));",
+          "    write!(f, r\"\\x{:02x}\", byte).is_err();"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = &[0x01, 0x02, 0x03, 0x04, 0x08, 0x0b, 0x0c, 0x0e, 0x7f]; // ASCII control characters",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    write!(f, \"\\\"\").is_ok();",
+          "    utf8::decode(bytes).is_some();",
+          "    matches!(result, Err(byte));",
+          "    write!(f, r\"\\x{:02x}\", byte).is_err();",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = b\"Hello, world!\\nThis is a test.\\tGoodbye!\"; // Valid UTF-8 characters including control characters",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)).is_ok(), true);",
+          "    assert_eq!(utf8::decode(bytes).is_some(), true);",
+          "    assert_eq!(matches!(utf8::decode(bytes).unwrap(), Err(_)), true);",
+          "    assert_eq!(core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)).unwrap_err().is_io(), true);"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = b\"Hello, world!\\nThis is a test.\\tGoodbye!\"; // Valid UTF-8 characters including control characters",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert_eq!(core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)).is_ok(), true);",
+          "    assert_eq!(utf8::decode(bytes).is_some(), true);",
+          "    assert_eq!(matches!(utf8::decode(bytes).unwrap(), Err(_)), true);",
+          "    assert_eq!(core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)).unwrap_err().is_io(), true);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let bytes: &[u8] = &[0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x80]; // First part valid, last byte invalid",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)), Ok(()));",
+          "    assert!(utf8::decode(bytes).is_some());",
+          "    assert!(matches!(utf8::decode(bytes), Some(Err(0x80))));",
+          "    assert!(core::fmt::write(&mut core::fmt::Formatter::new(), |f| write!(f, r\"\\x{:02x}\", 0x80)).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let bytes: &[u8] = &[0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x80]; // First part valid, last byte invalid",
+          "    let haystack = DebugHaystack(bytes);",
+          "    let _ = core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f));",
+          "    assert_eq!(core::fmt::write(&mut core::fmt::Formatter::new(), |f| haystack.fmt(f)), Ok(()));",
+          "    assert!(utf8::decode(bytes).is_some());",
+          "    assert!(matches!(utf8::decode(bytes), Some(Err(0x80))));",
+          "    assert!(core::fmt::write(&mut core::fmt::Formatter::new(), |f| write!(f, r\"\\x{:02x}\", 0x80)).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

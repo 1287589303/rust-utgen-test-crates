@@ -1,0 +1,171 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let stride2 = 1; // Minimum stride",
+          "    let mut table = TransitionTable {",
+          "        table: vec![],",
+          "        classes: ByteClasses([0; 256]),",
+          "        stride2,",
+          "    };",
+          "    let result = table.add_empty_state();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().0, 0);",
+          "    assert_eq!(table.table.len(), 1 << stride2);",
+          "    assert_eq!(table.table[0], 0);"
+        ],
+        "code": [
+          "{",
+          "    let stride2 = 1; // Minimum stride",
+          "    let mut table = TransitionTable {",
+          "        table: vec![],",
+          "        classes: ByteClasses([0; 256]),",
+          "        stride2,",
+          "    };",
+          "    let result = table.add_empty_state();",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().0, 0);",
+          "    assert_eq!(table.table.len(), 1 << stride2);",
+          "    assert_eq!(table.table[0], 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let stride2 = 8; // Middle of stride range",
+          "    let mut table = TransitionTable {",
+          "        table: vec![0; 512], // Pre-filled to reach the middle",
+          "        classes: ByteClasses([0; 256]),",
+          "        stride2,",
+          "    };",
+          "    let result = table.add_empty_state();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().0 % 8, 0);",
+          "    assert_eq!(table.table.len(), 512 + 8);",
+          "    assert_eq!(table.table.last(), Some(&0));",
+          "    assert_eq!(table.table[table.table.len() - 1], 0);",
+          "    assert!(StateID::new(table.table.len() - 1).is_ok());",
+          "    assert!(StateID::new(table.table.len()).is_err());"
+        ],
+        "code": [
+          "{",
+          "    let stride2 = 8; // Middle of stride range",
+          "    let mut table = TransitionTable {",
+          "        table: vec![0; 512], // Pre-filled to reach the middle",
+          "        classes: ByteClasses([0; 256]),",
+          "        stride2,",
+          "    };",
+          "    let result = table.add_empty_state();",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(result.unwrap().0 % 8, 0);",
+          "    assert_eq!(table.table.len(), 512 + 8);",
+          "    assert_eq!(table.table.last(), Some(&0));",
+          "    assert_eq!(table.table[table.table.len() - 1], 0);",
+          "    assert!(StateID::new(table.table.len() - 1).is_ok());",
+          "    assert!(StateID::new(table.table.len()).is_err());",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let stride2 = 9; // Maximum stride",
+          "    let mut table = TransitionTable {",
+          "        table: vec![0; 512], // Pre-filled to reach the maximum limit",
+          "        classes: ByteClasses([0; 256]),",
+          "        stride2,",
+          "    };",
+          "    let result = table.add_empty_state();",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    assert_eq!(table.table.len(), 512 + table.stride());",
+          "    assert_eq!(result.unwrap().0, 512);"
+        ],
+        "code": [
+          "{",
+          "    let stride2 = 9; // Maximum stride",
+          "    let mut table = TransitionTable {",
+          "        table: vec![0; 512], // Pre-filled to reach the maximum limit",
+          "        classes: ByteClasses([0; 256]),",
+          "        stride2,",
+          "    };",
+          "    let result = table.add_empty_state();",
+          "    assert!(result.is_ok());",
+          "    assert_eq!(table.table.len(), 512 + table.stride());",
+          "    assert_eq!(result.unwrap().0, 512);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let stride2 = 9; // Maximum stride",
+          "    let mut table = TransitionTable {",
+          "        table: vec![0; 512], // Filled to the max capacity",
+          "        classes: ByteClasses([0; 256]),",
+          "        stride2,",
+          "    };",
+          "    let _ = table.add_empty_state(); // This should return an error",
+          "}"
+        ],
+        "oracle": [
+          "    let stride2 = 9; // Maximum stride",
+          "    let mut table = TransitionTable {",
+          "    table: vec![0; 512], // Filled to the max capacity",
+          "    classes: ByteClasses([0; 256]),",
+          "    stride2,",
+          "    };",
+          "    let result = table.add_empty_state(); // Expecting an error",
+          "    assert_eq!(result.is_err(), true); // Should return an Error",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates); // Check for specific error kind"
+        ],
+        "code": [
+          "{",
+          "    let stride2 = 9; // Maximum stride",
+          "    let mut table = TransitionTable {",
+          "        table: vec![0; 512], // Filled to the max capacity",
+          "        classes: ByteClasses([0; 256]),",
+          "        stride2,",
+          "    };",
+          "    let _ = table.add_empty_state(); // This should return an error",
+          "    let stride2 = 9; // Maximum stride",
+          "    let mut table = TransitionTable {",
+          "    table: vec![0; 512], // Filled to the max capacity",
+          "    classes: ByteClasses([0; 256]),",
+          "    stride2,",
+          "    };",
+          "    let result = table.add_empty_state(); // Expecting an error",
+          "    assert_eq!(result.is_err(), true); // Should return an Error",
+          "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates); // Check for specific error kind",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

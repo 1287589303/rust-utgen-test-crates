@@ -1,0 +1,7359 @@
+{
+  "name": "regex_lite::pikevm::{impl#0}::search",
+  "mod_info": {
+    "name": "pikevm",
+    "loc": "regex-lite/src/lib.rs:881:1:881:12"
+  },
+  "visible": true,
+  "loc": "regex-lite/src/pikevm.rs:72:5:179:6",
+  "doc": "/// The implementation of standard leftmost search.\n///\n/// Capturing group spans are written to `slots`, but only if requested.\n/// `slots` can be any length. Any slot in the NFA that is activated but\n/// which is out of bounds for the given `slots` is ignored.\n",
+  "code": [
+    "pub(crate) fn search(",
+    "    &self,",
+    "    cache: &mut Cache,",
+    "    haystack: &[u8],",
+    "    start: usize,",
+    "    end: usize,",
+    "    earliest: bool,",
+    "    slots: &mut [Option<NonMaxUsize>],",
+    ") -> bool {",
+    "    cache.setup_search(slots.len());",
+    "    if start > end {",
+    "        return false;",
+    "    }",
+    "    // Why do we even care about this? Well, in our `slots` representation,",
+    "    // we use usize::MAX as a sentinel to indicate \"no match.\" This isn't",
+    "    // problematic so long as our haystack doesn't have a maximal length.",
+    "    // Byte slices are guaranteed by Rust to have a length that fits into",
+    "    // isize, and so this assert should always pass. But we put it here to",
+    "    // make our assumption explicit.",
+    "    assert!(",
+    "        haystack.len() < core::usize::MAX,",
+    "        \"byte slice lengths must be less than usize MAX\",",
+    "    );",
+    "",
+    "    let Cache { ref mut stack, ref mut curr, ref mut next } = cache;",
+    "    let start_id = self.nfa().start();",
+    "    let anchored = self.nfa().is_start_anchored();",
+    "    let mut matched = false;",
+    "    // Yes, our search doesn't end at `end`, but includes it. This is",
+    "    // necessary because matches are delayed by one byte. The delay is used",
+    "    // to handle look-behind assertions. In the case of the PikeVM, the",
+    "    // delay is implemented by not considering a match to exist until it",
+    "    // is visited in `nexts`. Technically, we know a match exists in the",
+    "    // previous iteration via `epsilon_closure`.",
+    "    let mut at = start;",
+    "    while at <= end {",
+    "        // If we have no states left to visit, then there are some cases",
+    "        // where we know we can quit early or even skip ahead.",
+    "        if curr.set.is_empty() {",
+    "            // We have a match so we can quit.",
+    "            if matched {",
+    "                break;",
+    "            }",
+    "            // If we're running an anchored search and we've advanced",
+    "            // beyond the start position with no other states to try, then",
+    "            // we will never observe a match and thus can stop.",
+    "            if anchored && at > start {",
+    "                break;",
+    "            }",
+    "        }",
+    "        // Instead of using a hypothetical unanchored start state in the",
+    "        // NFA (which doesn't exist, but we could add it), we actually",
+    "        // always use its anchored starting state. As a result, when doing",
+    "        // an unanchored search, we need to simulate our own '(?s:.)*?'",
+    "        // prefix, to permit a match to appear anywhere.",
+    "        //",
+    "        // Now, we don't *have* to do things this way. We could create",
+    "        // a proper unanchored start state in the NFA and do one",
+    "        // `epsilon_closure` call from that starting state before the main",
+    "        // loop here. And that is just as correct. However, it turns out to",
+    "        // be slower than our approach here because it slightly increases",
+    "        // the cost of processing each byte by requiring us to visit",
+    "        // more NFA states to deal with the additional NFA states in the",
+    "        // unanchored prefix. By simulating it explicitly here, we lower",
+    "        // those costs substantially. The cost is itself small, but it adds",
+    "        // up for large haystacks.",
+    "        //",
+    "        // In order to simulate the '(?s:.)*?' prefix---which is not",
+    "        // greedy---we are careful not to perform an epsilon closure on",
+    "        // the start state if we already have a match. Namely, if we",
+    "        // did otherwise, we would never reach a terminating condition",
+    "        // because there would always be additional states to process.",
+    "        if !matched {",
+    "            // Since we are adding to the 'curr' active states and since",
+    "            // this is for the start ID, we use a slots slice that is",
+    "            // guaranteed to have the right length but where every element",
+    "            // is absent. This is exactly what we want, because this",
+    "            // epsilon closure is responsible for simulating an unanchored",
+    "            // '(?s:.)*?' prefix. It is specifically outside of any",
+    "            // capturing groups, and thus, using slots that are always",
+    "            // absent is correct.",
+    "            //",
+    "            // Note though that we can't just use `&mut []` here, since",
+    "            // this epsilon closure may traverse through `Capture` states",
+    "            // transitions, and thus must be able to write offsets to the",
+    "            // slots given which are later copied to slot values in `curr`.",
+    "            let slots = next.slot_table.all_absent();",
+    "            self.epsilon_closure(",
+    "                stack, slots, curr, haystack, at, start_id,",
+    "            );",
+    "        }",
+    "        let (ch, len) = utf8::decode_lossy(&haystack[at..]);",
+    "        if self.nexts(stack, curr, next, haystack, at, ch, len, slots) {",
+    "            matched = true;",
+    "        }",
+    "        // Unless the caller asked us to return early, we need to mush",
+    "        // on to see if we can extend our match. (But note that 'nexts'",
+    "        // will quit right after seeing a match, as is consistent with",
+    "        // leftmost-first match priority.)",
+    "        if (earliest && matched) || len == 0 {",
+    "            break;",
+    "        }",
+    "        core::mem::swap(curr, next);",
+    "        next.set.clear();",
+    "        at += len;",
+    "    }",
+    "    matched",
+    "}"
+  ],
+  "size": {
+    "chain": 65,
+    "contra": 24,
+    "min_set": 9
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "true",
+          "line": 82,
+          "bound": null
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 112,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        46,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        21,
+        46,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "true",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "at > start",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": "at == start"
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 26,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 27,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 28,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 29,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 30,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 31,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 32,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 33,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 34,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 35,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 36,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 37,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 38,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 39,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 40,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 41,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 42,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 43,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 112,
+          "bound": null
+        },
+        {
+          "cond": "anchored",
+          "norm": null,
+          "value": "false",
+          "line": 118,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 44,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 45,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 46,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 47,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 48,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 49,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 50,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 51,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 52,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 53,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 54,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 55,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 56,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 57,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 58,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "true",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 59,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 60,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 61,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 62,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "false",
+          "line": 171,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        39,
+        40,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 63,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "true",
+          "line": 107,
+          "bound": "at == end"
+        },
+        {
+          "cond": "curr.set.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null
+        },
+        {
+          "cond": "matched",
+          "norm": null,
+          "value": "false",
+          "line": 144,
+          "bound": null
+        },
+        {
+          "cond": "self.nexts(stack, curr, next, haystack, at, ch, len, slots)",
+          "norm": null,
+          "value": "false",
+          "line": 164,
+          "bound": null
+        },
+        {
+          "cond": "earliest",
+          "norm": null,
+          "value": "false",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "len == 0",
+          "norm": "0 == len",
+          "value": "true",
+          "line": 171,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        41,
+        42,
+        43,
+        44,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 64,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "true",
+          "line": 92,
+          "bound": null
+        },
+        {
+          "cond": "at <= end",
+          "norm": null,
+          "value": "false",
+          "line": 107,
+          "bound": null
+        }
+      ],
+      "ret": "matched",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        45,
+        47,
+        48
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 65,
+      "conds": [
+        {
+          "cond": "start > end",
+          "norm": "end < start",
+          "value": "false",
+          "line": 82,
+          "bound": "start == end"
+        },
+        {
+          "cond": "haystack.len() < core::usize::MAX",
+          "norm": "core::usize::MAX > haystack.len()",
+          "value": "false",
+          "line": 92,
+          "bound": "haystack.len() == core::usize::MAX"
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        8,
+        49
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

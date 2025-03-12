@@ -1,0 +1,380 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, ast::ErrorKind::RepetitionMissing);",
+          "    assert_eq!(parser.offset(), 0);",
+          "    assert!(parser.comments.borrow().is_empty());",
+          "    assert!(parser.stack_group.borrow().is_empty());",
+          "    assert!(parser.stack_class.borrow().is_empty());",
+          "    assert_eq!(parser.capture_names.borrow().len(), 0);"
+        ],
+        "code": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"\");",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, ast::ErrorKind::RepetitionMissing);",
+          "    assert_eq!(parser.offset(), 0);",
+          "    assert!(parser.comments.borrow().is_empty());",
+          "    assert!(parser.stack_group.borrow().is_empty());",
+          "    assert!(parser.stack_class.borrow().is_empty());",
+          "    assert_eq!(parser.capture_names.borrow().len(), 0);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"a\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok(), \"Expected parse_with_comments to succeed for input 'a'\");",
+          "    let with_comments = result.unwrap();",
+          "    assert_eq!(with_comments.ast.is_empty(), false, \"AST should not be empty for input 'a'\");",
+          "    assert_eq!(with_comments.comments.len(), 0, \"There should be no comments for input 'a'\");",
+          "    ",
+          "    let result_empty = parser.parse_with_comments(\"\");",
+          "    assert!(result_empty.is_err(), \"Expected parse_with_comments to fail for empty input\");",
+          "    ",
+          "    let result_invalid = parser.parse_with_comments(\"a(b\");",
+          "    assert!(result_invalid.is_err(), \"Expected parse_with_comments to fail for invalid input 'a(b'\");",
+          "    ",
+          "    let result_group = parser.parse_with_comments(\"(a|b)\");",
+          "    assert!(result_group.is_ok(), \"Expected parse_with_comments to succeed for input '(a|b)'\");",
+          "    let with_comments_group = result_group.unwrap();",
+          "    assert_eq!(with_comments_group.ast.has_subexprs(), true, \"AST should contain subexpressions for input '(a|b)'\");",
+          "    ",
+          "    let result_complex = parser.parse_with_comments(\"(a|b)?[c]*\");",
+          "    assert!(result_complex.is_ok(), \"Expected parse_with_comments to succeed for complex input '(a|b)?[c]*'\");",
+          "    let with_comments_complex = result_complex.unwrap();",
+          "    assert_eq!(with_comments_complex.ast.is_empty(), false, \"AST should not be empty for complex input '(a|b)?[c]*'\");"
+        ],
+        "code": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"a\");",
+          "    assert!(result.is_ok(), \"Expected parse_with_comments to succeed for input 'a'\");",
+          "    let with_comments = result.unwrap();",
+          "    assert_eq!(with_comments.ast.is_empty(), false, \"AST should not be empty for input 'a'\");",
+          "    assert_eq!(with_comments.comments.len(), 0, \"There should be no comments for input 'a'\");",
+          "    ",
+          "    let result_empty = parser.parse_with_comments(\"\");",
+          "    assert!(result_empty.is_err(), \"Expected parse_with_comments to fail for empty input\");",
+          "    ",
+          "    let result_invalid = parser.parse_with_comments(\"a(b\");",
+          "    assert!(result_invalid.is_err(), \"Expected parse_with_comments to fail for invalid input 'a(b'\");",
+          "    ",
+          "    let result_group = parser.parse_with_comments(\"(a|b)\");",
+          "    assert!(result_group.is_ok(), \"Expected parse_with_comments to succeed for input '(a|b)'\");",
+          "    let with_comments_group = result_group.unwrap();",
+          "    assert_eq!(with_comments_group.ast.has_subexprs(), true, \"AST should contain subexpressions for input '(a|b)'\");",
+          "    ",
+          "    let result_complex = parser.parse_with_comments(\"(a|b)?[c]*\");",
+          "    assert!(result_complex.is_ok(), \"Expected parse_with_comments to succeed for complex input '(a|b)?[c]*'\");",
+          "    let with_comments_complex = result_complex.unwrap();",
+          "    assert_eq!(with_comments_complex.ast.is_empty(), false, \"AST should not be empty for complex input '(a|b)?[c]*'\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"(a(b(c)))\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let comments = result.as_ref().unwrap().comments;",
+          "    assert!(comments.is_empty());",
+          "    let ast = result.unwrap().ast;",
+          "    assert!(matches!(ast, Ast::Group(_)));",
+          "    let concat = if let Ast::Group(group) = ast {",
+          "    group",
+          "    } else {",
+          "    panic!(\"Expected Ast::Group\");",
+          "    };",
+          "    assert_eq!(concat.asts.len(), 1);",
+          "    let first_ast = &concat.asts[0];",
+          "    assert!(matches!(first_ast, Ast::Concat(_)));",
+          "    let inner_concat = if let Ast::Concat(concat) = first_ast {",
+          "    concat",
+          "    } else {",
+          "    panic!(\"Expected Ast::Concat\");",
+          "    };",
+          "    assert!(inner_concat.asts.len() == 1);",
+          "    assert!(matches!(inner_concat.asts[0], Ast::Group(_)));",
+          "    let nested_group = if let Ast::Group(group) = &inner_concat.asts[0] {",
+          "    group",
+          "    } else {",
+          "    panic!(\"Expected Ast::Group\");",
+          "    };",
+          "    assert!(nested_group.asts.len() == 1);",
+          "    assert!(matches!(nested_group.asts[0], Ast::Literal(_)));",
+          "    let literal = if let Ast::Literal(lit) = &nested_group.asts[0] {",
+          "    lit",
+          "    } else {",
+          "    panic!(\"Expected Ast::Literal\");",
+          "    };",
+          "    assert_eq!(literal.kind, ast::LiteralKind::Verbatim);",
+          "    assert_eq!(literal.c, 'c');"
+        ],
+        "code": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"(a(b(c)))\");",
+          "    assert!(result.is_ok());",
+          "    let comments = result.as_ref().unwrap().comments;",
+          "    assert!(comments.is_empty());",
+          "    let ast = result.unwrap().ast;",
+          "    assert!(matches!(ast, Ast::Group(_)));",
+          "    let concat = if let Ast::Group(group) = ast {",
+          "    group",
+          "    } else {",
+          "    panic!(\"Expected Ast::Group\");",
+          "    };",
+          "    assert_eq!(concat.asts.len(), 1);",
+          "    let first_ast = &concat.asts[0];",
+          "    assert!(matches!(first_ast, Ast::Concat(_)));",
+          "    let inner_concat = if let Ast::Concat(concat) = first_ast {",
+          "    concat",
+          "    } else {",
+          "    panic!(\"Expected Ast::Concat\");",
+          "    };",
+          "    assert!(inner_concat.asts.len() == 1);",
+          "    assert!(matches!(inner_concat.asts[0], Ast::Group(_)));",
+          "    let nested_group = if let Ast::Group(group) = &inner_concat.asts[0] {",
+          "    group",
+          "    } else {",
+          "    panic!(\"Expected Ast::Group\");",
+          "    };",
+          "    assert!(nested_group.asts.len() == 1);",
+          "    assert!(matches!(nested_group.asts[0], Ast::Literal(_)));",
+          "    let literal = if let Ast::Literal(lit) = &nested_group.asts[0] {",
+          "    lit",
+          "    } else {",
+          "    panic!(\"Expected Ast::Literal\");",
+          "    };",
+          "    assert_eq!(literal.kind, ast::LiteralKind::Verbatim);",
+          "    assert_eq!(literal.c, 'c');",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"a # this is a comment\\nb\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let with_comments = result.unwrap();",
+          "    assert_eq!(with_comments.comments.len(), 1);",
+          "    assert_eq!(with_comments.comments[0].comment, \" this is a comment\");",
+          "    assert!(!with_comments.ast.is_empty());",
+          "    assert!(matches!(with_comments.ast, Ast::Concat(_)));"
+        ],
+        "code": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"a # this is a comment\\nb\");",
+          "    assert!(result.is_ok());",
+          "    let with_comments = result.unwrap();",
+          "    assert_eq!(with_comments.comments.len(), 1);",
+          "    assert_eq!(with_comments.comments[0].comment, \" this is a comment\");",
+          "    assert!(!with_comments.ast.is_empty());",
+          "    assert!(matches!(with_comments.ast, Ast::Concat(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"a+b*?c\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok(), \"Expected result to be Ok, got {:?}\", result);",
+          "    let with_comments = result.unwrap();",
+          "    assert!(with_comments.ast.is_empty() == false, \"Expected non-empty AST\");",
+          "    assert_eq!(with_comments.comments.len(), 0, \"Expected no comments in the AST\");",
+          "    assert!(with_comments.ast.has_subexprs(), \"Expected AST to have subexpressions\");"
+        ],
+        "code": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"a+b*?c\");",
+          "    assert!(result.is_ok(), \"Expected result to be Ok, got {:?}\", result);",
+          "    let with_comments = result.unwrap();",
+          "    assert!(with_comments.ast.is_empty() == false, \"Expected non-empty AST\");",
+          "    assert_eq!(with_comments.comments.len(), 0, \"Expected no comments in the AST\");",
+          "    assert!(with_comments.ast.has_subexprs(), \"Expected AST to have subexpressions\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"(a(b(c)\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err(), \"Expected an error due to unclosed parentheses\");",
+          "    assert_eq!(result.unwrap_err().kind, ast::ErrorKind::UnclosedGroup, \"Error kind mismatch\");",
+          "    assert!(result.unwrap_err().pattern.contains(\"(a(b(c\"), \"Error message should include the original pattern\");",
+          "    assert!(result.unwrap_err().span.start < result.unwrap_err().span.end, \"Error span should be valid\");",
+          "    assert_eq!(parser.comments.borrow().len(), 0, \"Expect no comments for malformed pattern\");",
+          "    assert_eq!(parser.pos.get().line, 1, \"Parser position should remain at line 1\");",
+          "    assert_eq!(parser.pos.get().column, 5, \"Parser position column should be 5 after parsing attempt\");",
+          "    assert!(parser.stack_group.borrow().is_empty(), \"Group stack should be empty after error\");",
+          "    assert!(parser.stack_class.borrow().is_empty(), \"Class stack should be empty after error\");"
+        ],
+        "code": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"(a(b(c)\");",
+          "    assert!(result.is_err(), \"Expected an error due to unclosed parentheses\");",
+          "    assert_eq!(result.unwrap_err().kind, ast::ErrorKind::UnclosedGroup, \"Error kind mismatch\");",
+          "    assert!(result.unwrap_err().pattern.contains(\"(a(b(c\"), \"Error message should include the original pattern\");",
+          "    assert!(result.unwrap_err().span.start < result.unwrap_err().span.end, \"Error span should be valid\");",
+          "    assert_eq!(parser.comments.borrow().len(), 0, \"Expect no comments for malformed pattern\");",
+          "    assert_eq!(parser.pos.get().line, 1, \"Parser position should remain at line 1\");",
+          "    assert_eq!(parser.pos.get().column, 5, \"Parser position column should be 5 after parsing attempt\");",
+          "    assert!(parser.stack_group.borrow().is_empty(), \"Group stack should be empty after error\");",
+          "    assert!(parser.stack_class.borrow().is_empty(), \"Class stack should be empty after error\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"\\\\101\"); // octal for 'A'",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok(), \"Expected parse_with_comments to succeed for input '\\\\101'\");",
+          "    let with_comments = result.unwrap();",
+          "    assert_eq!(with_comments.comments.len(), 0, \"Expected no comments for input '\\\\101'\");",
+          "    assert!(matches!(with_comments.ast, Ast::Concat(_)), \"Expected AST to be of type Concat for input '\\\\101'\");",
+          "    assert!(with_comments.ast.is_empty() == false, \"Expected non-empty AST for input '\\\\101'\");"
+        ],
+        "code": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"\\\\101\"); // octal for 'A'",
+          "    assert!(result.is_ok(), \"Expected parse_with_comments to succeed for input '\\\\101'\");",
+          "    let with_comments = result.unwrap();",
+          "    assert_eq!(with_comments.comments.len(), 0, \"Expected no comments for input '\\\\101'\");",
+          "    assert!(matches!(with_comments.ast, Ast::Concat(_)), \"Expected AST to be of type Concat for input '\\\\101'\");",
+          "    assert!(with_comments.ast.is_empty() == false, \"Expected non-empty AST for input '\\\\101'\");",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"{2,\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, ast::ErrorKind::RepetitionCountUnclosed);",
+          "    assert_eq!(result.unwrap_err().pattern, \"{2,\");",
+          "    assert!(result.unwrap_err().span.start.offset < result.unwrap_err().span.end.offset);"
+        ],
+        "code": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"{2,\");",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.unwrap_err().kind, ast::ErrorKind::RepetitionCountUnclosed);",
+          "    assert_eq!(result.unwrap_err().pattern, \"{2,\");",
+          "    assert!(result.unwrap_err().span.start.offset < result.unwrap_err().span.end.offset);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"a(b|c)*d?\");",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_ok());",
+          "    let with_comments = result.unwrap();",
+          "    assert!(with_comments.ast.is_empty() == false);",
+          "    assert!(with_comments.comments.len() >= 0);",
+          "    assert!(with_comments.ast.is_complete());",
+          "    assert!(with_comments.ast.contains_literal('a'));",
+          "    assert!(with_comments.ast.contains_group());",
+          "    assert!(with_comments.ast.contains_alternation());",
+          "    assert!(with_comments.ast.contains_repetition());",
+          "    assert!(with_comments.comments.iter().all(|comment| comment.comment.len() > 0));"
+        ],
+        "code": [
+          "{",
+          "    let parser = Parser::new();",
+          "    let result = parser.parse_with_comments(\"a(b|c)*d?\");",
+          "    assert!(result.is_ok());",
+          "    let with_comments = result.unwrap();",
+          "    assert!(with_comments.ast.is_empty() == false);",
+          "    assert!(with_comments.comments.len() >= 0);",
+          "    assert!(with_comments.ast.is_complete());",
+          "    assert!(with_comments.ast.contains_literal('a'));",
+          "    assert!(with_comments.ast.contains_group());",
+          "    assert!(with_comments.ast.contains_alternation());",
+          "    assert!(with_comments.ast.contains_repetition());",
+          "    assert!(with_comments.comments.iter().all(|comment| comment.comment.len() > 0));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

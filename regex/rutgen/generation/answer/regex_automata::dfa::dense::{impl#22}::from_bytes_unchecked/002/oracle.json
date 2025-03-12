@@ -1,0 +1,170 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_len: u32 = 1; // minimal valid value",
+          "    let state_len_bytes = state_len.to_le_bytes();",
+          "    let slice: &[u8] = &[",
+          "        state_len_bytes[0], state_len_bytes[1], state_len_bytes[2], state_len_bytes[3],",
+          "        0, 0, 0, 0, // placeholder for slices (2 pairs of u32 offsets)",
+          "        1, 0, 0, 0, // pattern_len 1",
+          "        1, 0, 0, 0, // idlen 1",
+          "        0, 0, 0, 0  // pattern ID",
+          "    ];",
+          "    let _ = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: &[u8] = &[0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]; // state_len = 2",
+          "    assert!(MatchStates::from_bytes_unchecked(slice).is_err()); // Check for arithmetic overflow on state offset pairs",
+          "    ",
+          "    let slice: &[u8] = &[",
+          "    0, 0, 0, 1, // state_len = 1",
+          "    0, 0, 0, 0, // placeholder for slices (2 pairs of u32 offsets)",
+          "    1, 0, 0, 0, // pattern_len = 1",
+          "    1, 0, 0, 0, // idlen = 1",
+          "    0, 0, 0, 0  // pattern ID",
+          "    ];",
+          "    let (ms, offset) = unsafe { MatchStates::from_bytes_unchecked(slice).unwrap() };",
+          "    assert_eq!(ms.pattern_len, 1);",
+          "    assert_eq!(offset, slice.len() - 4);"
+        ],
+        "code": [
+          "{",
+          "    let state_len: u32 = 1; // minimal valid value",
+          "    let state_len_bytes = state_len.to_le_bytes();",
+          "    let slice: &[u8] = &[",
+          "        state_len_bytes[0], state_len_bytes[1], state_len_bytes[2], state_len_bytes[3],",
+          "        0, 0, 0, 0, // placeholder for slices (2 pairs of u32 offsets)",
+          "        1, 0, 0, 0, // pattern_len 1",
+          "        1, 0, 0, 0, // idlen 1",
+          "        0, 0, 0, 0  // pattern ID",
+          "    ];",
+          "    let _ = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "    let slice: &[u8] = &[0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]; // state_len = 2",
+          "    assert!(MatchStates::from_bytes_unchecked(slice).is_err()); // Check for arithmetic overflow on state offset pairs",
+          "    ",
+          "    let slice: &[u8] = &[",
+          "    0, 0, 0, 1, // state_len = 1",
+          "    0, 0, 0, 0, // placeholder for slices (2 pairs of u32 offsets)",
+          "    1, 0, 0, 0, // pattern_len = 1",
+          "    1, 0, 0, 0, // idlen = 1",
+          "    0, 0, 0, 0  // pattern ID",
+          "    ];",
+          "    let (ms, offset) = unsafe { MatchStates::from_bytes_unchecked(slice).unwrap() };",
+          "    assert_eq!(ms.pattern_len, 1);",
+          "    assert_eq!(offset, slice.len() - 4);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let state_len: u32 = u32::MAX; // largest possible value to check overflow",
+          "    let state_len_bytes = state_len.to_le_bytes();",
+          "    let slice: &[u8] = &[",
+          "        state_len_bytes[0], state_len_bytes[1], state_len_bytes[2], state_len_bytes[3],",
+          "        0, 0, 0, 0, // placeholder for slices (2 pairs of u32 offsets)",
+          "        0, 0, 0, 0, // pattern_len 0 ",
+          "        1, 0, 0, 0, // idlen 1",
+          "        0, 0, 0, 0  // pattern ID",
+          "    ];",
+          "    let _ = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(wire::try_read_u32_as_usize(slice, \"match state length\"), Ok((u32::MAX as usize, 4)));",
+          "    assert!(matches!(wire::mul(2, usize::MAX, \"match state offset pairs\"), Err(_)));"
+        ],
+        "code": [
+          "{",
+          "    let state_len: u32 = u32::MAX; // largest possible value to check overflow",
+          "    let state_len_bytes = state_len.to_le_bytes();",
+          "    let slice: &[u8] = &[",
+          "        state_len_bytes[0], state_len_bytes[1], state_len_bytes[2], state_len_bytes[3],",
+          "        0, 0, 0, 0, // placeholder for slices (2 pairs of u32 offsets)",
+          "        0, 0, 0, 0, // pattern_len 0 ",
+          "        1, 0, 0, 0, // idlen 1",
+          "        0, 0, 0, 0  // pattern ID",
+          "    ];",
+          "    let _ = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "    assert_eq!(wire::try_read_u32_as_usize(slice, \"match state length\"), Ok((u32::MAX as usize, 4)));",
+          "    assert!(matches!(wire::mul(2, usize::MAX, \"match state offset pairs\"), Err(_)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let state_len: u32 = 2; // multiple match states",
+          "    let state_len_bytes = state_len.to_le_bytes();",
+          "    let slice: &[u8] = &[",
+          "        state_len_bytes[0], state_len_bytes[1], state_len_bytes[2], state_len_bytes[3],",
+          "        8, 0, 0, 0, // enough space for 2 pairs of u32 offsets",
+          "        2, 0, 0, 0, // pattern_len 2",
+          "        2, 0, 0, 0, // idlen 2",
+          "        0, 0, 0, 0, // first pattern ID",
+          "        1, 0, 0, 0  // second pattern ID",
+          "    ];",
+          "    let _ = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "}"
+        ],
+        "oracle": [
+          "    let slice: &[u8] = &[0, 0, 0, 2, 8, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0];",
+          "    assert_eq!(unsafe { MatchStates::from_bytes_unchecked(slice) }, Ok((_, 24)));",
+          "    ",
+          "    let slice: &[u8] = &[0, 0, 0, 2, 4, 0, 0, 0];",
+          "    assert!(unsafe { MatchStates::from_bytes_unchecked(slice) }.is_err());",
+          "    ",
+          "    let slice: &[u8] = &[0, 0, 0, 1, 8, 0, 0, 0, 1, 0, 0, 0];",
+          "    assert!(unsafe { MatchStates::from_bytes_unchecked(slice) }.is_err());",
+          "    ",
+          "    let slice: &[u8] = &[0, 0, 0, 3, 12, 0, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 0];",
+          "    assert_eq!(unsafe { MatchStates::from_bytes_unchecked(slice) }, Ok((_, 28)));"
+        ],
+        "code": [
+          "{",
+          "    let state_len: u32 = 2; // multiple match states",
+          "    let state_len_bytes = state_len.to_le_bytes();",
+          "    let slice: &[u8] = &[",
+          "        state_len_bytes[0], state_len_bytes[1], state_len_bytes[2], state_len_bytes[3],",
+          "        8, 0, 0, 0, // enough space for 2 pairs of u32 offsets",
+          "        2, 0, 0, 0, // pattern_len 2",
+          "        2, 0, 0, 0, // idlen 2",
+          "        0, 0, 0, 0, // first pattern ID",
+          "        1, 0, 0, 0  // second pattern ID",
+          "    ];",
+          "    let _ = unsafe { MatchStates::from_bytes_unchecked(slice) };",
+          "    let slice: &[u8] = &[0, 0, 0, 2, 8, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0];",
+          "    assert_eq!(unsafe { MatchStates::from_bytes_unchecked(slice) }, Ok((_, 24)));",
+          "    ",
+          "    let slice: &[u8] = &[0, 0, 0, 2, 4, 0, 0, 0];",
+          "    assert!(unsafe { MatchStates::from_bytes_unchecked(slice) }.is_err());",
+          "    ",
+          "    let slice: &[u8] = &[0, 0, 0, 1, 8, 0, 0, 0, 1, 0, 0, 0];",
+          "    assert!(unsafe { MatchStates::from_bytes_unchecked(slice) }.is_err());",
+          "    ",
+          "    let slice: &[u8] = &[0, 0, 0, 3, 12, 0, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 0];",
+          "    assert_eq!(unsafe { MatchStates::from_bytes_unchecked(slice) }, Ok((_, 28)));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]

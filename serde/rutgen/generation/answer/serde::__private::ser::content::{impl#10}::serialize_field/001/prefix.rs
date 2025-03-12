@@ -1,0 +1,134 @@
+// Answer 0
+
+#[test]
+fn test_serialize_field_err_for_invalid_value() {
+    struct InvalidValue;
+
+    impl Serialize for InvalidValue {
+        fn serialize<S>(&self, _: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            Err(S::Error::custom("serialization error"))
+        }
+    }
+
+    struct TestSerializer {
+        fields: Vec<Content>,
+        error: PhantomData<dyn Error>,
+    }
+
+    impl SerializeTupleVariant for TestSerializer {
+        type Ok = Content;
+        type Error = Box<dyn Error>;
+
+        fn serialize_field<T>(&mut self, value: &T) -> Result<(), Self::Error>
+        where
+            T: ?Sized + Serialize,
+        {
+            let value = tri!(value.serialize(ContentSerializer::<Self::Error>::new()));
+            self.fields.push(value);
+            Ok(())
+        }
+
+        fn end(self) -> Result<Content, Self::Error> {
+            Ok(Content::Seq(self.fields))
+        }
+    }
+
+    let mut serializer = TestSerializer {
+        fields: Vec::new(),
+        error: PhantomData,
+    };
+
+    let result = serializer.serialize_field(&InvalidValue);
+}
+
+#[test]
+fn test_serialize_field_err_for_string() {
+    struct InvalidString;
+
+    impl Serialize for InvalidString {
+        fn serialize<S>(&self, _: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            Err(S::Error::custom("serialization error"))
+        }
+    }
+
+    struct TestSerializer {
+        fields: Vec<Content>,
+        error: PhantomData<dyn Error>,
+    }
+
+    impl SerializeTupleVariant for TestSerializer {
+        type Ok = Content;
+        type Error = Box<dyn Error>;
+
+        fn serialize_field<T>(&mut self, value: &T) -> Result<(), Self::Error>
+        where
+            T: ?Sized + Serialize,
+        {
+            let value = tri!(value.serialize(ContentSerializer::<Self::Error>::new()));
+            self.fields.push(value);
+            Ok(())
+        }
+
+        fn end(self) -> Result<Content, Self::Error> {
+            Ok(Content::Seq(self.fields))
+        }
+    }
+
+    let mut serializer = TestSerializer {
+        fields: Vec::new(),
+        error: PhantomData,
+    };
+
+    let result = serializer.serialize_field(&InvalidString);
+}
+
+#[test]
+fn test_serialize_field_err_for_integer() {
+    struct InvalidInteger;
+
+    impl Serialize for InvalidInteger {
+        fn serialize<S>(&self, _: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            Err(S::Error::custom("serialization error"))
+        }
+    }
+
+    struct TestSerializer {
+        fields: Vec<Content>,
+        error: PhantomData<dyn Error>,
+    }
+
+    impl SerializeTupleVariant for TestSerializer {
+        type Ok = Content;
+        type Error = Box<dyn Error>;
+
+        fn serialize_field<T>(&mut self, value: &T) -> Result<(), Self::Error>
+        where
+            T: ?Sized + Serialize,
+        {
+            let value = tri!(value.serialize(ContentSerializer::<Self::Error>::new()));
+            self.fields.push(value);
+            Ok(())
+        }
+
+        fn end(self) -> Result<Content, Self::Error> {
+            Ok(Content::Seq(self.fields))
+        }
+    }
+
+    let mut serializer = TestSerializer {
+        fields: Vec::new(),
+        error: PhantomData,
+    };
+
+    let result = serializer.serialize_field(&InvalidInteger);
+}
+

@@ -1,0 +1,194 @@
+{
+  "name": "ryu::buffer::{impl#6}::format_nonfinite",
+  "mod_info": {
+    "name": "buffer",
+    "loc": "src/lib.rs:106:1:106:12"
+  },
+  "visible": true,
+  "loc": "src/buffer/mod.rs:125:5:136:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: bits & MANTISSA_MASK != 0 at line 129 is true\n",
+        "expected return value/type: NAN\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestF64(f64);",
+                "    ",
+                "    let value = TestF64(f64::from_bits(0x7FFFFFFFFFFFFFFF)); // A NaN representation",
+                "    assert_eq!(value.0.format_nonfinite(), NAN);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestF64(f64);",
+                "    ",
+                "    let value = TestF64(f64::from_bits(0x8000000000000000)); // Negative infinity representation",
+                "    assert_eq!(value.0.format_nonfinite(), NEG_INFINITY);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestF64(f64);",
+                "    ",
+                "    let value = TestF64(f64::from_bits(0x7F80000000000000)); // Positive infinity representation",
+                "    assert_eq!(value.0.format_nonfinite(), INFINITY);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: bits & MANTISSA_MASK != 0 at line 129 is false\n",
+        "precondition: bits & SIGN_MASK != 0 at line 131 is true\n",
+        "expected return value/type: NEG_INFINITY\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "   #[derive(Clone)]  ",
+                "   struct NonFinite;  ",
+                " ",
+                "   impl Copy for NonFinite {}  ",
+                " ",
+                "   impl Sealed for NonFinite {  ",
+                "       fn is_nonfinite(self) -> bool {  ",
+                "           false  ",
+                "       }  ",
+                " ",
+                "       fn format_nonfinite(self) -> &'static str {  ",
+                "           const MANTISSA_MASK: u32 = 0x007fffff;  ",
+                "           const SIGN_MASK: u32 = 0x80000000;  ",
+                "           let bits = 0x80000000; // bits with SIGN_MASK set and MANTISSA_MASK not set  ",
+                "           if bits & MANTISSA_MASK != 0 {  ",
+                "               NAN  ",
+                "           } else if bits & SIGN_MASK != 0 {  ",
+                "               NEG_INFINITY  ",
+                "           } else {  ",
+                "               INFINITY  ",
+                "           }  ",
+                "       }  ",
+                " ",
+                "       unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {  ",
+                "           0 // Implementation not needed for this test  ",
+                "       }  ",
+                "   }  ",
+                " ",
+                "   let non_finite_val = NonFinite;  ",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: bits & MANTISSA_MASK != 0 at line 129 is false\n",
+        "precondition: bits & SIGN_MASK != 0 at line 131 is false\n",
+        "expected return value/type: INFINITY\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestValue(f64);",
+                "    ",
+                "    let value = TestValue(f64::INFINITY);",
+                "    assert_eq!(value.0.format_nonfinite(), \"inf\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestValue(f64);",
+                "    ",
+                "    let value = TestValue(f64::NEG_INFINITY);",
+                "    assert_eq!(value.0.format_nonfinite(), \"-inf\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestValue(f64);",
+                "    ",
+                "    let value = TestValue(f64::NAN);",
+                "    assert_eq!(value.0.format_nonfinite(), \"NaN\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

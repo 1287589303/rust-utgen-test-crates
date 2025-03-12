@@ -1,0 +1,188 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = \"data:text/plain;base64,SGVsbG8sIFdvcmxkIQ\"; // valid MIME type but has base64",
+          "    let result = DataUrl::process(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.err(), Some(DataUrlError::NoComma));",
+          "    assert_eq!(result.is_ok(), false);",
+          "    assert_eq!(result.unwrap_err(), DataUrlError::NoComma);"
+        ],
+        "code": [
+          "{",
+          "    let input = \"data:text/plain;base64,SGVsbG8sIFdvcmxkIQ\"; // valid MIME type but has base64",
+          "    let result = DataUrl::process(input);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.err(), Some(DataUrlError::NoComma));",
+          "    assert_eq!(result.is_ok(), false);",
+          "    assert_eq!(result.unwrap_err(), DataUrlError::NoComma);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = \"data:invalid/mime-type\"; // valid format but invalid MIME type",
+          "    let result = DataUrl::process(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.unwrap_err(), DataUrlError::NoComma);"
+        ],
+        "code": [
+          "{",
+          "    let input = \"data:invalid/mime-type\"; // valid format but invalid MIME type",
+          "    let result = DataUrl::process(input);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.unwrap_err(), DataUrlError::NoComma);",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = \"data:text/plain;\"; // valid MIME type with no body",
+          "    let result = DataUrl::process(input);",
+          "}"
+        ],
+        "oracle": [
+          "    let input = \"data:text/plain;\";",
+          "    assert_eq!(DataUrl::process(input).is_err(), true);",
+          "    assert_eq!(DataUrl::process(input).err(), Some(DataUrlError::NoComma));"
+        ],
+        "code": [
+          "{",
+          "    let input = \"data:text/plain;\"; // valid MIME type with no body",
+          "    let result = DataUrl::process(input);",
+          "    let input = \"data:text/plain;\";",
+          "    assert_eq!(DataUrl::process(input).is_err(), true);",
+          "    assert_eq!(DataUrl::process(input).err(), Some(DataUrlError::NoComma));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = \"data: text/plain; \"; // valid MIME type with leading space after \"data:\"",
+          "    let result = DataUrl::process(input);",
+          "}"
+        ],
+        "oracle": [
+          "    DataUrl::process(\"data: text/plain; \").unwrap_err();",
+          "    DataUrl::process(\"data:text/plain;\").unwrap_err();",
+          "    DataUrl::process(\"data: text/plain;base64,\").unwrap_err();",
+          "    DataUrl::process(\"data: application/json;\").unwrap_err();",
+          "    DataUrl::process(\"data: ;base64,\").unwrap_err();",
+          "    DataUrl::process(\"data: text/html; charset=UTF-8,\").unwrap_err();",
+          "    DataUrl::process(\"data: text/plain,Hello, World!\").unwrap();",
+          "    DataUrl::process(\"data: text/plain;base64,SGVsbG8sIFdvcmxkIQ==\").unwrap();",
+          "    DataUrl::process(\"data: image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA\").unwrap();"
+        ],
+        "code": [
+          "{",
+          "    let input = \"data: text/plain; \"; // valid MIME type with leading space after \"data:\"",
+          "    let result = DataUrl::process(input);",
+          "    DataUrl::process(\"data: text/plain; \").unwrap_err();",
+          "    DataUrl::process(\"data:text/plain;\").unwrap_err();",
+          "    DataUrl::process(\"data: text/plain;base64,\").unwrap_err();",
+          "    DataUrl::process(\"data: application/json;\").unwrap_err();",
+          "    DataUrl::process(\"data: ;base64,\").unwrap_err();",
+          "    DataUrl::process(\"data: text/html; charset=UTF-8,\").unwrap_err();",
+          "    DataUrl::process(\"data: text/plain,Hello, World!\").unwrap();",
+          "    DataUrl::process(\"data: text/plain;base64,SGVsbG8sIFdvcmxkIQ==\").unwrap();",
+          "    DataUrl::process(\"data: image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA\").unwrap();",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = \"data:\ttext/plain;\"; // valid MIME type with a tab character after \"data:\"",
+          "    let result = DataUrl::process(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err(), Some(DataUrlError::NoComma));"
+        ],
+        "code": [
+          "{",
+          "    let input = \"data:\ttext/plain;\"; // valid MIME type with a tab character after \"data:\"",
+          "    let result = DataUrl::process(input);",
+          "    assert!(result.is_err());",
+          "    assert_eq!(result.err(), Some(DataUrlError::NoComma));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = \"data:plaintxt\"; // valid format but not a proper MIME type",
+          "    let result = DataUrl::process(input);",
+          "}"
+        ],
+        "oracle": [
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.err(), Some(DataUrlError::NoComma));"
+        ],
+        "code": [
+          "{",
+          "    let input = \"data:plaintxt\"; // valid format but not a proper MIME type",
+          "    let result = DataUrl::process(input);",
+          "    assert_eq!(result.is_err(), true);",
+          "    assert_eq!(result.err(), Some(DataUrlError::NoComma));",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let input = \"data:valid/mime;params=%ff\"; // valid MIME type with high ASCII percent encoded",
+          "    let result = DataUrl::process(input);",
+          "}"
+        ],
+        "oracle": [
+          "    result.unwrap_err() == DataUrlError::NoComma"
+        ],
+        "code": [
+          "{",
+          "    let input = \"data:valid/mime;params=%ff\"; // valid MIME type with high ASCII percent encoded",
+          "    let result = DataUrl::process(input);",
+          "    result.unwrap_err() == DataUrlError::NoComma",
+          "}"
+        ],
+        "can_compile": false,
+        "repaired": false
+      }
+    ]
+  }
+]
