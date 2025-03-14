@@ -1,0 +1,201 @@
+{
+  "name": "rand::distr::integer::{impl#3}::sample",
+  "mod_info": {
+    "name": "distr::integer",
+    "loc": "src/distr/mod.rs:92:1:92:13"
+  },
+  "visible": true,
+  "loc": "src/distr/integer.rs:51:5:53:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "Rng should be a mutable reference to an object implementing the Rng trait, with valid random number generation capabilities; the function should return a u64 value.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct MockRng {",
+                "        value: u64,",
+                "    }",
+                "",
+                "    impl Rng for MockRng {",
+                "        fn next_u64(&mut self) -> u64 {",
+                "            self.value",
+                "        }",
+                "    }",
+                "",
+                "    let mut rng = MockRng { value: 42 };",
+                "    let distr = StandardUniform;",
+                "    let result = distr.sample(&mut rng);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result.0, 42);"
+              ],
+              "code": [
+                "{",
+                "   struct MockRng {",
+                "       value: u64,",
+                "   }",
+                "",
+                "   impl RngCore for MockRng {",
+                "       fn next_u64(&mut self) -> u64 {",
+                "           self.value",
+                "       }",
+                "   }",
+                "",
+                "    let mut rng = MockRng { value: 42 };",
+                "    let distr = StandardUniform;",
+                "   let result: (u64,) = distr.sample(&mut rng);  ",
+                "   assert_eq!(result.0, 42);  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct StatefulRng {",
+                "        next_value: u64,",
+                "    }",
+                "",
+                "    impl Rng for StatefulRng {",
+                "        fn next_u64(&mut self) -> u64 {",
+                "            let current = self.next_value;",
+                "            self.next_value += 1;",
+                "            current",
+                "        }",
+                "    }",
+                "",
+                "    let mut rng = StatefulRng { next_value: 100 };",
+                "    let distr = StandardUniform;",
+                "    let result1 = distr.sample(&mut rng);",
+                "    let result2 = distr.sample(&mut rng);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result1, Wrapping(100));",
+                "    assert_eq!(result2, Wrapping(101));"
+              ],
+              "code": [
+                "{",
+                "     struct StatefulRng {  ",
+                "         next_value: u64,  ",
+                "     }  ",
+                "     ",
+                "     impl RngCore for StatefulRng {",
+                "         fn next_u64(&mut self) -> u64 {  ",
+                "             let current = self.next_value;  ",
+                "             self.next_value += 1;  ",
+                "             current  ",
+                "         }  ",
+                " ",
+                "         fn set_stream(&mut self, _: u64) {}  ",
+                "         fn fill_bytes(&mut self, dest: &mut [u8]) {",
+                "             for byte in dest.iter_mut() {",
+                "                 *byte = (self.next_u64() & 0xFF) as u8;",
+                "             }",
+                "         }",
+                "     }  ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct ZeroRng;",
+                "",
+                "    impl Rng for ZeroRng {",
+                "        fn next_u64(&mut self) -> u64 {",
+                "            0",
+                "        }",
+                "    }",
+                "",
+                "    let mut rng = ZeroRng;",
+                "    let distr = StandardUniform;",
+                "    let result = distr.sample(&mut rng);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result.0, 0);"
+              ],
+              "code": [
+                "{",
+                "   struct ZeroRng;",
+                "   ",
+                "   impl rand::Rng for ZeroRng {",
+                "       fn gen(&mut self) -> u64 {",
+                "           0",
+                "       }",
+                "   }",
+                "",
+                "    let mut rng = ZeroRng;",
+                "    let distr = StandardUniform;",
+                "   let result: (u64,) = distr.sample(&mut rng);",
+                "   assert_eq!(result.0, 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct LargeValueRng {",
+                "        value: u64,",
+                "    }",
+                "",
+                "    impl Rng for LargeValueRng {",
+                "        fn next_u64(&mut self) -> u64 {",
+                "            self.value",
+                "        }",
+                "    }",
+                "",
+                "    let mut rng = LargeValueRng { value: u64::MAX };",
+                "    let distr = StandardUniform;",
+                "    let result = distr.sample(&mut rng);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Wrapping(u64::MAX));"
+              ],
+              "code": [
+                "{",
+                "   struct LargeValueRng {",
+                "       value: u64,",
+                "   }",
+                "   ",
+                "   impl RngCore for LargeValueRng {",
+                "       fn next_u64(&mut self) -> u64 {",
+                "           self.value",
+                "       }",
+                "   ",
+                "       fn throw_msg(&mut self) {",
+                "           panic!(\"Not implemented\");",
+                "       }",
+                "   }",
+                "   ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

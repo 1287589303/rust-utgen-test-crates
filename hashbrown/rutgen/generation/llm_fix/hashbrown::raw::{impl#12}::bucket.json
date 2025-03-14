@@ -68,7 +68,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -96,26 +96,26 @@
               ],
               "code": [
                 "{",
-                "    let alloc = Global;",
-                "    let table_layout = TableLayout::default();",
-                "    let capacity = 2; ",
-                "    let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
-                "    ",
-                "    unsafe {",
-                "        let bucket = raw_table.bucket::<u32>(1);",
-                "        assert!(!bucket.as_ptr().is_null());",
-                "    }",
-                "    unsafe {",
-                "    assert_eq!(raw_table.buckets(), 2);",
-                "    assert!(raw_table.bucket_mask != 0);",
-                "    assert!(1 < raw_table.buckets());",
-                "    assert!(!bucket.as_ptr().is_null());",
-                "    assert_eq!(bucket.as_ptr(), raw_table.data_end::<u32>().as_ptr().sub(1));",
-                "    }",
+                "  let alloc = Global;",
+                "  let table_layout = TableLayout { size: 0, ctrl_align: 0 }; // or use TableLayout::new::<u32>() if T is known",
+                "  let capacity = 2; ",
+                "  let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+                "  let bucket; // Declare bucket here",
+                "  unsafe {",
+                "     bucket = raw_table.bucket::<u32>(1); // Initialize bucket within unsafe block",
+                "     assert!(!bucket.as_ptr().is_null());",
+                " }",
+                " unsafe {",
+                "     assert_eq!(raw_table.buckets(), 2);",
+                "     assert!(raw_table.bucket_mask != 0);",
+                "     assert!(1 < raw_table.buckets());",
+                "     assert!(!bucket.as_ptr().is_null());",
+                "     assert_eq!(bucket.as_ptr(), raw_table.data_end::<u32>().as_ptr().sub(1));",
+                " }",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             },
             {
               "attrs": [],
@@ -160,7 +160,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [
@@ -186,9 +186,9 @@
               "code": [
                 "{",
                 "    let alloc = Global;",
-                "    let table_layout = TableLayout::default();",
-                "    let capacity = 4; ",
-                "    let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
+                "   let table_layout = TableLayout::new::<u32>();",
+                "   let capacity = 4; ",
+                "   let mut raw_table = RawTableInner::with_capacity(&alloc, table_layout, capacity);",
                 "    ",
                 "    unsafe {",
                 "        let _bucket = raw_table.bucket::<u32>(4); // out of bounds",
@@ -198,8 +198,8 @@
                 "    panic!(\"Index out of bounds\");",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             }
           ]
         }
@@ -238,22 +238,22 @@
                 "    assert_eq!(unsafe { *pointer }, 0);  // Ensure the bucket at index 0 has default value 0"
               ],
               "code": [
-                "{",
-                "    unsafe {",
-                "        let alloc = &Global;  // Use a global allocator",
-                "        let table_layout = TableLayout::default();  // Assume default layout for simplicity",
-                "        let capacity = 1;  // Must be power of two",
-                "        let mut raw_table = RawTableInner::with_capacity(alloc, table_layout, capacity);",
-                "        let bucket = raw_table.bucket::<i32>(0);  // Index should be valid",
-                "        let pointer = bucket.as_ptr();  // Call the method to get pointer",
-                "    }",
-                "    assert!(raw_table.buckets() > 0);  // Ensure there's at least one bucket",
-                "    assert!(pointer != std::ptr::null_mut());  // Ensure pointer is not null",
-                "    assert_eq!(unsafe { *pointer }, 0);  // Ensure the bucket at index 0 has default value 0",
+                "{  ",
+                "    unsafe {  ",
+                "        let alloc = &Global;  // Use a global allocator  ",
+                "        let table_layout = TableLayout::new::<i32>();  // Use new method instead of default  ",
+                "        let capacity = 1;  // Must be power of two  ",
+                "        let mut raw_table = RawTableInner::with_capacity(alloc, table_layout, capacity);  ",
+                "        let bucket = raw_table.bucket::<i32>(0);  // Index should be valid  ",
+                "        let pointer = bucket.as_ptr();  // Call the method to get pointer  ",
+                "        assert!(raw_table.buckets() > 0);  // Ensure there's at least one bucket  ",
+                "        assert!(pointer != std::ptr::null_mut());  // Ensure pointer is not null  ",
+                "        assert_eq!(unsafe { *pointer }, 0);  // Ensure the bucket at index 0 has default value 0  ",
+                "    }  ",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             },
             {
               "attrs": [],
@@ -281,26 +281,26 @@
               ],
               "code": [
                 "{",
-                "    unsafe {",
-                "        let alloc = &Global;",
-                "        let table_layout = TableLayout::default();",
-                "        let capacity = 2;  // Must be power of two",
-                "        let mut raw_table = RawTableInner::with_capacity(alloc, table_layout, capacity);",
-                "        let bucket = raw_table.bucket::<i32>(1);  // Index should be valid",
-                "        let pointer = bucket.as_ptr();  // Call the method to get pointer",
-                "    }",
-                "    raw_table.bucket::<i32>(1).as_ptr() != ptr::null_mut()",
-                "    assert!(raw_table.buckets() > 1)",
-                "    assert_eq!(raw_table.buckets(), 2)",
-                "    raw_table.bucket::<i32>(0).as_ptr() != ptr::null_mut()",
-                "    assert!(raw_table.bucket_mask != 0)",
-                "    drop(raw_table.bucket::<i32>(1))",
-                "    drop(raw_table.bucket::<i32>(0))",
-                "    raw_table.bucket::<i32>(1).as_non_null().as_ptr() == raw_table.data_end::<i32>().as_ptr().sub(1)",
+                "      unsafe {  ",
+                "          let alloc = &Global;  ",
+                "         let table_layout = TableLayout::new::<i32>();  ",
+                "         let capacity = 2;  // Must be power of two  ",
+                "         let mut raw_table = RawTableInner::with_capacity(alloc, table_layout, capacity);  ",
+                "         let bucket = raw_table.bucket::<i32>(1);  // Index should be valid  ",
+                "          let pointer = bucket.as_ptr();  // Call the method to get pointer  ",
+                "          assert!(raw_table.bucket::<i32>(1).as_ptr() != ptr::null_mut());  ",
+                "          assert!(raw_table.buckets() > 1);  ",
+                "          assert_eq!(raw_table.buckets(), 2);  ",
+                "          assert!(raw_table.bucket::<i32>(0).as_ptr() != ptr::null_mut());  ",
+                "          assert!(raw_table.bucket_mask != 0);  ",
+                "          drop(raw_table.bucket::<i32>(1));  ",
+                "          drop(raw_table.bucket::<i32>(0));  ",
+                "          assert!(raw_table.bucket::<i32>(1).as_non_null().as_ptr() == raw_table.data_end::<i32>().as_ptr().sub(1));  ",
+                "      }  ",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             },
             {
               "attrs": [],
@@ -326,9 +326,9 @@
                 "{",
                 "    unsafe {",
                 "        let alloc = &Global;",
-                "        let table_layout = TableLayout::default();",
-                "        let capacity = 4;  // Must be power of two",
-                "        let mut raw_table = RawTableInner::with_capacity(alloc, table_layout, capacity);",
+                "       let table_layout = TableLayout::new::<i32>(); // Explicitly use new method",
+                "       let capacity = 4;  // Must be power of two",
+                "       let mut raw_table = RawTableInner::with_capacity(alloc, table_layout, capacity);",
                 "        let bucket = raw_table.bucket::<i32>(3);  // Index should be valid",
                 "        let pointer = bucket.as_ptr();  // Call the method to get pointer",
                 "    }",
@@ -339,7 +339,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -388,30 +388,31 @@
               ],
               "code": [
                 "{",
-                "    struct TestAllocator;",
-                "    ",
-                "    let allocator = TestAllocator;",
-                "    let table_layout = TableLayout::default();",
-                "    let capacity = 4; // Assuming 4 buckets to keep it small and simple",
-                "",
-                "    unsafe {",
-                "        let raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);",
-                "        let index = raw_table.buckets(); // index == buckets",
-                "",
-                "        let bucket = raw_table.bucket::<u32>(index); // This should cause a panic due to the violation of index < self.buckets()",
-                "    }",
-                "    assert_eq!(raw_table.buckets(), 4);",
-                "    let index = raw_table.buckets();",
-                "    assert!(index >= 4);",
-                "    let result = std::panic::catch_unwind(|| {",
-                "    raw_table.bucket::<u32>(index)",
-                "    });",
-                "    assert!(result.is_err());",
-                "    assert_eq!(result.err().unwrap().downcast_ref::<&str>(), Some(&\"assertion failed\"));",
+                "   struct TestAllocator;",
+                "   ",
+                "   let allocator = TestAllocator;",
+                "   let table_layout = TableLayout::new::<u32>(); // Instantiate using new()",
+                "   let capacity = 4; // Assuming 4 buckets to keep it small and simple",
+                "   let capacity = 4; // Assuming 4 buckets to keep it small and simple  ",
+                " ",
+                "   let raw_table;  ",
+                "   unsafe {  ",
+                "       raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);  ",
+                "       let index = raw_table.buckets(); // index == buckets  ",
+                " ",
+                "       let bucket = raw_table.bucket::<u32>(index); // This should cause a panic due to the violation of index < self.buckets()  ",
+                "   }  ",
+                "   let index = raw_table.buckets();  ",
+                "   assert_eq!(index, 4);  ",
+                "   let result = std::panic::catch_unwind(|| {  ",
+                "       raw_table.bucket::<u32>(index)  ",
+                "   });  ",
+                "   assert!(result.is_err());  ",
+                "   assert_eq!(result.err().unwrap().downcast_ref::<&str>(), Some(&\"assertion failed\"));  ",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -438,25 +439,25 @@
               ],
               "code": [
                 "{",
-                "    struct TestAllocator;",
+                "  struct TestAllocator;  ",
                 "",
-                "    let allocator = TestAllocator;",
-                "    let table_layout = TableLayout::default();",
-                "    let capacity = 4; // Assuming 4 buckets for consistency",
+                "  let allocator = TestAllocator;  ",
+                "  let table_layout = TableLayout::new::<()>();  ",
+                "  let capacity = 4; // Assuming 4 buckets for consistency  ",
                 "",
-                "    unsafe {",
-                "        let raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);",
-                "        let index = raw_table.buckets(); // index == buckets",
+                "  unsafe {  ",
+                "      let raw_table = RawTableInner::with_capacity(&allocator, table_layout, capacity);  ",
+                "       let index = raw_table.buckets(); // index == buckets  ",
+                " ",
+                "       debug_assert!(index < raw_table.buckets()); // should panic when index == buckets  ",
+                "       let bucket = raw_table.bucket::<()>(index); // unsafe call with index == buckets, should lead to panic  ",
+                "   }  ",
+                "   debug_assert_ne!(self.bucket_mask, 0);  ",
                 "",
-                "        let bucket = raw_table.bucket::<()>(index); // This should also cause a panic due to the violation of index < self.buckets()",
-                "    }",
-                "    debug_assert_ne!(self.bucket_mask, 0);",
-                "    debug_assert!(index < self.buckets()); // should panic when index == buckets",
-                "    let bucket = raw_table.bucket::<()>(index); // unsafe call with index == buckets, should lead to panic",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }

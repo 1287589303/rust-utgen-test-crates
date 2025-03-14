@@ -1,0 +1,246 @@
+{
+  "name": "regex_lite::hir::parse::{impl#0}::char",
+  "mod_info": {
+    "name": "hir::parse",
+    "loc": "regex-lite/src/hir/mod.rs:5:1:5:11"
+  },
+  "visible": false,
+  "loc": "regex-lite/src/hir/parse.rs:215:5:217:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "the input pattern must be a non-empty string, the parser must not be at the end of the pattern (i.e., the position must be less than the length of the pattern), and the character at the current position must be a valid UTF-8 character.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let config = Config {",
+                "        nest_limit: 10,",
+                "        flags: Flags::default(),",
+                "    };",
+                "    ",
+                "    let pattern = \"abc\";",
+                "    let mut parser = Parser::new(config, pattern);",
+                "    ",
+                "    parser.pos.set(1); // Position set to a valid index",
+                "    let _result = parser.char();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(parser.char(), 'b');"
+              ],
+              "code": [
+                "{",
+                "    let config = Config {",
+                "        nest_limit: 10,",
+                "        flags: Flags::default(),",
+                "    };",
+                "    ",
+                "    let pattern = \"abc\";",
+                "    let mut parser = Parser::new(config, pattern);",
+                "    ",
+                "    parser.pos.set(1); // Position set to a valid index",
+                "    let _result = parser.char();",
+                "    assert_eq!(parser.char(), 'b');",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let config = Config {",
+                "        nest_limit: 10,",
+                "        flags: Flags::default(),",
+                "    };",
+                "",
+                "    let pattern = \"你好\"; // Valid UTF-8 string",
+                "    let mut parser = Parser::new(config, pattern);",
+                "    ",
+                "    parser.pos.set(0); // Position set to the start",
+                "    let _result = parser.char();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, '你');",
+                "    parser.pos.set(1);",
+                "    let _result = parser.char();",
+                "    assert_eq!(_result, '好');",
+                "    parser.pos.set(2);",
+                "    panic::catch_unwind(|| { parser.char(); }).unwrap_err();",
+                "    parser.pos.set(0);",
+                "    let _result = parser.char();",
+                "    assert_eq!(_result, '你');"
+              ],
+              "code": [
+                "{",
+                "    let config = Config {",
+                "        nest_limit: 10,",
+                "        flags: Flags::default(),",
+                "    };",
+                "",
+                "    let pattern = \"你好\"; // Valid UTF-8 string",
+                "    let mut parser = Parser::new(config, pattern);",
+                "    ",
+                "    parser.pos.set(0); // Position set to the start",
+                "    let _result = parser.char();",
+                "    assert_eq!(_result, '你');",
+                "    parser.pos.set(1);",
+                "    let _result = parser.char();",
+                "    assert_eq!(_result, '好');",
+                "    parser.pos.set(2);",
+                "    panic::catch_unwind(|| { parser.char(); }).unwrap_err();",
+                "    parser.pos.set(0);",
+                "    let _result = parser.char();",
+                "    assert_eq!(_result, '你');",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let config = Config {",
+                "        nest_limit: 10,",
+                "        flags: Flags::default(),",
+                "    };",
+                "",
+                "    let pattern = \"xyz\";",
+                "    let mut parser = Parser::new(config, pattern);",
+                "    ",
+                "    parser.pos.set(3); // Position set to end",
+                "    let _result = parser.char(); // Should panic here",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(parser.pos.get(), 3); // Ensure position is at the end of pattern",
+                "    assert!(std::panic::catch_unwind(|| parser.char()).is_err()); // Verify it panics when at end of pattern",
+                "    assert_eq!(parser.char().get(), None); // Confirm character is None at end position before calling char()"
+              ],
+              "code": [
+                "{",
+                "    let config = Config {",
+                "        nest_limit: 10,",
+                "        flags: Flags::default(),",
+                "    };",
+                "",
+                "    let pattern = \"xyz\";",
+                "    let mut parser = Parser::new(config, pattern);",
+                "    ",
+                "    parser.pos.set(3); // Position set to end",
+                "    let _result = parser.char(); // Should panic here",
+                "    assert_eq!(parser.pos.get(), 3); // Ensure position is at the end of pattern",
+                "    assert!(std::panic::catch_unwind(|| parser.char()).is_err()); // Verify it panics when at end of pattern",
+                "    assert_eq!(parser.char().get(), None); // Confirm character is None at end position before calling char()",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let config = Config {",
+                "        nest_limit: 5,",
+                "        flags: Flags::default(),",
+                "    };",
+                "",
+                "    let pattern = \"123\"; ",
+                "    let mut parser = Parser::new(config, pattern);",
+                "    ",
+                "    parser.pos.set(2); // Position to second last character",
+                "    let _result = parser.char();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, '3');",
+                "    parser.pos.set(3); // Move to end of pattern",
+                "    assert_panics!(\"codepoint, but parser is done\", { parser.char(); });",
+                "    parser.pos.set(0); // Move to start of pattern",
+                "    assert_eq!(parser.char(), '1');",
+                "    parser.pos.set(1); // Move to second character",
+                "    assert_eq!(parser.char(), '2');"
+              ],
+              "code": [
+                "{",
+                "    let config = Config {",
+                "        nest_limit: 5,",
+                "        flags: Flags::default(),",
+                "    };",
+                "",
+                "    let pattern = \"123\"; ",
+                "    let mut parser = Parser::new(config, pattern);",
+                "    ",
+                "    parser.pos.set(2); // Position to second last character",
+                "    let _result = parser.char();",
+                "    assert_eq!(_result, '3');",
+                "    parser.pos.set(3); // Move to end of pattern",
+                "    assert_panics!(\"codepoint, but parser is done\", { parser.char(); });",
+                "    parser.pos.set(0); // Move to start of pattern",
+                "    assert_eq!(parser.char(), '1');",
+                "    parser.pos.set(1); // Move to second character",
+                "    assert_eq!(parser.char(), '2');",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let config = Config {",
+                "        nest_limit: 10,",
+                "        flags: Flags::default(),",
+                "    };",
+                "",
+                "    let pattern = \"abc中文测试\"; // Mixed valid UTF-8 string",
+                "    let mut parser = Parser::new(config, pattern);",
+                "    ",
+                "    parser.pos.set(4); // Position set to the first Chinese character",
+                "    let _result = parser.char();",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(_result, '中'); // Expecting the Chinese character '中' at position 4",
+                "    assert!(parser.pos.get() == 4); // Ensure position remains unchanged after calling char()"
+              ],
+              "code": [
+                "{",
+                "    let config = Config {",
+                "        nest_limit: 10,",
+                "        flags: Flags::default(),",
+                "    };",
+                "",
+                "    let pattern = \"abc中文测试\"; // Mixed valid UTF-8 string",
+                "    let mut parser = Parser::new(config, pattern);",
+                "    ",
+                "    parser.pos.set(4); // Position set to the first Chinese character",
+                "    let _result = parser.char();",
+                "    assert_eq!(_result, '中'); // Expecting the Chinese character '中' at position 4",
+                "    assert!(parser.pos.get() == 4); // Ensure position remains unchanged after calling char()",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

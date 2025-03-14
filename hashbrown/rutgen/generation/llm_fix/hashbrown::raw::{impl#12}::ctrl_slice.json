@@ -70,9 +70,14 @@
               ],
               "code": [
                 "{",
-                "    struct TestAllocator;",
-                "    ",
-                "    let alloc = TestAllocator;",
+                "   struct TestAllocator;",
+                "   ",
+                "   use allocator_api2::alloc::Allocator;",
+                "   unsafe impl Allocator for TestAllocator {}",
+                "   ",
+                "   let alloc = TestAllocator;",
+                "   let buckets = 1; // minimum valid bucket value",
+                "   let table_layout = TableLayout::new(); // assume a valid initialization",
                 "    let buckets = 1; // minimum valid bucket value",
                 "    let table_layout = TableLayout::new(); // assume a valid initialization",
                 "    let fallibility = Fallibility::Infallible; // non-failing operation",
@@ -109,12 +114,12 @@
                 "    let ctrl_slice = raw_table_inner.ctrl_slice();",
                 "    let expected_length = raw_table_inner.num_ctrl_bytes();",
                 "    assert_eq!(ctrl_slice.len(), expected_length);",
-                "    assert_eq!(ctrl_slice.as_ptr(), raw_table_inner.ctrl().as_ptr());",
+                "   assert_eq!(ctrl_slice.as_ptr(), raw_table_inner.ctrl_slice().as_ptr());",
                 "    }",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -146,16 +151,16 @@
                 "    let table_layout = TableLayout::new(); // assume a valid initialization",
                 "    let fallibility = Fallibility::Infallible;",
                 "",
-                "    unsafe {",
-                "        let raw_table_inner = RawTableInner::new_uninitialized(&alloc, table_layout, buckets, fallibility).unwrap();",
-                "        let ctrl_slice = raw_table_inner.ctrl_slice();",
-                "        // Here you would use ctrl_slice, but we're omitting assertions as per the instructions",
-                "    }",
-                "    assert_eq!(unsafe { slice::from_raw_parts_mut(raw_table_inner.ctrl.as_ptr().cast(), raw_table_inner.num_ctrl_bytes()) }, ctrl_slice);",
+                "   unsafe {",
+                "       let raw_table_inner = RawTableInner::new_uninitialized(&alloc, table_layout, buckets, fallibility).unwrap();",
+                "       let ctrl_slice = raw_table_inner.ctrl_slice();",
+                "       // Here you would use ctrl_slice, but we're omitting assertions as per the instructions",
+                "       assert_eq!(slice::from_raw_parts_mut(raw_table_inner.ctrl.as_ptr().cast(), raw_table_inner.num_ctrl_bytes()), ctrl_slice);",
+                "   }",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -186,29 +191,29 @@
               ],
               "code": [
                 "{",
-                "    struct TestAllocator;",
+                "   struct TestAllocator;",
                 "",
-                "    let alloc = TestAllocator;",
-                "    let buckets = 8; // for example, 2^3 which is a valid power of two",
-                "    let table_layout = TableLayout::new(); // assume a valid initialization",
-                "    let fallibility = Fallibility::Infallible;",
+                "   let alloc = TestAllocator;",
+                "   let buckets = 8; // for example, 2^3 which is a valid power of two",
+                "   let table_layout = TableLayout::new(); // assume a valid initialization",
+                "   let fallibility = Fallibility::Infallible;",
                 "",
-                "    unsafe {",
-                "        let raw_table_inner = RawTableInner::new_uninitialized(&alloc, table_layout, buckets, fallibility).unwrap();",
-                "        let ctrl_slice = raw_table_inner.ctrl_slice();",
-                "        // Here you would use ctrl_slice, but we're omitting assertions as per the instructions",
-                "    }",
-                "    assert_eq!(raw_table_inner.ctrl_slice().len(), raw_table_inner.num_ctrl_bytes());",
-                "    assert!(raw_table_inner.ctrl_slice().as_mut_ptr() != ptr::null_mut());",
-                "    assert!(raw_table_inner.ctrl_slice()[0] == Tag(0));",
-                "    for i in 1..raw_table_inner.num_ctrl_bytes() {",
-                "    assert!(raw_table_inner.ctrl_slice()[i] == Tag(0));",
-                "    }",
-                "    assert!(raw_table_inner.ctrl_slice().is_aligned());",
+                "   let raw_table_inner = unsafe {",
+                "       RawTableInner::new_uninitialized(&alloc, table_layout, buckets, fallibility).unwrap()",
+                "   };",
+                "   let ctrl_slice = raw_table_inner.ctrl_slice();",
+                "   // Here you would use ctrl_slice, but we're omitting assertions as per the instructions",
+                "   assert_eq!(raw_table_inner.ctrl_slice().len(), raw_table_inner.num_ctrl_bytes());",
+                "   assert!(raw_table_inner.ctrl_slice().as_mut_ptr() != ptr::null_mut());",
+                "   assert!(raw_table_inner.ctrl_slice()[0] == Tag(0));",
+                "   for i in 1..raw_table_inner.num_ctrl_bytes() {",
+                "       assert!(raw_table_inner.ctrl_slice()[i] == Tag(0));",
+                "   }",
+                "   assert!(raw_table_inner.ctrl_slice().is_aligned());",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -242,18 +247,18 @@
                 "    let table_layout = TableLayout::new(); // assume a valid initialization",
                 "    let fallibility = Fallibility::Infallible;",
                 "",
-                "    unsafe {",
-                "        let raw_table_inner = RawTableInner::new_uninitialized(&alloc, table_layout, buckets, fallibility).unwrap();",
-                "        let ctrl_slice = raw_table_inner.ctrl_slice();",
-                "        // Here you would use ctrl_slice, but we're omitting assertions as per the instructions",
-                "    }",
-                "    unsafe { let slice = raw_table_inner.ctrl_slice(); assert_eq!(slice.len(), raw_table_inner.num_ctrl_bytes()); }",
-                "    unsafe { let slice: &mut [Tag] = raw_table_inner.ctrl_slice(); assert!(!slice.is_empty()); }",
-                "    unsafe { let slice: &mut [Tag] = raw_table_inner.ctrl_slice(); assert!(slice.as_ptr() == raw_table_inner.ctrl.as_ptr().cast()); }",
+                "   unsafe {",
+                "       let raw_table_inner = RawTableInner::new_uninitialized(&alloc, table_layout, buckets, fallibility).unwrap();",
+                "       let ctrl_slice = raw_table_inner.ctrl_slice();",
+                "       // Here you would use ctrl_slice, but we're omitting assertions as per the instructions",
+                "       let slice = raw_table_inner.ctrl_slice(); assert_eq!(slice.len(), raw_table_inner.num_ctrl_bytes());",
+                "       let slice: &mut [Tag] = raw_table_inner.ctrl_slice(); assert!(!slice.is_empty());",
+                "       let slice: &mut [Tag] = raw_table_inner.ctrl_slice(); assert!(slice.as_ptr() == raw_table_inner.ctrl.as_ptr().cast());",
+                "   }",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -312,7 +317,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }

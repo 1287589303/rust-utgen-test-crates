@@ -1,0 +1,204 @@
+{
+  "name": "regex_automata::dfa::dense::{impl#7}::write_to_native_endian",
+  "mod_info": {
+    "name": "dfa::dense",
+    "loc": "regex-automata/src/dfa/mod.rs:337:1:337:15"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/dense.rs:2085:5:2090:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "DFA buffer sizes should be a minimum of 4 bytes up to a maximum determined by the DFA size, expected outputs should be checked against successful serialization, invalid outputs should be checked against serialize errors when buffers are too small or improperly aligned.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let original_dfa = DFA::new(\"foo[0-9]+\").unwrap();",
+                "    #[repr(C)]",
+                "    struct Aligned<B: ?Sized> {",
+                "        _align: [u32; 0],",
+                "        bytes: B,",
+                "    }",
+                "    let mut buf = Aligned { _align: [], bytes: [0u8; 4 * (1 << 10)] };",
+                "    let written = original_dfa.write_to_native_endian(&mut buf.bytes).unwrap();",
+                "    let dfa: DFA<&[u32]> = DFA::from_bytes(&buf.bytes[..written]).unwrap().0;",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(original_dfa.pattern_len() > 0);",
+                "    assert!(written > 0);",
+                "    assert!(buf.bytes.len() >= written);",
+                "    assert_eq!(dfa.is_utf8(), original_dfa.is_utf8());",
+                "    assert!(dfa.is_start_state(dfa.start_state(&StartKind::Both).unwrap()));",
+                "    assert!(dfa.has_empty() == original_dfa.has_empty());",
+                "    assert!(dfa.match_len(dfa.start_state(&StartKind::Both).unwrap()) > 0);",
+                "    assert_eq!(dfa.try_search_fwd(&Input::new(\"foo12345\")).unwrap(), Some(HalfMatch::must(0, 8)));"
+              ],
+              "code": [
+                "{",
+                "    let original_dfa = DFA::new(\"foo[0-9]+\").unwrap();",
+                "    #[repr(C)]",
+                "    struct Aligned<B: ?Sized> {",
+                "        _align: [u32; 0],",
+                "        bytes: B,",
+                "    }",
+                "    let mut buf = Aligned { _align: [], bytes: [0u8; 4 * (1 << 10)] };",
+                "    let written = original_dfa.write_to_native_endian(&mut buf.bytes).unwrap();",
+                "    let dfa: DFA<&[u32]> = DFA::from_bytes(&buf.bytes[..written]).unwrap().0;",
+                "    assert!(original_dfa.pattern_len() > 0);",
+                "    assert!(written > 0);",
+                "    assert!(buf.bytes.len() >= written);",
+                "    assert_eq!(dfa.is_utf8(), original_dfa.is_utf8());",
+                "    assert!(dfa.is_start_state(dfa.start_state(&StartKind::Both).unwrap()));",
+                "    assert!(dfa.has_empty() == original_dfa.has_empty());",
+                "    assert!(dfa.match_len(dfa.start_state(&StartKind::Both).unwrap()) > 0);",
+                "    assert_eq!(dfa.try_search_fwd(&Input::new(\"foo12345\")).unwrap(), Some(HalfMatch::must(0, 8)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let original_dfa = DFA::new(\"x\").unwrap();",
+                "    let mut small_buf = [0u8; 3]; // Smaller than required",
+                "    let result = original_dfa.write_to_native_endian(&mut small_buf);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "oracle": [
+                "    let original_dfa = DFA::new(\"x\").unwrap();",
+                "    let mut small_buf = [0u8; 3]; // Buffer too small",
+                "    let result = original_dfa.write_to_native_endian(&mut small_buf);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().what, \"buffer too small\");"
+              ],
+              "code": [
+                "{",
+                "    let original_dfa = DFA::new(\"x\").unwrap();",
+                "    let mut small_buf = [0u8; 3]; // Smaller than required",
+                "    let result = original_dfa.write_to_native_endian(&mut small_buf);",
+                "    assert!(result.is_err());",
+                "    let original_dfa = DFA::new(\"x\").unwrap();",
+                "    let mut small_buf = [0u8; 3]; // Buffer too small",
+                "    let result = original_dfa.write_to_native_endian(&mut small_buf);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().what, \"buffer too small\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let original_dfa = DFA::new(\"bar\").unwrap();",
+                "    let required_size = original_dfa.write_to_len();",
+                "    let mut exact_buf = vec![0u8; required_size]; // Exactly the required size",
+                "    let written = original_dfa.write_to_native_endian(&mut exact_buf).unwrap();",
+                "    assert_eq!(written, required_size);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(written, required_size);  // Verify the written size is as expected",
+                "    assert!(exact_buf.len() == required_size);  // Check that the buffer size is exactly what was required",
+                "    assert!(original_dfa.write_to_native_endian(&mut exact_buf).is_ok());  // Ensure the serialization does not return an error",
+                "    assert!(exact_buf.iter().all(|&byte| byte == 0 || byte != 0));  // Validate that some bytes in exact_buf are non-zero after writing",
+                "    assert_eq!(original_dfa.write_to_len(), required_size);  // Confirm that the write_to_len yields the same required size"
+              ],
+              "code": [
+                "{",
+                "    let original_dfa = DFA::new(\"bar\").unwrap();",
+                "    let required_size = original_dfa.write_to_len();",
+                "    let mut exact_buf = vec![0u8; required_size]; // Exactly the required size",
+                "    let written = original_dfa.write_to_native_endian(&mut exact_buf).unwrap();",
+                "    assert_eq!(written, required_size);",
+                "    assert_eq!(written, required_size);  // Verify the written size is as expected",
+                "    assert!(exact_buf.len() == required_size);  // Check that the buffer size is exactly what was required",
+                "    assert!(original_dfa.write_to_native_endian(&mut exact_buf).is_ok());  // Ensure the serialization does not return an error",
+                "    assert!(exact_buf.iter().all(|&byte| byte == 0 || byte != 0));  // Validate that some bytes in exact_buf are non-zero after writing",
+                "    assert_eq!(original_dfa.write_to_len(), required_size);  // Confirm that the write_to_len yields the same required size",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let original_dfa = DFA::new(\"baz\").unwrap();",
+                "    let misaligned_buf = [0u8; 4]; // Alignment issue due to size",
+                "    let result = original_dfa.write_to_native_endian(&mut misaligned_buf);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(original_dfa.write_to_native_endian(&mut misaligned_buf).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let original_dfa = DFA::new(\"baz\").unwrap();",
+                "    let misaligned_buf = [0u8; 4]; // Alignment issue due to size",
+                "    let result = original_dfa.write_to_native_endian(&mut misaligned_buf);",
+                "    assert!(result.is_err());",
+                "    assert!(original_dfa.write_to_native_endian(&mut misaligned_buf).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let empty_dfa = DFA::new(\"\").unwrap(); // Create DFA with an empty pattern",
+                "    let min_buf = [0u8; 4]; // Minimum size buffer",
+                "    let written = empty_dfa.write_to_native_endian(&mut min_buf).unwrap();",
+                "    assert!(written > 0);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(written, empty_dfa.write_to_native_endian(&mut min_buf).unwrap());",
+                "    assert!(written <= min_buf.len());",
+                "    assert_eq!(empty_dfa.write_to_native_endian(&mut min_buf).unwrap_err().what, \"buffer too small\");",
+                "    assert_eq!(empty_dfa.match_pattern(0, 0), PatternID::NULL);",
+                "    assert!(empty_dfa.has_empty());",
+                "    assert_eq!(empty_dfa.pattern_len(), 0);",
+                "    assert!(empty_dfa.is_match_state(0));"
+              ],
+              "code": [
+                "{",
+                "    let empty_dfa = DFA::new(\"\").unwrap(); // Create DFA with an empty pattern",
+                "    let min_buf = [0u8; 4]; // Minimum size buffer",
+                "    let written = empty_dfa.write_to_native_endian(&mut min_buf).unwrap();",
+                "    assert!(written > 0);",
+                "    assert_eq!(written, empty_dfa.write_to_native_endian(&mut min_buf).unwrap());",
+                "    assert!(written <= min_buf.len());",
+                "    assert_eq!(empty_dfa.write_to_native_endian(&mut min_buf).unwrap_err().what, \"buffer too small\");",
+                "    assert_eq!(empty_dfa.match_pattern(0, 0), PatternID::NULL);",
+                "    assert!(empty_dfa.has_empty());",
+                "    assert_eq!(empty_dfa.pattern_len(), 0);",
+                "    assert!(empty_dfa.is_match_state(0));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

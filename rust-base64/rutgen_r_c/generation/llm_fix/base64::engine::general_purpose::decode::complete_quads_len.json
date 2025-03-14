@@ -1,0 +1,422 @@
+{
+  "name": "base64::engine::general_purpose::decode::complete_quads_len",
+  "mod_info": {
+    "name": "engine::general_purpose::decode",
+    "loc": "src/engine/general_purpose/mod.rs:12:1:12:23"
+  },
+  "visible": true,
+  "loc": "src/engine/general_purpose/decode.rs:131:1:163:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: input.len() % 4 == input_len_rem at line 137 is true\n",
+        "precondition: input_len_rem == 1 at line 140 is false\n",
+        "precondition: last_byte != PAD_BYTE at line 143 is true\n",
+        "precondition: decode_table[usize::from(last_byte)] == INVALID_VALUE at line 143 is true\n",
+        "expected return value/type: Err(DecodeError::InvalidByte(input.len() - 1, last_byte).into())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    const INVALID_VALUE: u8 = 255; // Assuming this is the INVALID_VALUE defined in the context",
+                "    const PAD_BYTE: u8 = b'='; // Assuming this is the PAD_BYTE defined in the context",
+                "",
+                "    let input: &[u8] = &[b'A', b'B', b'C', b'X']; // X is invalid",
+                "    let input_len_rem = 1; // input.len() % 4 == input_len_rem",
+                "    let output_len = 5; // Sufficient length for valid outputs",
+                "    let mut decode_table: [u8; 256] = [INVALID_VALUE; 256];",
+                "    decode_table[b'A' as usize] = 0; // Valid base64 character",
+                "    decode_table[b'B' as usize] = 1; // Valid base64 character",
+                "    decode_table[b'C' as usize] = 2; // Valid base64 character",
+                "    decode_table[b'X' as usize] = INVALID_VALUE; // Invalid character simulating error",
+                "",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                "    assert_eq!(result, Err(DecodeSliceError::DecodeError(DecodeError::InvalidByte(3, b'X'))));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "precondition: input.len() % 4 == input_len_rem at line 137 is true\n",
+        "precondition: input_len_rem == 1 at line 140 is false\n",
+        "precondition: last_byte != PAD_BYTE at line 143 is true\n",
+        "precondition: decode_table[usize::from(last_byte)] == INVALID_VALUE at line 143 is false\n",
+        "precondition: input.is_empty() at line 155 is false\n",
+        "precondition: (1..=4).contains(&(input.len() - input_complete_nonterminal_quads_len)) at line 155 is true\n",
+        "precondition: output_len < input_complete_nonterminal_quads_len / 4 * 3 at line 159 is false, with bound output_len == input_complete_nonterminal_quads_len / 4 * 3\n",
+        "expected return value/type: Ok(input_complete_nonterminal_quads_len)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    const DECODE_TABLE: [u8; 256] = [",
+                "        // Assume this array has been initialized correctly with valid base64 decode values",
+                "        // The actual values should be filled out according to the base64 specification",
+                "        // For illustration, here are just some values:",
+                "        255, 255, 255, 255, 255, 255, 255, 255, // 0-7",
+                "        // ... fill in for all 256 ASCII values",
+                "        // Example valid entry for 'A' (index 65)",
+                "        0, // A",
+                "        // Example valid entry for 'B' (index 66)",
+                "        1, // B",
+                "        // The rest should be populated similarly",
+                "    ];",
+                "",
+                "    let input = b\"QUJD\"; // 'A', 'B', 'C' in Base64",
+                "    let input_len_rem = 0;",
+                "    let output_len = 3; // Output buffer should fit the 3 bytes of data",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &DECODE_TABLE);",
+                "    assert_eq!(result, Ok(4)); // 4 complete quads, therefore returns 4",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    const DECODE_TABLE: [u8; 256] = [255; 256]; // All invalid for testing",
+                "",
+                "    let input = b\"QUJD\"; // Valid base64 input",
+                "    let input_len_rem = 0;",
+                "    let output_len = 2; // Not enough space for the output",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &DECODE_TABLE);",
+                "    assert_eq!(result, Err(DecodeSliceError::OutputSliceTooSmall));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    const DECODE_TABLE: [u8; 256] = [",
+                "        255, 255, 255, 255, 255, 255, 255, 255, // 0-7",
+                "        // ... fill in for all 256 ASCII values",
+                "        255, // Lets say we made `Z` invalid for instance",
+                "        // Example invalid entry for 'Y' (index 89)",
+                "        255, // Y is now invalid",
+                "        // ...",
+                "    ];",
+                "",
+                "    let input = b\"QUJY\"; // Last byte is invalid 'Y' which is not in our decode table",
+                "    let input_len_rem = 1;",
+                "    let output_len = 3;",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &DECODE_TABLE);",
+                "    assert_eq!(result, Err(DecodeSliceError::DecodeError(DecodeError::InvalidByte(3, 89))));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 11,
+      "prompt_conds": [
+        "precondition: input.len() % 4 == input_len_rem at line 137 is true\n",
+        "precondition: input_len_rem == 1 at line 140 is false\n",
+        "precondition: last_byte != PAD_BYTE at line 143 is false\n",
+        "precondition: input.is_empty() at line 155 is false\n",
+        "precondition: (1..=4).contains(&(input.len() - input_complete_nonterminal_quads_len)) at line 155 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let input = b\"QUJDRA==\"; // Base64 for \"ABCD\" with padding",
+                "    let input_len_rem = input.len() % 4; // 0",
+                "    let output_len = 6; // Enough for \"ABCD\"",
+                "    let decode_table: [u8; 256] = {",
+                "        let mut table = [INVALID_VALUE; 256];",
+                "        table[b'A' as usize] = 0;",
+                "        table[b'Q' as usize] = 1;",
+                "        table[b'J' as usize] = 2;",
+                "        table[b'D' as usize] = 3;",
+                "        table[b'R' as usize] = 4;",
+                "        table[b'A' as usize] = 5;",
+                "        // Add other necessary mappings...",
+                "        table",
+                "    };",
+                "",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                "    assert_eq!(result, Ok(4)); // Full quad length should be 4",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let input = b\"QUJDRA==\"; // Base64 for \"ABCD\" with padding",
+                "    let input_len_rem = input.len() % 4; // 0",
+                "    let output_len = 5; // Not enough for \"ABCD\"",
+                "    let decode_table: [u8; 256] = {",
+                "        let mut table = [INVALID_VALUE; 256];",
+                "        table[b'A' as usize] = 0;",
+                "        table[b'Q' as usize] = 1;",
+                "        table[b'J' as usize] = 2;",
+                "        table[b'D' as usize] = 3;",
+                "        table[b'R' as usize] = 4;",
+                "        table[b'A' as usize] = 5;",
+                "        // Add other necessary mappings...",
+                "        table",
+                "    };",
+                "",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                "    assert_eq!(result, Err(DecodeSliceError::OutputSliceTooSmall));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let input = b\"QUJDRA\"; // Invalid because it ends with non-pad byte",
+                "    let input_len_rem = input.len() % 4; // 2",
+                "    let output_len = 6; // Enough for \"ABCD\"",
+                "    let decode_table: [u8; 256] = {",
+                "        let mut table = [INVALID_VALUE; 256];",
+                "        table[b'A' as usize] = 0;",
+                "        table[b'Q' as usize] = 1;",
+                "        table[b'J' as usize] = 2;",
+                "        table[b'D' as usize] = 3;",
+                "        table[b'R' as usize] = 4;",
+                "        table[b'A' as usize] = 5;",
+                "        // Add other necessary mappings...",
+                "        table",
+                "    };",
+                "",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                "    assert_eq!(result, Err(DecodeSliceError::DecodeError(DecodeError::InvalidByte(5, b'A'))));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let input: &[u8] = &[]; // Empty input",
+                "    let input_len_rem = input.len() % 4; // 0",
+                "    let output_len = 0; // Output length of 0",
+                "    let decode_table: [u8; 256] = {",
+                "        let mut table = [INVALID_VALUE; 256];",
+                "        table",
+                "    };",
+                "",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                "    assert_eq!(result, Ok(0)); // Should return 0 for empty input",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let input = b\"QUJD==\"; // Invalid because input should not have a complete last quad (due to the padding)",
+                "    let input_len_rem = input.len() % 4; // 2",
+                "    let output_len = 6; // Enough for \"ABCD\"",
+                "    let decode_table: [u8; 256] = {",
+                "        let mut table = [INVALID_VALUE; 256];",
+                "        table[b'A' as usize] = 0;",
+                "        table[b'Q' as usize] = 1;",
+                "        table[b'J' as usize] = 2;",
+                "        table[b'D' as usize] = 3;",
+                "        table[b'R' as usize] = 4;",
+                "        table[b'A' as usize] = 5;",
+                "        // Add other necessary mappings...",
+                "        table",
+                "    };",
+                "",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                "    assert_eq!(result, Ok(4)); // It's still complete though",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 12,
+      "prompt_conds": [
+        "precondition: input.len() % 4 == input_len_rem at line 137 is true\n",
+        "precondition: input_len_rem == 1 at line 140 is true\n",
+        "precondition: input.is_empty() at line 155 is true\n",
+        "precondition: output_len < input_complete_nonterminal_quads_len / 4 * 3 at line 159 is true\n",
+        "expected return value/type: Err(DecodeSliceError::OutputSliceTooSmall)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "   const DECODE_TABLE: [u8; 256] = {",
+                "       let mut table = [INVALID_VALUE; 256];",
+                "       // Example initialization for base64 characters 'A' to 'Z', 'a' to 'z', '0' to '9', '+', '/'",
+                "       for i in 0..26 {",
+                "           table[i + b'A' as usize] = i as u8;",
+                "       }",
+                "       for i in 0..26 {",
+                "           table[i + b'a' as usize] = (i + 26) as u8;",
+                "       }",
+                "    };",
+                "",
+                "    let input = b\"YWF\"; // Example base64 input, length is 3",
+                "    let input_len_rem = input.len() % 4; // Should be 1",
+                "    let output_len = 0; // Output length is less than required",
+                "",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &DECODE_TABLE);",
+                "    assert_eq!(result, Err(DecodeSliceError::OutputSliceTooSmall));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 17,
+      "prompt_conds": [
+        "precondition: input.len() % 4 == input_len_rem at line 137 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let input: &[u8] = b\"invalid_base64_data____\";",
+                "    let input_len_rem = 2; // Choose a value that does not satisfy input.len() % 4 == input_len_rem",
+                "    let output_len = 10;",
+                "    let decode_table: [u8; 256] = [0; 256];",
+                "    ",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let input: &[u8] = b\"valid_base64_data____\";",
+                "    let input_len_rem = 0; // This is valid",
+                "    let output_len = 10;",
+                "    let decode_table: [u8; 256] = [0; 256];",
+                "",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                "    assert!(result.is_ok());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    let input: &[u8] = b\"valid_base64_data\";",
+                "    let input_len_rem = 0; // valid case",
+                "    let output_len = 5; // This is too small for the complete quads",
+                "    let decode_table: [u8; 256] = [0; 256];",
+                "",
+                "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                "    assert_eq!(result, Err(DecodeSliceError::OutputSliceTooSmall));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

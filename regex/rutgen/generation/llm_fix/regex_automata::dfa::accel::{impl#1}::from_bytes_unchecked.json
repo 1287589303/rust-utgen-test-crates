@@ -1,0 +1,1591 @@
+{
+  "name": "regex_automata::dfa::accel::{impl#1}::from_bytes_unchecked",
+  "mod_info": {
+    "name": "dfa::accel",
+    "loc": "regex-automata/src/dfa/mod.rs:346:1:346:22"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/dfa/accel.rs:186:5:221:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: wire::try_read_u32_as_usize(slice, \"accelerators length\")? at line 192 is Err/None\n"
+      ],
+      "input_infer": "slice length < 4 (to trigger buffer too small error) or slice at 4-byte boundary misaligned (to trigger alignment error)\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[];",
+                "    let result = crate::dfa::accel::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap().kind(), DeserializeErrorKind::BufferTooSmall);",
+                "    assert!(result.err().unwrap().what.contains(\"accelerators length\"));"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[];",
+                "    let result = crate::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap().kind(), DeserializeErrorKind::BufferTooSmall);",
+                "    assert!(result.err().unwrap().what.contains(\"accelerators length\"));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &b\"\\x01\\x02\\x03\"[..]; // Length 3, unaligned",
+                "    let result = crate::dfa::accel::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, DeserializeErrorKind::InvalidUSize(\"accelerators length\"));",
+                "    assert!(result.unwrap_err().slice.len() < ACCEL_LEN);",
+                "    assert!(result.unwrap_err().slice.len() % ACCEL_TY_SIZE != 0);",
+                "    assert!(result.unwrap_err().slice.len() > 0);",
+                "    assert!(result.unwrap_err().alignment.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &b\"\\x01\\x02\\x03\"[..]; // Length 3, unaligned",
+                "    let result = crate::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, DeserializeErrorKind::InvalidUSize(\"accelerators length\"));",
+                "    assert!(result.unwrap_err().slice.len() < ACCEL_LEN);",
+                "    assert!(result.unwrap_err().slice.len() % ACCEL_TY_SIZE != 0);",
+                "    assert!(result.unwrap_err().slice.len() > 0);",
+                "    assert!(result.unwrap_err().alignment.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: wire::try_read_u32_as_usize(slice, \"accelerators length\")? at line 192 is Ok/Some\n",
+        "precondition: wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")? at line 198 is Err/None\n"
+      ],
+      "input_infer": "Test input conditions: slice must be a byte array of length >= 4 (to read accelerator length) and containing values such that `wire::try_read_u32_as_usize` returns Ok, while also being constructed such that `accel_len` leads to arithmetic overflow when multiplied by 2 (i.e. `accel_len` > usize::MAX / 2).\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let accel_len = usize::MAX / 2 + 1; // This will cause an overflow when multiplied by 2",
+                "    let mut bytes: Vec<u8> = vec![0; 4]; // Initial length for u32 (4 bytes)",
+                "    bytes.extend(&(accel_len as u32).to_le_bytes()); // Set the first 4 bytes as the accelerator length",
+                "",
+                "    // Fill the rest of the slice with dummy data (at least enough to ensure `check_slice_len` can pass)",
+                "    bytes.extend(vec![0u8; 16]); // Placeholder data",
+                "",
+                "    let slice = &bytes[..];",
+                "",
+                "    let result = crate::accel::from_bytes_unchecked(slice);",
+                "    // Since we are only calling the function, we don't assert anything here",
+                "}"
+              ],
+              "oracle": [
+                "    let accel_len = usize::MAX / 2 + 1; // This will cause an overflow when multiplied by 2",
+                "    let mut bytes: Vec<u8> = vec![0; 4]; // Initial length for u32 (4 bytes)",
+                "    bytes.extend(&(accel_len as u32).to_le_bytes()); // Set the first 4 bytes as the accelerator length",
+                "    bytes.extend(vec![0u8; 16]); // Placeholder data",
+                "    let slice = &bytes[..];",
+                "    let result = crate::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err()); // Expect an error due to arithmetic overflow in line 198"
+              ],
+              "code": [
+                "{",
+                "    let accel_len = usize::MAX / 2 + 1; // This will cause an overflow when multiplied by 2",
+                "    let mut bytes: Vec<u8> = vec![0; 4]; // Initial length for u32 (4 bytes)",
+                "    bytes.extend(&(accel_len as u32).to_le_bytes()); // Set the first 4 bytes as the accelerator length",
+                "",
+                "    // Fill the rest of the slice with dummy data (at least enough to ensure `check_slice_len` can pass)",
+                "    bytes.extend(vec![0u8; 16]); // Placeholder data",
+                "",
+                "    let slice = &bytes[..];",
+                "",
+                "    let result = crate::accel::from_bytes_unchecked(slice);",
+                "    // Since we are only calling the function, we don't assert anything here",
+                "    let accel_len = usize::MAX / 2 + 1; // This will cause an overflow when multiplied by 2",
+                "    let mut bytes: Vec<u8> = vec![0; 4]; // Initial length for u32 (4 bytes)",
+                "    bytes.extend(&(accel_len as u32).to_le_bytes()); // Set the first 4 bytes as the accelerator length",
+                "    bytes.extend(vec![0u8; 16]); // Placeholder data",
+                "    let slice = &bytes[..];",
+                "    let result = crate::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err()); // Expect an error due to arithmetic overflow in line 198",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let accel_len = 2; // Valid length that should not overflow",
+                "    let mut bytes: Vec<u8> = vec![0; 4]; // Initial length for u32 (4 bytes)",
+                "    bytes.extend(&(accel_len as u32).to_le_bytes()); // Set the first 4 bytes as the accelerator length",
+                "",
+                "    // Not enough bytes to satisfy the `accels` length check",
+                "    let slice = &bytes[..8]; // Not enough data for the algorithms to work properly",
+                "",
+                "    let result = crate::accel::from_bytes_unchecked(slice);",
+                "    // Since we are only calling the function, we don't assert anything here",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes: Vec<u8> = vec![0; 4]; // Initial length for u32 (4 bytes)",
+                "    bytes.extend(&(accel_len as u32).to_le_bytes()); // Set the first 4 bytes as the accelerator length",
+                "    let slice = &bytes[..8]; // Not enough data for the algorithms to work properly",
+                "    let result = crate::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err()); // Expect an error due to insufficient bytes for accelerators"
+              ],
+              "code": [
+                "{",
+                "    let accel_len = 2; // Valid length that should not overflow",
+                "    let mut bytes: Vec<u8> = vec![0; 4]; // Initial length for u32 (4 bytes)",
+                "    bytes.extend(&(accel_len as u32).to_le_bytes()); // Set the first 4 bytes as the accelerator length",
+                "",
+                "    // Not enough bytes to satisfy the `accels` length check",
+                "    let slice = &bytes[..8]; // Not enough data for the algorithms to work properly",
+                "",
+                "    let result = crate::accel::from_bytes_unchecked(slice);",
+                "    // Since we are only calling the function, we don't assert anything here",
+                "    let bytes: Vec<u8> = vec![0; 4]; // Initial length for u32 (4 bytes)",
+                "    bytes.extend(&(accel_len as u32).to_le_bytes()); // Set the first 4 bytes as the accelerator length",
+                "    let slice = &bytes[..8]; // Not enough data for the algorithms to work properly",
+                "    let result = crate::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err()); // Expect an error due to insufficient bytes for accelerators",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: wire::try_read_u32_as_usize(slice, \"accelerators length\")? at line 192 is Ok/Some\n",
+        "precondition: wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")? at line 198 is Ok/Some\n",
+        "precondition: wire::add(\n            wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")?,\n            1,\n            \"total number of accel_tys\",\n        )? at line 197 is Err/None\n"
+      ],
+      "input_infer": "slice length must be greater than or equal to 4 (for the length of the accelerator), and slice content must have a valid u32 at the beginning, followed by enough bytes to form a valid number of accelerators (up to 2 * u32 + 1 for total length), total length must be ≤ (8 * acceleration length + 4) bytes while ensuring alignment to 4 bytes; additionally, add operation must trigger an arithmetic overflow error when accelerator length exceeds u32 limits.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x01]; // u32 (1)",
+                "    let additional_len = 8 * (u32::MAX as usize) + 4 - slice.len(); // to exceed limit",
+                "    let mut bytes = Vec::with_capacity(slice.len() + additional_len);",
+                "    bytes.extend_from_slice(slice);",
+                "    for _ in 0..additional_len {",
+                "        bytes.push(0);",
+                "    }",
+                "    ",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(&bytes);",
+                "    // Not asserting, just calling to satisfy the requirement.",
+                "    let _ = result;",
+                "}"
+              ],
+              "oracle": [
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x01]; // Valid slice with length 1",
+                "    let additional_len = 8 * (u32::MAX as usize) + 4 - slice.len(); // Exceeding length after valid slice",
+                "    let mut bytes = Vec::with_capacity(slice.len() + additional_len);",
+                "    bytes.extend_from_slice(slice);",
+                "    for _ in 0..additional_len { bytes.push(0); }",
+                "    ",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(&bytes);",
+                "    assert!(result.is_err()); // Expecting an error due to arithmetic overflow in add at line 197",
+                "    assert_eq!(result.err().unwrap().kind(), DeserializeErrorKind::ArithmeticOverflow); // Ensures correct error type"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x01]; // u32 (1)",
+                "    let additional_len = 8 * (u32::MAX as usize) + 4 - slice.len(); // to exceed limit",
+                "    let mut bytes = Vec::with_capacity(slice.len() + additional_len);",
+                "    bytes.extend_from_slice(slice);",
+                "    for _ in 0..additional_len {",
+                "        bytes.push(0);",
+                "    }",
+                "    ",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(&bytes);",
+                "    // Not asserting, just calling to satisfy the requirement.",
+                "    let _ = result;",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x01]; // Valid slice with length 1",
+                "    let additional_len = 8 * (u32::MAX as usize) + 4 - slice.len(); // Exceeding length after valid slice",
+                "    let mut bytes = Vec::with_capacity(slice.len() + additional_len);",
+                "    bytes.extend_from_slice(slice);",
+                "    for _ in 0..additional_len { bytes.push(0); }",
+                "    ",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(&bytes);",
+                "    assert!(result.is_err()); // Expecting an error due to arithmetic overflow in add at line 197",
+                "    assert_eq!(result.err().unwrap().kind(), DeserializeErrorKind::ArithmeticOverflow); // Ensures correct error type",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x02]; // u32 (2)",
+                "    let mut bytes = Vec::new();",
+                "    bytes.extend_from_slice(slice);",
+                "    bytes.extend_from_slice(&[0, 0, 0, 0, 0, 0, 0, 0]); // valid 2 accelerators",
+                "",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(&bytes);",
+                "    let _ = result;",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes = &[0x00, 0x00, 0x00, 0x02, 0, 0, 0, 0, 0, 0, 0, 0]; // valid input with 2 accelerators",
+                "    assert!(Accels::<&[AccelTy]>::from_bytes_unchecked(bytes).is_ok());",
+                "    ",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x00]; // zero accelerators",
+                "    assert!(Accels::<&[AccelTy]>::from_bytes_unchecked(bytes).is_err());",
+                "    ",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x02, 0, 0, 0, 0]; // partial bytes for valid 2 accelerators",
+                "    assert!(Accels::<&[AccelTy]>::from_bytes_unchecked(bytes).is_err());",
+                "    ",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // extra zero bytes",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(bytes).unwrap();",
+                "    assert_eq!(result.0.accels.len(), 2);",
+                "    ",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x01]; // one accelerator",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(bytes);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x02, 0, 0, 0, 0, 0, 1, 0, 0]; // two accelerators with different values",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(bytes);",
+                "    assert!(result.is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x02]; // u32 (2)",
+                "    let mut bytes = Vec::new();",
+                "    bytes.extend_from_slice(slice);",
+                "    bytes.extend_from_slice(&[0, 0, 0, 0, 0, 0, 0, 0]); // valid 2 accelerators",
+                "",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(&bytes);",
+                "    let _ = result;",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x02, 0, 0, 0, 0, 0, 0, 0, 0]; // valid input with 2 accelerators",
+                "    assert!(Accels::<&[AccelTy]>::from_bytes_unchecked(bytes).is_ok());",
+                "    ",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x00]; // zero accelerators",
+                "    assert!(Accels::<&[AccelTy]>::from_bytes_unchecked(bytes).is_err());",
+                "    ",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x02, 0, 0, 0, 0]; // partial bytes for valid 2 accelerators",
+                "    assert!(Accels::<&[AccelTy]>::from_bytes_unchecked(bytes).is_err());",
+                "    ",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // extra zero bytes",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(bytes).unwrap();",
+                "    assert_eq!(result.0.accels.len(), 2);",
+                "    ",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x01]; // one accelerator",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(bytes);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let bytes = &[0x00, 0x00, 0x00, 0x02, 0, 0, 0, 0, 0, 1, 0, 0]; // two accelerators with different values",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(bytes);",
+                "    assert!(result.is_ok());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x01]; // u32 (1)",
+                "    let mut bytes = Vec::new();",
+                "    bytes.extend_from_slice(slice);",
+                "    bytes.extend_from_slice(&[0, 0, 0, 0]); // valid 1 accelerator",
+                "",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(&bytes);",
+                "    let _ = result;",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result.is_ok(), true);",
+                "    assert_eq!(result.unwrap().0.accels.len(), 1);",
+                "    assert_eq!(result.unwrap().1, 8);",
+                "    assert!(result.unwrap().0.accels.as_ptr().is_aligned_to::<AccelTy>());",
+                "    assert!(result.unwrap().0.accels.len() > 0);",
+                "    assert!(result.unwrap().0.accels[0] == 0);"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x01]; // u32 (1)",
+                "    let mut bytes = Vec::new();",
+                "    bytes.extend_from_slice(slice);",
+                "    bytes.extend_from_slice(&[0, 0, 0, 0]); // valid 1 accelerator",
+                "",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(&bytes);",
+                "    let _ = result;",
+                "    assert_eq!(result.is_ok(), true);",
+                "    assert_eq!(result.unwrap().0.accels.len(), 1);",
+                "    assert_eq!(result.unwrap().1, 8);",
+                "    assert!(result.unwrap().0.accels.as_ptr().is_aligned_to::<AccelTy>());",
+                "    assert!(result.unwrap().0.accels.len() > 0);",
+                "    assert!(result.unwrap().0.accels[0] == 0);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x02]; // u32 (2)",
+                "    let bytes = &[0; 3]; // less than required length",
+                "",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(bytes);",
+                "    let _ = result;",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes = &[0; 3]; // less than required length",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(bytes);",
+                "    assert!(result.is_err());  // Expecting an error due to insufficient length",
+                "    assert_eq!(result.err().unwrap(), DeserializeError::buffer_too_small(\"accelerators\"));  // Check specific error type"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x02]; // u32 (2)",
+                "    let bytes = &[0; 3]; // less than required length",
+                "",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(bytes);",
+                "    let _ = result;",
+                "    let bytes = &[0; 3]; // less than required length",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(bytes);",
+                "    assert!(result.is_err());  // Expecting an error due to insufficient length",
+                "    assert_eq!(result.err().unwrap(), DeserializeError::buffer_too_small(\"accelerators\"));  // Check specific error type",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x01]; // u32 (1)",
+                "    let mut bytes = Vec::new();",
+                "    bytes.extend_from_slice(slice);",
+                "    bytes.extend_from_slice(&[1, 2, 3]); // invalid alignment for u32",
+                "",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(&bytes);",
+                "    let _ = result;",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result.is_err(), true);",
+                "    assert!(result.unwrap_err().is_alignment_mismatch());",
+                "    assert_eq!(result.unwrap_err().alignment_expected(), 4);",
+                "    assert_eq!(result.unwrap_err().address(), 1);"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x01]; // u32 (1)",
+                "    let mut bytes = Vec::new();",
+                "    bytes.extend_from_slice(slice);",
+                "    bytes.extend_from_slice(&[1, 2, 3]); // invalid alignment for u32",
+                "",
+                "    let result = Accels::<&[AccelTy]>::from_bytes_unchecked(&bytes);",
+                "    let _ = result;",
+                "    assert_eq!(result.is_err(), true);",
+                "    assert!(result.unwrap_err().is_alignment_mismatch());",
+                "    assert_eq!(result.unwrap_err().alignment_expected(), 4);",
+                "    assert_eq!(result.unwrap_err().address(), 1);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: wire::try_read_u32_as_usize(slice, \"accelerators length\")? at line 192 is Ok/Some\n",
+        "precondition: wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")? at line 198 is Ok/Some\n",
+        "precondition: wire::add(\n            wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")?,\n            1,\n            \"total number of accel_tys\",\n        )? at line 197 is Ok/Some\n",
+        "precondition: wire::mul(\n            ACCEL_TY_SIZE,\n            accel_tys_len,\n            \"total number of bytes in accelerators\",\n        )? at line 202 is Err/None\n"
+      ],
+      "input_infer": "slice containing at least 8 bytes, where the first 4 bytes represent a valid u32 (0 < accel_len <= 2^32 - 1), followed by 8 or more bytes (aligning to 4-byte boundaries) that represent the accelerators as u32 values\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let sample_data: [u8; 12] = [0x02, 0x00, 0x00, 0x00, // accel_len = 2 (valid)",
+                "                                  0x01, 0x00, 0x00, 0x00, // first u32 value",
+                "                                  0x02, 0x00, 0x00, 0x00]; // second u32 value",
+                "    let slice = &sample_data[..];",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let sample_data_valid: [u8; 12] = [0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];",
+                "    let slice_valid = &sample_data_valid[..];",
+                "    let result_valid = Accels::from_bytes_unchecked(slice_valid);",
+                "    assert!(result_valid.is_ok());",
+                "    ",
+                "    let sample_data_invalid_length: [u8; 8] = [0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00];",
+                "    let slice_invalid_length = &sample_data_invalid_length[..];",
+                "    let result_invalid_length = Accels::from_bytes_unchecked(slice_invalid_length);",
+                "    assert!(result_invalid_length.is_err());",
+                "    ",
+                "    let sample_data_with_overflow: [u8; 16] = [0xFFFFFFFF, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00];",
+                "    let slice_with_overflow = &sample_data_with_overflow[..];",
+                "    let result_with_overflow = Accels::from_bytes_unchecked(slice_with_overflow);",
+                "    assert!(result_with_overflow.is_err());",
+                "    ",
+                "    let sample_data_alignment_issue: [u8; 12] = [0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x01];",
+                "    let slice_alignment_issue = &sample_data_alignment_issue[..];",
+                "    let result_alignment_issue = Accels::from_bytes_unchecked(slice_alignment_issue);",
+                "    assert!(result_alignment_issue.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let sample_data: [u8; 12] = [0x02, 0x00, 0x00, 0x00, // accel_len = 2 (valid)",
+                "                                  0x01, 0x00, 0x00, 0x00, // first u32 value",
+                "                                  0x02, 0x00, 0x00, 0x00]; // second u32 value",
+                "    let slice = &sample_data[..];",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    let sample_data_valid: [u8; 12] = [0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];",
+                "    let slice_valid = &sample_data_valid[..];",
+                "    let result_valid = Accels::from_bytes_unchecked(slice_valid);",
+                "    assert!(result_valid.is_ok());",
+                "    ",
+                "    let sample_data_invalid_length: [u8; 8] = [0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00];",
+                "    let slice_invalid_length = &sample_data_invalid_length[..];",
+                "    let result_invalid_length = Accels::from_bytes_unchecked(slice_invalid_length);",
+                "    assert!(result_invalid_length.is_err());",
+                "    ",
+                "    let sample_data_with_overflow: [u8; 16] = [0xFFFFFFFF, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00];",
+                "    let slice_with_overflow = &sample_data_with_overflow[..];",
+                "    let result_with_overflow = Accels::from_bytes_unchecked(slice_with_overflow);",
+                "    assert!(result_with_overflow.is_err());",
+                "    ",
+                "    let sample_data_alignment_issue: [u8; 12] = [0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x01];",
+                "    let slice_alignment_issue = &sample_data_alignment_issue[..];",
+                "    let result_alignment_issue = Accels::from_bytes_unchecked(slice_alignment_issue);",
+                "    assert!(result_alignment_issue.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let sample_data: [u8; 8] = [0x01, 0x00, 0x00, 0x00, // accel_len = 1 (valid)",
+                "                                0x01, 0x00, 0x00, 0x00]; // one u32 value",
+                "    let slice = &sample_data[..];",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let sample_data: [u8; 8] = [0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]; // accel_len = 1 (valid)",
+                "    let slice = &sample_data[..];",
+                "    assert!(Accels::from_bytes_unchecked(slice).is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let sample_data: [u8; 8] = [0x01, 0x00, 0x00, 0x00, // accel_len = 1 (valid)",
+                "                                0x01, 0x00, 0x00, 0x00]; // one u32 value",
+                "    let slice = &sample_data[..];",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    let sample_data: [u8; 8] = [0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]; // accel_len = 1 (valid)",
+                "    let slice = &sample_data[..];",
+                "    assert!(Accels::from_bytes_unchecked(slice).is_ok());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let sample_data: [u8; 16] = [0xFF, 0xFF, 0xFF, 0xFF, // accel_len = 4294967295 (max u32)",
+                "                                  0x00, 0x00, 0x00, 0x00, ",
+                "                                  0x00, 0x00, 0x00, 0x00]; // Two u32 values",
+                "    let slice = &sample_data[..];",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let sample_data: [u8; 16] = [0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    let slice = &sample_data[..];",
+                "    assert!(Accels::from_bytes_unchecked(slice).is_err());",
+                "    assert!(matches!(Accels::from_bytes_unchecked(slice), Err(DeserializeError::arithmetic_overflow(\"total number of bytes in accelerators\"))));"
+              ],
+              "code": [
+                "{",
+                "    let sample_data: [u8; 16] = [0xFF, 0xFF, 0xFF, 0xFF, // accel_len = 4294967295 (max u32)",
+                "                                  0x00, 0x00, 0x00, 0x00, ",
+                "                                  0x00, 0x00, 0x00, 0x00]; // Two u32 values",
+                "    let slice = &sample_data[..];",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    let sample_data: [u8; 16] = [0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    let slice = &sample_data[..];",
+                "    assert!(Accels::from_bytes_unchecked(slice).is_err());",
+                "    assert!(matches!(Accels::from_bytes_unchecked(slice), Err(DeserializeError::arithmetic_overflow(\"total number of bytes in accelerators\"))));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let sample_data: [u8; 4] = [0x00, 0x00, 0x00, 0x00]; // accel_len = 0 (valid but empty)",
+                "    let slice = &sample_data[..];",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let sample_data: [u8; 4] = [0x00, 0x00, 0x00, 0x00];",
+                "    let slice = &sample_data[..];",
+                "    let result = Accels::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, remaining) = result.unwrap();",
+                "    assert_eq!(remaining, 0);",
+                "    assert_eq!(accels.accels.len(), 0);"
+              ],
+              "code": [
+                "{",
+                "    let sample_data: [u8; 4] = [0x00, 0x00, 0x00, 0x00]; // accel_len = 0 (valid but empty)",
+                "    let slice = &sample_data[..];",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    let sample_data: [u8; 4] = [0x00, 0x00, 0x00, 0x00];",
+                "    let slice = &sample_data[..];",
+                "    let result = Accels::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, remaining) = result.unwrap();",
+                "    assert_eq!(remaining, 0);",
+                "    assert_eq!(accels.accels.len(), 0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let sample_data: [u8; 12] = [0x02, 0x00, 0x00, 0x00, // accel_len = 2 (valid)",
+                "                                  0x01, 0x00, 0x00, 0x00, // first u32 value",
+                "                                  0x02, 0x00, 0x00, 0x00]; // second u32 value",
+                "    let slice = &sample_data[1..]; // Start slice not aligned",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let sample_data: [u8; 12] = [0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];",
+                "    let slice = &sample_data;",
+                "    let result = Accels::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, size) = result.unwrap();",
+                "    assert_eq!(size, 0);",
+                "    assert_eq!(accels.accels.len(), 2);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    assert_eq!(accels.accels[1], 2);",
+                "    let slice = &sample_data[0..1];",
+                "    let result = Accels::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let sample_data: [u8; 12] = [0x02, 0x00, 0x00, 0x00, // accel_len = 2 (valid)",
+                "                                  0x01, 0x00, 0x00, 0x00, // first u32 value",
+                "                                  0x02, 0x00, 0x00, 0x00]; // second u32 value",
+                "    let slice = &sample_data[1..]; // Start slice not aligned",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    let sample_data: [u8; 12] = [0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];",
+                "    let slice = &sample_data;",
+                "    let result = Accels::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, size) = result.unwrap();",
+                "    assert_eq!(size, 0);",
+                "    assert_eq!(accels.accels.len(), 2);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    assert_eq!(accels.accels[1], 2);",
+                "    let slice = &sample_data[0..1];",
+                "    let result = Accels::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "precondition: wire::try_read_u32_as_usize(slice, \"accelerators length\")? at line 192 is Ok/Some\n",
+        "precondition: wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")? at line 198 is Ok/Some\n",
+        "precondition: wire::add(\n            wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")?,\n            1,\n            \"total number of accel_tys\",\n        )? at line 197 is Ok/Some\n",
+        "precondition: wire::mul(\n            ACCEL_TY_SIZE,\n            accel_tys_len,\n            \"total number of bytes in accelerators\",\n        )? at line 202 is Ok/Some\n",
+        "precondition: wire::check_slice_len(slice, accel_tys_bytes_len, \"accelerators\")? at line 207 is Err/None\n"
+      ],
+      "input_infer": "slices with lengths where the first 4 bytes correctly represent a u32 value (between 1 and 2^32-1) followed by at least that many accelerators encoded as u32 elements (total length between 8 and 4 + 2^32 * 4), while ensuring the slice's size aligns with the u32 type; also test with non-aligned buffers and incorrect lengths to validate error handling.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: Vec<u8> = vec![",
+                "        0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "        0x12, 0x34, 0x56, 0x78  // first u32 accelerator",
+                "    ];",
+                "    let slice: &[u8] = &input;",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let input: Vec<u8> = vec![0x01, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78];",
+                "    let slice: &[u8] = &input;",
+                "    assert!(Accels::from_bytes_unchecked(slice).is_ok());",
+                "    assert_eq!(Accels::from_bytes_unchecked(slice).unwrap().1, 8);",
+                "    let invalid_input: Vec<u8> = vec![0x01, 0x00, 0x00, 0x00];",
+                "    let invalid_slice: &[u8] = &invalid_input;",
+                "    assert!(Accels::from_bytes_unchecked(invalid_slice).is_err());",
+                "    let overflow_input: Vec<u8> = vec![0xFF, 0xFF, 0xFF, 0xFF];",
+                "    let overflow_slice: &[u8] = &overflow_input;",
+                "    assert!(Accels::from_bytes_unchecked(overflow_slice).is_err());",
+                "    let empty_input: Vec<u8> = vec![];",
+                "    let empty_slice: &[u8] = &empty_input;",
+                "    assert!(Accels::from_bytes_unchecked(empty_slice).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let input: Vec<u8> = vec![",
+                "        0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "        0x12, 0x34, 0x56, 0x78  // first u32 accelerator",
+                "    ];",
+                "    let slice: &[u8] = &input;",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    let input: Vec<u8> = vec![0x01, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78];",
+                "    let slice: &[u8] = &input;",
+                "    assert!(Accels::from_bytes_unchecked(slice).is_ok());",
+                "    assert_eq!(Accels::from_bytes_unchecked(slice).unwrap().1, 8);",
+                "    let invalid_input: Vec<u8> = vec![0x01, 0x00, 0x00, 0x00];",
+                "    let invalid_slice: &[u8] = &invalid_input;",
+                "    assert!(Accels::from_bytes_unchecked(invalid_slice).is_err());",
+                "    let overflow_input: Vec<u8> = vec![0xFF, 0xFF, 0xFF, 0xFF];",
+                "    let overflow_slice: &[u8] = &overflow_input;",
+                "    assert!(Accels::from_bytes_unchecked(overflow_slice).is_err());",
+                "    let empty_input: Vec<u8> = vec![];",
+                "    let empty_slice: &[u8] = &empty_input;",
+                "    assert!(Accels::from_bytes_unchecked(empty_slice).is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: Vec<u8> = vec![",
+                "        0x02, 0x00, 0x00, 0x00, // accel_len = 2",
+                "        0x12, 0x34, 0x56, 0x78, // first u32 accelerator",
+                "        0x9A, 0xBC, 0xDE, 0xF0  // second u32 accelerator",
+                "    ];",
+                "    let slice: &[u8] = &input;",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(wire::try_read_u32_as_usize(slice, \"accelerators length\").is_ok(), true);",
+                "    assert!(wire::mul(2, 2, \"total number of accelerator accel_tys\").is_ok());",
+                "    assert!(wire::add(wire::mul(2, 2, \"total number of accelerator accel_tys\").unwrap(), 1, \"total number of accel_tys\").is_ok());",
+                "    assert!(wire::mul(ACCEL_TY_SIZE, wire::add(wire::mul(2, 2, \"total number of accelerator accel_tys\").unwrap(), 1, \"total number of accel_tys\").unwrap(), \"total number of bytes in accelerators\").is_ok());",
+                "    assert!(wire::check_slice_len(slice, 8, \"accelerators\").is_err());"
+              ],
+              "code": [
+                "{",
+                "    let input: Vec<u8> = vec![",
+                "        0x02, 0x00, 0x00, 0x00, // accel_len = 2",
+                "        0x12, 0x34, 0x56, 0x78, // first u32 accelerator",
+                "        0x9A, 0xBC, 0xDE, 0xF0  // second u32 accelerator",
+                "    ];",
+                "    let slice: &[u8] = &input;",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    assert_eq!(wire::try_read_u32_as_usize(slice, \"accelerators length\").is_ok(), true);",
+                "    assert!(wire::mul(2, 2, \"total number of accelerator accel_tys\").is_ok());",
+                "    assert!(wire::add(wire::mul(2, 2, \"total number of accelerator accel_tys\").unwrap(), 1, \"total number of accel_tys\").is_ok());",
+                "    assert!(wire::mul(ACCEL_TY_SIZE, wire::add(wire::mul(2, 2, \"total number of accelerator accel_tys\").unwrap(), 1, \"total number of accel_tys\").unwrap(), \"total number of bytes in accelerators\").is_ok());",
+                "    assert!(wire::check_slice_len(slice, 8, \"accelerators\").is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let input: Vec<u8> = vec![",
+                "        0xFFFFFFFF, 0x00, 0x00, 0x00, // accel_len = 4294967295 (max u32)",
+                "    ]; // This is just to test edge; not a valid case for accelerators",
+                "    let buffer_size = 4 + (4 * (u32::MAX as usize)); ",
+                "    let mut input = input;",
+                "    input.resize(buffer_size, 0); // Fill with zeros up to the boundary",
+                "    let slice: &[u8] = &input;",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(Accels::from_bytes_unchecked(slice).is_err());",
+                "    assert_eq!(slice.len(), buffer_size);",
+                "    assert_eq!(slice[0..4], [0xFF, 0xFF, 0xFF, 0xFF]);",
+                "    assert!(slice[4..].iter().all(|&x| x == 0));",
+                "    assert!(std::mem::align_of::<AccelTy>() == 4);",
+                "    assert!(slice.as_ptr().as_usize() % std::mem::align_of::<AccelTy>() == 0);",
+                "    assert!(wire::check_slice_len(slice, buffer_size, \"accelerators\").is_err());",
+                "    assert!(wire::mul(u32::MAX as usize, 2, \"total number of accelerator accel_tys\").is_err());",
+                "    assert!(wire::add(",
+                "    wire::mul(u32::MAX as usize, 2, \"total number of accelerator accel_tys\").unwrap_err(),",
+                "    1,",
+                "    \"total number of accel_tys\"",
+                "    ).is_err());",
+                "    assert!(wire::mul(ACCEL_TY_SIZE, u32::MAX as usize, \"total number of bytes in accelerators\").is_err());",
+                "    assert_eq!(wire::try_read_u32_as_usize(slice, \"accelerators length\").is_ok(), true);"
+              ],
+              "code": [
+                "{",
+                "    let input: Vec<u8> = vec![",
+                "        0xFFFFFFFF, 0x00, 0x00, 0x00, // accel_len = 4294967295 (max u32)",
+                "    ]; // This is just to test edge; not a valid case for accelerators",
+                "    let buffer_size = 4 + (4 * (u32::MAX as usize)); ",
+                "    let mut input = input;",
+                "    input.resize(buffer_size, 0); // Fill with zeros up to the boundary",
+                "    let slice: &[u8] = &input;",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    assert!(Accels::from_bytes_unchecked(slice).is_err());",
+                "    assert_eq!(slice.len(), buffer_size);",
+                "    assert_eq!(slice[0..4], [0xFF, 0xFF, 0xFF, 0xFF]);",
+                "    assert!(slice[4..].iter().all(|&x| x == 0));",
+                "    assert!(std::mem::align_of::<AccelTy>() == 4);",
+                "    assert!(slice.as_ptr().as_usize() % std::mem::align_of::<AccelTy>() == 0);",
+                "    assert!(wire::check_slice_len(slice, buffer_size, \"accelerators\").is_err());",
+                "    assert!(wire::mul(u32::MAX as usize, 2, \"total number of accelerator accel_tys\").is_err());",
+                "    assert!(wire::add(",
+                "    wire::mul(u32::MAX as usize, 2, \"total number of accelerator accel_tys\").unwrap_err(),",
+                "    1,",
+                "    \"total number of accel_tys\"",
+                "    ).is_err());",
+                "    assert!(wire::mul(ACCEL_TY_SIZE, u32::MAX as usize, \"total number of bytes in accelerators\").is_err());",
+                "    assert_eq!(wire::try_read_u32_as_usize(slice, \"accelerators length\").is_ok(), true);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let input: Vec<u8> = vec![",
+                "        0x02, 0x00, 0x00, 0x00, // accel_len = 2",
+                "        0x12, 0x34, 0x56, 0x78, // first u32 accelerator",
+                "        0x9A, 0xBC, 0xDE, 0xF0  // second u32 accelerator",
+                "    ];",
+                "    let slice: &[u8] = &input[1..]; // Slice starts misaligned",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let input: Vec<u8> = vec![0x02, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0];",
+                "    let slice: &[u8] = &input[1..];",
+                "    let result = Accels::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let input: Vec<u8> = vec![",
+                "        0x02, 0x00, 0x00, 0x00, // accel_len = 2",
+                "        0x12, 0x34, 0x56, 0x78, // first u32 accelerator",
+                "        0x9A, 0xBC, 0xDE, 0xF0  // second u32 accelerator",
+                "    ];",
+                "    let slice: &[u8] = &input[1..]; // Slice starts misaligned",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    let input: Vec<u8> = vec![0x02, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0];",
+                "    let slice: &[u8] = &input[1..];",
+                "    let result = Accels::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let input: Vec<u8> = vec![",
+                "        0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "        0x12, 0x34, 0x56       // Incomplete u32 (only 3 bytes)",
+                "    ];",
+                "    let slice: &[u8] = &input;",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(wire::try_read_u32_as_usize(slice, \"accelerators length\").is_ok(), true);",
+                "    assert_eq!(wire::mul(accel_len, 2, \"total number of accelerator accel_tys\").is_ok(), true);",
+                "    assert_eq!(wire::add(wire::mul(accel_len, 2, \"total number of accelerator accel_tys\").unwrap(), 1, \"total number of accel_tys\").is_ok(), true);",
+                "    assert_eq!(wire::mul(ACCEL_TY_SIZE, accel_tys_len, \"total number of bytes in accelerators\").is_ok(), true);",
+                "    assert_eq!(wire::check_slice_len(slice, accel_tys_bytes_len, \"accelerators\").is_err(), true);"
+              ],
+              "code": [
+                "{",
+                "    let input: Vec<u8> = vec![",
+                "        0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "        0x12, 0x34, 0x56       // Incomplete u32 (only 3 bytes)",
+                "    ];",
+                "    let slice: &[u8] = &input;",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    assert_eq!(wire::try_read_u32_as_usize(slice, \"accelerators length\").is_ok(), true);",
+                "    assert_eq!(wire::mul(accel_len, 2, \"total number of accelerator accel_tys\").is_ok(), true);",
+                "    assert_eq!(wire::add(wire::mul(accel_len, 2, \"total number of accelerator accel_tys\").unwrap(), 1, \"total number of accel_tys\").is_ok(), true);",
+                "    assert_eq!(wire::mul(ACCEL_TY_SIZE, accel_tys_len, \"total number of bytes in accelerators\").is_ok(), true);",
+                "    assert_eq!(wire::check_slice_len(slice, accel_tys_bytes_len, \"accelerators\").is_err(), true);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let input: Vec<u8> = vec![0; 0]; // Empty slice",
+                "    let slice: &[u8] = &input;",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let input: Vec<u8> = vec![0; 0]; // Empty slice",
+                "    let slice: &[u8] = &input;",
+                "    assert!(Accels::from_bytes_unchecked(slice).is_err());",
+                "    assert!(Accels::from_bytes_unchecked(slice).unwrap_err().is_a(DeserializeError::buffer_too_small(\"accelerators\")));"
+              ],
+              "code": [
+                "{",
+                "    let input: Vec<u8> = vec![0; 0]; // Empty slice",
+                "    let slice: &[u8] = &input;",
+                "    let _ = Accels::from_bytes_unchecked(slice);",
+                "    let input: Vec<u8> = vec![0; 0]; // Empty slice",
+                "    let slice: &[u8] = &input;",
+                "    assert!(Accels::from_bytes_unchecked(slice).is_err());",
+                "    assert!(Accels::from_bytes_unchecked(slice).unwrap_err().is_a(DeserializeError::buffer_too_small(\"accelerators\")));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "precondition: wire::try_read_u32_as_usize(slice, \"accelerators length\")? at line 192 is Ok/Some\n",
+        "precondition: wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")? at line 198 is Ok/Some\n",
+        "precondition: wire::add(\n            wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")?,\n            1,\n            \"total number of accel_tys\",\n        )? at line 197 is Ok/Some\n",
+        "precondition: wire::mul(\n            ACCEL_TY_SIZE,\n            accel_tys_len,\n            \"total number of bytes in accelerators\",\n        )? at line 202 is Ok/Some\n",
+        "precondition: wire::check_slice_len(slice, accel_tys_bytes_len, \"accelerators\")? at line 207 is Ok/Some\n",
+        "precondition: wire::check_alignment::<AccelTy>(slice)? at line 208 is Err/None\n"
+      ],
+      "input_infer": "slice input must be a byte array of at least 9 bytes (1 + 4 + 4) with appropriate alignment for u32, containing a valid u32 length followed by well-formed accelerators; valid lengths of accelerators can be from 0 to 2^31-1, and the length of the slice must exactly support these accelerators with 4 bytes for the length and align properly to u32.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[",
+                "        0, 0, 0, 2, // accel_len = 2 (2 accelerators)",
+                "        1, 0, 0, 0, // first accelerator (u32)",
+                "        2, 0, 0, 0, // second accelerator (u32)",
+                "    ];",
+                "    let result = Accels::from_bytes_unchecked(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let (accels, remaining) = result.unwrap();",
+                "    assert_eq!(accels.accels.len(), 3);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    assert_eq!(accels.accels[1], 2);",
+                "    assert_eq!(remaining, 0);"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[",
+                "        0, 0, 0, 2, // accel_len = 2 (2 accelerators)",
+                "        1, 0, 0, 0, // first accelerator (u32)",
+                "        2, 0, 0, 0, // second accelerator (u32)",
+                "    ];",
+                "    let result = Accels::from_bytes_unchecked(bytes);",
+                "    assert!(result.is_ok());",
+                "    let (accels, remaining) = result.unwrap();",
+                "    assert_eq!(accels.accels.len(), 3);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    assert_eq!(accels.accels[1], 2);",
+                "    assert_eq!(remaining, 0);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[",
+                "        0, 0, 0, 0, // accel_len = 0 (0 accelerators)",
+                "    ];",
+                "    let result = Accels::from_bytes_unchecked(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes: &[u8] = &[0, 0, 0, 0];",
+                "    assert_eq!(result, Ok((Accels { accels: &[] }, 4)));",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().0.accels.len(), 0);",
+                "    assert_eq!(result.unwrap().1, 4);"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[",
+                "        0, 0, 0, 0, // accel_len = 0 (0 accelerators)",
+                "    ];",
+                "    let result = Accels::from_bytes_unchecked(bytes);",
+                "    let bytes: &[u8] = &[0, 0, 0, 0];",
+                "    assert_eq!(result, Ok((Accels { accels: &[] }, 4)));",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().0.accels.len(), 0);",
+                "    assert_eq!(result.unwrap().1, 4);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[",
+                "        0, 0, 0, 1, // accel_len = 1 (1 accelerator)",
+                "        5, 0, 0, 0, // first accelerator (u32)",
+                "    ];",
+                "    let result = Accels::from_bytes_unchecked(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result.is_ok(), true);",
+                "    let (accels, remaining) = result.unwrap();",
+                "    assert_eq!(remaining, 0);",
+                "    assert_eq!(accels.accels.len(), 1);",
+                "    assert_eq!(accels.accels[0], 5);",
+                "    assert!(std::mem::align_of_val(&accels.accels) == core::mem::align_of::<AccelTy>());"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[",
+                "        0, 0, 0, 1, // accel_len = 1 (1 accelerator)",
+                "        5, 0, 0, 0, // first accelerator (u32)",
+                "    ];",
+                "    let result = Accels::from_bytes_unchecked(bytes);",
+                "    assert_eq!(result.is_ok(), true);",
+                "    let (accels, remaining) = result.unwrap();",
+                "    assert_eq!(remaining, 0);",
+                "    assert_eq!(accels.accels.len(), 1);",
+                "    assert_eq!(accels.accels[0], 5);",
+                "    assert!(std::mem::align_of_val(&accels.accels) == core::mem::align_of::<AccelTy>());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut bytes = vec![0; 4 + 4 * (std::u32::MAX as usize)];",
+                "    bytes[0..4].copy_from_slice(&(std::u32::MAX as u32).to_le_bytes());",
+                "    let offsets = (0..std::u32::MAX).map(|i| {",
+                "        let start = 4 + (i as usize) * 4;",
+                "        bytes[start..start + 4].copy_from_slice(&(i as u32).to_le_bytes());",
+                "    }).collect::<Vec<_>>();",
+                "    let result = Accels::from_bytes_unchecked(&bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    let mut bytes = vec![0; 4 + 4 * (std::u32::MAX as usize)];",
+                "    bytes[0..4].copy_from_slice(&(std::u32::MAX as u32).to_le_bytes());",
+                "    let offsets = (0..std::u32::MAX).map(|i| {",
+                "    let start = 4 + (i as usize) * 4;",
+                "    bytes[start..start + 4].copy_from_slice(&(i as u32).to_le_bytes());",
+                "    }).collect::<Vec<_>>();",
+                "    let result = Accels::from_bytes_unchecked(&bytes);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let mut invalid_bytes = vec![0; 3]; // Invalid length for accelerators",
+                "    let invalid_result = Accels::from_bytes_unchecked(&invalid_bytes);",
+                "    assert!(invalid_result.is_err());",
+                "    ",
+                "    let mut misaligned_bytes = vec![0; 4 + 4 * (std::u32::MAX as usize)];",
+                "    misaligned_bytes[0..4].copy_from_slice(&(std::u32::MAX as u32).to_le_bytes());",
+                "    misaligned_bytes.push(1); // Create a misalignment",
+                "    let misaligned_result = Accels::from_bytes_unchecked(&misaligned_bytes);",
+                "    assert!(misaligned_result.is_err());",
+                "    ",
+                "    let mut empty_bytes = vec![0; 4]; // Length of accelerators is 0",
+                "    empty_bytes[0..4].copy_from_slice(&(0 as u32).to_le_bytes());",
+                "    let empty_result = Accels::from_bytes_unchecked(&empty_bytes);",
+                "    assert!(empty_result.is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let mut bytes = vec![0; 4 + 4 * (std::u32::MAX as usize)];",
+                "    bytes[0..4].copy_from_slice(&(std::u32::MAX as u32).to_le_bytes());",
+                "    let offsets = (0..std::u32::MAX).map(|i| {",
+                "        let start = 4 + (i as usize) * 4;",
+                "        bytes[start..start + 4].copy_from_slice(&(i as u32).to_le_bytes());",
+                "    }).collect::<Vec<_>>();",
+                "    let result = Accels::from_bytes_unchecked(&bytes);",
+                "    let mut bytes = vec![0; 4 + 4 * (std::u32::MAX as usize)];",
+                "    bytes[0..4].copy_from_slice(&(std::u32::MAX as u32).to_le_bytes());",
+                "    let offsets = (0..std::u32::MAX).map(|i| {",
+                "    let start = 4 + (i as usize) * 4;",
+                "    bytes[start..start + 4].copy_from_slice(&(i as u32).to_le_bytes());",
+                "    }).collect::<Vec<_>>();",
+                "    let result = Accels::from_bytes_unchecked(&bytes);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let mut invalid_bytes = vec![0; 3]; // Invalid length for accelerators",
+                "    let invalid_result = Accels::from_bytes_unchecked(&invalid_bytes);",
+                "    assert!(invalid_result.is_err());",
+                "    ",
+                "    let mut misaligned_bytes = vec![0; 4 + 4 * (std::u32::MAX as usize)];",
+                "    misaligned_bytes[0..4].copy_from_slice(&(std::u32::MAX as u32).to_le_bytes());",
+                "    misaligned_bytes.push(1); // Create a misalignment",
+                "    let misaligned_result = Accels::from_bytes_unchecked(&misaligned_bytes);",
+                "    assert!(misaligned_result.is_err());",
+                "    ",
+                "    let mut empty_bytes = vec![0; 4]; // Length of accelerators is 0",
+                "    empty_bytes[0..4].copy_from_slice(&(0 as u32).to_le_bytes());",
+                "    let empty_result = Accels::from_bytes_unchecked(&empty_bytes);",
+                "    assert!(empty_result.is_ok());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "precondition: wire::try_read_u32_as_usize(slice, \"accelerators length\")? at line 192 is Ok/Some\n",
+        "precondition: wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")? at line 198 is Ok/Some\n",
+        "precondition: wire::add(\n            wire::mul(accel_len, 2, \"total number of accelerator accel_tys\")?,\n            1,\n            \"total number of accel_tys\",\n        )? at line 197 is Ok/Some\n",
+        "precondition: wire::mul(\n            ACCEL_TY_SIZE,\n            accel_tys_len,\n            \"total number of bytes in accelerators\",\n        )? at line 202 is Ok/Some\n",
+        "precondition: wire::check_slice_len(slice, accel_tys_bytes_len, \"accelerators\")? at line 207 is Ok/Some\n",
+        "precondition: wire::check_alignment::<AccelTy>(slice)? at line 208 is Ok/Some\n",
+        "expected return value/type: Ok((Accels { accels }, slice.as_ptr().as_usize() - slice_start))\n"
+      ],
+      "input_infer": "slice length >= 4, slice alignment % 4 == 0, accel_len in [1, 2147483647], each accel_tys bytes from slice each <= 4294967295, sufficient bytes to meet calculated accel_tys_bytes_len\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[",
+                "        0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "        0x01, 0x00, 0x00, 0x00, // first AccelTy",
+                "        0x02, 0x00, 0x00, 0x00, // second AccelTy (for valid offset)",
+                "        0x00, 0x00, 0x00, 0x00, // padding for alignment",
+                "        0x00, 0x00, 0x00, 0x00  // more padding",
+                "    ];",
+                "    let _ = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x02, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[",
+                "        0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "        0x01, 0x00, 0x00, 0x00, // first AccelTy",
+                "        0x02, 0x00, 0x00, 0x00, // second AccelTy (for valid offset)",
+                "        0x00, 0x00, 0x00, 0x00, // padding for alignment",
+                "        0x00, 0x00, 0x00, 0x00  // more padding",
+                "    ];",
+                "    let _ = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x02, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[",
+                "        0x02, 0x00, 0x00, 0x00, // accel_len = 2",
+                "        0x01, 0x00, 0x00, 0x00, // first AccelTy",
+                "        0x02, 0x00, 0x00, 0x00, // second AccelTy",
+                "        0x00, 0x00, 0x00, 0x00, // padding for alignment",
+                "        0x00, 0x00, 0x00, 0x00  // more padding",
+                "    ];",
+                "    let _ = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(slice), Ok((Accels { accels: &[1, 2] }, slice.len() - 20)));",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00];",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(slice), Ok((Accels { accels: &[3] }, slice.len() - 8)));",
+                "    ",
+                "    let slice: &[u8] = &[0x03, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00];",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(slice), Ok((Accels { accels: &[4, 5] }, slice.len() - 12)));",
+                "    ",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00];",
+                "    assert!(regex_automata::dfa::accel::from_bytes_unchecked(slice).is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01];",
+                "    assert!(regex_automata::dfa::accel::from_bytes_unchecked(slice).is_err());"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[",
+                "        0x02, 0x00, 0x00, 0x00, // accel_len = 2",
+                "        0x01, 0x00, 0x00, 0x00, // first AccelTy",
+                "        0x02, 0x00, 0x00, 0x00, // second AccelTy",
+                "        0x00, 0x00, 0x00, 0x00, // padding for alignment",
+                "        0x00, 0x00, 0x00, 0x00  // more padding",
+                "    ];",
+                "    let _ = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(slice), Ok((Accels { accels: &[1, 2] }, slice.len() - 20)));",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00];",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(slice), Ok((Accels { accels: &[3] }, slice.len() - 8)));",
+                "    ",
+                "    let slice: &[u8] = &[0x03, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00];",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(slice), Ok((Accels { accels: &[4, 5] }, slice.len() - 12)));",
+                "    ",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00];",
+                "    assert!(regex_automata::dfa::accel::from_bytes_unchecked(slice).is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01];",
+                "    assert!(regex_automata::dfa::accel::from_bytes_unchecked(slice).is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[",
+                "        0xFF, 0xFF, 0xFF, 0x7F, // accel_len = 2147483647",
+                "    ];",
+                "    let slice = {",
+                "        let accel_tys: Vec<u8> = (0..(2147483647 * 4))",
+                "            .map(|_| 0x00)",
+                "            .collect();",
+                "        [slice, &accel_tys[..]].concat()",
+                "    };",
+                "    let _ = regex_automata::dfa::accel::from_bytes_unchecked(&slice);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).is_ok(), true);",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).unwrap().1, slice.len() - 4);",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).unwrap().0.accels.len(), 2147483647 * 2);",
+                "    assert!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).is_ok());",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).unwrap().0.accels[0], 0x00);",
+                "    assert!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).is_ok());"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[",
+                "        0xFF, 0xFF, 0xFF, 0x7F, // accel_len = 2147483647",
+                "    ];",
+                "    let slice = {",
+                "        let accel_tys: Vec<u8> = (0..(2147483647 * 4))",
+                "            .map(|_| 0x00)",
+                "            .collect();",
+                "        [slice, &accel_tys[..]].concat()",
+                "    };",
+                "    let _ = regex_automata::dfa::accel::from_bytes_unchecked(&slice);",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).is_ok(), true);",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).unwrap().1, slice.len() - 4);",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).unwrap().0.accels.len(), 2147483647 * 2);",
+                "    assert!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).is_ok());",
+                "    assert_eq!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).unwrap().0.accels[0], 0x00);",
+                "    assert!(regex_automata::dfa::accel::from_bytes_unchecked(&slice).is_ok());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[",
+                "        0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "        0x01, 0x00, 0x00, 0x00, // first AccelTy",
+                "        0x00, 0x00, 0x00, 0x00, // padding for alignment",
+                "    ];",
+                "    let _ = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, remaining) = result.unwrap();",
+                "    assert_eq!(remaining, 0);",
+                "    assert_eq!(accels.accels.len(), 1);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, remaining) = result.unwrap();",
+                "    assert_eq!(remaining, 0);",
+                "    assert_eq!(accels.accels.len(), 2);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    assert_eq!(accels.accels[1], 2);",
+                "    ",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[",
+                "        0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "        0x01, 0x00, 0x00, 0x00, // first AccelTy",
+                "        0x00, 0x00, 0x00, 0x00, // padding for alignment",
+                "    ];",
+                "    let _ = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, remaining) = result.unwrap();",
+                "    assert_eq!(remaining, 0);",
+                "    assert_eq!(accels.accels.len(), 1);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, remaining) = result.unwrap();",
+                "    assert_eq!(remaining, 0);",
+                "    assert_eq!(accels.accels.len(), 2);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    assert_eq!(accels.accels[1], 2);",
+                "    ",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[",
+                "        0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "        0x01, 0x00, 0x00, 0x00, // first AccelTy",
+                "    ];",
+                "    let _ = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "}"
+              ],
+              "oracle": [
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, _) = result.unwrap();",
+                "    assert_eq!(accels.accels.len(), 1);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, _) = result.unwrap();",
+                "    assert_eq!(accels.accels.len(), 2);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    assert_eq!(accels.accels[1], 2);",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[",
+                "    0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "    0x01, 0x00, 0x00, 0x00, // first AccelTy",
+                "    0x02, 0x00, 0x00, // slice too small",
+                "    ];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let misaligned_slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(misaligned_slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[",
+                "        0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "        0x01, 0x00, 0x00, 0x00, // first AccelTy",
+                "    ];",
+                "    let _ = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, _) = result.unwrap();",
+                "    assert_eq!(accels.accels.len(), 1);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    ",
+                "    let slice: &[u8] = &[0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_ok());",
+                "    let (accels, _) = result.unwrap();",
+                "    assert_eq!(accels.accels.len(), 2);",
+                "    assert_eq!(accels.accels[0], 1);",
+                "    assert_eq!(accels.accels[1], 2);",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[",
+                "    0x01, 0x00, 0x00, 0x00, // accel_len = 1",
+                "    0x01, 0x00, 0x00, 0x00, // first AccelTy",
+                "    0x02, 0x00, 0x00, // slice too small",
+                "    ];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let misaligned_slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(misaligned_slice);",
+                "    assert!(result.is_err());",
+                "    ",
+                "    let slice: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x01];",
+                "    let result = regex_automata::dfa::accel::from_bytes_unchecked(slice);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,385 @@
+{
+  "name": "serde_json::ser::to_vec_pretty",
+  "mod_info": {
+    "name": "ser",
+    "loc": "src/lib.rs:423:1:423:13"
+  },
+  "visible": true,
+  "loc": "src/ser.rs:2221:1:2228:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: to_writer_pretty(&mut writer, value) matches core::result::Result::Err(err) at line 2226 is true\n",
+        "expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "Input: Invalid types for serialization (e.g. non-serializable types or structs with non-string map keys).\n",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::Arc;",
+            "use std::collections::HashMap;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct InvalidStruct;",
+                "",
+                "    let result: Result<Vec<u8>> = to_vec_pretty(&InvalidStruct);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());"
+              ],
+              "code": [
+                "{",
+                "    struct InvalidStruct;",
+                "",
+                "    let result: Result<Vec<u8>> = to_vec_pretty(&InvalidStruct);",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::collections::HashMap;",
+                "",
+                "    let mut map: HashMap<i32, i32> = HashMap::new();",
+                "    map.insert(1, 2);",
+                "",
+                "    let result: Result<Vec<u8>> = to_vec_pretty(&map);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert!(matches!(result, Err(_)));",
+                "    assert!(result.unwrap_err().code() == ErrorCode::Serialization);",
+                "    assert!(result.unwrap_err().to_string().contains(\"non-string keys\"));"
+              ],
+              "code": [
+                "{",
+                "    use std::collections::HashMap;",
+                "",
+                "    let mut map: HashMap<i32, i32> = HashMap::new();",
+                "    map.insert(1, 2);",
+                "",
+                "    let result: Result<Vec<u8>> = to_vec_pretty(&map);",
+                "    assert!(result.is_err());",
+                "    assert!(matches!(result, Err(_)));",
+                "    assert!(result.unwrap_err().code() == ErrorCode::Serialization);",
+                "    assert!(result.unwrap_err().to_string().contains(\"non-string keys\"));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::sync::Arc;",
+                "",
+                "    let invalid_data: Arc<i32> = Arc::new(5);",
+                "",
+                "    let result: Result<Vec<u8>> = to_vec_pretty(&invalid_data);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert!(matches!(result, Err(_)));"
+              ],
+              "code": [
+                "{",
+                "    use std::sync::Arc;",
+                "",
+                "    let invalid_data: Arc<i32> = Arc::new(5);",
+                "",
+                "    let result: Result<Vec<u8>> = to_vec_pretty(&invalid_data);",
+                "    assert!(result.is_err());",
+                "    assert!(matches!(result, Err(_)));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: to_writer_pretty(&mut writer, value) matches core::result::Result::Ok(val) at line 2226 is true\n",
+        "precondition: to_writer_pretty(&mut writer, value) matches core::result::Result::Ok(val) at line 2226 is true\n",
+        "expected return value/type: Ok(writer)\n"
+      ],
+      "input_infer": "value must be a serializable data structure (e.g., structs, arrays, maps with string keys only, etc.), and should not contain non-string map keys or invalid serialization types (like circular references or unsupported data types), so test with simple data structures, edge cases like empty structs/maps/arrays, and complex nested structures with valid serialization paths, ensuring both boundary and typical conditions are tested.\n",
+      "answers": [
+        {
+          "uses": [
+            "use std::collections::HashMap;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(serde::Serialize)]",
+                "    struct EmptyStruct;",
+                "",
+                "    let value = EmptyStruct;",
+                "    let result = to_vec_pretty(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), vec![]);"
+              ],
+              "code": [
+                "{",
+                "    #[derive(serde::Serialize)]",
+                "    struct EmptyStruct;",
+                "",
+                "    let value = EmptyStruct;",
+                "    let result = to_vec_pretty(&value);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), vec![]);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(serde::Serialize)]",
+                "    struct TestStruct {",
+                "        name: String,",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let value = TestStruct {",
+                "        name: String::from(\"test\"),",
+                "        value: 42,",
+                "    };",
+                "    let result = to_vec_pretty(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let writer = result.unwrap();",
+                "    assert_eq!(writer, br#\"{\"name\":\"test\",\"value\":42}\"#);"
+              ],
+              "code": [
+                "{",
+                "    #[derive(serde::Serialize)]",
+                "    struct TestStruct {",
+                "        name: String,",
+                "        value: i32,",
+                "    }",
+                "",
+                "    let value = TestStruct {",
+                "        name: String::from(\"test\"),",
+                "        value: 42,",
+                "    };",
+                "    let result = to_vec_pretty(&value);",
+                "    assert!(result.is_ok());",
+                "    let writer = result.unwrap();",
+                "    assert_eq!(writer, br#\"{\"name\":\"test\",\"value\":42}\"#);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let value: Vec<i32> = Vec::new();",
+                "    let result = to_vec_pretty(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Ok(Vec::new()));",
+                "    assert!(result.is_ok());",
+                "    assert!(result.unwrap().is_empty());",
+                "    assert_eq!(result.unwrap_err(), None);"
+              ],
+              "code": [
+                "{",
+                "    let value: Vec<i32> = Vec::new();",
+                "    let result = to_vec_pretty(&value);",
+                "    assert_eq!(result, Ok(Vec::new()));",
+                "    assert!(result.is_ok());",
+                "    assert!(result.unwrap().is_empty());",
+                "    assert_eq!(result.unwrap_err(), None);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let value = vec![1, 2, 3];",
+                "    let result = to_vec_pretty(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), b\"[\\n  1,\\n  2,\\n  3\\n]\");"
+              ],
+              "code": [
+                "{",
+                "    let value = vec![1, 2, 3];",
+                "    let result = to_vec_pretty(&value);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), b\"[\\n  1,\\n  2,\\n  3\\n]\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::collections::HashMap;",
+                "",
+                "    let value: HashMap<String, String> = HashMap::new();",
+                "    let result = to_vec_pretty(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(matches!(result, Ok(_)));",
+                "    assert_eq!(result.unwrap().len(), 0);",
+                "    assert!(result.unwrap().is_empty());",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.is_err(), false);",
+                "    assert!(result.unwrap().contains(&b'{'));"
+              ],
+              "code": [
+                "{",
+                "    use std::collections::HashMap;",
+                "",
+                "    let value: HashMap<String, String> = HashMap::new();",
+                "    let result = to_vec_pretty(&value);",
+                "    assert!(matches!(result, Ok(_)));",
+                "    assert_eq!(result.unwrap().len(), 0);",
+                "    assert!(result.unwrap().is_empty());",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.is_err(), false);",
+                "    assert!(result.unwrap().contains(&b'{'));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    use std::collections::HashMap;",
+                "",
+                "    let mut value = HashMap::new();",
+                "    value.insert(String::from(\"key1\"), String::from(\"value1\"));",
+                "    value.insert(String::from(\"key2\"), String::from(\"value2\"));",
+                "    let result = to_vec_pretty(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let writer = result.unwrap();",
+                "    assert_eq!(writer, b\"{\\n  \\\"key1\\\": \\\"value1\\\",\\n  \\\"key2\\\": \\\"value2\\\"\\n}\");"
+              ],
+              "code": [
+                "{",
+                "    use std::collections::HashMap;",
+                "",
+                "    let mut value = HashMap::new();",
+                "    value.insert(String::from(\"key1\"), String::from(\"value1\"));",
+                "    value.insert(String::from(\"key2\"), String::from(\"value2\"));",
+                "    let result = to_vec_pretty(&value);",
+                "    assert!(result.is_ok());",
+                "    let writer = result.unwrap();",
+                "    assert_eq!(writer, b\"{\\n  \\\"key1\\\": \\\"value1\\\",\\n  \\\"key2\\\": \\\"value2\\\"\\n}\");",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(serde::Serialize)]",
+                "    struct InnerStruct {",
+                "        inner_value: String,",
+                "    }",
+                "",
+                "    #[derive(serde::Serialize)]",
+                "    struct OuterStruct {",
+                "        inner: InnerStruct,",
+                "        outer_value: i32,",
+                "    }",
+                "",
+                "    let value = OuterStruct {",
+                "        inner: InnerStruct {",
+                "            inner_value: String::from(\"inner\"),",
+                "        },",
+                "        outer_value: 100,",
+                "    };",
+                "    let result = to_vec_pretty(&value);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let expected_output = br#\"{ \"inner\": { \"inner_value\": \"inner\" }, \"outer_value\": 100 }\"#;",
+                "    assert_eq!(result.unwrap(), expected_output.to_vec());"
+              ],
+              "code": [
+                "{",
+                "    #[derive(serde::Serialize)]",
+                "    struct InnerStruct {",
+                "        inner_value: String,",
+                "    }",
+                "",
+                "    #[derive(serde::Serialize)]",
+                "    struct OuterStruct {",
+                "        inner: InnerStruct,",
+                "        outer_value: i32,",
+                "    }",
+                "",
+                "    let value = OuterStruct {",
+                "        inner: InnerStruct {",
+                "            inner_value: String::from(\"inner\"),",
+                "        },",
+                "        outer_value: 100,",
+                "    };",
+                "    let result = to_vec_pretty(&value);",
+                "    assert!(result.is_ok());",
+                "    let expected_output = br#\"{ \"inner\": { \"inner_value\": \"inner\" }, \"outer_value\": 100 }\"#;",
+                "    assert_eq!(result.unwrap(), expected_output.to_vec());",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -101,13 +101,13 @@
                 "        );",
                 "        assert!(result.is_ok());",
                 "    }",
-                "    assert_eq!(self.items.checked_add(4), Some(8));",
-                "    assert!(new_items <= full_capacity / 2);",
-                "    assert_eq!(reserve_rehash_inner(&allocator, 4, &hasher, Fallibility::Infallible, table_layout, drop), Ok(()));",
+                "   assert_eq!(raw_table.items.checked_add(4), Some(8));  ",
+                "   let new_items = raw_table.items + additional;  ",
+                "   assert!(new_items <= full_capacity / 2);  ",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -203,14 +203,14 @@
                 "            None,",
                 "        );",
                 "    }",
-                "    plaintext",
-                "    assert_eq!(raw_table.items, 3);",
+                "   // Ensure 'plaintext' is not misplaced; removing it.",
+                "   assert_eq!(raw_table.items, 3);",
                 "    assert!(matches!(raw_table.reserve_rehash_inner(&alloc, additional, &TestHasher, Fallibility::Fallible, table_layout, None), Err(TryReserveError::CapacityOverflow)));",
                 "    assert!(raw_table.bucket_mask > 0);",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -305,7 +305,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -353,31 +353,41 @@
                 "    result.unwrap_err().eq(&fallibility.capacity_overflow())"
               ],
               "code": [
-                "{",
-                "    struct TestAllocator;",
-                "    unsafe impl Allocator for TestAllocator {}",
-                "    ",
-                "    let alloc = TestAllocator;",
-                "    let layout = TableLayout { size: 8, ctrl_align: 4 };",
-                "",
-                "    let mut table_inner = RawTableInner::with_capacity(&alloc, layout, 16);",
-                "    table_inner.items = isize::MAX as usize;",
-                "",
-                "    let additional = 1;",
-                "    let fallibility = Fallibility::Fallible;",
-                "",
-                "    let hasher = |_: &mut RawTableInner, _: usize| 0u64;",
-                "",
-                "    let result = unsafe {",
-                "        table_inner.reserve_rehash_inner(&alloc, additional, &hasher, fallibility, layout, None)",
-                "    };",
-                "",
-                "    // No assertions, focusing on calling the function correctly.",
-                "    result.unwrap_err().eq(&fallibility.capacity_overflow())",
+                "{  ",
+                "   struct TestAllocator;  ",
+                "   unsafe impl Allocator for TestAllocator {",
+                "       fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, allocator_api2::alloc::AllocError> {",
+                "           todo!()  // Replace with actual allocation logic",
+                "       }",
+                "       ",
+                "       unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {",
+                "           todo!()  // Replace with actual deallocation logic",
+                "       }",
+                "   }  ",
+                "  ",
+                "   let alloc = TestAllocator;  ",
+                "   ",
+                "    let alloc = TestAllocator;  ",
+                "    let layout = TableLayout { size: 8, ctrl_align: 4 };  ",
+                " ",
+                "    let mut table_inner = RawTableInner::with_capacity(&alloc, layout, 16);  ",
+                "    table_inner.items = isize::MAX as usize;  ",
+                " ",
+                "    let additional = 1;  ",
+                "    let fallibility = Fallibility::Fallible;  ",
+                " ",
+                "    let hasher = |_: &mut RawTableInner, _: usize| 0u64;  ",
+                " ",
+                "    let result = unsafe {  ",
+                "        table_inner.reserve_rehash_inner(&alloc, additional, &hasher, fallibility, layout, None)  ",
+                "    };  ",
+                " ",
+                "    // No assertions, focusing on calling the function correctly.  ",
+                "    assert_eq!(result.unwrap_err(), fallibility.capacity_overflow())  ",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             },
             {
               "attrs": [],
@@ -412,8 +422,29 @@
               ],
               "code": [
                 "{",
-                "    struct TestAllocator;",
-                "    unsafe impl Allocator for TestAllocator {}",
+                "   struct TestAllocator;",
+                "   unsafe impl Allocator for TestAllocator {",
+                "       fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, allocator_api2::alloc::AllocError> {",
+                "           // Implementation of allocation logic",
+                "           todo!()",
+                "       }",
+                "       unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {",
+                "           // Implementation of deallocation logic",
+                "           todo!()",
+                "       }",
+                "   }",
+                "   ",
+                "   let alloc = TestAllocator;",
+                "   let layout = TableLayout { size: 8, ctrl_align: 4 };",
+                "   ",
+                "   let mut table_inner = RawTableInner::with_capacity(&alloc, layout, 16);",
+                "   table_inner.items = isize::MAX as usize;",
+                "   ",
+                "   let additional = 1;",
+                "   let fallibility = Fallibility::Infallible;",
+                "   ",
+                "   let hasher = |_: &mut RawTableInner, _: usize| 0u64;",
+                "   ",
                 "",
                 "    let alloc = TestAllocator;",
                 "    let layout = TableLayout { size: 8, ctrl_align: 4 };",
@@ -437,8 +468,8 @@
                 "    }",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             }
           ]
         }

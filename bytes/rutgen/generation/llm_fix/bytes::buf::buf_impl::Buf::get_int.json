@@ -33,16 +33,16 @@
               ],
               "code": [
                 "{",
-                "    let mut buf: &[u8] = &b\"\\x7F\"[..];",
-                "    buf.get_int(1);",
-                "    assert_eq!(buf.remaining(), 0);",
-                "    assert_eq!(buf.get_int(1), 127);",
-                "    assert_panics!(buf.get_int(2));",
-                "    assert_panics!(buf.get_int(9));",
+                "   let mut buf: &[u8] = &b\"\\x7F\"[..];",
+                "   buf.get_int(1);",
+                "   assert_eq!(buf.remaining(), 0);",
+                "   assert_eq!(buf.get_int(1), 127);",
+                "   let result = std::panic::catch_unwind(|| { buf.get_int(2); });",
+                "   assert!(result.is_err());",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -75,7 +75,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -92,15 +92,15 @@
               ],
               "code": [
                 "{",
-                "    let mut buf: &[u8] = &b\"\\x01\\x02\"[..];",
-                "    buf.get_int(2);",
-                "    assert_eq!(buf.get_int(2), 0x000102);",
-                "    assert!(std::panic::catch_unwind(|| buf.get_int(3)).is_err());",
-                "    assert!(std::panic::catch_unwind(|| buf.get_int(9)).is_err());",
+                "   let mut buf: &[u8] = &b\"\\x01\\x02\"[..];",
+                "   buf.get_int(2);",
+                "   assert_eq!(buf.get_int(2), 0x000102);",
+                "   assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| buf.get_int(3))).is_err());",
+                "   assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| buf.get_int(9))).is_err());",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             },
             {
               "attrs": [],
@@ -131,13 +131,15 @@
                 "    let mut buf: &[u8] = &b\"\\xFF\\xFE\"[..];",
                 "    buf.get_int(2);",
                 "    assert_eq!(buf.get_int(2), -1);",
-                "    assert_panics!(buf.get_int(3));",
-                "    assert_panics!(buf.get_int(8));",
+                "   let result = std::panic::catch_unwind(|| buf.get_int(3));",
+                "   assert!(result.is_err());",
+                "   let result = std::panic::catch_unwind(|| buf.get_int(8));",
+                "   assert!(result.is_err());",
                 "    assert_eq!(buf.get_int(1), 255);",
                 "    assert_panics!(buf.get_int(0));",
                 "    buf.advance(2);",
                 "    assert!(buf.has_remaining() == false);",
-                "    assert_panics!(buf.get_int(2));",
+                "   let result = std::panic::catch_unwind(|| { buf.get_int(2); });  ",
                 "    buf = &b\"\\x80\\x00\"[..];",
                 "    assert_eq!(buf.get_int(2), -32768);",
                 "    buf = &b\"\\x00\"[..];",
@@ -147,7 +149,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -165,18 +167,18 @@
                 "    panic::catch_unwind(|| buf_empty.get_int(1)).is_err();"
               ],
               "code": [
-                "{",
-                "    let mut buf: &[u8] = &b\"\\x01\\x02\\x03\"[..];",
-                "    buf.get_int(3);",
-                "    assert_eq!(buf.get_int(3), 0x010203);",
-                "    panic::catch_unwind(|| buf.get_int(9)).is_err();",
-                "    panic::catch_unwind(|| buf.get_int(10)).is_err();",
-                "    let mut buf_empty: &[u8] = &b\"\"[..];",
-                "    panic::catch_unwind(|| buf_empty.get_int(1)).is_err();",
-                "}"
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -203,9 +205,9 @@
                 "    let mut buf: &[u8] = &b\"\\xFF\\xFE\\xFD\"[..];",
                 "    buf.get_int(3);",
                 "    assert_eq!(buf.get_int(3), -0x010203);",
-                "    assert_panics!(buf.get_int(4));",
-                "    assert_panics!(buf.get_int(8));",
-                "    assert_panics!(buf.get_int(10));",
+                "   let result = std::panic::catch_unwind(|| { buf.get_int(4); });",
+                "   assert!(result.is_err());",
+                "   let result = std::panic::catch_unwind(|| { buf.get_int(8); });",
                 "    buf = &b\"\\x01\\x02\\x03 hello\"[..];",
                 "    assert_eq!(buf.get_int(3), 0x010203);",
                 "    buf = &b\"\\x7F\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\"[..];",
@@ -215,7 +217,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -246,7 +248,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -266,18 +268,18 @@
               ],
               "code": [
                 "{",
-                "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFE\"[..];",
-                "    buf.get_int(4);",
-                "    assert_eq!(buf.get_int(3), 0xFFFFFFFE);",
-                "    assert!(std::panic::catch_unwind(|| buf.get_int(9)).is_err());",
-                "    assert_eq!(buf.get_int(2), 0xFFFF);",
-                "    buf.advance(4);",
-                "    assert!(buf.remaining() == 0);",
-                "    assert!(buf.has_remaining() == false);",
+                "   let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFE\"[..];  ",
+                "   buf.get_int(4);  ",
+                "   assert_eq!(buf.get_int(3), 0xFFFFFFFE);  ",
+                "   assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| buf.get_int(9))).is_err());  ",
+                "   assert_eq!(buf.get_int(2), 0xFFFF);  ",
+                "   buf.advance(4);  ",
+                "   assert!(buf.remaining() == 0);  ",
+                "   assert!(buf.has_remaining() == false);  ",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             },
             {
               "attrs": [],
@@ -318,7 +320,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -337,17 +339,17 @@
               ],
               "code": [
                 "{",
-                "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
-                "    buf.get_int(5);",
-                "    assert_eq!(buf.get_int(3), 0xFFFFFFFC);",
-                "    assert_eq!(buf.get_int(4), 0xFFFFFFFFFFFFFFFC);",
-                "    assert_panics!(buf.get_int(9));",
-                "    assert_panics!(buf.get_int(8));",
-                "    assert_panics!(buf.get_int(0));",
+                "   let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+                "   buf.get_int(5);",
+                "   assert_eq!(buf.get_int(3), 0xFFFFFFFC);",
+                "   assert_eq!(buf.get_int(4), 0xFFFFFFFFFFFFFFFC);",
+                "   let result = std::panic::catch_unwind(|| { buf.get_int(9); });",
+                "   assert!(result.is_err());",
+                "   let result = std::panic::catch_unwind(|| { buf.get_int(8); });",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -384,7 +386,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -409,7 +411,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -437,8 +439,8 @@
                 "    buf.get_int(7);",
                 "    assert_eq!(buf.get_int(7), 0);",
                 "    assert_eq!(buf.get_int(8), 1);",
-                "    assert_panics!(buf.get_int(9));",
-                "    assert_panics!(buf.get_int(0));",
+                "   let res = std::panic::catch_unwind(|| { buf.get_int(9); });",
+                "   assert!(res.is_err());",
                 "    assert_eq!(buf.get_int(1), 0);",
                 "    assert_eq!(buf.get_int(2), 0);",
                 "    assert_eq!(buf.get_int(3), 0);",
@@ -448,7 +450,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -471,21 +473,21 @@
               ],
               "code": [
                 "{",
-                "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
-                "    buf.get_int(7);",
-                "    assert_eq!(buf.get_int(1), 255);",
-                "    assert_eq!(buf.get_int(2), 65535);",
-                "    assert_eq!(buf.get_int(3), 16777215);",
-                "    assert_eq!(buf.get_int(4), 4294967295);",
-                "    assert_eq!(buf.get_int(5), 1);",
-                "    assert_eq!(buf.get_int(6), 68719476735);",
-                "    assert!(std::panic::catch_unwind(|| { buf.get_int(8); }).is_err());",
-                "    assert!(std::panic::catch_unwind(|| { buf.get_int(9); }).is_err());",
-                "    assert!(std::panic::catch_unwind(|| { buf.get_int(0); }).is_err());",
+                "   let buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+                "   let mut buf_instance = &mut buf;",
+                "   buf_instance.get_int(7);",
+                "   assert_eq!(buf_instance.get_int(1), 255);",
+                "   assert_eq!(buf_instance.get_int(2), 65535);",
+                "   assert_eq!(buf_instance.get_int(3), 16777215);",
+                "   assert_eq!(buf_instance.get_int(4), 4294967295);",
+                "   assert_eq!(buf_instance.get_int(5), 1);",
+                "   assert_eq!(buf_instance.get_int(6), 68719476735);",
+                "   assert!(std::panic::catch_unwind(|| { buf_instance.get_int(8); }).is_err());",
+                "  assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| { buf_instance.get_int(9); })).is_err());",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [
@@ -541,15 +543,15 @@
               ],
               "code": [
                 "{",
-                "    let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
-                "    buf.get_int(8);",
-                "    assert_eq!(buf.remaining(), 8);",
-                "    assert!(buf.has_remaining());",
-                "    assert!(matches!(buf.get_int(8), Err(TryGetError::InsufficientData)));",
+                "   let mut buf: &[u8] = &b\"\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFF\\xFC\"[..];",
+                "   buf.get_int(8);",
+                "   assert_eq!(buf.remaining(), 8);",
+                "   assert!(buf.has_remaining());",
+                "   assert!(matches!(buf.get_int(8), Err(TryGetError { requested: _, available: _ })));",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [

@@ -1,0 +1,195 @@
+{
+  "name": "base64::write::encoder::{impl#3}::drop",
+  "mod_info": {
+    "name": "write::encoder",
+    "loc": "src/write/mod.rs:2:1:2:13"
+  },
+  "visible": true,
+  "loc": "src/write/encoder.rs:403:5:408:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: self.panicked at line 404 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::io::Cursor;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    use std::io::Cursor;",
+                "",
+                "    struct TestEngine;",
+                "",
+                "    impl Engine for TestEngine {",
+                "        type Config = ();",
+                "        type DecodeEstimate = usize;",
+                "",
+                "        fn internal_encode(&self, _: &[u8], _: &mut [u8]) -> usize { 0 }",
+                "        fn internal_decoded_len_estimate(&self, _: usize) -> Self::DecodeEstimate { 0 }",
+                "        fn internal_decode(",
+                "            &self, _: &[u8], _: &mut [u8], _: Self::DecodeEstimate",
+                "        ) -> Result<DecodeMetadata, DecodeSliceError> {",
+                "            unimplemented!()",
+                "        }",
+                "        fn config(&self) -> &Self::Config { &() }",
+                "    }",
+                "",
+                "    let engine = TestEngine;",
+                "    let writer = Cursor::new(Vec::new());",
+                "",
+                "    let mut encoder_writer = EncoderWriter {",
+                "        engine: &engine,",
+                "        delegate: Some(writer),",
+                "        extra_input: [0; MIN_ENCODE_CHUNK_SIZE],",
+                "        extra_input_occupied_len: 0,",
+                "        output: [0; BUF_SIZE],",
+                "        output_occupied_len: 0,",
+                "        panicked: true,  // simulate the panicked state",
+                "    };",
+                "",
+                "    // Call drop implicitly by letting 'encoder_writer' go out of scope ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: self.panicked at line 404 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::io::Cursor;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestEngine;",
+                "",
+                "    impl Engine for TestEngine {",
+                "        type Config = ();",
+                "        type DecodeEstimate = usize;",
+                "",
+                "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                "            let len = input.len().min(output.len());",
+                "            output[..len].copy_from_slice(&input[..len]);",
+                "            len",
+                "        }",
+                "",
+                "        fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {",
+                "            input_len // simple estimate",
+                "        }",
+                "",
+                "        fn internal_decode(",
+                "            &self,",
+                "            _input: &[u8],",
+                "            _output: &mut [u8],",
+                "            _decode_estimate: Self::DecodeEstimate,",
+                "        ) -> Result<(), ()> {",
+                "            Ok(())",
+                "        }",
+                "",
+                "        fn config(&self) -> &Self::Config {",
+                "            &()",
+                "        }",
+                "    }",
+                "",
+                "    use std::io::Cursor;",
+                "",
+                "    let engine = TestEngine;",
+                "    let data = b\"Hello, World!\";",
+                "    let writer = Cursor::new(Vec::new());",
+                "    let mut encoder_writer = EncoderWriter::new(writer, &engine);",
+                "",
+                "    encoder_writer.extra_input_occupied_len = 0; // Ensure no extra input",
+                "    encoder_writer.output_occupied_len = 0; // Ensure no occupied output",
+                "    encoder_writer.panicked = false; // Set panicked to false",
+                "",
+                "    // Drop encoder_writer to trigger `drop`",
+                "    drop(encoder_writer);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestEngine;",
+                "",
+                "    impl Engine for TestEngine {",
+                "        type Config = ();",
+                "        type DecodeEstimate = usize;",
+                "",
+                "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                "            input.len().min(output.len()) // simple implementation",
+                "        }",
+                "",
+                "        fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {",
+                "            input_len // simple estimate",
+                "        }",
+                "",
+                "        fn internal_decode(",
+                "            &self,",
+                "            _input: &[u8],",
+                "            _output: &mut [u8],",
+                "            _decode_estimate: Self::DecodeEstimate,",
+                "        ) -> Result<(), ()> {",
+                "            Ok(())",
+                "        }",
+                "",
+                "        fn config(&self) -> &Self::Config {",
+                "            &()",
+                "        }",
+                "    }",
+                "",
+                "    use std::io::Cursor;",
+                "",
+                "    let engine = TestEngine;",
+                "    let writer = Cursor::new(Vec::new());",
+                "    let mut encoder_writer = EncoderWriter::new(writer, &engine);",
+                "",
+                "    encoder_writer.panicked = true; // Set panicked to true to trigger panic on drop",
+                "",
+                "    // Drop encoder_writer, which should panic",
+                "    drop(encoder_writer);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,717 @@
+{
+  "name": "regex_automata::util::utf8::decode",
+  "mod_info": {
+    "name": "util::utf8",
+    "loc": "regex-automata/src/util/mod.rs:57:1:57:21"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/util/utf8.rs:56:1:70:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: bytes.is_empty() at line 57 is true\n",
+        "expected return value/type: None\n"
+      ],
+      "input_infer": "bytes is an empty slice `&[]`\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[];",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[];",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: bytes.is_empty() at line 57 is false\n",
+        "precondition: len(bytes[0]) matches Some(1) or Some(len) or Some(len) at line 60 is true\n",
+        "precondition: len(bytes[0]) matches Some(len) at line 60 is true\n",
+        "precondition: len > bytes.len() at line 62 is true\n",
+        "expected return value/type: Some(Err(bytes[0]))\n"
+      ],
+      "input_infer": "bytes: &[0..=0x7F] or bytes: &[0xC0..=0xF4] with length less than the required UTF-8 length\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0x41]; // 'A'",
+                "    decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    decode(&[]); // None",
+                "    decode(&[0x80]); // Some(Err(128))",
+                "    decode(&[0xC0]); // Some(Err(192))",
+                "    decode(&[0xE0, 0xA0, 0x80]); // Some(Ok('␀'))",
+                "    decode(&[0xF0, 0xA0, 0x80, 0x80]); // Some(Ok('␀'))",
+                "    decode(&[0xC1]); // Some(Err(193))",
+                "    decode(&[0xE1, 0x80]); // Some(Err(225))",
+                "    decode(&[0xF5]); // Some(Err(245))",
+                "    decode(&[0xFF]); // Some(Err(255))"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0x41]; // 'A'",
+                "    decode(bytes);",
+                "    decode(&[]); // None",
+                "    decode(&[0x80]); // Some(Err(128))",
+                "    decode(&[0xC0]); // Some(Err(192))",
+                "    decode(&[0xE0, 0xA0, 0x80]); // Some(Ok('␀'))",
+                "    decode(&[0xF0, 0xA0, 0x80, 0x80]); // Some(Ok('␀'))",
+                "    decode(&[0xC1]); // Some(Err(193))",
+                "    decode(&[0xE1, 0x80]); // Some(Err(225))",
+                "    decode(&[0xF5]); // Some(Err(245))",
+                "    decode(&[0xFF]); // Some(Err(255))",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0xC2, 0xA0]; // Valid sequence length 2, but short (only 1 byte provided)",
+                "    decode(&bytes[..1]);",
+                "}"
+              ],
+              "oracle": [
+                "    decode(&[0xC2, 0xA0]) == Some(Err(0xC2));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0xC2, 0xA0]; // Valid sequence length 2, but short (only 1 byte provided)",
+                "    decode(&bytes[..1]);",
+                "    decode(&[0xC2, 0xA0]) == Some(Err(0xC2));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0xE2, 0x82, 0xAC]; // Valid sequence length 3, but short (only 2 bytes provided)",
+                "    decode(&bytes[..2]);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(decode(&[0xE2, 0x82]), Some(Err(0xE2)));",
+                "    assert_eq!(decode(&[0xC2]), Some(Ok('B')));",
+                "    assert_eq!(decode(&[0xE2]), Some(Err(0xE2)));",
+                "    assert_eq!(decode(&[0xF0, 0x9F, 0x92, 0xA9]), Some(Err(0xF0)));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0xE2, 0x82, 0xAC]; // Valid sequence length 3, but short (only 2 bytes provided)",
+                "    decode(&bytes[..2]);",
+                "    assert_eq!(decode(&[0xE2, 0x82]), Some(Err(0xE2)));",
+                "    assert_eq!(decode(&[0xC2]), Some(Ok('B')));",
+                "    assert_eq!(decode(&[0xE2]), Some(Err(0xE2)));",
+                "    assert_eq!(decode(&[0xF0, 0x9F, 0x92, 0xA9]), Some(Err(0xF0)));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0xF0, 0x9F, 0x92, 0xA9]; // Valid sequence length 4, but short (only 3 bytes provided)",
+                "    decode(&bytes[..3]);",
+                "}"
+              ],
+              "oracle": [
+                "    let result = decode(&bytes[..3]); assert_eq!(result, Some(Err(0xF0)));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0xF0, 0x9F, 0x92, 0xA9]; // Valid sequence length 4, but short (only 3 bytes provided)",
+                "    decode(&bytes[..3]);",
+                "    let result = decode(&bytes[..3]); assert_eq!(result, Some(Err(0xF0)));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0xC0]; // Invalid first byte for a two-byte character, expect Err for 0xC0",
+                "    decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes: &[u8] = &[]; // Empty slice, expect None",
+                "    assert_eq!(decode(bytes), None);",
+                "    ",
+                "    let bytes: &[u8] = &[0xC0]; // Invalid first byte for a two-byte character, expect Some(Err(0xC0))",
+                "    assert_eq!(decode(bytes), Some(Err(0xC0)));",
+                "    ",
+                "    let bytes: &[u8] = &[0xE2, 0x82]; // Incomplete UTF-8 sequence, expect Some(Err(0xE2))",
+                "    assert_eq!(decode(bytes), Some(Err(0xE2)));",
+                "    ",
+                "    let bytes: &[u8] = &[0xF0, 0x90, 0x80]; // Incomplete four-byte UTF-8 sequence, expect Some(Err(0xF0))",
+                "    assert_eq!(decode(bytes), Some(Err(0xF0)));",
+                "    ",
+                "    let bytes: &[u8] = &[0xD0, 0x80]; // Valid two-byte character, expect Some(Ok('\\u{080}'))",
+                "    assert_eq!(decode(bytes), Some(Ok('\\u{080}')));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0xC0]; // Invalid first byte for a two-byte character, expect Err for 0xC0",
+                "    decode(bytes);",
+                "    let bytes: &[u8] = &[]; // Empty slice, expect None",
+                "    assert_eq!(decode(bytes), None);",
+                "    ",
+                "    let bytes: &[u8] = &[0xC0]; // Invalid first byte for a two-byte character, expect Some(Err(0xC0))",
+                "    assert_eq!(decode(bytes), Some(Err(0xC0)));",
+                "    ",
+                "    let bytes: &[u8] = &[0xE2, 0x82]; // Incomplete UTF-8 sequence, expect Some(Err(0xE2))",
+                "    assert_eq!(decode(bytes), Some(Err(0xE2)));",
+                "    ",
+                "    let bytes: &[u8] = &[0xF0, 0x90, 0x80]; // Incomplete four-byte UTF-8 sequence, expect Some(Err(0xF0))",
+                "    assert_eq!(decode(bytes), Some(Err(0xF0)));",
+                "    ",
+                "    let bytes: &[u8] = &[0xD0, 0x80]; // Valid two-byte character, expect Some(Ok('\\u{080}'))",
+                "    assert_eq!(decode(bytes), Some(Ok('\\u{080}')));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: bytes.is_empty() at line 57 is false\n",
+        "precondition: len(bytes[0]) matches Some(1) or Some(len) or Some(len) at line 60 is true\n",
+        "precondition: len(bytes[0]) matches Some(len) at line 60 is true\n",
+        "precondition: len > bytes.len() at line 62 is false, with bound len == bytes.len()\n",
+        "precondition: len(bytes[0]) matches None at line 61 is false\n",
+        "precondition: len(bytes[0]) matches Some(1) at line 63 is false\n",
+        "precondition: len(bytes[0]) matches Some(len) at line 64 is false\n",
+        "precondition: len(bytes[0]) matches Some(len) at line 62 is false\n",
+        "precondition: core::str::from_utf8(&bytes[..len]) matches Err(_) at line 66 is true\n",
+        "expected return value/type: Some(Err(bytes[0]))\n"
+      ],
+      "input_infer": "bytes: [0b1100_0001, 0b1000_0000], bytes: [0b1110_0001, 0b1000_0000, 0b1000_0000]\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = [0b1100_0001, 0b1000_0000];",
+                "    let _result = decode(&bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes = [0b1100_0001, 0b1000_0000];",
+                "    let expected = Some(Err(0b1100_0001));",
+                "    let result = decode(&bytes);",
+                "    assert_eq!(result, expected);"
+              ],
+              "code": [
+                "{",
+                "    let bytes = [0b1100_0001, 0b1000_0000];",
+                "    let _result = decode(&bytes);",
+                "    let bytes = [0b1100_0001, 0b1000_0000];",
+                "    let expected = Some(Err(0b1100_0001));",
+                "    let result = decode(&bytes);",
+                "    assert_eq!(result, expected);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = [0b1110_0001, 0b1000_0000, 0b1000_0000];",
+                "    let _result = decode(&bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes = [0b1110_0001, 0b1000_0000, 0b1000_0000];",
+                "    let expected = Some(Err(bytes[0]));",
+                "    assert_eq!(decode(&bytes), expected);"
+              ],
+              "code": [
+                "{",
+                "    let bytes = [0b1110_0001, 0b1000_0000, 0b1000_0000];",
+                "    let _result = decode(&bytes);",
+                "    let bytes = [0b1110_0001, 0b1000_0000, 0b1000_0000];",
+                "    let expected = Some(Err(bytes[0]));",
+                "    assert_eq!(decode(&bytes), expected);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "precondition: bytes.is_empty() at line 57 is false\n",
+        "precondition: len(bytes[0]) matches Some(1) or Some(len) or Some(len) at line 60 is true\n",
+        "precondition: len(bytes[0]) matches Some(len) at line 60 is true\n",
+        "precondition: len > bytes.len() at line 62 is false, with bound len == bytes.len()\n",
+        "precondition: len(bytes[0]) matches None at line 61 is false\n",
+        "precondition: len(bytes[0]) matches Some(1) at line 63 is false\n",
+        "precondition: len(bytes[0]) matches Some(len) at line 64 is false\n",
+        "precondition: len(bytes[0]) matches Some(len) at line 62 is false\n",
+        "precondition: core::str::from_utf8(&bytes[..len]) matches Ok(s) at line 66 is true\n",
+        "precondition: core::str::from_utf8(&bytes[..len]) matches Ok(s) at line 66 is true\n",
+        "expected return value/type: Some(Ok(s.chars().next().unwrap()))\n"
+      ],
+      "input_infer": "Test input conditions or ranges: bytes must be a non-empty slice containing valid UTF-8 encoded sequences, specifically leading with a single-byte character (0x00 to 0x7F) or a multi-byte character that is correctly encoded starting with 0xC2 to 0xF4, ensuring that the byte length matches the defined UTF-8 character length requirements without exceeding the slice length.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0x41]; // ASCII 'A' (1-byte character)",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Ok('A')));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0x41]; // ASCII 'A' (1-byte character)",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('A')));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0xC2, 0xA0]; // UTF-8 for ' ' (Non-breaking space, 2-byte character)",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Ok('\\u{00A0}'));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0xC2, 0xA0]; // UTF-8 for ' ' (Non-breaking space, 2-byte character)",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('\\u{00A0}'));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0xE2, 0x82, 0xAC]; // UTF-8 for '€' (Euro sign, 3-byte character)",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Ok('€')));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0xE2, 0x82, 0xAC]; // UTF-8 for '€' (Euro sign, 3-byte character)",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('€')));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0xF0, 0x9F, 0x92, 0xA9]; // UTF-8 for '💩' (Pile of poo, 4-byte character)",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Ok('💩')));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0xF0, 0x9F, 0x92, 0xA9]; // UTF-8 for '💩' (Pile of poo, 4-byte character)",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('💩')));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0xF0, 0x9F, 0x93, 0xA8]; // UTF-8 for '📝' (Memo, 4-byte character)",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Ok('📝')));",
+                "    assert!(result.is_some());",
+                "    assert!(result.unwrap().is_ok());",
+                "    assert_eq!(result.unwrap().unwrap(), '📝');",
+                "    assert!(result.is_some());",
+                "    assert!(matches!(result, Some(Result::Ok(_))));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0xF0, 0x9F, 0x93, 0xA8]; // UTF-8 for '📝' (Memo, 4-byte character)",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('📝')));",
+                "    assert!(result.is_some());",
+                "    assert!(result.unwrap().is_ok());",
+                "    assert_eq!(result.unwrap().unwrap(), '📝');",
+                "    assert!(result.is_some());",
+                "    assert!(matches!(result, Some(Result::Ok(_))));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "precondition: bytes.is_empty() at line 57 is false\n",
+        "precondition: len(bytes[0]) matches Some(1) or Some(len) or Some(len) at line 60 is true\n",
+        "precondition: len(bytes[0]) matches Some(len) at line 60 is true\n",
+        "precondition: len > bytes.len() at line 62 is false, with bound len == bytes.len()\n",
+        "precondition: len(bytes[0]) matches Some(1) or Some(len) or Some(len) at line 60 is true\n",
+        "precondition: len(bytes[0]) matches Some(1) at line 60 is true\n",
+        "expected return value/type: Some(Ok(char::from(bytes[0])))\n"
+      ],
+      "input_infer": "bytes: &[0x00, 0x7F] or bytes: &[0x41] or bytes: &[0xC2, 0xA9] or bytes: &[0xE2, 0x82, 0xAC] or bytes: &[0xF0, 0x9F, 0x92, 0xA9] with length between 1 and 4 bytes\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = &[0x41]; // 'A'",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Ok('A')));"
+              ],
+              "code": [
+                "{",
+                "    let bytes = &[0x41]; // 'A'",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('A')));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = &[0x00]; // Null character",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Ok('\\0')));"
+              ],
+              "code": [
+                "{",
+                "    let bytes = &[0x00]; // Null character",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('\\0')));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = &[0xC2, 0xA9]; // ©",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Ok('©')));"
+              ],
+              "code": [
+                "{",
+                "    let bytes = &[0xC2, 0xA9]; // ©",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('©')));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = &[0xE2, 0x82, 0xAC]; // €",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Ok('€')));"
+              ],
+              "code": [
+                "{",
+                "    let bytes = &[0xE2, 0x82, 0xAC]; // €",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('€')));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = &[0xF0, 0x9F, 0x92, 0xA9]; // 💩",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes = &[0x61]; // a",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('a')));",
+                "    ",
+                "    let bytes = &[0xC3, 0xA9]; // é",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('é')));",
+                "    ",
+                "    let bytes = &[0xE2, 0x9C, 0x94]; // ✓",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('✓')));",
+                "    ",
+                "    let bytes = &[0xF0, 0x9F, 0x98, 0x82]; // 😂",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('😂')));",
+                "    ",
+                "    let bytes = &[0x61, 0x62, 0x63]; // abc",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('a')));",
+                "    ",
+                "    let bytes = &[0xE2, 0x82, 0x82]; // ⁀",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('⁀')));",
+                "    ",
+                "    let bytes = &[0xF4, 0x8F, 0xBF, 0xBF]; // invalid",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Err(0xF4)));",
+                "    ",
+                "    let bytes = &[0x80, 0x80]; // invalid",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Err(0x80)));",
+                "    ",
+                "    let bytes = &[0xFF]; // invalid",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Err(0xFF)));"
+              ],
+              "code": [
+                "{",
+                "    let bytes = &[0xF0, 0x9F, 0x92, 0xA9]; // 💩",
+                "    let result = decode(bytes);",
+                "    let bytes = &[0x61]; // a",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('a')));",
+                "    ",
+                "    let bytes = &[0xC3, 0xA9]; // é",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('é')));",
+                "    ",
+                "    let bytes = &[0xE2, 0x9C, 0x94]; // ✓",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('✓')));",
+                "    ",
+                "    let bytes = &[0xF0, 0x9F, 0x98, 0x82]; // 😂",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('😂')));",
+                "    ",
+                "    let bytes = &[0x61, 0x62, 0x63]; // abc",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('a')));",
+                "    ",
+                "    let bytes = &[0xE2, 0x82, 0x82]; // ⁀",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Ok('⁀')));",
+                "    ",
+                "    let bytes = &[0xF4, 0x8F, 0xBF, 0xBF]; // invalid",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Err(0xF4)));",
+                "    ",
+                "    let bytes = &[0x80, 0x80]; // invalid",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Err(0x80)));",
+                "    ",
+                "    let bytes = &[0xFF]; // invalid",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Err(0xFF)));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "precondition: bytes.is_empty() at line 57 is false\n",
+        "precondition: len(bytes[0]) matches None at line 60 is true\n",
+        "precondition: len(bytes[0]) matches None at line 60 is true\n",
+        "expected return value/type: Some(Err(bytes[0]))\n"
+      ],
+      "input_infer": "bytes containing a single invalid UTF-8 continuation byte (e.g., [0x80]), or any byte > 0xFF that does not represent a valid UTF-8 start byte or continuation byte\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0x80]; // Invalid UTF-8 start byte",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Err(0x80)));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0x80]; // Invalid UTF-8 start byte",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Err(0x80)));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0xC2, 0x80, 0x80]; // Valid start byte followed by an invalid continuation byte",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Err(0xC2)));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0xC2, 0x80, 0x80]; // Valid start byte followed by an invalid continuation byte",
+                "    let result = decode(bytes);",
+                "    assert_eq!(result, Some(Err(0xC2)));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0xF8]; // Byte > 0xFF that does not represent a valid UTF-8 start byte",
+                "    let result = decode(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    result == Some(Err(0xF8))"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0xF8]; // Byte > 0xFF that does not represent a valid UTF-8 start byte",
+                "    let result = decode(bytes);",
+                "    result == Some(Err(0xF8))",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

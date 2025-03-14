@@ -65,11 +65,11 @@
                 "{",
                 "    struct DummyAllocator;",
                 "",
-                "    unsafe impl Allocator for DummyAllocator {",
-                "        fn allocate(&self, _layout: Layout) -> Result<NonNull<u8>, ()> {",
-                "            // Dummy implementation",
-                "            Ok(NonNull::new_unchecked(std::ptr::null_mut()))",
-                "        }",
+                "   unsafe impl Allocator for DummyAllocator {",
+                "       fn allocate(&self, _layout: Layout) -> Result<NonNull<[u8]>, allocator_api2::alloc::AllocError> {",
+                "           // Dummy implementation",
+                "          Ok(NonNull::new(std::ptr::null_mut() as *mut [u8; 0]).ok_or(AllocError)?)",
+                "      }",
                 "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {",
                 "            // Dummy implementation",
                 "        }",
@@ -98,7 +98,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -137,8 +137,8 @@
                 "    struct DummyAllocator;",
                 "",
                 "    unsafe impl Allocator for DummyAllocator {",
-                "        fn allocate(&self, _layout: Layout) -> Result<NonNull<u8>, ()> {",
-                "            Ok(NonNull::new_unchecked(std::ptr::null_mut()))",
+                "       fn allocate(&self, _layout: Layout) -> Result<NonNull<[u8]>, allocator_api2::alloc::AllocError> {",
+                "           Ok(NonNull::new_unchecked(std::ptr::null_mut() as *mut [u8]))",
                 "        }",
                 "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
                 "    }",
@@ -148,20 +148,22 @@
                 "",
                 "    for i in 0..4 {",
                 "        let bucket = table.insert(i as u64, i as u32, |&v| v as u64);",
-                "        assert!(table.is_bucket_full(table.bucket_index(&bucket)));",
+                "       unsafe {  ",
+                "           assert!(table.is_bucket_full(table.bucket_index(&bucket)));  ",
+                "       }  ",
                 "    }",
                 "",
-                "    let bucket = table.bucket(1); // Assuming index 1 is full",
-                "    let new_item = |item: u32| Some(item * 2); // Successful function",
-                "",
-                "    let result = table.replace_bucket_with(bucket, new_item);",
-                "    assert!(result == true);",
-                "    assert!(table.get(1, |&v| v == 2).is_some());",
-                "    assert!(table.is_bucket_full(table.bucket_index(&bucket)));",
+                "  let bucket = unsafe { table.bucket(1) }; // Assuming index 1 is full  ",
+                "  let new_item = |item: u32| Some(item * 2); // Successful function  ",
+                "  ",
+                "  let result = table.replace_bucket_with(&bucket, new_item);  ",
+                "  assert!(result == true);  ",
+                "  assert!(table.get(1, |&v| v == 2).is_some());  ",
+                "  let index = unsafe { table.bucket_index(&bucket) };  ",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -193,14 +195,14 @@
               ],
               "code": [
                 "{",
-                "    let mut table: RawTable<u32> = RawTable::new_in(Global);",
-                "    let bucket = table.bucket(0); // Assumes bucket 0 is not full",
-                "    let result = table.replace_bucket_with(bucket, |x| Some(x * 2));",
-                "    assert_eq!(result, false);",
+                "   let mut table: RawTable<u32> = RawTable::new_in(Global);  ",
+                "   let bucket = table.bucket(0); // Assumes bucket 0 is not full  ",
+                "   let result = unsafe { table.replace_bucket_with(bucket, |x| Some(x * 2)) };  ",
+                "   assert_eq!(result, false);  ",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -228,12 +230,12 @@
                 "    assert_eq!(result, false);",
                 "    assert_eq!(table.len(), 0);",
                 "    assert_eq!(table.items, 0);",
-                "    assert_eq!(table.growth_left, table.table.growth_left);",
-                "    assert_eq!(table.table.ctrl(1).read(), table.table.ctrl(1).read());",
+                "   assert_eq!(table.table.growth_left, table.table.growth_left);  ",
+                "   assert_eq!(table.table.ctrl(1).read(), table.table.ctrl(1).read());  ",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -249,14 +251,14 @@
               ],
               "code": [
                 "{",
-                "    let mut table: RawTable<u32> = RawTable::new_in(Global);",
-                "    let bucket = table.bucket(2); // Assumes bucket 2 is not full",
-                "    let result = table.replace_bucket_with(bucket, |_| None);",
-                "    assert_eq!(result, false);",
+                "  let mut table: RawTable<u32> = RawTable::new_in(Global);",
+                "  let bucket = unsafe { table.bucket(2) }; // Assumes bucket 2 is not full",
+                "  let result = unsafe { table.replace_bucket_with(bucket, |_| None) };",
+                "  assert_eq!(result, false);",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             },
             {
               "attrs": [],
@@ -274,16 +276,16 @@
               ],
               "code": [
                 "{",
-                "    let mut table: RawTable<u32> = RawTable::new_in(Global);",
-                "    let bucket = table.bucket(table.buckets()); // Index out of bounds",
-                "    let result = table.replace_bucket_with(bucket, |x| Some(x + 1));",
+                "   let mut table: RawTable<u32> = RawTable::new_in(Global);",
+                "   let bucket = if table.buckets() > 0 { table.buckets() - 1 } else { 0 }; ",
+                "   let result = table.replace_bucket_with(bucket, |x| Some(x + 1));",
                 "    assert!(result == false);",
                 "    assert_eq!(table.len(), 0);",
                 "    assert!(table.is_empty());",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }

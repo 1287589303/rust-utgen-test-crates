@@ -1,0 +1,120 @@
+{
+  "name": "base64::engine::Engine::decode_slice_unchecked",
+  "mod_info": {
+    "name": "engine",
+    "loc": "src/lib.rs:281:1:281:16"
+  },
+  "visible": true,
+  "loc": "src/engine/mod.rs:393:5:418:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestEngine;",
+                "",
+                "    impl TestEngine {",
+                "        fn internal_decode(&self, _: &[u8], _: &mut [u8], _: usize) -> Result<DecodedMetadata, DecodeSliceError> {",
+                "            Ok(DecodedMetadata { decoded_len: 3 }) // Simulate successful decode",
+                "        }",
+                "",
+                "        fn internal_decoded_len_estimate(&self, _: usize) -> usize {",
+                "            3 // Simulate estimated length",
+                "        }",
+                "    }",
+                "    ",
+                "    impl Engine for TestEngine {}",
+                "",
+                "    let engine = TestEngine;",
+                "    let input = b\"SGVsbG8\"; // Base64 for \"Hello\"",
+                "    let mut output = [0u8; 3]; // Buffer for decoded data",
+                "    let result = engine.decode_slice_unchecked(input, &mut output);",
+                "    ",
+                "    assert_eq!(result.unwrap(), 3);",
+                "    assert_eq!(&output, b\"Hello\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Output slice is too small\")]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestEngine;",
+                "",
+                "    impl TestEngine {",
+                "        fn internal_decode(&self, _: &[u8], _: &mut [u8], _: usize) -> Result<DecodedMetadata, DecodeSliceError> {",
+                "            Err(DecodeSliceError::OutputSliceTooSmall) // Simulate output slice too small error",
+                "        }",
+                "",
+                "        fn internal_decoded_len_estimate(&self, _: usize) -> usize {",
+                "            5 // Assume we expect more than the output can handle",
+                "        }",
+                "    }",
+                "",
+                "    impl Engine for TestEngine {}",
+                "",
+                "    let engine = TestEngine;",
+                "    let input = b\"SGVsbG8\"; // Base64 for \"Hello\"",
+                "    let mut output = [0u8; 2]; // Smaller output buffer",
+                "    let _ = engine.decode_slice_unchecked(input, &mut output); // This should panic",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct TestEngine;",
+                "",
+                "    impl TestEngine {",
+                "        fn internal_decode(&self, _: &[u8], _: &mut [u8], _: usize) -> Result<DecodedMetadata, DecodeSliceError> {",
+                "            Ok(DecodedMetadata { decoded_len: 0 }) // Simulate decode of empty input",
+                "        }",
+                "",
+                "        fn internal_decoded_len_estimate(&self, _: usize) -> usize {",
+                "            0 // Estimate for empty input",
+                "        }",
+                "    }",
+                "",
+                "    impl Engine for TestEngine {}",
+                "",
+                "    let engine = TestEngine;",
+                "    let input = b\"\"; // Empty input",
+                "    let mut output = [0u8; 0]; // Corresponding empty output buffer",
+                "    let result = engine.decode_slice_unchecked(input, &mut output);",
+                "    ",
+                "    assert_eq!(result.unwrap(), 0);",
+                "    assert!(output.is_empty());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

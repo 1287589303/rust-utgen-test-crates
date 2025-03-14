@@ -1,0 +1,134 @@
+{
+  "name": "base64::write::encoder::{impl#1}::into_inner",
+  "mod_info": {
+    "name": "write::encoder",
+    "loc": "src/write/mod.rs:2:1:2:13"
+  },
+  "visible": true,
+  "loc": "src/write/encoder.rs:242:5:246:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct MockEngine;",
+                "    struct MockWriter {",
+                "        data: Vec<u8>,",
+                "    }",
+                "",
+                "    impl io::Write for MockWriter {",
+                "        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {",
+                "            self.data.extend_from_slice(buf);",
+                "            Ok(buf.len())",
+                "        }",
+                "",
+                "        fn flush(&mut self) -> io::Result<()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let mock_writer = MockWriter { data: Vec::new() };",
+                "    let engine = MockEngine;",
+                "",
+                "    let mut encoder_writer = EncoderWriter::new(mock_writer, &engine);",
+                "    let inner_writer = encoder_writer.into_inner();",
+                "",
+                "    assert!(inner_writer.data.is_empty());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Encoder has already had finish() called\")]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "   struct MockEngine;",
+                "   ",
+                "   impl engine::Engine for MockEngine {",
+                "       // Implement required methods here",
+                "   }",
+                "   ",
+                "   struct MockWriter {",
+                "    }",
+                "",
+                "    impl io::Write for MockWriter {",
+                "        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {",
+                "            self.data.extend_from_slice(buf);",
+                "            Ok(buf.len())",
+                "        }",
+                "",
+                "        fn flush(&mut self) -> io::Result<()> {",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let mock_writer = MockWriter { data: Vec::new() };",
+                "    let engine = MockEngine;",
+                "",
+                "    let mut encoder_writer = EncoderWriter::new(mock_writer, &engine);",
+                "    encoder_writer.finish().unwrap(); // Call finish to complete writing",
+                "    let _ = encoder_writer.into_inner(); // Get inner writer to avoid panic",
+                "    encoder_writer.into_inner(); // This should panic",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "   struct MockEngine;",
+                "   ",
+                "   impl engine::Engine for MockEngine {",
+                "       type Config = ();",
+                "       type DecodeEstimate = usize;",
+                "       ",
+                "       fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                "           output[..input.len()].copy_from_slice(input);",
+                "           input.len()",
+                "       }",
+                "   ",
+                "       fn internal_decoded_len_estimate(&self, input_len: usize) -> usize {",
+                "           input_len / 4 * 3",
+                "       }",
+                "   ",
+                "       fn internal_decode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                "           output[..input.len()].copy_from_slice(input);",
+                "           input.len()",
+                "       }",
+                "   }",
+                "   ",
+                "   let mock_writer = MockWriter { data: Vec::new() };",
+                "   let engine = MockEngine;",
+                "   ",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

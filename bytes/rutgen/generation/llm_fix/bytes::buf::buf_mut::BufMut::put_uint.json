@@ -90,29 +90,42 @@
                 "    assert!(std::panic::catch_unwind(|| buf.put_uint(0x01, 8)).is_err());"
               ],
               "code": [
-                "{",
-                "    struct TestBuf {",
-                "        buffer: Vec<u8>,",
-                "        pos: usize,",
-                "    }",
-                "    ",
-                "    impl TestBuf {",
-                "        fn new(capacity: usize) -> Self {",
-                "            TestBuf {",
-                "                buffer: vec![0; capacity],",
-                "                pos: 0,",
-                "            }",
-                "        }",
-                "        ",
-                "        fn remaining_mut(&self) -> usize {",
-                "            self.buffer.len() - self.pos",
-                "        }",
-                "        ",
-                "        unsafe fn advance_mut(&mut self, cnt: usize) {",
-                "            self.pos += cnt;",
-                "        }",
-                "        ",
-                "        fn chunk_mut(&mut self) -> &mut UninitSlice {",
+                "   fn test_put_uint_00()",
+                "   {",
+                "     struct TestBuf {  ",
+                "          buffer: Vec<u8>,  ",
+                "          pos: usize,  ",
+                "      }  ",
+                "      ",
+                "      impl TestBuf {  ",
+                "          fn new(capacity: usize) -> Self {  ",
+                "              TestBuf {  ",
+                "               pos: 0,  ",
+                "           }  ",
+                "       }  ",
+                "       ",
+                "       fn remaining_mut(&self) -> usize {  ",
+                "           self.buffer.len() - self.pos  ",
+                "       }  ",
+                "       ",
+                "       unsafe fn advance_mut(&mut self, cnt: usize) {  ",
+                "           self.pos += cnt;  ",
+                "       }  ",
+                "       ",
+                "       fn chunk_mut(&mut self) -> &mut UninitSlice {  ",
+                "           let start = self.pos;  ",
+                "           let end = self.pos + self.remaining_mut();  ",
+                "           &mut self.buffer[start..end]  ",
+                "       }  ",
+                "       ",
+                "       fn put_slice(&mut self, src: &[u8]) {  ",
+                "           let cnt = usize::min(src.len(), self.remaining_mut());  ",
+                "           self.chunk_mut()[..cnt].copy_from_slice(&src[..cnt]);  ",
+                "           unsafe { self.advance_mut(cnt) };  ",
+                "       }  ",
+                " ",
+                "       fn put_uint(&mut self, value: u64, nbytes: usize) {  ",
+                "           self.put_slice(&value.to_le_bytes()[..nbytes]);  ",
                 "            // This would normally return a mutable slice; for simplicity, using a raw pointer",
                 "            // directly. This will not actually be safe as is, so this is for illustrative purposes.",
                 "            let start = self.pos;",
@@ -155,7 +168,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [
@@ -252,7 +265,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -319,7 +332,7 @@
                 "        position: usize,",
                 "    }",
                 "",
-                "    impl BufMut for TestBuf {",
+                "   unsafe impl BufMut for TestBuf {",
                 "        fn remaining_mut(&self) -> usize {",
                 "            self.data.len() - self.position",
                 "        }",
@@ -349,7 +362,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -452,7 +465,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [
@@ -496,40 +509,40 @@
               ],
               "code": [
                 "{",
-                "    struct TestBuf {",
-                "        data: Vec<u8>,",
-                "        position: usize,",
-                "    }",
-                "",
-                "    impl BufMut for TestBuf {",
-                "        fn remaining_mut(&self) -> usize {",
-                "            self.data.len() - self.position",
-                "        }",
-                "",
-                "        unsafe fn advance_mut(&mut self, cnt: usize) {",
-                "            self.position += cnt;",
-                "        }",
-                "",
-                "        fn has_remaining_mut(&self) -> bool {",
-                "            self.remaining_mut() > 0",
-                "        }",
-                "",
-                "        fn chunk_mut(&mut self) -> &mut UninitSlice {",
-                "            let slice = &mut self.data[self.position..];",
-                "            unsafe { UninitSlice::from_mut(slice) }",
-                "        }",
-                "    }",
-                "",
-                "    let mut buf = TestBuf { data: vec![0; 5], position: 0 };",
-                "    buf.put_uint(0x01, 6); // Will panic as nbytes > remaining capacity",
+                "   struct TestBuf {  ",
+                "       data: Vec<u8>,  ",
+                "       position: usize,  ",
+                "   }  ",
+                " ",
+                "  unsafe impl BufMut for TestBuf {  ",
+                "      fn remaining_mut(&self) -> usize {  ",
+                "          self.data.len() - self.position  ",
+                "       }  ",
+                " ",
+                "       unsafe fn advance_mut(&mut self, cnt: usize) {  ",
+                "           self.position += cnt;  ",
+                "       }  ",
+                " ",
+                "       fn has_remaining_mut(&self) -> bool {  ",
+                "           self.remaining_mut() > 0  ",
+                "       }  ",
+                " ",
+                "      fn chunk_mut(&mut self) -> &mut UninitSlice {  ",
+                "          let slice = &mut self.data[self.position..];  ",
+                "          unsafe { UninitSlice::new(slice) }  ",
+                "      }  ",
+                "   }  ",
+                " ",
+                "   use std::vec;  ",
+                "   let mut buf = TestBuf { data: vec![0; 5], position: 0 };  ",
                 "    assert_eq!(std::panic::catch_unwind(|| {",
                 "    let mut buf = TestBuf { data: vec![0; 5], position: 0 };",
                 "    unsafe { buf.put_uint(0x01, 6); }",
                 "    }).is_err(), true);",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             }
           ]
         }

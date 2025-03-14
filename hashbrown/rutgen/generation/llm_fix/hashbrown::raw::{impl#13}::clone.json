@@ -72,7 +72,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -107,9 +107,9 @@
                 "    struct TestAllocator;",
                 "",
                 "    unsafe impl Allocator for TestAllocator {",
-                "        fn allocate(&self, _layout: Layout) -> Result<NonNull<u8>, ()> {",
-                "            Ok(NonNull::new_unchecked(Box::into_raw(Box::new(0u8)) as *mut u8))",
-                "        }",
+                "       fn allocate(&self, _layout: Layout) -> Result<NonNull<[u8]>, allocator_api2::alloc::AllocError> {",
+                "           Ok(NonNull::new_unchecked(Box::into_raw(Box::new([0u8; 1])) as *mut [u8]))",
+                "       }",
                 "        unsafe fn deallocate(&self, ptr: NonNull<u8>, _layout: Layout) {",
                 "            drop(Box::from_raw(ptr.as_ptr() as *mut u8));",
                 "        }",
@@ -127,7 +127,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -185,12 +185,12 @@
               ],
               "code": [
                 "{",
-                "    struct MockAllocator;",
-                "",
+                "   #[derive(Clone)]",
+                "   struct MockAllocator;",
                 "    unsafe impl Allocator for MockAllocator {",
-                "        fn allocate(&self, _: Layout) -> Result<NonNull<u8>, ()> {",
-                "            Err(())",
-                "        }",
+                "       fn allocate(&self, _: Layout) -> Result<NonNull<[u8]>, allocator_api2::alloc::AllocError> {",
+                "           Err(allocator_api2::alloc::AllocError)",
+                "       }",
                 "",
                 "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
                 "    }",
@@ -207,15 +207,15 @@
                 "",
                 "    // Attempting to clone, expecting it to panic due to allocation failure",
                 "    let _ = table.clone();",
-                "    assert!(!table.is_empty_singleton()); // Ensure precondition: self.table.is_empty_singleton() is false",
-                "    let result = std::panic::catch_unwind(|| {",
-                "    let _ = table.clone(); // Trigger cloning behavior",
-                "    });",
-                "    assert!(result.is_err()); // Ensure that the clone operation panics due to allocation failure",
+                "   assert!(!table.table.is_empty_singleton()); // Ensure precondition: self.table.is_empty_singleton() is false",
+                "   let result = std::panic::catch_unwind(|| {",
+                "       let _ = table.clone(); // Trigger cloning behavior",
+                "   });",
+                "   assert!(result.is_err()); // Ensure that the clone operation panics due to allocation failure",
                 "}"
               ],
-              "can_compile": false,
-              "repaired": false
+              "can_compile": true,
+              "repaired": true
             },
             {
               "attrs": [
@@ -255,14 +255,15 @@
               ],
               "code": [
                 "{",
-                "    struct MockAllocator;",
-                "",
-                "    unsafe impl Allocator for MockAllocator {",
-                "        fn allocate(&self, _: Layout) -> Result<NonNull<u8>, ()> {",
-                "            Err(())",
-                "        }",
-                "",
-                "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
+                "   #[derive(Clone)]",
+                "   struct MockAllocator;",
+                "   ",
+                "   unsafe impl Allocator for MockAllocator {",
+                "       fn allocate(&self, _: Layout) -> Result<NonNull<u8>, ()> {",
+                "           Err(())",
+                "       }",
+                "   ",
+                "       unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
                 "    }",
                 "",
                 "    let allocator = MockAllocator;",
@@ -284,7 +285,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -344,39 +345,40 @@
               ],
               "code": [
                 "{",
-                "    struct TestAllocator;",
-                "",
-                "    unsafe impl Allocator for TestAllocator {",
-                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
-                "            Ok(NonNull::dangling())",
-                "        }",
-                "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
-                "    }",
-                "",
-                "    let alloc = TestAllocator;",
-                "    let buckets = 4; // power of two greater than 1",
-                "    let mut table = unsafe {",
-                "        RawTable::new_uninitialized(alloc.clone(), buckets, Fallibility::Infallible).unwrap()",
+                "   #[derive(Clone)]  ",
+                "   struct TestAllocator;  ",
+                " ",
+                "   unsafe impl Allocator for TestAllocator {  ",
+                "       fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {  ",
+                "           Ok(NonNull::dangling())  ",
+                "       }  ",
+                "       unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}  ",
+                "   }  ",
+                " ",
+                "   let alloc = TestAllocator;  ",
+                "   let buckets = 4; // power of two greater than 1  ",
+                "   let mut table = unsafe {  ",
+                "       RawTable::new_uninitialized(alloc.clone(), buckets, Fallibility::Infallible).unwrap()  ",
                 "    };",
                 "",
                 "    // Simulating non-empty state",
-                "    table.items = 1;",
+                "   table.table.items = 1;  ",
                 "",
-                "    let raw_table = RawTable {",
-                "        table,",
+                "   let raw_table = RawTable {",
+                "       table: unsafe { std::mem::transmute::<&RawTable<_, TestAllocator>, RawTableInner>(&table) },",
                 "        alloc,",
                 "        marker: PhantomData,",
                 "    };",
                 "",
                 "    let _cloned_table = raw_table.clone();",
-                "    self.table.is_empty_singleton() == false",
-                "    Self::new_uninitialized(self.alloc.clone(), self.table.buckets(), Fallibility::Infallible).is_ok()",
-                "    let new_table = raw_table.clone();",
-                "    new_table.table.items == raw_table.table.items",
+                "   raw_table.table.is_empty_singleton() == false;",
+                "   RawTable::new_uninitialized(raw_table.alloc.clone(), raw_table.table.buckets(), Fallibility::Infallible).is_ok();",
+                "   let new_table = raw_table.clone();",
+                "   new_table.table.items == raw_table.table.items  ",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -447,11 +449,11 @@
                 "    let cloned_table = raw_table.clone();",
                 "    assert_eq!(cloned_table.table.items, raw_table.table.items);",
                 "    assert_eq!(cloned_table.table.buckets(), raw_table.table.buckets());",
-                "    assert_eq!(cloned_table.alloc.allocator(), raw_table.alloc.allocator());",
+                "   assert_eq!(cloned_table.alloc, raw_table.alloc);  ",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }

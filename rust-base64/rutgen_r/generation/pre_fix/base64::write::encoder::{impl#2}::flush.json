@@ -1,0 +1,222 @@
+{
+  "name": "base64::write::encoder::{impl#2}::flush",
+  "mod_info": {
+    "name": "write::encoder",
+    "loc": "src/write/mod.rs:2:1:2:13"
+  },
+  "visible": true,
+  "loc": "src/write/encoder.rs:393:5:399:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: self.write_all_encoded_output()? at line 394 is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct MockDelegate {",
+                "        should_fail_flush: bool,",
+                "    }",
+                "",
+                "    impl std::io::Write for MockDelegate {",
+                "        fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {",
+                "            Ok(0)",
+                "        }",
+                "",
+                "        fn flush(&mut self) -> std::io::Result<()> {",
+                "            if self.should_fail_flush {",
+                "                return Err(std::io::Error::new(std::io::ErrorKind::Other, \"Flush error\"));",
+                "            }",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    struct Encoder {",
+                "        delegate: Option<MockDelegate>,",
+                "    }",
+                "",
+                "    impl Encoder {",
+                "        fn write_all_encoded_output(&mut self) -> Result<()> {",
+                "            Err(std::io::Error::new(std::io::ErrorKind::Other, \"Encoding error\"))",
+                "        }",
+                "",
+                "        fn flush(&mut self) -> Result<()> {",
+                "            self.write_all_encoded_output()?;",
+                "            self.delegate",
+                "                .as_mut()",
+                "                .expect(\"Writer must be present\")",
+                "                .flush()",
+                "        }",
+                "    }",
+                "",
+                "    let mut encoder = Encoder {",
+                "        delegate: Some(MockDelegate { should_fail_flush: false }),",
+                "    };",
+                "",
+                "    let result = encoder.flush();",
+                "    assert!(result.is_err());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Writer must be present\")]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct Encoder {",
+                "        delegate: Option<MockDelegate>,",
+                "    }",
+                "",
+                "    impl Encoder {",
+                "        fn write_all_encoded_output(&mut self) -> Result<()> {",
+                "            Err(std::io::Error::new(std::io::ErrorKind::Other, \"Encoding error\"))",
+                "        }",
+                "",
+                "        fn flush(&mut self) -> Result<()> {",
+                "            self.write_all_encoded_output()?;",
+                "            self.delegate",
+                "                .as_mut()",
+                "                .expect(\"Writer must be present\")",
+                "                .flush()",
+                "        }",
+                "    }",
+                "",
+                "    let mut encoder = Encoder {",
+                "        delegate: None,",
+                "    };",
+                "",
+                "    let _ = encoder.flush();",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: self.write_all_encoded_output()? at line 394 is Ok/Some\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct MockWriter {",
+                "        called_flush: bool,",
+                "    }",
+                "",
+                "    impl Write for MockWriter {",
+                "        fn write(&mut self, _buf: &[u8]) -> Result<usize> {",
+                "            Ok(buf.len())",
+                "        }",
+                "",
+                "        fn flush(&mut self) -> Result<()> {",
+                "            self.called_flush = true; // Track if flush was called",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    struct Encoder {",
+                "        delegate: Option<Box<dyn Write>>,",
+                "    }",
+                "",
+                "    impl Encoder {",
+                "        fn flush(&mut self) -> Result<()> {",
+                "            self.write_all_encoded_output()?;",
+                "            self.delegate",
+                "                .as_mut()",
+                "                .expect(\"Writer must be present\")",
+                "                .flush()",
+                "        }",
+                "",
+                "        fn write_all_encoded_output(&self) -> Result<()> {",
+                "            // Simulate successful encoding process",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "    ",
+                "    let mut mock_writer = MockWriter { called_flush: false };",
+                "    let mut encoder = Encoder {",
+                "        delegate: Some(Box::new(mock_writer)),",
+                "    };",
+                "",
+                "    let result = encoder.flush();",
+                "    assert!(result.is_ok());",
+                "    assert!(mock_writer.called_flush); // Check that flush was indeed called",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Writer must be present\")]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct Encoder {",
+                "        delegate: Option<Box<dyn Write>>,",
+                "    }",
+                "",
+                "    impl Encoder {",
+                "        fn flush(&mut self) -> Result<()> {",
+                "            self.write_all_encoded_output()?;",
+                "            self.delegate",
+                "                .as_mut()",
+                "                .expect(\"Writer must be present\")",
+                "                .flush()",
+                "        }",
+                "",
+                "        fn write_all_encoded_output(&self) -> Result<()> {",
+                "            // Simulate successful encoding process",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "    ",
+                "    let mut encoder = Encoder {",
+                "        delegate: None,",
+                "    };",
+                "",
+                "    // This should panic since the writer is not present",
+                "    encoder.flush().unwrap();",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

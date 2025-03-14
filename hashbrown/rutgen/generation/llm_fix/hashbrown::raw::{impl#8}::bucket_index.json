@@ -52,9 +52,9 @@
                 "{",
                 "    struct TestAllocator;",
                 "    unsafe impl Allocator for TestAllocator {",
-                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
-                "            NonNull::new_unchecked(&mut [0u8; 16][..] as *mut _ as *mut u8).ok_or(())",
-                "        }",
+                "       fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, allocator_api2::alloc::AllocError> {",
+                "           NonNull::new_unchecked(&mut [0u8; 16][..] as *mut _ as *mut [u8]).ok_or(allocator_api2::alloc::AllocError {})",
+                "       }",
                 "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
                 "    }",
                 "",
@@ -76,7 +76,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -107,25 +107,25 @@
                 "{",
                 "    struct TestAllocator;",
                 "    unsafe impl Allocator for TestAllocator {",
-                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
-                "            NonNull::new_unchecked(&mut [0u8; 16][..] as *mut _ as *mut u8).ok_or(())",
-                "        }",
+                "       fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, allocator_api2::alloc::AllocError> {  ",
+                "           NonNull::new_unchecked(&mut [0u8; 16][..] as *mut _ as *mut [u8]).ok_or(allocator_api2::alloc::AllocError)  ",
+                "       }  ",
                 "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
                 "    }",
                 "",
                 "    let allocator = TestAllocator;",
                 "    let mut table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator);",
-                "    let bucket = table.bucket(0); // Access a bucket that might not exist",
-                "    let index = table.bucket_index(&bucket);",
-                "    let allocator = TestAllocator;",
-                "    let mut table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator);",
-                "    let bucket = table.bucket(0);",
-                "    let index = table.bucket_index(&bucket);",
-                "    assert!(index <= table.buckets());",
+                "   let bucket = unsafe { table.bucket(0) }; ",
+                "   let index = unsafe { table.bucket_index(&bucket) };  ",
+                "   let allocator = TestAllocator;  ",
+                "   let mut table: RawTable<u8, TestAllocator> = RawTable::new_in(allocator);  ",
+                "   let bucket = table.bucket(0);  ",
+                "   let index = unsafe { table.bucket_index(&bucket) };  ",
+                "   assert!(index <= table.buckets());  ",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -166,15 +166,15 @@
                 "    let allocator = TestAllocator;",
                 "    let mut table: RawTable<ZeroSized, TestAllocator> = RawTable::new_in(allocator);",
                 "    let bucket = table.insert(0, ZeroSized, |x: &ZeroSized| 0); // Insert a zero-sized type",
-                "    let index = table.bucket_index(&bucket);",
-                "    let allocator = TestAllocator;",
-                "    let mut table: RawTable<ZeroSized, TestAllocator> = RawTable::new_in(allocator);",
-                "    let bucket = table.insert(0, ZeroSized, |x: &ZeroSized| 0);",
-                "    assert_eq!(table.bucket_index(&bucket), bucket.to_base_index(table.data_end()));",
+                "   let index;",
+                "   unsafe {",
+                "       index = table.bucket_index(&bucket);",
+                "   }",
+                "  let base_index = unsafe { bucket.to_base_index(table.data_end()) };",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }

@@ -57,8 +57,10 @@
                 "        // Implementation for the Allocator trait",
                 "    }",
                 "",
-                "    let allocator = TestAllocator;",
-                "    let table_layout = TableLayout::default(); // Assuming a default layout is suitable",
+                "   let allocator = TestAllocator;",
+                "   let table_layout = TableLayout { size: 0, ctrl_align: 0 }; // Provide concrete values for default",
+                "   let initial_capacity = 4; // A power of two",
+                "   let mut raw_table = RawTableInner::with_capacity(&allocator, table_layout, initial_capacity);",
                 "    let initial_capacity = 4; // A power of two",
                 "    let mut raw_table = RawTableInner::with_capacity(&allocator, table_layout, initial_capacity);",
                 "",
@@ -76,7 +78,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -119,8 +121,8 @@
                 "        // Implementation for the Allocator trait",
                 "    }",
                 "",
-                "    let allocator = TestAllocator;",
-                "    let table_layout = TableLayout::default(); // Assuming a default layout is suitable",
+                "   let allocator = TestAllocator;",
+                "   let table_layout = TableLayout::new::<u8>(); // Create a TableLayout using the new method",
                 "    let initial_capacity = 1; // A power of two",
                 "    let mut raw_table = RawTableInner::with_capacity(&allocator, table_layout, initial_capacity);",
                 "",
@@ -133,15 +135,15 @@
                 "    let current_group = full_buckets_indices.current_group;",
                 "    assert!(current_group.next().is_none());",
                 "    assert_eq!(full_buckets_indices.ctrl, raw_table.ctrl);",
-                "    let ctrl_ptr = raw_table.ctrl(0).cast::<u8>();",
-                "    unsafe {",
-                "    let loaded_group = Group::load_aligned(ctrl_ptr).match_full();",
-                "    assert_eq!(current_group.0.0, loaded_group.0.0);",
-                "    }",
+                "   let ctrl_ptr = raw_table.ctrl(0) as *const Tag; // Cast to *const Tag instead of *mut u8",
+                "   unsafe {",
+                "   let loaded_group = Group::load_aligned(ctrl_ptr).match_full();",
+                "   assert_eq!(current_group.0.0, loaded_group.0.0);",
+                "   }",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -190,14 +192,19 @@
               ],
               "code": [
                 "{",
-                "    struct TestAllocator;",
+                "   struct TestAllocator;",
                 "",
-                "    impl Allocator for TestAllocator {",
-                "        // Implementation for the Allocator trait",
-                "    }",
+                "   impl Allocator for TestAllocator {",
+                "       // Implementation for the Allocator trait",
+                "   }",
                 "",
-                "    let allocator = TestAllocator;",
-                "    let table_layout = TableLayout::default(); // Assuming a default layout is suitable",
+                "   impl Default for TableLayout {",
+                "       fn default() -> Self {",
+                "           TableLayout::new::<u8>() // Provide default using a type as an example",
+                "       }",
+                "   }",
+                "   let allocator = TestAllocator;",
+                "   let table_layout = TableLayout::default(); // Assuming a default layout is suitable",
                 "    let initial_capacity = 8; // A power of two",
                 "    let mut raw_table = RawTableInner::with_capacity(&allocator, table_layout, initial_capacity);",
                 "",
@@ -213,10 +220,10 @@
                 "    assert_eq!(full_buckets_indices.items, 3);",
                 "    }",
                 "    ",
-                "    unsafe fn test_full_buckets_indices_group_first_index() {",
-                "    assert_eq!(full_buckets_indices.group_first_index, 0);",
-                "    }",
-                "    ",
+                "   let test_full_buckets_indices_group_first_index = || {",
+                "       assert_eq!(full_buckets_indices.group_first_index, 0);",
+                "   };",
+                "   ",
                 "    unsafe fn test_full_buckets_indices_current_group_iter() {",
                 "    let current_group_iter = full_buckets_indices.current_group;",
                 "    // Assert that the iterator is in a valid state",
@@ -230,7 +237,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }

@@ -1,9 +1,9 @@
 You are given the below error from running 'cargo test' and related Rust code snippets.
 error[E0412]: cannot find type `String` in this scope
-    --> src/map.rs:6533:30
+    --> src/map.rs:6541:38
      |
-6533 |     let _iter: IntoIter<u32, String, TestAllocator> = Default::default();
-     |                              ^^^^^^ not found in this scope
+6541 |     let non_empty_map: IntoKeys<i32, String, TestAllocator> = IntoKeys {
+     |                                      ^^^^^^ not found in this scope
      |
 help: consider importing one of these structs
      |
@@ -71,23 +71,58 @@ file: src/map.rs
 [6516]
 [6517]
 [6518]#[test]
-[6519]fn test_default_00()
+[6519]fn test_fold_00()
 [6520]{
-[6521]  use std::ptr::NonNull;  
-[6522]  
-[6523]  struct TestAllocator;  
-[6524]
-[6525]  impl Allocator for TestAllocator {  
-[6526]      fn allocate(&self, _layout: std::alloc::Layout) -> Result<NonNull<u8>, ()> {  
-[6527]          Ok(NonNull::new_unchecked(std::ptr::null_mut()))  
-[6528]      }  
-[6529]   }
-[6530]   
-[6531]
-[6532]    let _iter: IntoIter<u32, String, TestAllocator> = Default::default();
-[6533]    assert_eq!(_iter.inner, Default::default());
-[6534]}
-Instructions: Fix the error on the above code snippets. Not every snippet might require a fix or be relevant to the error, but take into account the code in all above snippets as it could help you derive the best possible fix. Assume that the snippets might not be complete and could be missing lines above or below. Do not add comments or code that is not necessary to fix the error. Do not use unsafe or unstable features (through ’#![feature(...)]’). You can only modify lines 6521 to 6534 in file /home/abezbm/rust-utgen-test-crates/hashbrown/src/map.rs. For your answer, return one or more ChangeLog groups, each containing one or more fixes to the above code snippets. Each group must be formatted with the below instructions.Format instructions: Each ChangeLog group must start with a description of its included fixes. The group must then list one or more pairs of (OriginalCode, FixedCode) code snippets. Each OriginalCode snippet must list all consecutive original lines of code that must be replaced (including a few lines before and after the fixes), followed by the FixedCode snippet with all consecutive fixed lines of code that must replace the original lines of code (including the same few lines before and after the changes). In each pair, the OriginalCode and FixedCode snippets must start at the same source code line number N. Each listed code line, in both the OriginalCode and FixedCode snippets, must be prefixed with [N] that matches the line index N in the above snippets, and then be prefixed with exactly the same whitespace indentation as the original snippets above.
+[6521]    struct TestAllocator;
+[6522]
+[6523]    impl Allocator for TestAllocator {
+[6524]        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {
+[6525]            unimplemented!()
+[6526]        }
+[6527]        
+[6528]        unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+[6529]            unimplemented!()
+[6530]        }
+[6531]    }
+[6532]
+[6533]    let empty_map: IntoKeys<i32, String, TestAllocator> = IntoKeys {
+[6534]        inner: IntoIter {
+[6535]            inner: RawIntoIter::new(),
+[6536]        },
+[6537]    };
+[6538]
+[6539]    let result = empty_map.fold(0, |acc, _| acc + 1);
+[6540]    assert_eq!(result, 0);
+[6541]    let non_empty_map: IntoKeys<i32, String, TestAllocator> = IntoKeys {
+[6542]    inner: IntoIter {
+[6543]    inner: RawIntoIter::from(vec![(1, "one".to_string()), (2, "two".to_string())]),
+[6544]    },
+[6545]    };
+[6546]    let result_non_empty = non_empty_map.fold(0, |acc, _| acc + 1);
+[6547]    assert_eq!(result_non_empty, 2);
+[6548]    let mixed_map: IntoKeys<i32, String, TestAllocator> = IntoKeys {
+[6549]    inner: IntoIter {
+[6550]    inner: RawIntoIter::from(vec![(1, "one".to_string()), (3, "three".to_string())]),
+[6551]    },
+[6552]    };
+[6553]    let result_mixed = mixed_map.fold(0, |acc, _| acc + 1);
+[6554]    assert_eq!(result_mixed, 2);
+[6555]    let single_entry_map: IntoKeys<i32, String, TestAllocator> = IntoKeys {
+[6556]    inner: IntoIter {
+[6557]    inner: RawIntoIter::from(vec![(5, "five".to_string())]),
+[6558]    },
+[6559]    };
+[6560]    let result_single = single_entry_map.fold(0, |acc, _| acc + 1);
+[6561]    assert_eq!(result_single, 1);
+[6562]    let large_map: IntoKeys<i32, String, TestAllocator> = IntoKeys {
+[6563]    inner: IntoIter {
+[6564]    inner: RawIntoIter::from((0..1000).map(|i| (i, i.to_string())).collect::<Vec<_>>()),
+[6565]    },
+[6566]    };
+[6567]    let result_large = large_map.fold(0, |acc, _| acc + 1);
+[6568]    assert_eq!(result_large, 1000);
+[6569]}
+Instructions: Fix the error on the above code snippets. Not every snippet might require a fix or be relevant to the error, but take into account the code in all above snippets as it could help you derive the best possible fix. Assume that the snippets might not be complete and could be missing lines above or below. Do not add comments or code that is not necessary to fix the error. Do not use unsafe or unstable features (through ’#![feature(...)]’). You can only modify lines 6521 to 6568 in file /home/abezbm/rust-utgen-test-crates/hashbrown/src/map.rs. For your answer, return one or more ChangeLog groups, each containing one or more fixes to the above code snippets. Each group must be formatted with the below instructions.Format instructions: Each ChangeLog group must start with a description of its included fixes. The group must then list one or more pairs of (OriginalCode, FixedCode) code snippets. Each OriginalCode snippet must list all consecutive original lines of code that must be replaced (including a few lines before and after the fixes), followed by the FixedCode snippet with all consecutive fixed lines of code that must replace the original lines of code (including the same few lines before and after the changes). In each pair, the OriginalCode and FixedCode snippets must start at the same source code line number N. Each listed code line, in both the OriginalCode and FixedCode snippets, must be prefixed with [N] that matches the line index N in the above snippets, and then be prefixed with exactly the same whitespace indentation as the original snippets above.
 ---
 ChangeLog:1@<file>
 FixDescription: <summary>.

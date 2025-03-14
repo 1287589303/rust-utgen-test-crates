@@ -1,0 +1,497 @@
+{
+  "name": "regex_automata::util::utf8::decode_last",
+  "mod_info": {
+    "name": "util::utf8",
+    "loc": "regex-automata/src/util/mod.rs:57:1:57:21"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/util/utf8.rs:79:1:93:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: bytes.is_empty() at line 80 is true\n",
+        "expected return value/type: None\n"
+      ],
+      "input_infer": "bytes = []\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[];",
+                "    let result = decode_last(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[];",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "precondition: bytes.is_empty() at line 80 is false\n",
+        "precondition: start > limit at line 85 is true\n",
+        "precondition: is_leading_or_invalid_byte(bytes[start]) at line 85 is true\n",
+        "precondition: decode(&bytes[start..]) matches Some(Ok(ch)) or Some(Err(_)) at line 88 is true\n",
+        "precondition: decode(&bytes[start..]) matches None at line 88 is true\n",
+        "precondition: decode(&bytes[start..]) matches Some(Ok(ch)) at line 88 is true\n",
+        "expected return value/type: Some(Ok(ch))\n"
+      ],
+      "input_infer": "1 <= bytes.length <= 5, bytes must contain valid UTF-8 characters, bytes[start] must be a valid UTF-8 leading byte, and bytes[start..] must satisfy UTF-8 encoding rules\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = [0b1100_0001, 0b1010_0001]; // 'Á'",
+                "    let result = decode_last(&bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, Some(Ok('Á')));"
+              ],
+              "code": [
+                "{",
+                "    let bytes = [0b1100_0001, 0b1010_0001]; // 'Á'",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Ok('Á')));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = [0b1110_0001, 0b1000_0001, 0b1010_0001]; // 'Á'",
+                "    let result = decode_last(&bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    result.assert_equal(Some(Ok('Á')));"
+              ],
+              "code": [
+                "{",
+                "    let bytes = [0b1110_0001, 0b1000_0001, 0b1010_0001]; // 'Á'",
+                "    let result = decode_last(&bytes);",
+                "    result.assert_equal(Some(Ok('Á')));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = [0b1111_0010, 0b1000_0001, 0b1000_0001, 0b1000_0001]; // '€'",
+                "    let result = decode_last(&bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes = [0b1111_0010, 0b1000_0001, 0b1000_0001, 0b1000_0001]; // '€'",
+                "    let expected = Some(Ok('€'));",
+                "    assert_eq!(decode_last(&bytes), expected);"
+              ],
+              "code": [
+                "{",
+                "    let bytes = [0b1111_0010, 0b1000_0001, 0b1000_0001, 0b1000_0001]; // '€'",
+                "    let result = decode_last(&bytes);",
+                "    let bytes = [0b1111_0010, 0b1000_0001, 0b1000_0001, 0b1000_0001]; // '€'",
+                "    let expected = Some(Ok('€'));",
+                "    assert_eq!(decode_last(&bytes), expected);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes = [0b1111_1111, 0b1000_0001]; // Invalid leading byte",
+                "    let result = decode_last(&bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes = [0b1100_0001, 0b1000_0000]; // Valid UTF-8 encoding for 'á'",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Ok('А'))); // Assuming 'А' is the expected character",
+                "    ",
+                "    let bytes = [0b1111_1110, 0b1000_0000]; // Valid UTF-8 encoding for '€'",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Ok('€'))); // Assuming '€' is the expected character",
+                "    ",
+                "    let bytes = [0b1111_1111, 0b1010_0001, 0b0011_0010]; // Invalid leading byte",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Err(0b0011_0010))); // Last byte returned as error",
+                "    ",
+                "    let bytes = [0b1100_0011, 0b1011_0001]; // Valid UTF-8 encoding for 'ƒ'",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Ok('ƒ'))); // Assuming 'ƒ' is the expected character",
+                "    ",
+                "    let bytes = [0b1111_1000]; // Single byte, invalid UTF-8",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Err(0b1111_1000))); // Last byte returned as error",
+                "    ",
+                "    let bytes = [0b1100_1010, 0b0000_1010]; // Valid UTF-8 encoding",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Ok('©'))); // Assuming '©' is the expected character"
+              ],
+              "code": [
+                "{",
+                "    let bytes = [0b1111_1111, 0b1000_0001]; // Invalid leading byte",
+                "    let result = decode_last(&bytes);",
+                "    let bytes = [0b1100_0001, 0b1000_0000]; // Valid UTF-8 encoding for 'á'",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Ok('А'))); // Assuming 'А' is the expected character",
+                "    ",
+                "    let bytes = [0b1111_1110, 0b1000_0000]; // Valid UTF-8 encoding for '€'",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Ok('€'))); // Assuming '€' is the expected character",
+                "    ",
+                "    let bytes = [0b1111_1111, 0b1010_0001, 0b0011_0010]; // Invalid leading byte",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Err(0b0011_0010))); // Last byte returned as error",
+                "    ",
+                "    let bytes = [0b1100_0011, 0b1011_0001]; // Valid UTF-8 encoding for 'ƒ'",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Ok('ƒ'))); // Assuming 'ƒ' is the expected character",
+                "    ",
+                "    let bytes = [0b1111_1000]; // Single byte, invalid UTF-8",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Err(0b1111_1000))); // Last byte returned as error",
+                "    ",
+                "    let bytes = [0b1100_1010, 0b0000_1010]; // Valid UTF-8 encoding",
+                "    let result = decode_last(&bytes);",
+                "    assert_eq!(result, Some(Ok('©'))); // Assuming '©' is the expected character",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[]; // Should return None",
+                "    let result = decode_last(bytes);",
+                "    assert!(result.is_none());",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes: &[u8] = &[0b11000010, 0b10111111]; // Valid UTF-8 sequence for 'ÿ', expects Some(Ok('ÿ'))",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, Some(Ok('ÿ')));",
+                "    ",
+                "    let bytes: &[u8] = &[0b11000010, 0b10000010, 0b10111111]; // Valid UTF-8 sequence for '¢', expects Some(Ok('¢'))",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, Some(Ok('¢')));",
+                "    ",
+                "    let bytes: &[u8] = &[0b11100000, 0b10100000, 0b10000001]; // Valid UTF-8 sequence for 'Á', expects Some(Ok('Á'))",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, Some(Ok('Á')));",
+                "    ",
+                "    let bytes: &[u8] = &[0b11000000, 0b10111111, 0b11111111]; // Invalid UTF-8 sequence, expects Some(Err(255))",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, Some(Err(255)));",
+                "    ",
+                "    let bytes: &[u8] = &[0b10111111]; // Leading byte but invalid, expects Some(Err(191))",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, Some(Err(191)));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[]; // Should return None",
+                "    let result = decode_last(bytes);",
+                "    assert!(result.is_none());",
+                "    let bytes: &[u8] = &[0b11000010, 0b10111111]; // Valid UTF-8 sequence for 'ÿ', expects Some(Ok('ÿ'))",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, Some(Ok('ÿ')));",
+                "    ",
+                "    let bytes: &[u8] = &[0b11000010, 0b10000010, 0b10111111]; // Valid UTF-8 sequence for '¢', expects Some(Ok('¢'))",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, Some(Ok('¢')));",
+                "    ",
+                "    let bytes: &[u8] = &[0b11100000, 0b10100000, 0b10000001]; // Valid UTF-8 sequence for 'Á', expects Some(Ok('Á'))",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, Some(Ok('Á')));",
+                "    ",
+                "    let bytes: &[u8] = &[0b11000000, 0b10111111, 0b11111111]; // Invalid UTF-8 sequence, expects Some(Err(255))",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, Some(Err(255)));",
+                "    ",
+                "    let bytes: &[u8] = &[0b10111111]; // Leading byte but invalid, expects Some(Err(191))",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, Some(Err(191)));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "precondition: bytes.is_empty() at line 80 is false\n",
+        "precondition: start > limit at line 85 is true\n",
+        "precondition: is_leading_or_invalid_byte(bytes[start]) at line 85 is false\n",
+        "precondition: start > limit at line 85 is false, with bound start == limit\n",
+        "precondition: decode(&bytes[start..]) matches None at line 88 is true\n",
+        "precondition: decode(&bytes[start..]) matches None at line 88 is true\n",
+        "expected return value/type: None\n"
+      ],
+      "input_infer": "bytes: &[u8] where length is between 1 and 5 bytes, with the last byte being an invalid UTF-8 continuation byte.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = b\"\"; // Invalid as per precondition",
+                "    let result = decode_last(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    None",
+                "    Some(Err(bytes[bytes.len() - 1]))",
+                "    Some(Ok(ch))",
+                "    None"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = b\"\"; // Invalid as per precondition",
+                "    let result = decode_last(bytes);",
+                "    None",
+                "    Some(Err(bytes[bytes.len() - 1]))",
+                "    Some(Ok(ch))",
+                "    None",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = b\"\\xE2\\x9C\"; // Two valid bytes, where last is not a valid continuation",
+                "    let result = decode_last(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = b\"\\xE2\\x9C\"; // Two valid bytes, where last is not a valid continuation",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = b\"\\xC2\\xE2\\x9C\"; // Last byte is E2, which is invalid continuation",
+                "    let result = decode_last(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = b\"\\xC2\\xE2\\x9C\"; // Last byte is E2, which is invalid continuation",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = b\"\\xC2\\xA1\"; // One valid UTF-8 sequence, but last is continuation (invalid)",
+                "    let result = decode_last(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    let bytes: &[u8] = b\"\"; // Test with empty byte slice, expect None",
+                "    assert_eq!(decode_last(bytes), None);",
+                "    ",
+                "    let bytes: &[u8] = b\"\\xC2\\xA1\\x80\"; // Test with valid leading byte and invalid continuation",
+                "    assert_eq!(decode_last(bytes), Some(Err(0x80)));",
+                "    ",
+                "    let bytes: &[u8] = b\"\\xC2\\x80\"; // Test with valid leading but only continuation byte",
+                "    assert_eq!(decode_last(bytes), Some(Err(0x80)));",
+                "    ",
+                "    let bytes: &[u8] = b\"\\xE2\\x82\\xAC\"; // Test with valid UTF-8 sequence (Euro sign)",
+                "    assert_eq!(decode_last(bytes), Some(Ok('€')));",
+                "    ",
+                "    let bytes: &[u8] = b\"\\xF0\\x9F\\x92\\xA9\"; // Test with a valid 4-byte UTF-8 sequence (Pile of poo)",
+                "    assert_eq!(decode_last(bytes), Some(Ok('💩')));",
+                "    ",
+                "    let bytes: &[u8] = b\"\\xE2\\x82\"; // Test with invalid ending (incomplete sequence)",
+                "    assert_eq!(decode_last(bytes), Some(Err(0xE2)));"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = b\"\\xC2\\xA1\"; // One valid UTF-8 sequence, but last is continuation (invalid)",
+                "    let result = decode_last(bytes);",
+                "    let bytes: &[u8] = b\"\"; // Test with empty byte slice, expect None",
+                "    assert_eq!(decode_last(bytes), None);",
+                "    ",
+                "    let bytes: &[u8] = b\"\\xC2\\xA1\\x80\"; // Test with valid leading byte and invalid continuation",
+                "    assert_eq!(decode_last(bytes), Some(Err(0x80)));",
+                "    ",
+                "    let bytes: &[u8] = b\"\\xC2\\x80\"; // Test with valid leading but only continuation byte",
+                "    assert_eq!(decode_last(bytes), Some(Err(0x80)));",
+                "    ",
+                "    let bytes: &[u8] = b\"\\xE2\\x82\\xAC\"; // Test with valid UTF-8 sequence (Euro sign)",
+                "    assert_eq!(decode_last(bytes), Some(Ok('€')));",
+                "    ",
+                "    let bytes: &[u8] = b\"\\xF0\\x9F\\x92\\xA9\"; // Test with a valid 4-byte UTF-8 sequence (Pile of poo)",
+                "    assert_eq!(decode_last(bytes), Some(Ok('💩')));",
+                "    ",
+                "    let bytes: &[u8] = b\"\\xE2\\x82\"; // Test with invalid ending (incomplete sequence)",
+                "    assert_eq!(decode_last(bytes), Some(Err(0xE2)));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 10,
+      "prompt_conds": [
+        "precondition: bytes.is_empty() at line 80 is false\n",
+        "precondition: start > limit at line 85 is false, with bound start == limit\n",
+        "precondition: decode(&bytes[start..]) matches None at line 88 is true\n",
+        "precondition: decode(&bytes[start..]) matches None at line 88 is true\n",
+        "expected return value/type: None\n"
+      ],
+      "input_infer": "bytes: non-empty byte slice where length is 4 or greater, last byte invalid UTF-8 byte, and bytes contain no leading valid UTF-8 bytes in the last 4 bytes.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[];",
+                "    let result = decode_last(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(decode_last(&[0xC0]), None);",
+                "    assert_eq!(decode_last(&[0xC0, 0x80]), None);",
+                "    assert_eq!(decode_last(&[0xE0, 0xA0, 0x80]), None);",
+                "    assert_eq!(decode_last(&[0xF0, 0x80, 0x80, 0xBF]), None);",
+                "    assert_eq!(decode_last(&[0xF0, 0x80, 0x80, 0x80, 0xFF]), None);"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[];",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(decode_last(&[0xC0]), None);",
+                "    assert_eq!(decode_last(&[0xC0, 0x80]), None);",
+                "    assert_eq!(decode_last(&[0xE0, 0xA0, 0x80]), None);",
+                "    assert_eq!(decode_last(&[0xF0, 0x80, 0x80, 0xBF]), None);",
+                "    assert_eq!(decode_last(&[0xF0, 0x80, 0x80, 0x80, 0xFF]), None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0b11000010, 0b10111111, 0b11100000, 0b10111111]; // Invalid continuation bytes",
+                "    let result = decode_last(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0b11000010, 0b10111111, 0b11100000, 0b10111111]; // Invalid continuation bytes",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let bytes: &[u8] = &[0b11000000, 0b00000000, 0b00000000, 0b11111111]; // Last byte is invalid",
+                "    let result = decode_last(bytes);",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(result, None);"
+              ],
+              "code": [
+                "{",
+                "    let bytes: &[u8] = &[0b11000000, 0b00000000, 0b00000000, 0b11111111]; // Last byte is invalid",
+                "    let result = decode_last(bytes);",
+                "    assert_eq!(result, None);",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

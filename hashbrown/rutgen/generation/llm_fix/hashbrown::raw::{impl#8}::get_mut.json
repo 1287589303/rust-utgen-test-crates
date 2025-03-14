@@ -55,13 +55,13 @@
               ],
               "code": [
                 "{",
-                "    struct TestAllocator;",
-                "    unsafe impl Allocator for TestAllocator {",
-                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
-                "            // Dummy implementation for testing",
-                "            Ok(NonNull::new_unchecked(0 as *mut u8))",
-                "        }",
-                "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
+                "   struct TestAllocator;",
+                "   unsafe impl Allocator for TestAllocator {",
+                "       fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
+                "           // Dummy implementation for testing",
+                "           Ok(NonNull::new(0 as *mut u8).ok_or(())?)",
+                "       }",
+                "       unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
                 "    }",
                 "",
                 "    let mut table: RawTable<i32, TestAllocator> = RawTable::with_capacity_in(4, TestAllocator);",
@@ -69,7 +69,7 @@
                 "    // Insert an element to ensure `find` will return Some(bucket)",
                 "    let hash = 42;",
                 "    let value = 100;",
-                "    table.insert(hash, value, |v| *v);",
+                "   table.insert(hash, value, |v| (*v).try_into().unwrap());",
                 "",
                 "    // Define equality function",
                 "    let eq = |&v: &i32| v == value;",
@@ -82,7 +82,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -123,8 +123,8 @@
                 "{",
                 "    struct TestAllocator;",
                 "    unsafe impl Allocator for TestAllocator {",
-                "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
-                "            Ok(NonNull::new_unchecked(0 as *mut u8))",
+                "       fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, allocator_api2::alloc::AllocError> {  ",
+                "           Ok(NonNull::new_unchecked(0 as *mut [u8; 1] as *mut u8))  ",
                 "        }",
                 "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
                 "    }",
@@ -137,8 +137,8 @@
                 "    let hash2 = 101;",
                 "    let value2 = 201;",
                 "    ",
-                "    table.insert(hash1, value1, |v| *v);",
-                "    table.insert(hash2, value2, |v| *v);",
+                "   table.insert(hash1, value1, |v| (*v).try_into().unwrap());  ",
+                "   table.insert(hash2, value2, |v| (*v).try_into().unwrap());  ",
                 "",
                 "    // Define equality function for second element",
                 "    let eq = |&v: &i32| v == value2;",
@@ -151,7 +151,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -190,18 +190,18 @@
                 "    struct TestAllocator;",
                 "    unsafe impl Allocator for TestAllocator {",
                 "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
-                "            Ok(NonNull::new_unchecked(0 as *mut u8))",
-                "        }",
-                "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
+                "           Ok(NonNull::new(0 as *mut u8).ok_or(()).unwrap())  ",
+                "       }  ",
+                "       unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}  ",
                 "    }",
                 "",
                 "    let mut table: RawTable<i32, TestAllocator> = RawTable::with_capacity_in(2, TestAllocator);",
                 "",
                 "    // Insert an element at the boundary",
                 "    let hash = 0; // Assuming 0 is valid",
-                "    let value = -1; // Example boundary value",
-                "    table.insert(hash, value, |v| *v);",
-                "",
+                "   let value = -1; // Example boundary value",
+                "   table.insert(hash, value, |v| (*v).try_into().unwrap());",
+                "   ",
                 "    // Define equality function",
                 "    let eq = |&v: &i32| v == value;",
                 "",
@@ -214,7 +214,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -258,9 +258,9 @@
                 "{",
                 "    struct DummyAllocator;",
                 "    unsafe impl Allocator for DummyAllocator {",
-                "        fn allocate(&self, _: Layout) -> Result<NonNull<u8>, ()> {",
-                "            Ok(NonNull::new_unchecked(std::ptr::null_mut()))",
-                "        }",
+                "       fn allocate(&self, _: Layout) -> Result<NonNull<[u8]>, allocator_api2::alloc::AllocError> {",
+                "           Ok(NonNull::new_unchecked(std::ptr::null_mut() as *mut [u8]))",
+                "       }",
                 "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
                 "    }",
                 "",
@@ -272,7 +272,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -300,10 +300,10 @@
                 "    struct DummyAllocator;",
                 "    unsafe impl Allocator for DummyAllocator {",
                 "        fn allocate(&self, _: Layout) -> Result<NonNull<u8>, ()> {",
-                "            Ok(NonNull::new_unchecked(std::ptr::null_mut()))",
-                "        }",
-                "        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
-                "    }",
+                "           Err(()) // Return an error instead of using an invalid pointer",
+                "       }",
+                "       unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}",
+                "   }",
                 "",
                 "    let allocator = DummyAllocator;",
                 "    let mut table: RawTable<i32, DummyAllocator> = RawTable::new_in(allocator);",
@@ -313,7 +313,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }

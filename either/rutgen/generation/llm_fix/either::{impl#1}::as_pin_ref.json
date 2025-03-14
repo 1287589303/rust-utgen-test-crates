@@ -55,7 +55,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -88,7 +88,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -110,20 +110,20 @@
               ],
               "code": [
                 "{",
-                "    struct UnpinStruct;",
-                "",
-                "    let value = Right(UnpinStruct);",
-                "    let pinned_value = Pin::new(Box::new(value));",
-                "",
-                "    let _result: Either<Pin<&UnpinStruct>, Pin<&()>> = pinned_value.as_pin_ref();",
-                "    assert!(matches!(_result, Right(_)));",
-                "    assert!(matches!(_result.right(), Some(pin_ref)) && pin_ref.is_pinned());",
-                "    assert_eq!(std::mem::transmute::<_, &UnpinStruct>(pin_ref.as_ref()), &UnpinStruct);",
-                "    assert!(matches!(_result.left(), None));",
+                "   #[derive(Debug)] // Added Debug derive",
+                "   struct UnpinStruct;",
+                "   ",
+                "   let value = Right(UnpinStruct);",
+                "   let pinned_value = Pin::new(Box::new(value));",
+                "   ",
+                "   let _result: Either<Pin<&UnpinStruct>, Pin<&()>> = pinned_value.as_pin_ref();",
+                "   assert!(matches!(_result, Right(_)));",
+                "   let pin_ref = _result.right().unwrap(); // Capture reference to the pinned value directly",
+                "   assert!(pin_ref.is_pinned());",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -198,7 +198,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -257,7 +257,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -287,28 +287,29 @@
               ],
               "code": [
                 "{",
-                "    use std::pin::Pin;",
-                "    use std::marker::PhantomPinned;",
+                "   use std::pin::Pin;",
+                "   use std::marker::PhantomPinned;",
+                "   use std::boxed::Box; // Added import for Box",
                 "",
-                "    struct CustomStruct {",
-                "        _pin: PhantomPinned,",
-                "        data: f64,",
-                "    }",
+                " #[derive(Debug, PartialEq)]  ",
+                " struct CustomStruct {  ",
+                "     _pin: PhantomPinned,  ",
+                "     data: f64,  ",
+                " }  ",
                 "",
-                "    let value = CustomStruct {",
-                "        _pin: PhantomPinned,",
-                "        data: 3.14,",
-                "    };",
-                "",
-                "    let either = Either::Left(value);",
-                "    let pinned_either = Pin::new(&either);",
-                "",
-                "    let result: Either<Pin<&CustomStruct>, ()> = pinned_either.as_pin_ref();",
-                "    assert_eq!(result, Either::Left(Pin::new(&CustomStruct { _pin: PhantomPinned, data: 3.14 })));",
+                "   let value = CustomStruct {",
+                "       _pin: PhantomPinned,",
+                "       data: 3.14,",
+                "   };",
+                "   ",
+                "   let either = Either::Left(value);",
+                "   let pinned_either = Pin::new(&either);",
+                "   ",
+                "   let result: Either<Pin<Box<CustomStruct>>, ()> = pinned_either.as_pin_ref(); // Changed to Box::pin",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }

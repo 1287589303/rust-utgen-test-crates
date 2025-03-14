@@ -1,0 +1,137 @@
+{
+  "name": "base64::decode::decode_engine_vec",
+  "mod_info": {
+    "name": "decode",
+    "loc": "src/lib.rs:293:1:293:12"
+  },
+  "visible": true,
+  "loc": "src/decode.rs:111:1:117:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct MockEngine;",
+                "",
+                "    impl Engine for MockEngine {",
+                "        fn decode_vec<T: AsRef<[u8]>>(&self, input: T, buffer: &mut Vec<u8>) -> Result<(), DecodeError> {",
+                "            let decoded = base64::decode(input.as_ref()).map_err(|_| DecodeError::InvalidByte(0, 0))?;",
+                "            buffer.extend_from_slice(&decoded);",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "    ",
+                "    let input = \"aGVsbG8gd29ybGQ=\"; // \"hello world\" in base64",
+                "    let mut buffer = Vec::new();",
+                "    let engine = MockEngine;",
+                "",
+                "    let result = decode_engine_vec(input, &mut buffer, &engine);",
+                "    assert!(result.is_ok());",
+                "   assert_eq!(buffer, b\"hello world\".as_ref());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct MockEngine;",
+                "",
+                "    impl Engine for MockEngine {",
+                "        fn decode_vec<T: AsRef<[u8]>>(&self, input: T, buffer: &mut Vec<u8>) -> Result<(), DecodeError> {",
+                "            if input.as_ref() == b\"invalid_base64\" {",
+                "                return Err(DecodeError::InvalidByte(0, b'i')); // mock error",
+                "            }",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "    ",
+                "    let input = \"invalid_base64\";",
+                "    let mut buffer = Vec::new();",
+                "    let engine = MockEngine;",
+                "",
+                "    let result = decode_engine_vec(input, &mut buffer, &engine);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), DecodeError::InvalidByte(0, b'i'));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"decode_vec\")]"
+              ],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct MockEngine;",
+                "",
+                "    impl Engine for MockEngine {",
+                "        fn decode_vec<T: AsRef<[u8]>>(&self, input: T, buffer: &mut Vec<u8>) -> Result<(), DecodeError> {",
+                "            if input.as_ref().is_empty() {",
+                "                panic!(\"decode_vec called with empty input\");",
+                "            }",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "    ",
+                "    let input = \"\";",
+                "    let mut buffer = Vec::new();",
+                "    let engine = MockEngine;",
+                "",
+                "    let _ = decode_engine_vec(input, &mut buffer, &engine);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracle": [],
+              "code": [
+                "{",
+                "    struct MockEngine;",
+                "",
+                "    impl Engine for MockEngine {",
+                "        fn decode_vec<T: AsRef<[u8]>>(&self, input: T, buffer: &mut Vec<u8>) -> Result<(), DecodeError> {",
+                "            return Err(DecodeError::InvalidLength(3)); // mock invalid length error",
+                "        }",
+                "    }",
+                "    ",
+                "    let input = \"abc\"; // mock input with invalid length for base64",
+                "    let mut buffer = Vec::new();",
+                "    let engine = MockEngine;",
+                "",
+                "    let result = decode_engine_vec(input, &mut buffer, &engine);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err(), DecodeError::InvalidLength(3));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

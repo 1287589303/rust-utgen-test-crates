@@ -1,0 +1,68 @@
+// Answer 0
+
+#[test]
+fn test_encode_engine_string_empty_input() {
+    struct MockEngine;
+
+    impl Engine for MockEngine {
+        fn encode_string<T: AsRef<[u8]>>(&self, input: T, output_buf: &mut String) {
+            output_buf.push_str(&base64::encode(input.as_ref()));
+        }
+    }
+
+    let engine = MockEngine;
+    let mut output = String::new();
+    encode_engine_string("", &mut output, &engine);
+    assert_eq!(output, "");
+}
+
+#[test]
+fn test_encode_engine_string_small_input() {
+    struct MockEngine;
+
+    impl Engine for MockEngine {
+        fn encode_string<T: AsRef<[u8]>>(&self, input: T, output_buf: &mut String) {
+            output_buf.push_str(&base64::encode(input.as_ref()));
+        }
+    }
+
+    let engine = MockEngine;
+    let mut output = String::new();
+    encode_engine_string("hello", &mut output, &engine);
+    assert_eq!(output, "aGVsbG8=");
+}
+
+#[test]
+fn test_encode_engine_string_binary_data() {
+    struct MockEngine;
+
+    impl Engine for MockEngine {
+        fn encode_string<T: AsRef<[u8]>>(&self, input: T, output_buf: &mut String) {
+            output_buf.push_str(&base64::encode(input.as_ref()));
+        }
+    }
+
+    let engine = MockEngine;
+    let mut output = String::new();
+    let binary_data = vec![0, 159, 146, 150]; // Example binary data
+    encode_engine_string(&binary_data, &mut output, &engine);
+    assert_eq!(output, "/wKu"); // Encoded base64 result
+}
+
+#[test]
+fn test_encode_engine_string_large_input() {
+    struct MockEngine;
+
+    impl Engine for MockEngine {
+        fn encode_string<T: AsRef<[u8]>>(&self, input: T, output_buf: &mut String) {
+            output_buf.push_str(&base64::encode(input.as_ref()));
+        }
+    }
+
+    let engine = MockEngine;
+    let mut output = String::new();
+    let large_input = vec![b'A'; 1000]; // Large input
+    encode_engine_string(&large_input, &mut output, &engine);
+    assert_eq!(output, &"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=");
+}
+

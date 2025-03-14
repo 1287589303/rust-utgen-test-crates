@@ -1,0 +1,262 @@
+{
+  "name": "regex_automata::util::wire::read_pattern_id",
+  "mod_info": {
+    "name": "util::wire",
+    "loc": "regex-automata/src/util/mod.rs:46:1:46:14"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/util/wire.rs:581:1:590:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "precondition: PatternID::from_ne_bytes(bytes)\n        .map_err(|err| DeserializeError::pattern_id_error(err, what))? at line 587 is Err/None\n"
+      ],
+      "input_infer": "slice: [] (empty slice, length < PatternID::SIZE) to [u8; PatternID::SIZE-1] (length insufficient for valid PatternID) and valid bytes of any size up to PatternID::SIZE with values that exceed PatternID limits for target endianness; what: any static string\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[];",
+                "    let result = read_pattern_id(slice, \"test_empty\");",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(matches!(read_pattern_id(&[], \"test_empty\"), Err(_)));"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[];",
+                "    let result = read_pattern_id(slice, \"test_empty\");",
+                "    assert!(matches!(read_pattern_id(&[], \"test_empty\"), Err(_)));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[1, 2, 3]; // Length < PatternID::SIZE",
+                "    let result = read_pattern_id(slice, \"test_short\");",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(matches!(result, Err(_)));",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::PatternIDError);"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[1, 2, 3]; // Length < PatternID::SIZE",
+                "    let result = read_pattern_id(slice, \"test_short\");",
+                "    assert!(matches!(result, Err(_)));",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::PatternIDError);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[255; PatternID::SIZE]; // Assuming this exceeds the PatternID limit",
+                "    let result = read_pattern_id(slice, \"test_invalid_exceeding\");",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, DeserializeErrorKind::PatternIDError);",
+                "    assert_eq!(result.unwrap_err().what, \"test_invalid_exceeding\");"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[255; PatternID::SIZE]; // Assuming this exceeds the PatternID limit",
+                "    let result = read_pattern_id(slice, \"test_invalid_exceeding\");",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, DeserializeErrorKind::PatternIDError);",
+                "    assert_eq!(result.unwrap_err().what, \"test_invalid_exceeding\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let slice: &[u8] = &[128; PatternID::SIZE]; // Assuming this exceeds the PatternID limit",
+                "    let result = read_pattern_id(slice, \"test_invalid_partial\");",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::PatternIDError);",
+                "    assert_eq!(result.unwrap_err().1, \"test_invalid_partial\");"
+              ],
+              "code": [
+                "{",
+                "    let slice: &[u8] = &[128; PatternID::SIZE]; // Assuming this exceeds the PatternID limit",
+                "    let result = read_pattern_id(slice, \"test_invalid_partial\");",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().0, DeserializeErrorKind::PatternIDError);",
+                "    assert_eq!(result.unwrap_err().1, \"test_invalid_partial\");",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: PatternID::from_ne_bytes(bytes)\n        .map_err(|err| DeserializeError::pattern_id_error(err, what))? at line 587 is Ok/Some\n",
+        "expected return value/type: Ok((pid, PatternID::SIZE))\n"
+      ],
+      "input_infer": "slice length must be at least PatternID::SIZE and bytes must represent a valid PatternID for the target endianness; values in bytes should be in the range of valid PatternID integers.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let valid_slice: &[u8] = &[0, 1, 2, 3, 4, 5, 6, 7]; // Adjust the array size for PatternID::SIZE",
+                "    let what = \"valid pattern ID\";",
+                "",
+                "    let result = read_pattern_id(valid_slice, what);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    let (pid, bytes_read) = result.unwrap();",
+                "    assert_eq!(bytes_read, PatternID::SIZE);",
+                "    assert_eq!(pid, PatternID::from_ne_bytes([0, 1, 2, 3, 4, 5, 6, 7]).unwrap());"
+              ],
+              "code": [
+                "{",
+                "    let valid_slice: &[u8] = &[0, 1, 2, 3, 4, 5, 6, 7]; // Adjust the array size for PatternID::SIZE",
+                "    let what = \"valid pattern ID\";",
+                "",
+                "    let result = read_pattern_id(valid_slice, what);",
+                "    assert!(result.is_ok());",
+                "    let (pid, bytes_read) = result.unwrap();",
+                "    assert_eq!(bytes_read, PatternID::SIZE);",
+                "    assert_eq!(pid, PatternID::from_ne_bytes([0, 1, 2, 3, 4, 5, 6, 7]).unwrap());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let high_value_slice: &[u8] = &[255, 255, 255, 255, 255, 255, 255, 255]; // Ensure this still forms a valid PatternID",
+                "    let what = \"boundary high pattern ID\";",
+                "",
+                "    let result = read_pattern_id(high_value_slice, what);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().1, PatternID::SIZE);",
+                "    let (pid, _) = result.unwrap();",
+                "    assert!(pid <= PatternID::max_value());"
+              ],
+              "code": [
+                "{",
+                "    let high_value_slice: &[u8] = &[255, 255, 255, 255, 255, 255, 255, 255]; // Ensure this still forms a valid PatternID",
+                "    let what = \"boundary high pattern ID\";",
+                "",
+                "    let result = read_pattern_id(high_value_slice, what);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap().1, PatternID::SIZE);",
+                "    let (pid, _) = result.unwrap();",
+                "    assert!(pid <= PatternID::max_value());",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let low_value_slice: &[u8] = &[0, 0, 0, 0, 0, 0, 0, 0]; // Ensure this is valid for low value",
+                "    let what = \"boundary low pattern ID\";",
+                "",
+                "    let result = read_pattern_id(low_value_slice, what);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), (PatternID::from_ne_bytes([0, 0, 0, 0, 0, 0, 0, 0]).unwrap(), PatternID::SIZE));"
+              ],
+              "code": [
+                "{",
+                "    let low_value_slice: &[u8] = &[0, 0, 0, 0, 0, 0, 0, 0]; // Ensure this is valid for low value",
+                "    let what = \"boundary low pattern ID\";",
+                "",
+                "    let result = read_pattern_id(low_value_slice, what);",
+                "    assert!(result.is_ok());",
+                "    assert_eq!(result.unwrap(), (PatternID::from_ne_bytes([0, 0, 0, 0, 0, 0, 0, 0]).unwrap(), PatternID::SIZE));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    let insufficient_length_slice: &[u8] = &[0, 1]; // Length is less than PatternID::SIZE",
+                "    let what = \"insufficient pattern ID length\";",
+                "",
+                "    let result = read_pattern_id(insufficient_length_slice, what);",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap().0, DeserializeErrorKind::InsufficientLength);"
+              ],
+              "code": [
+                "{",
+                "    let insufficient_length_slice: &[u8] = &[0, 1]; // Length is less than PatternID::SIZE",
+                "    let what = \"insufficient pattern ID length\";",
+                "",
+                "    let result = read_pattern_id(insufficient_length_slice, what);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.err().unwrap().0, DeserializeErrorKind::InsufficientLength);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -42,7 +42,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -67,7 +67,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -92,7 +92,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -117,7 +117,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -200,11 +200,11 @@
               ],
               "code": [
                 "{",
-                "    struct MyAllocator;",
-                "    impl Allocator for MyAllocator {",
-                "        fn allocate(&self, _layout: std::alloc::Layout) -> Result<NonNull<u8>, ()> {",
-                "            unimplemented!()",
-                "        }",
+                "   struct MyAllocator;",
+                "   use std::ptr::NonNull; // Import NonNull",
+                "   impl Allocator for MyAllocator {",
+                "",
+                "",
                 "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: std::alloc::Layout) {",
                 "            unimplemented!()",
                 "        }",
@@ -256,7 +256,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -317,13 +317,13 @@
               "code": [
                 "{",
                 "    struct MyAllocator;",
-                "    impl Allocator for MyAllocator {",
-                "        fn allocate(&self, _layout: std::alloc::Layout) -> Result<NonNull<u8>, ()> {",
-                "            unimplemented!()",
-                "        }",
-                "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: std::alloc::Layout) {",
-                "            unimplemented!()",
-                "        }",
+                "  unsafe impl Allocator for MyAllocator {  ",
+                "      fn allocate(&self, _layout: std::alloc::Layout) -> Result<NonNull<u8>, ()> {  ",
+                "          unimplemented!()  ",
+                "       }",
+                "       unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: std::alloc::Layout) {",
+                "           unimplemented!()",
+                "       }",
                 "    }",
                 "    ",
                 "    let mut hash_set_a = HashSet::<&str, DefaultHashBuilder, MyAllocator> {",
@@ -357,7 +357,7 @@
                 "    hash_set_a.map.insert(\"cherry\", ());",
                 "    hash_set_b.map.insert(\"banana\", ());",
                 "    hash_set_b.map.insert(\"cherry\", ());",
-                "    let intersection = Intersection { iter: Iter { iter: Keys { /* Simulating Keys with elements */ } }, other: &hash_set_b };",
+                "   let intersection = Intersection { iter: Iter { iter: Keys::default() }, other: &hash_set_b };",
                 "    let result = intersection.next();",
                 "    assert_eq!(result, Some(&\"banana\"));",
                 "    let result = intersection.next();",
@@ -367,7 +367,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -485,8 +485,8 @@
                 "    },",
                 "    other: &hash_set_b,",
                 "    };",
-                "    assert_eq!(intersection.next(), Some(\"banana\"));",
-                "    ",
+                "   assert_eq!(intersection.next(), Some(\"banana\").as_ref());",
+                "   ",
                 "    let mut intersection = Intersection {",
                 "    iter: Iter {",
                 "    iter: Keys {",
@@ -496,8 +496,8 @@
                 "    },",
                 "    other: &hash_set_b,",
                 "    };",
-                "    assert_eq!(intersection.next(), Some(\"cherry\"));",
-                "    ",
+                "   assert_eq!(intersection.next(), Some(\"cherry\").as_ref());",
+                "   ",
                 "    let mut intersection = Intersection {",
                 "    iter: Iter {",
                 "    iter: Keys {",
@@ -510,7 +510,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }
@@ -600,11 +600,11 @@
                 "    }",
                 "",
                 "    let mut iter_elements = vec![HashableElement(1), HashableElement(2)].into_iter();",
-                "    let other_set: HashSet<HashableElement, DefaultHasher> = {",
-                "        let mut s = HashSet::new();",
-                "        s.insert(HashableElement(3));",
-                "        s.insert(HashableElement(4));",
-                "        s",
+                "   let other_set: HashSet<HashableElement, DefaultHasher> = {  ",
+                "       let mut s: HashSet<HashableElement, DefaultHasher> = HashSet::with_hasher(DefaultHasher::new());  ",
+                "       s.insert(HashableElement(3));  ",
+                "       s.insert(HashableElement(4));  ",
+                "       s  ",
                 "    };",
                 "",
                 "    let mut intersection = Intersection {",
@@ -619,7 +619,7 @@
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -674,17 +674,21 @@
               ],
               "code": [
                 "{",
-                "    struct HashableElement(u32);",
-                "",
-                "    impl PartialEq for HashableElement {",
-                "        fn eq(&self, other: &Self) -> bool {",
-                "            self.0 == other.0",
-                "        }",
-                "    }",
-                "",
-                "    impl Eq for HashableElement {}",
-                "",
-                "    let iter_elements: Vec<HashableElement> = vec![];",
+                "  #[derive(Debug, Hash)] // Added Hash trait",
+                "  struct HashableElement(u32);",
+                "  ",
+                "  impl PartialEq for HashableElement {",
+                "      fn eq(&self, other: &Self) -> bool {",
+                "          self.0 == other.0",
+                "      }",
+                "  }",
+                "  ",
+                "  impl Eq for HashableElement {}",
+                "  ",
+                "  // Added Hash trait implementation",
+                "  ",
+                "   ",
+                "   let iter_elements: Vec<HashableElement> = vec![];",
                 "    let other_set: HashSet<HashableElement, DefaultHasher> = {",
                 "        let mut s = HashSet::new();",
                 "        s.insert(HashableElement(1));",
@@ -693,34 +697,34 @@
                 "    };",
                 "",
                 "    let mut intersection = Intersection {",
-                "        iter: Iter { inner: iter_elements.into_iter() },",
-                "        other: &other_set,",
-                "    };",
-                "",
-                "    let _result = intersection.next();",
-                "    assert_eq!(_result, None);",
-                "    let iter_elements: Vec<HashableElement> = vec![HashableElement(3)];",
-                "    let mut intersection = Intersection {",
-                "    iter: Iter { inner: iter_elements.into_iter() },",
+                "   iter: Iter { iter: iter_elements.into_iter() },  ",
+                "       other: &other_set,  ",
+                "   };  ",
+                " ",
+                "   let _result = intersection.next();  ",
+                "   assert_eq!(_result, None);  ",
+                "   let iter_elements: Vec<HashableElement> = vec![HashableElement(3)];  ",
+                "   let mut intersection = Intersection {  ",
+                "   iter: Iter { iter: iter_elements.into_iter() },  ",
                 "    other: &other_set,",
                 "    };",
                 "    assert_eq!(_result, Some(&HashableElement(3)));",
                 "    let iter_elements: Vec<HashableElement> = vec![HashableElement(1)];",
                 "    let mut intersection = Intersection {",
-                "    iter: Iter { inner: iter_elements.into_iter() },",
-                "    other: &other_set,",
-                "    };",
-                "    assert_eq!(_result, Some(&HashableElement(1)));",
-                "    let iter_elements: Vec<HashableElement> = vec![HashableElement(4)];",
-                "    let mut intersection = Intersection {",
-                "    iter: Iter { inner: iter_elements.into_iter() },",
+                "   iter: Iter { iter: iter_elements.into_iter() },  ",
+                "   other: &other_set,  ",
+                "   };  ",
+                "   assert_eq!(_result, Some(&HashableElement(1)));  ",
+                "   let iter_elements: Vec<HashableElement> = vec![HashableElement(4)];  ",
+                "   let mut intersection = Intersection {  ",
+                "   iter: Iter { iter: iter_elements.into_iter() },  ",
                 "    other: &other_set,",
                 "    };",
                 "    assert_eq!(_result, None);",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             },
             {
               "attrs": [],
@@ -774,15 +778,17 @@
                 "    use std::collections::hash_map::DefaultHasher;",
                 "    use std::hash::{Hash, Hasher};",
                 "    ",
-                "    struct HashableElement(u32);",
-                "",
-                "    impl PartialEq for HashableElement {",
-                "        fn eq(&self, other: &Self) -> bool {",
-                "            self.0 == other.0",
-                "        }",
-                "    }",
-                "",
-                "    impl Eq for HashableElement {}",
+                "   #[derive(Debug)]  // Added Debug derive",
+                "   struct HashableElement(u32);",
+                "   ",
+                "   impl PartialEq for HashableElement {",
+                "       fn eq(&self, other: &Self) -> bool {",
+                "           self.0 == other.0",
+                "       }",
+                "   }",
+                "   ",
+                "   impl Eq for HashableElement {}",
+                "   // Debug trait is now implemented via #[derive(Debug)]",
                 "",
                 "    impl Hash for HashableElement {",
                 "        fn hash<H: Hasher>(&self, state: &mut H) {",
@@ -790,13 +796,13 @@
                 "        }",
                 "    }",
                 "",
-                "    let mut iter_elements = vec![HashableElement(1), HashableElement(3)].into_iter();",
-                "    let other_set: HashSet<HashableElement, DefaultHasher> = {",
-                "        let mut s = HashSet::new();",
-                "        s.insert(HashableElement(1));",
-                "        s.insert(HashableElement(2));",
-                "        s",
-                "    };",
+                "   let mut iter_elements = vec![HashableElement(1), HashableElement(3)].into_iter();  ",
+                "   let other_set: HashSet<HashableElement> = {  ",
+                "       let mut s = HashSet::new();  ",
+                "       s.insert(HashableElement(1));  ",
+                "       s.insert(HashableElement(2));  ",
+                "       s  ",
+                "   };  ",
                 "",
                 "    let mut intersection = Intersection {",
                 "        iter: Iter { inner: iter_elements },",
@@ -807,13 +813,13 @@
                 "    assert_eq!(intersection.next(), None);  // precondition: self.iter.next()? at line 1959 is Err/None",
                 "    assert_eq!(intersection.next(), Some(&HashableElement(1)));  // scenario where self.iter.next()? is Some and self.other.contains(elt) is true",
                 "    assert_eq!(intersection.next(), None);  // scenario where self.iter.next()? is Some but self.other.contains(elt) returns false",
-                "    intermediate_variable = intersection.iter.next();",
+                "   let intermediate_variable = intersection.iter.next();",
                 "    assert!(intermediate_variable.is_some());  // precondition: self.iter.next()? at line 1959 is Ok/Some",
                 "    assert!(!other_set.contains(intermediate_variable.unwrap()));  // ensure self.other.contains(elt) is false",
                 "}"
               ],
               "can_compile": false,
-              "repaired": false
+              "repaired": true
             }
           ]
         }

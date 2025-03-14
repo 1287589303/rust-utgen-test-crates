@@ -1,0 +1,308 @@
+{
+  "name": "regex_automata::nfa::thompson::literal_trie::{impl#0}::add",
+  "mod_info": {
+    "name": "nfa::thompson::literal_trie",
+    "loc": "regex-automata/src/nfa/thompson/mod.rs:63:1:63:18"
+  },
+  "visible": true,
+  "loc": "regex-automata/src/nfa/thompson/literal_trie.rs:110:5:118:6",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "precondition: self.rev at line 113 is true\n",
+        "precondition: let Some(b) = if self.rev { it.next_back() } else { it.next() } at line 113 is true\n",
+        "precondition: self.get_or_add_state(prev, b)? at line 114 is Err/None\n"
+      ],
+      "input_infer": "self.rev = true, bytes = [0x00, 0xFF], States = max(usize::MAX), exhaust StateID space, resulting in an Err(BuildError)\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut trie = LiteralTrie::reverse();",
+                "    let bytes: &[u8] = &[0x00, 0xFF];",
+                "",
+                "    // Simulate the trie being full by mocking StateID creation to return an error.",
+                "    // Since we can't directly manipulate StateID, we add just enough to push the limit.",
+                "    for _ in 0..(usize::MAX as u32) {",
+                "        let _ = trie.add(bytes);",
+                "    }",
+                "",
+                "    // At this point, adding another byte would exhaust the StateID space.",
+                "    let result = trie.add(bytes);",
+                "    // result should be Err(BuildError) indicating that StateID space is exhausted.",
+                "}"
+              ],
+              "oracle": [
+                "    assert_eq!(trie.rev, true);",
+                "    assert!(matches!(trie.add(bytes), Err(BuildError { .. })));",
+                "    assert!(matches!(trie.get_or_add_state(StateID::ZERO, 0x00), Err(_)));",
+                "    assert!(matches!(trie.get_or_add_state(StateID::ZERO, 0xFF), Err(_)));"
+              ],
+              "code": [
+                "{",
+                "    let mut trie = LiteralTrie::reverse();",
+                "    let bytes: &[u8] = &[0x00, 0xFF];",
+                "",
+                "    // Simulate the trie being full by mocking StateID creation to return an error.",
+                "    // Since we can't directly manipulate StateID, we add just enough to push the limit.",
+                "    for _ in 0..(usize::MAX as u32) {",
+                "        let _ = trie.add(bytes);",
+                "    }",
+                "",
+                "    // At this point, adding another byte would exhaust the StateID space.",
+                "    let result = trie.add(bytes);",
+                "    // result should be Err(BuildError) indicating that StateID space is exhausted.",
+                "    assert_eq!(trie.rev, true);",
+                "    assert!(matches!(trie.add(bytes), Err(BuildError { .. })));",
+                "    assert!(matches!(trie.get_or_add_state(StateID::ZERO, 0x00), Err(_)));",
+                "    assert!(matches!(trie.get_or_add_state(StateID::ZERO, 0xFF), Err(_)));",
+                "}"
+              ],
+              "can_compile": true,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "precondition: self.rev at line 113 is false\n",
+        "precondition: let Some(b) = if self.rev { it.next_back() } else { it.next() } at line 113 is true\n",
+        "precondition: self.get_or_add_state(prev, b)? at line 114 is Err/None\n"
+      ],
+      "input_infer": "self.rev is false; bytes is a non-empty array of u8 where all elements cause StateID space exhaustion in get_or_add_state, e.g., 0 to 255.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = (0..=255).collect();",
+                "    let result = trie.add(&bytes);",
+                "    // The result should be an error indicating state ID exhaustion",
+                "}"
+              ],
+              "oracle": [
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = (0..=255).collect();",
+                "    let result = trie.add(&bytes);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::StateIDExhaustion);"
+              ],
+              "code": [
+                "{",
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = (0..=255).collect();",
+                "    let result = trie.add(&bytes);",
+                "    // The result should be an error indicating state ID exhaustion",
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = (0..=255).collect();",
+                "    let result = trie.add(&bytes);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::StateIDExhaustion);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = vec![0]; // Single byte input",
+                "    let result = trie.add(&bytes);",
+                "    // The result should be an error indicating state ID exhaustion",
+                "}"
+              ],
+              "oracle": [
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = vec![0];",
+                "    let result = trie.add(&bytes);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::StateIDExhausted);"
+              ],
+              "code": [
+                "{",
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = vec![0]; // Single byte input",
+                "    let result = trie.add(&bytes);",
+                "    // The result should be an error indicating state ID exhaustion",
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = vec![0];",
+                "    let result = trie.add(&bytes);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::StateIDExhausted);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = vec![1, 2, 3]; // Multiple bytes input",
+                "    let result = trie.add(&bytes);",
+                "    // The result should be an error indicating state ID exhaustion",
+                "}"
+              ],
+              "oracle": [
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = vec![1, 2, 3];",
+                "    let result = trie.add(&bytes);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates);"
+              ],
+              "code": [
+                "{",
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = vec![1, 2, 3]; // Multiple bytes input",
+                "    let result = trie.add(&bytes);",
+                "    // The result should be an error indicating state ID exhaustion",
+                "    trie.rev = false;",
+                "    let bytes: Vec<u8> = vec![1, 2, 3];",
+                "    let result = trie.add(&bytes);",
+                "    assert!(result.is_err());",
+                "    assert_eq!(result.unwrap_err().kind, BuildErrorKind::TooManyStates);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "precondition: self.rev at line 113 is false\n",
+        "precondition: let Some(b) = if self.rev { it.next_back() } else { it.next() } at line 113 is true\n",
+        "precondition: self.get_or_add_state(prev, b)? at line 114 is Ok/Some\n",
+        "precondition: self.rev at line 113 is true\n",
+        "precondition: let Some(b) = if self.rev { it.next_back() } else { it.next() } at line 113 is true\n",
+        "expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "Test input conditions or ranges: Non-empty byte slices with a length of at least 1, containing valid bytes (0-255), where the `StateID` space is not exhausted and `self.rev` is set to false during the first execution and true during the second execution.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let input: &[u8] = &[1, 2, 3, 4, 5];",
+                "    trie.add(input).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let input: &[u8] = &[1, 2, 3, 4, 5];",
+                "    assert_eq!(trie.add(input), Ok(()));",
+                "    trie.rev = true;",
+                "    let input_rev: &[u8] = &[5, 4, 3, 2, 1];",
+                "    assert_eq!(trie.add(input_rev), Ok(()));",
+                "    trie.rev = false;",
+                "    let input_empty: &[u8] = &[];",
+                "    assert_eq!(trie.add(input_empty), Ok(()));"
+              ],
+              "code": [
+                "{",
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let input: &[u8] = &[1, 2, 3, 4, 5];",
+                "    trie.add(input).unwrap();",
+                "    let mut trie = LiteralTrie::forward();",
+                "    trie.rev = false;",
+                "    let input: &[u8] = &[1, 2, 3, 4, 5];",
+                "    assert_eq!(trie.add(input), Ok(()));",
+                "    trie.rev = true;",
+                "    let input_rev: &[u8] = &[5, 4, 3, 2, 1];",
+                "    assert_eq!(trie.add(input_rev), Ok(()));",
+                "    trie.rev = false;",
+                "    let input_empty: &[u8] = &[];",
+                "    assert_eq!(trie.add(input_empty), Ok(()));",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let mut trie = LiteralTrie::reverse();",
+                "    trie.rev = true;",
+                "    let input: &[u8] = &[5, 4, 3, 2, 1];",
+                "    trie.add(input).unwrap();",
+                "}"
+              ],
+              "oracle": [
+                "    assert!(trie.rev == true);",
+                "    assert_eq!(trie.states.len(), initial_state_count + 1);",
+                "    assert_eq!(trie.states[prev].chunks.len(), expected_chunks_after_addition);",
+                "    assert!(trie.get_or_add_state(prev, 5).is_ok());",
+                "    assert!(trie.get_or_add_state(prev, 4).is_ok());",
+                "    assert!(trie.get_or_add_state(prev, 3).is_ok());",
+                "    assert!(trie.get_or_add_state(prev, 2).is_ok());",
+                "    assert!(trie.get_or_add_state(prev, 1).is_ok());",
+                "    assert_eq!(trie.states[prev].is_leaf(), true);",
+                "    assert_eq!(trie.states[prev].transitions.len(), expected_transitions_count);"
+              ],
+              "code": [
+                "{",
+                "    let mut trie = LiteralTrie::reverse();",
+                "    trie.rev = true;",
+                "    let input: &[u8] = &[5, 4, 3, 2, 1];",
+                "    trie.add(input).unwrap();",
+                "    assert!(trie.rev == true);",
+                "    assert_eq!(trie.states.len(), initial_state_count + 1);",
+                "    assert_eq!(trie.states[prev].chunks.len(), expected_chunks_after_addition);",
+                "    assert!(trie.get_or_add_state(prev, 5).is_ok());",
+                "    assert!(trie.get_or_add_state(prev, 4).is_ok());",
+                "    assert!(trie.get_or_add_state(prev, 3).is_ok());",
+                "    assert!(trie.get_or_add_state(prev, 2).is_ok());",
+                "    assert!(trie.get_or_add_state(prev, 1).is_ok());",
+                "    assert_eq!(trie.states[prev].is_leaf(), true);",
+                "    assert_eq!(trie.states[prev].transitions.len(), expected_transitions_count);",
+                "}"
+              ],
+              "can_compile": false,
+              "repaired": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
